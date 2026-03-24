@@ -1,5 +1,8 @@
 plugins {
     id("com.android.application")
+    // START: FlutterFire Configuration
+    id("com.google.gms.google-services")
+    // END: FlutterFire Configuration
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
@@ -40,5 +43,10 @@ android {
 }
 
 flutter {
+    configurations.all {
+    resolutionStrategy {
+        force("com.google.firebase:firebase-auth:22.3.1")
+    }
+}
     source = "../.."
 }

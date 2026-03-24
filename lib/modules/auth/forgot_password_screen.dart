@@ -1,8 +1,41 @@
 import 'package:flutter/material.dart';
-import 'otp_screen.dart'; // Đảm bảo import trang OTP
+import '../../services/auth_service.dart';
 
-class ForgotPasswordScreen extends StatelessWidget {
+class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
+
+  @override
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+}
+
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  final AuthService _authService = AuthService();
+  final _emailController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSendReset() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập email!'), backgroundColor: Colors.red));
+      return;
+    }
+    setState(() => _isLoading = true);
+    final result = await _authService.resetPassword(email: email);
+    setState(() => _isLoading = false);
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(result.message),
+      backgroundColor: result.success ? const Color(0xFF438883) : Colors.red,
+    ));
+    if (result.success) Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +133,7 @@ class ForgotPasswordScreen extends StatelessWidget {
 
                       // Ô NHẬP LIỆU (TEXT FIELD)
                       TextFormField(
+                        controller: _emailController,
                         style: const TextStyle(fontSize: 15),
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
@@ -153,16 +187,7 @@ class ForgotPasswordScreen extends StatelessWidget {
 
                       // NÚT "GỬI MÃ XÁC MINH"
                       InkWell(
-                        onTap: () {
-                          // ĐÃ SỬA CHỖ NÀY: Truyền thêm isFromForgotPass: true
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const OTPScreen(isFromForgotPass: true),
-                            ),
-                          );
-                        },
+                        onTap: _isLoading ? null : _handleSendReset,
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -183,9 +208,11 @@ class ForgotPasswordScreen extends StatelessWidget {
                               ),
                             ],
                           ),
-                          child: const Center(
-                            child: Text(
-                              'Gửi mã Xác Minh',
+                          child: Center(
+                            child: _isLoading
+                                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                                : const Text(
+                              'Gửi email khôi phục',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,

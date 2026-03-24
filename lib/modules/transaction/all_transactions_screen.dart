@@ -1,135 +1,77 @@
 import 'package:flutter/material.dart';
-import '../transaction/transaction_detail_screen.dart'; // Đảm bảo đường dẫn tới file chi tiết giao dịch đúng
+
+import '../../services/firestore_service.dart';
+import '../../models/transaction_model.dart';
+import '../home/home_screen.dart';
+import 'transaction_detail_screen.dart';
 
 class AllTransactionsScreen extends StatelessWidget {
   const AllTransactionsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final firestoreService = FirestoreService();
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            // 1. CUSTOM APP BAR
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Color(0xFF222222),
-                      size: 20,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const Text(
-                    'Lịch sử giao dịch',
-                    style: TextStyle(
-                      color: Color(0xFF222222),
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  // Nút Bộ Lọc (Filter) hoặc Tìm kiếm
-                  IconButton(
-                    icon: const Icon(
-                      Icons.filter_list,
-                      color: Color(0xFF222222),
-                      size: 24,
-                    ),
-                    onPressed: () {
-                      // Xử lý mở bộ lọc sau
-                    },
-                  ),
-                ],
-              ),
+              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                IconButton(icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF222222), size: 20), onPressed: () => Navigator.pop(context)),
+                const Text('Lịch sử giao dịch', style: TextStyle(color: Color(0xFF222222), fontSize: 18, fontWeight: FontWeight.w600)),
+                IconButton(icon: const Icon(Icons.filter_list, color: Color(0xFF222222), size: 24), onPressed: () {}),
+              ]),
             ),
-
             const SizedBox(height: 10),
 
-            // 2. DANH SÁCH GIAO DỊCH (Có thể cuộn)
+            // DANH SÁCH GIAO DỊCH REALTIME
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // --- NHÓM 1: HÔM NAY ---
-                    _buildDateHeader('Hôm nay'),
-                    _buildTransactionItem(
-                      context: context,
-                      icon: Icons.computer,
-                      title: 'Tiền lương Livestream',
-                      date: 'Hôm nay',
-                      amount: '+ 22.286.956đ',
-                      isIncome: true,
-                    ),
-                    _buildTransactionItem(
-                      context: context,
-                      icon: Icons.fastfood,
-                      title: 'Ăn trưa',
-                      date: 'Hôm nay',
-                      amount: '- 55.000đ',
-                      isIncome: false,
-                    ),
+              child: StreamBuilder<List<TransactionModel>>(
+                stream: firestoreService.getTransactionsStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
+                  }
 
-                    const SizedBox(height: 16),
+                  final transactions = snapshot.data ?? [];
+                  if (transactions.isEmpty) {
+                    return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(Icons.receipt_long, size: 60, color: Colors.grey.shade300),
+                      const SizedBox(height: 16),
+                      const Text('Chưa có giao dịch nào', style: TextStyle(color: Color(0xFF999999), fontSize: 16)),
+                    ]));
+                  }
 
-                    // --- NHÓM 2: HÔM QUA ---
-                    _buildDateHeader('Hôm qua'),
-                    _buildTransactionItem(
-                      context: context,
-                      icon: Icons.swap_horiz,
-                      title: 'Chuyển khoản',
-                      date: 'Hôm qua',
-                      amount: '- 2.228.695đ',
-                      isIncome: false,
-                    ),
-                    _buildTransactionItem(
-                      context: context,
-                      icon: Icons.shopping_bag,
-                      title: 'Siêu thị mini',
-                      date: 'Hôm qua',
-                      amount: '- 450.000đ',
-                      isIncome: false,
-                    ),
+                  // Nhóm giao dịch theo ngày
+                  final grouped = _groupByDate(transactions);
 
-                    const SizedBox(height: 16),
-
-                    // --- NHÓM 3: THÁNG TRƯỚC ---
-                    _buildDateHeader('Tháng 1, 2025'),
-                    _buildTransactionItem(
-                      context: context,
-                      icon: Icons.two_wheeler,
-                      title: 'Đổ xăng Wave RSX',
-                      date: '30 Thg 1, 2025',
-                      amount: '- 80.000đ',
-                      isIncome: false,
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ...grouped.entries.expand((entry) => [
+                          _buildDateHeader(entry.key),
+                          ...entry.value.map((tx) => _buildTransactionItem(
+                            context: context,
+                            icon: tx.icon,
+                            title: tx.category,
+                            date: HomeBody.formatDate(tx.date),
+                            amount: '${tx.isIncome ? "+" : "-"} ${HomeBody.formatCurrency(tx.amount)}',
+                            isIncome: tx.isIncome,
+                            transaction: tx,
+                          )),
+                          const SizedBox(height: 16),
+                        ]),
+                        const SizedBox(height: 40),
+                      ],
                     ),
-                    _buildTransactionItem(
-                      context: context,
-                      icon: Icons.play_arrow,
-                      title: 'Youtube Premium',
-                      date: '16 Thg 1, 2025',
-                      amount: '- 314.639đ',
-                      isIncome: false,
-                    ),
-                    _buildTransactionItem(
-                      context: context,
-                      icon: Icons.work,
-                      title: 'Dự án Freelance',
-                      date: '10 Thg 1, 2025',
-                      amount: '+ 15.000.000đ',
-                      isIncome: true,
-                    ),
-
-                    const SizedBox(height: 40), // Đệm dưới cùng
-                  ],
-                ),
+                  );
+                },
               ),
             ),
           ],
@@ -138,22 +80,24 @@ class AllTransactionsScreen extends StatelessWidget {
     );
   }
 
-  // --- HÀM TẠO TIÊU ĐỀ NGÀY THÁNG ---
+  // Nhóm giao dịch theo ngày
+  Map<String, List<TransactionModel>> _groupByDate(List<TransactionModel> transactions) {
+    final Map<String, List<TransactionModel>> grouped = {};
+    for (var tx in transactions) {
+      final key = HomeBody.formatDate(tx.date);
+      grouped.putIfAbsent(key, () => []);
+      grouped[key]!.add(tx);
+    }
+    return grouped;
+  }
+
   Widget _buildDateHeader(String date) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16, top: 8),
-      child: Text(
-        date,
-        style: const TextStyle(
-          color: Color(0xFF666666),
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      child: Text(date, style: const TextStyle(color: Color(0xFF666666), fontSize: 16, fontWeight: FontWeight.w600)),
     );
   }
 
-  // --- HÀM TẠO DÒNG GIAO DỊCH (Tái sử dụng giao diện) ---
   Widget _buildTransactionItem({
     required BuildContext context,
     required IconData icon,
@@ -161,72 +105,28 @@ class AllTransactionsScreen extends StatelessWidget {
     required String date,
     required String amount,
     required bool isIncome,
+    required TransactionModel transaction,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TransactionDetailScreen(
-                isIncome: isIncome,
-                title: title,
-                amount: amount,
-                date: date,
-                time: '14:30', // Demo time
-                icon: icon,
-              ),
-            ),
-          );
-        },
-        child: Row(
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0F6F5),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: const Color(0xFF438883), size: 24),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF222222),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    date,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF666666),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              amount,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isIncome
-                    ? const Color(0xFF24A869)
-                    : const Color(0xFFF95B51),
-              ),
-            ),
-          ],
-        ),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => TransactionDetailScreen(
+          isIncome: isIncome, title: title, amount: amount, date: date, time: transaction.time, icon: icon,
+        ))),
+        child: Row(children: [
+          Container(
+            width: 50, height: 50,
+            decoration: BoxDecoration(color: const Color(0xFFF0F6F5), borderRadius: BorderRadius.circular(12)),
+            child: Icon(icon, color: const Color(0xFF438883), size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF222222))),
+            const SizedBox(height: 4),
+            Text(date, style: const TextStyle(fontSize: 13, color: Color(0xFF666666))),
+          ])),
+          Text(amount, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isIncome ? const Color(0xFF24A869) : const Color(0xFFF95B51))),
+        ]),
       ),
     );
   }

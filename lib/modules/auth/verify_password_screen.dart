@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'reset_password_screen.dart'; // Import trang Nhập mật khẩu mới (sẽ tạo ở Bước 2)
+import '../../services/auth_service.dart';
+import 'reset_password_screen.dart';
 
 class VerifyPasswordScreen extends StatefulWidget {
   const VerifyPasswordScreen({super.key});
@@ -9,7 +10,34 @@ class VerifyPasswordScreen extends StatefulWidget {
 }
 
 class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
+  final AuthService _authService = AuthService();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleVerify() async {
+    final password = _passwordController.text;
+    if (password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập mật khẩu!'), backgroundColor: Colors.red));
+      return;
+    }
+    setState(() => _isLoading = true);
+    final result = await _authService.verifyCurrentPassword(password: password);
+    setState(() => _isLoading = false);
+
+    if (result.success) {
+      if (!mounted) return;
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const ResetPasswordScreen(isFromSecurity: true)));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message), backgroundColor: Colors.red));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,8 +130,8 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                         ),
                       ),
                       TextFormField(
+                        controller: _passwordController,
                         obscureText: _obscurePassword,
-                        autofocus: true,
                         style: const TextStyle(fontSize: 15),
                         decoration: InputDecoration(
                           hintText: 'Nhập mật khẩu hiện tại',
@@ -146,18 +174,7 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
 
                       // NÚT TIẾP TỤC
                       InkWell(
-                        onTap: () {
-                          // Trong verify_password_screen.dart
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              // Chuyển sang ResetPasswordScreen và truyền cờ isFromSecurity = true
-                              builder: (context) => const ResetPasswordScreen(
-                                isFromSecurity: true,
-                              ),
-                            ),
-                          );
-                        },
+                        onTap: _isLoading ? null : _handleVerify,
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),

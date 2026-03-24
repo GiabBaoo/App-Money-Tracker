@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
-import 'modules/home/home_screen.dart';
-// Đảm bảo bạn import đúng đường dẫn đến file splash_screen của bạn nhé
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'firebase_options.dart';
 import 'modules/splash/splash_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  await FirebaseAuth.instance.setSettings(
+    appVerificationDisabledForTesting: true,
+  );
   runApp(const MyApp());
 }
 
@@ -20,7 +28,6 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF438883)),
         useMaterial3: true,
       ),
-      // ĐỔI DÒNG NÀY: Gọi SplashScreen chạy đầu tiên
       home: SplashScreen(),
     );
   }

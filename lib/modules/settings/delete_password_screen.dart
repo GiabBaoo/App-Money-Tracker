@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'success_screen.dart'; // Gọi trang SuccessScreen ở Bước 1
+import '../../services/auth_service.dart';
+import 'success_screen.dart';
+import '../auth/login_screen.dart';
 
 class DeletePasswordScreen extends StatefulWidget {
   const DeletePasswordScreen({super.key});
@@ -9,7 +11,42 @@ class DeletePasswordScreen extends StatefulWidget {
 }
 
 class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
+  final AuthService _authService = AuthService();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleDelete() async {
+    final password = _passwordController.text;
+    if (password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập mật khẩu!'), backgroundColor: Colors.red));
+      return;
+    }
+    setState(() => _isLoading = true);
+    final result = await _authService.deleteAccount(password: password);
+    setState(() => _isLoading = false);
+
+    if (result.success) {
+      if (!mounted) return;
+      Navigator.push(context, MaterialPageRoute(builder: (context) => SuccessScreen(
+        appBarTitle: 'Xóa tài khoản',
+        successTitle: 'Xóa tài khoản thành công',
+        successMessage: 'Tất cả dữ liệu tài chính cá nhân của bạn đã được gỡ bỏ vĩnh viễn khỏi hệ thống.',
+        buttonText: 'Quay về đăng nhập',
+        onButtonPressed: () {
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const LoginScreen()), (route) => false);
+        },
+      )));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message), backgroundColor: Colors.red));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,8 +133,8 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                         ),
                       ),
                       TextFormField(
+                        controller: _passwordController,
                         obscureText: _obscurePassword,
-                        style: const TextStyle(fontSize: 16),
                         decoration: InputDecoration(
                           hintText: 'Nhập mật khẩu của bạn',
                           hintStyle: const TextStyle(color: Color(0xFFAAAAAA)),
@@ -137,26 +174,7 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                       const SizedBox(height: 40),
 
                       InkWell(
-                        onTap: () {
-                          // CHUYỂN SANG TRANG THÀNH CÔNG VỚI DỮ LIỆU CỤ THỂ
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => SuccessScreen(
-                                appBarTitle: 'Xóa tài khoản',
-                                successTitle: 'Xóa tài khoản thành công',
-                                successMessage:
-                                    'Tất cả dữ liệu tài chính cá nhân của bạn đã được gỡ bỏ vĩnh viễn khỏi hệ thống bảo mật của chúng tôi.',
-                                buttonText: 'Đóng ứng dụng',
-                                onButtonPressed: () {
-                                  Navigator.of(
-                                    context,
-                                  ).popUntil((route) => route.isFirst);
-                                },
-                              ),
-                            ),
-                          );
-                        },
+                        onTap: _isLoading ? null : _handleDelete,
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),

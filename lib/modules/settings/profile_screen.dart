@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../home/notification_screen.dart'; // Đảm bảo đường dẫn này đúng
+import '../../services/auth_service.dart';
+import '../../models/user_model.dart';
+import '../home/notification_screen.dart';
 import '../settings/account_info_screen.dart';
 import '../settings/security_screen.dart';
 import 'privacy_screen.dart';
@@ -10,166 +12,65 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authService = AuthService();
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // 1. NỀN XANH BO CONG ELIP Ở DƯỚI
           Container(
-            height: 280,
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              color: Color(0xFF438883),
-              borderRadius: BorderRadius.vertical(
-                bottom: Radius.elliptical(400, 60), // Bo cong hình elip mềm mại
-              ),
-            ),
+            height: 280, width: double.infinity,
+            decoration: const BoxDecoration(color: Color(0xFF438883), borderRadius: BorderRadius.vertical(bottom: Radius.elliptical(400, 60))),
           ),
-
-          // 2. NỘI DUNG CHÍNH (Có thể cuộn được)
           SafeArea(
             child: Column(
               children: [
-                // AppBar Custom (Đã bỏ nút Back, giữ Tiêu đề và icon chuông)
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Khối tàng hình để cân bằng layout, giữ chữ "Hồ sơ" ở giữa
-                      const SizedBox(width: 32),
-
-                      const Text(
-                        'Hồ sơ',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    const SizedBox(width: 32),
+                    const Text('Hồ sơ', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
+                    InkWell(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationScreen())),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                        child: const Icon(Icons.notifications_none, color: Colors.white),
                       ),
-
-                      // Nút Chuông điều hướng tới trang Thông báo
-                      InkWell(
-                        onTap: () {
-                          // Lệnh chuyển sang trang Thông báo
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const NotificationScreen(),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.notifications_none,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ]),
                 ),
-
                 const SizedBox(height: 30),
 
-                // AVATAR & THÔNG TIN CÁ NHÂN
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Color(0xFFEFEFEF),
-                    child: Icon(Icons.person, size: 50, color: Colors.grey),
-                  ),
+                // AVATAR & THÔNG TIN TỪ FIRESTORE
+                StreamBuilder<UserModel?>(
+                  stream: authService.getUserProfileStream(),
+                  builder: (context, snapshot) {
+                    final user = snapshot.data;
+                    return Column(children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                        child: const CircleAvatar(radius: 50, backgroundColor: Color(0xFFEFEFEF), child: Icon(Icons.person, size: 50, color: Colors.grey)),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(user?.name ?? 'Đang tải...', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF222222))),
+                      const SizedBox(height: 4),
+                      Text(user?.email ?? '', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF438883))),
+                    ]);
+                  },
                 ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Lê Trung Cao',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF222222),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  '@letrung_cao',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF438883),
-                  ),
-                ),
-
                 const SizedBox(height: 40),
 
-                // DANH SÁCH MENU CÀI ĐẶT
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     children: [
-                      _buildMenuItem(
-                        Icons.person_outline,
-                        'Thông tin tài khoản',
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const AccountInfoScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildMenuItem(
-                        Icons.mail_outline,
-                        'Trung tâm tin nhắn',
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const MessageCenterScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildMenuItem(
-                        Icons.shield_outlined,
-                        'Đăng nhập và bảo mật',
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SecurityScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildMenuItem(
-                        Icons.lock_outline,
-                        'Dữ liệu và riêng tư',
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const PrivacyScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(
-                        height: 100,
-                      ), // Khoảng trống để không bị thanh Bottom Navigation đè lên
+                      _buildMenuItem(Icons.person_outline, 'Thông tin tài khoản', () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AccountInfoScreen()))),
+                      _buildMenuItem(Icons.mail_outline, 'Trung tâm tin nhắn', () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MessageCenterScreen()))),
+                      _buildMenuItem(Icons.shield_outlined, 'Đăng nhập và bảo mật', () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SecurityScreen()))),
+                      _buildMenuItem(Icons.lock_outline, 'Dữ liệu và riêng tư', () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PrivacyScreen()))),
+                      const SizedBox(height: 100),
                     ],
                   ),
                 ),

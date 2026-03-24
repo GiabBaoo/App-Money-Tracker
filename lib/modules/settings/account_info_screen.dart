@@ -1,267 +1,107 @@
 import 'package:flutter/material.dart';
 
+import '../../services/auth_service.dart';
+import '../../models/user_model.dart';
+import '../auth/login_screen.dart';
+
 class AccountInfoScreen extends StatelessWidget {
   const AccountInfoScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final authService = AuthService();
+
     return Scaffold(
-      backgroundColor: const Color(0xFF438883), // Nền xanh lá mạ
+      backgroundColor: const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            // 1. CUSTOM APP BAR
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const Text(
-                    'Thông tin tài khoản',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 48), // Khối tàng hình cân bằng
-                ],
-              ),
+              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                IconButton(icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20), onPressed: () => Navigator.pop(context)),
+                const Text('Thông tin tài khoản', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
+                const SizedBox(width: 48),
+              ]),
             ),
-
             const SizedBox(height: 20),
-
-            // 2. KHUNG NỘI DUNG MÀU TRẮNG BO GÓC TRÊN
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(
-                    top: 30,
-                    bottom: 40,
-                    left: 24,
-                    right: 24,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // KHỐI 1: HEADER PROFILE (Avatar, Tên, ID)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE5E7EB)),
-                        ),
-                        child: Column(
-                          children: [
-                            // Avatar màu xanh nhạt
-                            Container(
-                              width: 80,
-                              height: 80,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFCCFEEB),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.person,
-                                size: 40,
-                                color: Color(0xFF2F7E79),
-                              ),
+                decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
+                child: StreamBuilder<UserModel?>(
+                  stream: authService.getUserProfileStream(),
+                  builder: (context, snapshot) {
+                    final user = snapshot.data;
+                    if (user == null) {
+                      return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
+                    }
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.only(top: 30, bottom: 40, left: 24, right: 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // HEADER
+                          Container(
+                            width: double.infinity, padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFE5E7EB))),
+                            child: Column(children: [
+                              Container(width: 80, height: 80, decoration: const BoxDecoration(color: Color(0xFFCCFEEB), shape: BoxShape.circle), child: const Icon(Icons.person, size: 40, color: Color(0xFF2F7E79))),
+                              const SizedBox(height: 12),
+                              Text(user.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A))),
+                              const SizedBox(height: 8),
+                              Text('ID: ${user.uid.substring(0, 8).toUpperCase()}', style: const TextStyle(color: Color(0xFF999999), fontSize: 14)),
+                            ]),
+                          ),
+                          const SizedBox(height: 30),
+
+                          _buildSectionTitle('THÔNG TIN CÁ NHÂN'),
+                          _buildInfoBox([
+                            _buildInfoRow(Icons.badge_outlined, 'Họ và tên', user.name),
+                            _buildDivider(),
+                            _buildInfoRow(Icons.male, 'Giới tính', user.gender),
+                            _buildDivider(),
+                            _buildInfoRow(Icons.cake_outlined, 'Ngày sinh', user.dateOfBirth != null ? '${user.dateOfBirth!.day.toString().padLeft(2, '0')}/${user.dateOfBirth!.month.toString().padLeft(2, '0')}/${user.dateOfBirth!.year}' : 'Chưa cập nhật'),
+                            _buildDivider(),
+                            _buildInfoRow(Icons.payments_outlined, 'Loại tiền tệ', user.currency),
+                          ]),
+                          const SizedBox(height: 30),
+
+                          _buildSectionTitle('THÔNG TIN LIÊN LẠC'),
+                          _buildInfoBox([
+                            _buildInfoRow(Icons.email_outlined, 'Email', user.email),
+                            _buildDivider(),
+                            _buildInfoRow(Icons.phone_outlined, 'Số điện thoại', user.phone.isNotEmpty ? user.phone : 'Chưa cập nhật'),
+                          ]),
+                          const SizedBox(height: 30),
+
+                          _buildSectionTitle('CHI TIẾT TÀI KHOẢN'),
+                          _buildInfoBox([
+                            _buildInfoRow(Icons.star_border, 'Loại tài khoản', user.accountType),
+                            _buildDivider(),
+                            _buildInfoRow(Icons.calendar_month_outlined, 'Ngày gia nhập', '${user.joinDate.day.toString().padLeft(2, '0')}/${user.joinDate.month.toString().padLeft(2, '0')}/${user.joinDate.year}'),
+                          ]),
+                          const SizedBox(height: 30),
+
+                          // NÚT ĐĂNG XUẤT
+                          InkWell(
+                            onTap: () async {
+                              await authService.logout();
+                              if (!context.mounted) return;
+                              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const LoginScreen()), (route) => false);
+                            },
+                            child: Container(
+                              width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 16),
+                              decoration: BoxDecoration(color: const Color(0xFFCCFEEB), borderRadius: BorderRadius.circular(30)),
+                              child: const Center(child: Text('Đăng xuất', style: TextStyle(color: Color(0xFF2F7E79), fontSize: 16, fontWeight: FontWeight.w600))),
                             ),
-                            const SizedBox(height: 12),
-                            // Tên
-                            const Text(
-                              'Lê Trung Cao',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1A1A1A),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            // Username và Huy hiệu
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text(
-                                  '@letrung_cao',
-                                  style: TextStyle(
-                                    color: Color(0xFF666666),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFCCFEEB),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    children: const [
-                                      Icon(
-                                        Icons.check_circle,
-                                        size: 12,
-                                        color: Color(0xFF2F7E79),
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'Đã xác minh',
-                                        style: TextStyle(
-                                          color: Color(0xFF2F7E79),
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            // ID
-                            const Text(
-                              'ID: FM-000023',
-                              style: TextStyle(
-                                color: Color(0xFF999999),
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
                       ),
-
-                      const SizedBox(height: 30),
-
-                      // KHỐI 2: THÔNG TIN CÁ NHÂN
-                      _buildSectionTitle('THÔNG TIN CÁ NHÂN'),
-                      _buildInfoBox([
-                        _buildInfoRow(
-                          Icons.badge_outlined,
-                          'Họ và tên',
-                          'Lê Trung Cao',
-                        ),
-                        _buildDivider(),
-                        _buildInfoRow(Icons.male, 'Giới tính', 'Nam'),
-                        _buildDivider(),
-                        _buildInfoRow(
-                          Icons.cake_outlined,
-                          'Ngày sinh',
-                          '15/05/1998',
-                        ),
-                        _buildDivider(),
-                        _buildInfoRow(
-                          Icons.payments_outlined,
-                          'Loại tiền tệ yêu thích',
-                          'VND (Việt Nam Đồng)',
-                        ),
-                      ]),
-
-                      const SizedBox(height: 30),
-
-                      // KHỐI 3: THÔNG TIN LIÊN LẠC
-                      _buildSectionTitle('THÔNG TIN LIÊN LẠC'),
-                      _buildInfoBox([
-                        _buildInfoRow(
-                          Icons.email_outlined,
-                          'Email',
-                          'letrung.cao@example.com',
-                        ),
-                        _buildDivider(),
-                        _buildInfoRow(
-                          Icons.phone_outlined,
-                          'Số điện thoại',
-                          '+84 987 654 321',
-                        ),
-                      ]),
-
-                      const SizedBox(height: 30),
-
-                      // KHỐI 4: CHI TIẾT TÀI KHOẢN
-                      _buildSectionTitle('CHI TIẾT TÀI KHOẢN'),
-                      _buildInfoBox([
-                        _buildInfoRow(
-                          Icons.star_border,
-                          'Loại tài khoản',
-                          'PREMIUM',
-                          trailing: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFCCFEEB),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'Pro',
-                              style: TextStyle(
-                                color: Color(0xFF2F7E79),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                        _buildDivider(),
-                        _buildInfoRow(
-                          Icons.calendar_month_outlined,
-                          'Ngày gia nhập hệ thống',
-                          '12 tháng 01, 2023',
-                        ),
-                      ]),
-
-                      const SizedBox(height: 30),
-
-                      // NÚT ĐĂNG XUẤT
-                      InkWell(
-                        onTap: () {
-                          // Lệnh đăng xuất
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: BoxDecoration(
-                            color: const Color(
-                              0xFFCCFEEB,
-                            ), // Màu xanh nhạt theo thiết kế
-                            borderRadius: BorderRadius.circular(
-                              30,
-                            ), // Bo tròn giống nút
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'Đăng xuất',
-                              style: TextStyle(
-                                color: Color(0xFF2F7E79),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
             ),
