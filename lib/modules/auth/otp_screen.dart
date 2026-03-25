@@ -85,7 +85,7 @@ class _OTPScreenState extends State<OTPScreen> {
     if (result.success) {
       if (widget.isFromForgotPass) {
         Navigator.pushReplacement(context, MaterialPageRoute(
-          builder: (context) => ResetPasswordScreen(isFromSecurity: false, emailForReset: widget.email),
+          builder: (context) => ResetPasswordScreen(isFromSecurity: false, emailForReset: widget.email, otpCode: code),
         ));
       } else {
         Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const HomeScreen()), (route) => false);

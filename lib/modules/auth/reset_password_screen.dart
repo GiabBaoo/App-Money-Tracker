@@ -6,11 +6,13 @@ import 'login_screen.dart';
 class ResetPasswordScreen extends StatefulWidget {
   final bool isFromSecurity;
   final String? emailForReset; // Email tu luong Quen MK (da xac thuc OTP)
+  final String? otpCode; // Ma OTP da xac thuc
 
   const ResetPasswordScreen({
     super.key,
     this.isFromSecurity = false,
     this.emailForReset,
+    this.otpCode,
   });
 
   @override
@@ -59,6 +61,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       final result = await _authService.resetPasswordWithEmail(
         email: _authService.currentUser?.email ?? '',
         newPassword: newPassword,
+        otpCode: widget.otpCode ?? '',
       );
       setState(() => _isLoading = false);
 
@@ -85,6 +88,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         final result = await _authService.resetPasswordWithEmail(
           email: widget.emailForReset!,
           newPassword: newPassword,
+          otpCode: widget.otpCode ?? '',
         );
         setState(() => _isLoading = false);
 
