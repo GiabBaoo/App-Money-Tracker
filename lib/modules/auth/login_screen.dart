@@ -42,6 +42,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (result.success) {
       if (!mounted) return;
+      
+      // Kiem tra xem email co da xac nhan khong
+      final currentUser = _authService.currentUser;
+      if (currentUser != null && !currentUser.emailVerified) {
+        _showSnackBar('Vui long xac nhan email truoc khi dang nhap!', isError: true);
+        await _authService.logout();
+        return;
+      }
+      
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomeScreen()),

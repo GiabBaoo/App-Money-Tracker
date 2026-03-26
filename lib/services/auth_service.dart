@@ -11,6 +11,48 @@ class AuthService {
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
+  // ==================== GUI EMAIL XAC NHAN ====================
+  Future<({bool success, String message})> sendEmailVerification() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        return (success: false, message: 'Khong tim thay nguoi dung!');
+      }
+      
+      await user.sendEmailVerification();
+      return (success: true, message: 'Email xac nhan da duoc gui!');
+    } on FirebaseAuthException catch (e) {
+      return (success: false, message: _getAuthErrorMessage(e.code));
+    } catch (e) {
+      return (success: false, message: 'Loi: $e');
+    }
+  }
+
+  // ==================== RELOAD USER VA KIEM TRA EMAIL VERIFIED ====================
+  Future<({bool success, String message, bool emailVerified})> reloadAndCheckEmailVerification() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        return (success: false, message: 'Khong tim thay nguoi dung!', emailVerified: false);
+      }
+      
+      await user.reload();
+      final updatedUser = _auth.currentUser;
+      
+      if (updatedUser == null) {
+        return (success: false, message: 'Co loi xay ra!', emailVerified: false);
+      }
+      
+      if (updatedUser.emailVerified) {
+        return (success: true, message: 'Email da duoc xac nhan!', emailVerified: true);
+      } else {
+        return (success: false, message: 'Email chua duoc xac nhan. Vui long kiem tra hop thu.', emailVerified: false);
+      }
+    } catch (e) {
+      return (success: false, message: 'Loi: $e', emailVerified: false);
+    }
+  }
+
   // ==================== TAO VA GUI MA OTP QUA EMAIL ====================
   Future<({bool success, String message})> sendOTP({
     required String email,
@@ -113,6 +155,13 @@ class AuthService {
         print('Firestore loi (nhung Auth OK): $firestoreError');
       }
 
+      // GUI EMAIL XAC NHAN
+      try {
+        await credential.user?.sendEmailVerification();
+      } catch (emailError) {
+        print('Gui email xac nhan loi: $emailError');
+      }
+
       return (success: true, message: 'Dang ky thanh cong!');
     } on FirebaseAuthException catch (e) {
       return (success: false, message: _getAuthErrorMessage(e.code));
@@ -167,6 +216,28 @@ class AuthService {
     }
   }
 
+  // ==================== SEND PASSWORD RESET EMAIL (QUEN MAT KHAU) ====================
+  Future<({bool success, String message})> sendPasswordResetEmail({required String email}) async {
+    try {
+      // Kiem tra email co hop le khong
+      if (email.isEmpty) {
+        return (success: false, message: 'Vui long nhap email!');
+      }
+      if (!email.contains('@') || !email.contains('.')) {
+        return (success: false, message: 'Email khong hop le!');
+      }
+
+      // Gui email dat lai mat khau
+      await _auth.sendPasswordResetEmail(email: email.trim());
+      
+      return (success: true, message: 'Email dat lai mat khau da duoc gui den $email. Vui long kiem tra hop thu va click vao link.');
+    } on FirebaseAuthException catch (e) {
+      return (success: false, message: _getAuthErrorMessage(e.code));
+    } catch (e) {
+      return (success: false, message: 'Loi: $e');
+    }
+  }
+
   // ==================== GUI EMAIL RESET PASSWORD (LUONG QUEN MK) ====================
   Future<({bool success, String message})> resetPasswordWithEmail({
     required String email,
@@ -174,16 +245,19 @@ class AuthService {
     required String otpCode,
   }) async {
     try {
-      // Xác thực OTP trước
-      final verifyResult = await verifyOTP(email: email, otpCode: otpCode);
-      if (!verifyResult.success) {
-        return (success: false, message: verifyResult.message);
+      // Neu co OTP, xac thuc OTP truoc (cho luong cu)
+      if (otpCode.isNotEmpty) {
+        final verifyResult = await verifyOTP(email: email, otpCode: otpCode);
+        if (!verifyResult.success) {
+          return (success: false, message: verifyResult.message);
+        }
       }
+      // Neu khong co OTP, chi can gui email reset password (luong moi)
 
-      // Sau khi OTP hợp lệ, gửi email reset password
+      // Gui email reset password
       await _auth.sendPasswordResetEmail(email: email.trim());
       
-      // Lưu mật khẩu mới tạm thời (user sẽ click link trong email để hoàn thành)
+      // Luu mat khau moi tam thoi (user se click link trong email de hoan thanh)
       await _firestore.collection('password_resets').doc(email.trim()).set({
         'email': email.trim(),
         'newPassword': newPassword,
@@ -191,11 +265,11 @@ class AuthService {
         'expiresAt': DateTime.now().add(const Duration(hours: 1)),
       });
 
-      return (success: true, message: 'Email đặt lại mật khẩu đã được gửi!');
+      return (success: true, message: 'Email dat lai mat khau da duoc gui!');
     } on FirebaseAuthException catch (e) {
       return (success: false, message: _getAuthErrorMessage(e.code));
     } catch (e) {
-      return (success: false, message: 'Lỗi: $e');
+      return (success: false, message: 'Loi: $e');
     }
   }
 

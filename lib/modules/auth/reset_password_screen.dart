@@ -58,7 +58,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       // LUONG DOI MK TU CAI DAT: Khong can lam gi them (mat khau cu da xac thuc o trang truoc)
       // Chi can goi Firebase de doi mat khau
       // Nhung vi luong nay khong co mat khau cu o day, nen dung sendPasswordResetEmail
-      final result = await _authService.resetPasswordWithEmail(
+      await _authService.resetPasswordWithEmail(
         email: _authService.currentUser?.email ?? '',
         newPassword: newPassword,
         otpCode: widget.otpCode ?? '',
@@ -85,7 +85,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     } else {
       // LUONG QUEN MK: Gui email reset password qua Firebase
       if (widget.emailForReset != null) {
-        final result = await _authService.resetPasswordWithEmail(
+        await _authService.resetPasswordWithEmail(
           email: widget.emailForReset!,
           newPassword: newPassword,
           otpCode: widget.otpCode ?? '',

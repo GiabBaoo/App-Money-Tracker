@@ -11,6 +11,7 @@ class UserModel {
   final String accountType;
   final DateTime joinDate;
   final String currency;
+  final String role;
 
   UserModel({
     required this.uid,
@@ -23,6 +24,7 @@ class UserModel {
     this.accountType = 'FREE',
     DateTime? joinDate,
     this.currency = 'VND',
+    this.role = 'user',
   }) : joinDate = joinDate ?? DateTime.now();
 
   // Chuyển từ Firestore Document sang Object
@@ -43,6 +45,7 @@ class UserModel {
           ? (data['joinDate'] as Timestamp).toDate()
           : DateTime.now(),
       currency: data['currency'] ?? 'VND',
+      role: data['role'] ?? 'user',
     );
   }
 
@@ -59,6 +62,7 @@ class UserModel {
       'accountType': accountType,
       'joinDate': Timestamp.fromDate(joinDate),
       'currency': currency,
+      'role': role,
     };
   }
 }
