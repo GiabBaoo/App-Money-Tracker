@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Thêm thư viện này để dùng FilteringTextInputFormatter chặn nhập chữ vào sđt
 import '../../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -69,44 +70,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // ==================== VALIDATION FUNCTIONS ====================
   String? _validatePassword(String password) {
-    if (password.isEmpty) return 'Vui long nhap mat khau!';
-    if (password.length < 8) return 'Mat khau phai co toi thieu 8 ky tu!';
+    if (password.isEmpty) return 'Vui lòng nhập mật khẩu!';
+    if (password.length < 8) return 'Mật khẩu phải có tối thiểu 8 ký tự!';
     if (!RegExp(r'[a-z]').hasMatch(password) ||
         !RegExp(r'[A-Z]').hasMatch(password)) {
-      return 'Mat khau phai co chu cai (vua chu hoa vua chu thuong)!';
+      return 'Mật khẩu phải có chữ cái (vừa chữ hoa vừa chữ thường)!';
     }
-    if (!RegExp(r'[0-9]').hasMatch(password)) return 'Mat khau phai co chu so!';
+    if (!RegExp(r'[0-9]').hasMatch(password)) return 'Mật khẩu phải có chữ số!';
     if (!RegExp(
       r"""[!@#$%^&*()_+\-=\[\]{};:'",./<>?\\|`~]""",
     ).hasMatch(password)) {
-      return 'Mat khau phai co ky tu dac biet (!@#\$%^&* ...)!';
+      return 'Mật khẩu phải có ký tự đặc biệt (!@#\$%^&* ...)!';
     }
     return null;
   }
 
   String? _validatePhone(String phone) {
-    if (phone.isEmpty) return 'Vui long nhap so dien thoai!';
-    if (phone.length != 9) return 'So dien thoai phai co 9 so!';
+    if (phone.isEmpty) return 'Vui lòng nhập số điện thoại!';
+    if (phone.length != 10) return 'Số điện thoại phải có đúng 10 chữ số!';
     if (!RegExp(r'^[0-9]+$').hasMatch(phone))
-      return 'So dien thoai chi chua chu so!';
-    if (![
-      '03',
-      '05',
-      '07',
-      '08',
-      '09',
-    ].any((prefix) => phone.startsWith(prefix))) {
-      return 'So dien thoai phai bat dau bang 03, 05, 07, 08 hoac 09!';
+      return 'Số điện thoại chỉ chứa chữ số!';
+
+    // Check nhanh đầu số hợp lệ của VN (03, 05, 07, 08, 09) và phải đủ 10 số
+    if (!RegExp(r'^(03|05|07|08|09)[0-9]{8}$').hasMatch(phone)) {
+      return 'Số điện thoại không có thực (phải bắt đầu bằng 03, 05, 07, 08 hoặc 09)!';
     }
     return null;
   }
 
   String? _validateDateOfBirth(DateTime? date) {
-    if (date == null) return 'Vui long chon ngay sinh!';
+    if (date == null) return 'Vui lòng chọn ngày sinh!';
     final now = DateTime.now();
     final minAge = DateTime(now.year - 6, now.month, now.day);
     if (date.isAfter(minAge)) {
-      return 'Ban phai toi thieu 6 tuoi de dang ky tai khoan!';
+      return 'Bạn phải tối thiểu 6 tuổi để đăng ký tài khoản!';
     }
     return null;
   }
@@ -126,16 +123,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _onNameChanged(String value) {
     setState(() {
-      _nameError = value.trim().isEmpty ? 'Vui long nhap ten!' : null;
+      _nameError = value.trim().isEmpty ? 'Vui lòng nhập tên!' : null;
     });
   }
 
   void _onEmailChanged(String value) {
     setState(() {
       if (value.trim().isEmpty) {
-        _emailError = 'Vui long nhap email!';
+        _emailError = 'Vui lòng nhập email!';
       } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(value)) {
-        _emailError = 'Email khong hop le!';
+        _emailError = 'Email không hợp lệ!';
       } else {
         _emailError = null;
       }
@@ -151,9 +148,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _onConfirmPasswordChanged(String value) {
     setState(() {
       if (value.isEmpty) {
-        _confirmPasswordError = 'Vui long nhap lai mat khau!';
+        _confirmPasswordError = 'Vui lòng nhập lại mật khẩu!';
       } else if (value != _passwordController.text) {
-        _confirmPasswordError = 'Mat khau nhap lai khong khop!';
+        _confirmPasswordError = 'Mật khẩu nhập lại không khớp!';
       } else {
         _confirmPasswordError = null;
       }
@@ -175,17 +172,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     // Validate Name
     if (name.isEmpty) {
-      _showSnackBar('Vui long nhap ten!', isError: true);
+      _showSnackBar('Vui lòng nhập tên!', isError: true);
       return;
     }
 
     // Validate Email
     if (email.isEmpty) {
-      _showSnackBar('Vui long nhap email!', isError: true);
+      _showSnackBar('Vui lòng nhập email!', isError: true);
       return;
     }
     if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(email)) {
-      _showSnackBar('Email khong hop le!', isError: true);
+      _showSnackBar('Email không hợp lệ!', isError: true);
       return;
     }
 
@@ -205,7 +202,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     // Validate Confirm Password
     if (password != confirmPassword) {
-      _showSnackBar('Mat khau nhap lai khong khop!', isError: true);
+      _showSnackBar('Mật khẩu nhập lại không khớp!', isError: true);
       return;
     }
 
@@ -218,7 +215,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
 
-    // Tao tai khoan
+    // Tạo tài khoản
     final registerResult = await _authService.register(
       name: name,
       email: email,
@@ -234,7 +231,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     if (registerResult.success) {
       _showSnackBar(
-        'Dang ky thanh cong! Vui long xac nhan email.',
+        'Đăng ký thành công! Vui lòng xác nhận email.',
         isError: false,
       );
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -322,7 +319,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Dang ky tai khoan',
+                        'Đăng ký tài khoản',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -331,7 +328,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Vui long dien day du thong tin ben duoi.',
+                        'Vui lòng điền đầy đủ thông tin bên dưới.',
                         style: TextStyle(
                           color: Color(0xFF666666),
                           fontSize: 14,
@@ -339,30 +336,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       const SizedBox(height: 30),
-                      _buildLabel('Ten nguoi dung', error: _nameError),
+                      _buildLabel('Tên người dùng', error: _nameError),
                       _buildTextField(
                         controller: _nameController,
-                        hintText: 'Nhap ten nguoi dung',
+                        hintText: 'Nhập tên người dùng',
                         onChanged: _onNameChanged,
                         errorText: _nameError,
                       ),
                       _buildLabel('Email', error: _emailError),
                       _buildTextField(
                         controller: _emailController,
-                        hintText: 'Nhap email',
+                        hintText: 'Nhập email',
                         keyboardType: TextInputType.emailAddress,
                         onChanged: _onEmailChanged,
                         errorText: _emailError,
                       ),
-                      _buildLabel('So dien thoai', error: _phoneError),
+                      _buildLabel('Số điện thoại', error: _phoneError),
                       _buildTextField(
                         controller: _phoneController,
-                        hintText:
-                            'Nhập số điện thoại ',
+                        hintText: 'Nhập số điện thoại',
                         keyboardType: TextInputType.phone,
                         onChanged: _onPhoneChanged,
                         errorText: _phoneError,
                         maxLength: 10,
+                        // Thêm dòng dưới đây để chặn nhập chữ vào ô số điện thoại
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                       ),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -371,12 +371,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildLabel('Gioi tinh'),
+                                _buildLabel('Giới tính'),
                                 Row(
                                   children: [
                                     _buildGenderOption('Nam'),
                                     const SizedBox(width: 8),
-                                    _buildGenderOption('Nu'),
+                                    _buildGenderOption('Nữ'),
                                   ],
                                 ),
                               ],
@@ -387,7 +387,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildLabel('Ngay sinh', error: _dateError),
+                                _buildLabel('Ngày sinh', error: _dateError),
                                 InkWell(
                                   onTap: _pickDate,
                                   child: Container(
@@ -447,10 +447,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      _buildLabel('Mat khau', error: _passwordError),
+                      _buildLabel('Mật khẩu', error: _passwordError),
                       _buildTextField(
                         controller: _passwordController,
-                        hintText: 'Nhap mat khau',
+                        hintText: 'Nhập mật khẩu',
                         isObscure: _obscurePassword,
                         onChanged: _updatePasswordValidation,
                         errorText: _passwordError,
@@ -476,19 +476,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: Column(
                           children: [
                             _buildPasswordRule(
-                              'Toi thieu 8 ky tu',
+                              'Tối thiểu 8 ký tự',
                               _hasMinLength,
                             ),
                             _buildPasswordRule(
-                              'Bao gom chu cai va chu so',
+                              'Bao gồm chữ cái và chữ số',
                               _hasLetter && _hasNumber,
                             ),
                             _buildPasswordRule(
-                              'Bao gom ky tu dac biet (!@#\$%^&*)',
+                              'Bao gồm ký tự đặc biệt (!@#\$%^&*)',
                               _hasSpecialChar,
                             ),
                             _buildPasswordRule(
-                              'Bao gom chu cai in Hoa',
+                              'Bao gồm chữ cái in hoa',
                               _hasUpperCase,
                             ),
                           ],
@@ -496,12 +496,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 16),
                       _buildLabel(
-                        'Nhap lai mat khau',
+                        'Nhập lại mật khẩu',
                         error: _confirmPasswordError,
                       ),
                       _buildTextField(
                         controller: _confirmPasswordController,
-                        hintText: 'Nhap lai mat khau',
+                        hintText: 'Nhập lại mật khẩu',
                         isObscure: _obscureConfirmPassword,
                         onChanged: _onConfirmPasswordChanged,
                         errorText: _confirmPasswordError,
@@ -553,7 +553,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     ),
                                   )
                                 : const Text(
-                                    'Dang Ky',
+                                    'Đăng ký',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 18,
@@ -586,6 +586,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     ),
   );
+
   Widget _buildTextField({
     required String hintText,
     TextEditingController? controller,
@@ -595,6 +596,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     Function(String)? onChanged,
     String? errorText,
     int? maxLength,
+    List<TextInputFormatter>?
+    inputFormatters, // Thêm tham số này để hỗ trợ format
   }) {
     bool hasError = errorText != null && errorText.isNotEmpty;
     return Column(
@@ -606,6 +609,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           keyboardType: keyboardType,
           onChanged: onChanged,
           maxLength: maxLength,
+          inputFormatters: inputFormatters, // Truyền format vào TextFormField
           style: const TextStyle(fontSize: 15),
           decoration: InputDecoration(
             hintText: hintText,
