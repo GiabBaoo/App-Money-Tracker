@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
-<<<<<<< HEAD
 import 'forgot_password_confirmation_screen.dart';
-=======
-import 'otp_screen.dart';
->>>>>>> funcionsettinggit
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -19,7 +15,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool _isLoading = false;
 
   @override
-<<<<<<< HEAD
   void dispose() {
     _emailController.dispose();
     super.dispose();
@@ -29,18 +24,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final email = _emailController.text.trim();
 
     // Validate email
-=======
-  void dispose() { _emailController.dispose(); super.dispose(); }
-
-  Future<void> _handleSendOTP() async {
-    final email = _emailController.text.trim();
->>>>>>> funcionsettinggit
     if (email.isEmpty) {
       _showSnackBar('Vui long nhap email!', isError: true);
       return;
     }
 
-<<<<<<< HEAD
     if (!email.contains('@') || !email.contains('.')) {
       _showSnackBar('Email khong hop le!', isError: true);
       return;
@@ -51,15 +39,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     // Goi API Firebase de gui email reset password
     final result = await _authService.sendPasswordResetEmail(email: email);
 
-=======
-    setState(() => _isLoading = true);
-    final otpResult = await _authService.sendOTP(email: email);
->>>>>>> funcionsettinggit
     setState(() => _isLoading = false);
 
     if (!mounted) return;
 
-<<<<<<< HEAD
     if (result.success) {
       _showSnackBar(result.message, isError: false);
       // Chuyen sang trang xac nhan
@@ -75,15 +58,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       });
     } else {
       _showSnackBar(result.message, isError: true);
-=======
-    if (otpResult.success) {
-      _showSnackBar('Ma xac thuc da duoc gui den $email');
-      Navigator.push(context, MaterialPageRoute(
-        builder: (context) => OTPScreen(email: email, isFromForgotPass: true),
-      ));
-    } else {
-      _showSnackBar(otpResult.message, isError: true);
->>>>>>> funcionsettinggit
     }
   }
 
@@ -117,21 +91,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             Expanded(
               child: Container(
                 width: double.infinity,
-<<<<<<< HEAD
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
                   boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -5))],
                 ),
-=======
-                decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(30)), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -5))]),
->>>>>>> funcionsettinggit
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-<<<<<<< HEAD
                       const Text(
                         'Quen mat khau',
                         style: TextStyle(color: Color(0xFF549B96), fontSize: 28, fontWeight: FontWeight.w700),
@@ -162,25 +131,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             borderRadius: BorderRadius.circular(8),
                             borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5),
                           ),
-=======
-                      const Text('Quen mat khau', style: TextStyle(color: Color(0xFF549B96), fontSize: 28, fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 8),
-                      const Text('Vui long nhap Email de nhan ma xac minh khoi phuc mat khau.', style: TextStyle(color: Color(0xFF666666), fontSize: 14, height: 1.5)),
-                      const SizedBox(height: 40),
-                      const Padding(padding: EdgeInsets.only(bottom: 8, left: 4), child: Text('Email', style: TextStyle(color: Color(0xFF666666), fontSize: 14, fontWeight: FontWeight.w500))),
-                      TextFormField(
-                        controller: _emailController, style: const TextStyle(fontSize: 15), keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          hintText: 'Nhap email cua ban', hintStyle: TextStyle(color: Colors.black.withOpacity(0.3), fontSize: 14),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFDDDDDD))),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5)),
->>>>>>> funcionsettinggit
                           suffixIcon: const Icon(Icons.mail_outline, color: Color(0xFFAAAAAA)),
                         ),
                       ),
                       const SizedBox(height: 50),
-<<<<<<< HEAD
                       Center(
                         child: InkWell(
                           onTap: () => Navigator.pop(context),
@@ -230,16 +184,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                     ),
                                   ),
                           ),
-=======
-                      Center(child: InkWell(onTap: () => Navigator.pop(context), child: const Text('Quay lai Dang nhap', style: TextStyle(color: Color(0xFF438883), fontSize: 15, fontWeight: FontWeight.bold)))),
-                      const SizedBox(height: 20),
-                      InkWell(
-                        onTap: _isLoading ? null : _handleSendOTP,
-                        child: Container(
-                          width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF68AEA9), Color(0xFF3E8681)]), borderRadius: BorderRadius.circular(40), boxShadow: [BoxShadow(color: const Color(0xFF3E8681).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))]),
-                          child: Center(child: _isLoading ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)) : const Text('Gui ma xac minh', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600))),
->>>>>>> funcionsettinggit
                         ),
                       ),
                     ],
@@ -253,7 +197,4 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 }
-<<<<<<< HEAD
 
-=======
->>>>>>> funcionsettinggit

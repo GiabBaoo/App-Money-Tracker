@@ -43,16 +43,12 @@ dependencies:
   intl: ^0.19.0
   pdf: ^3.10.0
   path_provider: ^2.1.0
-<<<<<<< HEAD
-=======
-  device_info_plus: ^12.3.0
-  http: ^1.6.0
-  local_auth: ^3.0.1
-  flutter_secure_storage: ^10.0.0
   geolocator: ^14.0.2
-  geocoding: ^4.0.0
+  flutter_secure_storage: ^10.0.0
+  local_auth: ^3.0.1
   flutter_contacts: ^2.0.1
->>>>>>> funcionsettinggit
+  geocoding: ^4.0.0
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

@@ -4,7 +4,6 @@ import '../../services/auth_service.dart';
 import '../../models/user_model.dart';
 import '../auth/login_screen.dart';
 
-<<<<<<< HEAD
 class AccountInfoScreen extends StatelessWidget {
   const AccountInfoScreen({super.key});
 
@@ -12,27 +11,6 @@ class AccountInfoScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authService = AuthService();
 
-=======
-class AccountInfoScreen extends StatefulWidget {
-  const AccountInfoScreen({super.key});
-
-  @override
-  State<AccountInfoScreen> createState() => _AccountInfoScreenState();
-}
-
-class _AccountInfoScreenState extends State<AccountInfoScreen> {
-  final AuthService _authService = AuthService();
-  late Stream<UserModel?> _userProfileStream;
-
-  @override
-  void initState() {
-    super.initState();
-    _userProfileStream = _authService.getUserProfileStream();
-  }
-
-  @override
-  Widget build(BuildContext context) {
->>>>>>> funcionsettinggit
     return Scaffold(
       backgroundColor: const Color(0xFF438883),
       body: SafeArea(
@@ -53,11 +31,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                 width: double.infinity,
                 decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
                 child: StreamBuilder<UserModel?>(
-<<<<<<< HEAD
                   stream: authService.getUserProfileStream(),
-=======
-                  stream: _userProfileStream,
->>>>>>> funcionsettinggit
                   builder: (context, snapshot) {
                     final user = snapshot.data;
                     if (user == null) {
@@ -113,11 +87,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                           // NÚT ĐĂNG XUẤT
                           InkWell(
                             onTap: () async {
-<<<<<<< HEAD
                               await authService.logout();
-=======
-                              await _authService.logout();
->>>>>>> funcionsettinggit
                               if (!context.mounted) return;
                               Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const LoginScreen()), (route) => false);
                             },

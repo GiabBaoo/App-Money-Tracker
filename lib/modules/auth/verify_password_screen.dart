@@ -33,19 +33,7 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
 
     if (result.success) {
       if (!mounted) return;
-<<<<<<< HEAD
       Navigator.push(context, MaterialPageRoute(builder: (context) => const ResetPasswordScreen(isFromSecurity: true)));
-=======
-      Navigator.push(
-        context, 
-        MaterialPageRoute(
-          builder: (context) => ResetPasswordScreen(
-            isFromSecurity: true,
-            currentPassword: password, // Chuyển mật khẩu cũ sang trang sau
-          ),
-        ),
-      );
->>>>>>> funcionsettinggit
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message), backgroundColor: Colors.red));
     }

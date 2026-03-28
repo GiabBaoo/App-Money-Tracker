@@ -1,12 +1,4 @@
-<<<<<<< HEAD
 import 'package:flutter/material.dart';
-=======
-import 'dart:math';
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../../services/firestore_service.dart';
-import '../../models/message_model.dart';
->>>>>>> funcionsettinggit
 import 'success_screen.dart'; // Import trang Thành Công đa năng của bạn
 
 class SupportRequestScreen extends StatefulWidget {
@@ -27,20 +19,6 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
 
   // ĐÃ SỬA: Gán giá trị mặc định là phần tử đầu tiên của mảng _topics
   late String _selectedTopic = _topics[0];
-<<<<<<< HEAD
-=======
-  final _titleController = TextEditingController();
-  final _detailsController = TextEditingController();
-  final FirestoreService _firestoreService = FirestoreService();
-  bool _isLoading = false;
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _detailsController.dispose();
-    super.dispose();
-  }
->>>>>>> funcionsettinggit
 
   @override
   Widget build(BuildContext context) {
@@ -146,10 +124,6 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                       // TIÊU ĐỀ
                       _buildLabel('Tiêu đề'),
                       TextFormField(
-<<<<<<< HEAD
-=======
-                        controller: _titleController,
->>>>>>> funcionsettinggit
                         style: const TextStyle(fontSize: 16),
                         decoration: _buildInputDecoration(
                           hintText: 'Nhập tiêu đề ngắn gọn',
@@ -161,10 +135,6 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                       // NỘI DUNG CHI TIẾT
                       _buildLabel('Nội dung chi tiết'),
                       TextFormField(
-<<<<<<< HEAD
-=======
-                        controller: _detailsController,
->>>>>>> funcionsettinggit
                         maxLines: 5, // Cho phép nhập nhiều dòng
                         style: const TextStyle(fontSize: 16, height: 1.5),
                         decoration: _buildInputDecoration(
@@ -176,7 +146,6 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
 
                       // NÚT GỬI YÊU CẦU
                       InkWell(
-<<<<<<< HEAD
                         onTap: () {
                           // GỬI THÀNH CÔNG -> GỌI TRANG SUCCESS_SCREEN ĐA NĂNG
                           Navigator.push(
@@ -198,79 +167,12 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                               ),
                             ),
                           );
-=======
-                        onTap: _isLoading ? null : () async {
-                          if (_titleController.text.trim().isEmpty || _detailsController.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text('Vui lòng nhập đầy đủ tiêu đề và nội dung!'),
-                                backgroundColor: Colors.red.shade600,
-                              ),
-                            );
-                            return;
-                          }
-
-                          setState(() => _isLoading = true);
-                          try {
-                            // Tạo tin nhắn tự động phản hồi
-                            final user = FirebaseAuth.instance.currentUser;
-                            if (user != null) {
-                              final randomId = Random().nextInt(90000) + 10000; // random 10000 -> 99999
-                              final message = MessageModel(
-                                uid: user.uid,
-                                iconCode: Icons.headset_mic.codePoint,
-                                iconBgColorValue: 0xFF6C5CE7,
-                                title: 'Hỗ trợ khách hàng #$randomId',
-                                shortMessage: 'Yêu cầu hỗ trợ của bạn đã được tiếp nhận.',
-                                fullMessage: 'Chào bạn,\n\nYêu cầu hỗ trợ về "${_titleController.text.trim()}" (Mã số: #$randomId) của bạn đã được gửi đến bộ phận Chăm sóc khách hàng. Tư vấn viên của chúng tôi sẽ liên hệ lại với bạn trong vòng 24 giờ tới.\n\nTrân trọng!',
-                              );
-                              await _firestoreService.addMessage(message);
-                            }
-
-                            if (!context.mounted) return;
-                            
-                            // GỬI THÀNH CÔNG -> GỌI TRANG SUCCESS_SCREEN ĐA NĂNG
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => SuccessScreen(
-                                  appBarTitle: 'Gửi yêu cầu',
-                                  successTitle: 'Gửi yêu cầu thành công',
-                                  successMessage:
-                                      'Yêu cầu của bạn đã được chuyển đến bộ phận Chăm sóc khách hàng. Chúng tôi sẽ phản hồi sớm nhất có thể.',
-                                  buttonText: 'Quay lại Hộp thư',
-                                  onButtonPressed: () {
-                                    // Bấm nút thì lùi về 2 bước (về lại trang Trung tâm tin nhắn)
-                                    int count = 0;
-                                    Navigator.popUntil(context, (route) {
-                                      return count++ == 2;
-                                    });
-                                  },
-                                ),
-                              ),
-                            );
-                          } catch (e) {
-                            if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Có lỗi xảy ra: $e'),
-                                backgroundColor: Colors.red.shade600,
-                              ),
-                            );
-                          } finally {
-                            if (mounted) setState(() => _isLoading = false);
-                          }
->>>>>>> funcionsettinggit
                         },
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-<<<<<<< HEAD
                             color: const Color(0xFF4A9B7F), // Màu xanh
-=======
-                            color: _isLoading ? Colors.grey : const Color(0xFF4A9B7F), // Màu xanh hoặc xám
->>>>>>> funcionsettinggit
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
@@ -280,7 +182,6 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                               ),
                             ],
                           ),
-<<<<<<< HEAD
                           child: const Center(
                             child: Text(
                               'Gửi yêu cầu',
@@ -290,19 +191,6 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-=======
-                          child: Center(
-                            child: _isLoading 
-                                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                : const Text(
-                                    'Gửi yêu cầu',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
->>>>>>> funcionsettinggit
                           ),
                         ),
                       ),

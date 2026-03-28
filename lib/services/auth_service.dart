@@ -11,7 +11,6 @@ class AuthService {
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-<<<<<<< HEAD
   // ==================== GUI EMAIL XAC NHAN ====================
   Future<({bool success, String message})> sendEmailVerification() async {
     try {
@@ -54,8 +53,6 @@ class AuthService {
     }
   }
 
-=======
->>>>>>> funcionsettinggit
   // ==================== TAO VA GUI MA OTP QUA EMAIL ====================
   Future<({bool success, String message})> sendOTP({
     required String email,
@@ -158,7 +155,6 @@ class AuthService {
         print('Firestore loi (nhung Auth OK): $firestoreError');
       }
 
-<<<<<<< HEAD
       // GUI EMAIL XAC NHAN
       try {
         await credential.user?.sendEmailVerification();
@@ -166,8 +162,6 @@ class AuthService {
         print('Gui email xac nhan loi: $emailError');
       }
 
-=======
->>>>>>> funcionsettinggit
       return (success: true, message: 'Dang ky thanh cong!');
     } on FirebaseAuthException catch (e) {
       return (success: false, message: _getAuthErrorMessage(e.code));
@@ -186,21 +180,6 @@ class AuthService {
         email: email.trim(),
         password: password,
       );
-<<<<<<< HEAD
-=======
-
-      // Ghi lại thời điểm đăng nhập để đồng bộ trạng thái sinh trắc học theo người dùng.
-      final uid = _auth.currentUser?.uid;
-      if (uid != null) {
-        await _firestore
-            .collection('biometric_prefs')
-            .doc(uid)
-            .set(
-              {'lastPasswordLoginAt': FieldValue.serverTimestamp()},
-              SetOptions(merge: true),
-            );
-      }
->>>>>>> funcionsettinggit
       return (success: true, message: 'Dang nhap thanh cong!');
     } on FirebaseAuthException catch (e) {
       return (success: false, message: _getAuthErrorMessage(e.code));
@@ -237,7 +216,6 @@ class AuthService {
     }
   }
 
-<<<<<<< HEAD
   // ==================== SEND PASSWORD RESET EMAIL (QUEN MAT KHAU) ====================
   Future<({bool success, String message})> sendPasswordResetEmail({required String email}) async {
     try {
@@ -260,8 +238,6 @@ class AuthService {
     }
   }
 
-=======
->>>>>>> funcionsettinggit
   // ==================== GUI EMAIL RESET PASSWORD (LUONG QUEN MK) ====================
   Future<({bool success, String message})> resetPasswordWithEmail({
     required String email,
@@ -269,7 +245,6 @@ class AuthService {
     required String otpCode,
   }) async {
     try {
-<<<<<<< HEAD
       // Neu co OTP, xac thuc OTP truoc (cho luong cu)
       if (otpCode.isNotEmpty) {
         final verifyResult = await verifyOTP(email: email, otpCode: otpCode);
@@ -283,18 +258,6 @@ class AuthService {
       await _auth.sendPasswordResetEmail(email: email.trim());
       
       // Luu mat khau moi tam thoi (user se click link trong email de hoan thanh)
-=======
-      // Xác thực OTP trước
-      final verifyResult = await verifyOTP(email: email, otpCode: otpCode);
-      if (!verifyResult.success) {
-        return (success: false, message: verifyResult.message);
-      }
-
-      // Sau khi OTP hợp lệ, gửi email reset password
-      await _auth.sendPasswordResetEmail(email: email.trim());
-      
-      // Lưu mật khẩu mới tạm thời (user sẽ click link trong email để hoàn thành)
->>>>>>> funcionsettinggit
       await _firestore.collection('password_resets').doc(email.trim()).set({
         'email': email.trim(),
         'newPassword': newPassword,
@@ -302,19 +265,11 @@ class AuthService {
         'expiresAt': DateTime.now().add(const Duration(hours: 1)),
       });
 
-<<<<<<< HEAD
       return (success: true, message: 'Email dat lai mat khau da duoc gui!');
     } on FirebaseAuthException catch (e) {
       return (success: false, message: _getAuthErrorMessage(e.code));
     } catch (e) {
       return (success: false, message: 'Loi: $e');
-=======
-      return (success: true, message: 'Email đặt lại mật khẩu đã được gửi!');
-    } on FirebaseAuthException catch (e) {
-      return (success: false, message: _getAuthErrorMessage(e.code));
-    } catch (e) {
-      return (success: false, message: 'Lỗi: $e');
->>>>>>> funcionsettinggit
     }
   }
 
@@ -347,18 +302,9 @@ class AuthService {
       final user = _auth.currentUser;
       if (user == null) return (success: false, message: 'Chua dang nhap!');
 
-<<<<<<< HEAD
       final credential = EmailAuthProvider.credential(email: user.email!, password: password);
       await user.reauthenticateWithCredential(credential);
       await _deleteUserData(user.uid);
-=======
-      final rawEmail = user.email?.trim();
-      final lowerEmail = rawEmail?.toLowerCase();
-
-      final credential = EmailAuthProvider.credential(email: user.email!, password: password);
-      await user.reauthenticateWithCredential(credential);
-      await _deleteUserData(user.uid, rawEmail: rawEmail, lowerEmail: lowerEmail);
->>>>>>> funcionsettinggit
       await user.delete();
       return (success: true, message: 'Xoa tai khoan thanh cong!');
     } on FirebaseAuthException catch (e) {
@@ -368,7 +314,6 @@ class AuthService {
     }
   }
 
-<<<<<<< HEAD
   Future<void> _deleteUserData(String uid) async {
     final batch = _firestore.batch();
     final transactions = await _firestore.collection('transactions').where('uid', isEqualTo: uid).get();
@@ -377,64 +322,6 @@ class AuthService {
     for (var doc in notifications.docs) { batch.delete(doc.reference); }
     batch.delete(_firestore.collection('users').doc(uid));
     await batch.commit();
-=======
-  Future<void> _deleteUserData(
-    String uid, {
-    String? rawEmail,
-    String? lowerEmail,
-  }) async {
-    // Firestore batch tối đa 500 thao tác/1 batch, nên cần chia nhỏ để tránh lỗi.
-    Future<void> _deleteInChunks(Iterable<QueryDocumentSnapshot<Map<String, dynamic>>> docs) async {
-      const chunkSize = 450; // dư địa an toàn so với limit 500
-      final docList = docs.toList();
-      for (int i = 0; i < docList.length; i += chunkSize) {
-        final batch = _firestore.batch();
-        final end = (i + chunkSize).clamp(0, docList.length);
-        for (int j = i; j < end; j++) {
-          batch.delete(docList[j].reference);
-        }
-        await batch.commit();
-      }
-    }
-
-    final transactions = await _firestore
-        .collection('transactions')
-        .where('uid', isEqualTo: uid)
-        .get();
-    await _deleteInChunks(transactions.docs);
-
-    final notifications = await _firestore
-        .collection('notifications')
-        .where('uid', isEqualTo: uid)
-        .get();
-    await _deleteInChunks(notifications.docs);
-
-    final messages = await _firestore
-        .collection('messages')
-        .where('uid', isEqualTo: uid)
-        .get();
-    await _deleteInChunks(messages.docs);
-
-    final deviceSessions = await _firestore
-        .collection('device_sessions')
-        .where('uid', isEqualTo: uid)
-        .get();
-    await _deleteInChunks(deviceSessions.docs);
-
-    // Xóa hồ sơ user (dạng doc cố định theo uid)
-    await _firestore.collection('users').doc(uid).delete();
-
-    // Xóa cài đặt sinh trắc học của user
-    await _firestore.collection('biometric_prefs').doc(uid).delete();
-
-    // Xóa dữ liệu khôi phục tài khoản theo email (nếu tồn tại)
-    if (lowerEmail != null && lowerEmail.isNotEmpty) {
-      await _firestore.collection('otp_codes').doc(lowerEmail).delete();
-    }
-    if (rawEmail != null && rawEmail.isNotEmpty) {
-      await _firestore.collection('password_resets').doc(rawEmail).delete();
-    }
->>>>>>> funcionsettinggit
   }
 
   // ==================== LAY THONG TIN USER ====================

@@ -175,13 +175,8 @@ class SecurityScreen extends StatelessWidget {
                             ),
                             _buildSecurityItem(
                               icon: Icons.fingerprint,
-<<<<<<< HEAD
                               title: 'Đăng nhập sinh trắc học',
                               subtitle: 'FaceID / Vân tay',
-=======
-                              title: 'Đăng nhập bằng vân tay',
-                              subtitle: 'Quét vân tay để mở khóa ứng dụng',
->>>>>>> funcionsettinggit
                               showDivider: true,
                               onTap: () {
                                 Navigator.push(
@@ -198,11 +193,7 @@ class SecurityScreen extends StatelessWidget {
                             _buildSecurityItem(
                               icon: Icons.devices,
                               title: 'Thiết bị đang hoạt động',
-<<<<<<< HEAD
                               subtitle: '3 thiết bị đang kết nối',
-=======
-                              subtitle: '1 thiết bị đang kết nối',
->>>>>>> funcionsettinggit
                               showDivider:
                                   false, // Dòng cuối không cần kẻ ngang
                               onTap: () {

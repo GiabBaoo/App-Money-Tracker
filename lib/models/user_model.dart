@@ -11,11 +11,8 @@ class UserModel {
   final String accountType;
   final DateTime joinDate;
   final String currency;
-<<<<<<< HEAD
   final String role;
-=======
   final Map<String, bool> dataUsage;
->>>>>>> funcionsettinggit
 
   UserModel({
     required this.uid,
@@ -28,10 +25,7 @@ class UserModel {
     this.accountType = 'FREE',
     DateTime? joinDate,
     this.currency = 'VND',
-<<<<<<< HEAD
     this.role = 'user',
-  }) : joinDate = joinDate ?? DateTime.now();
-=======
     Map<String, bool>? dataUsage,
   })  : joinDate = joinDate ?? DateTime.now(),
         dataUsage = dataUsage ??
@@ -39,7 +33,6 @@ class UserModel {
               'location': true,
               'contacts': false,
             };
->>>>>>> funcionsettinggit
 
   // Chuyển từ Firestore Document sang Object
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -59,13 +52,10 @@ class UserModel {
           ? (data['joinDate'] as Timestamp).toDate()
           : DateTime.now(),
       currency: data['currency'] ?? 'VND',
-<<<<<<< HEAD
       role: data['role'] ?? 'user',
-=======
       dataUsage: data['dataUsage'] != null
           ? Map<String, bool>.from(data['dataUsage'] as Map)
           : null,
->>>>>>> funcionsettinggit
     );
   }
 
@@ -82,11 +72,8 @@ class UserModel {
       'accountType': accountType,
       'joinDate': Timestamp.fromDate(joinDate),
       'currency': currency,
-<<<<<<< HEAD
       'role': role,
-=======
       'dataUsage': dataUsage,
->>>>>>> funcionsettinggit
     };
   }
 }
