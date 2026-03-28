@@ -1,0 +1,232 @@
+import 'package:flutter/material.dart';
+
+class TransactionDetailScreen extends StatelessWidget {
+  // Khai báo các biến để nhận dữ liệu từ màn hình trước truyền sang
+  final bool isIncome; // true = Thu, false = Chi
+  final String title;
+  final String date;
+  final String time;
+  final String amount;
+  final IconData icon;
+
+  const TransactionDetailScreen({
+    super.key,
+    required this.isIncome,
+    required this.title,
+    required this.date,
+    required this.time,
+    required this.amount,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Tự động chọn màu tùy theo trạng thái Thu / Chi
+    final Color statusColor = isIncome
+        ? const Color(0xFF438883)
+        : const Color(0xFFF95B51);
+    final String statusText = isIncome ? 'Thu nhập' : 'Chi phí';
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF438883), // Nền xanh lá mạ
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // 1. CUSTOM APP BAR
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_ios,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const Text(
+                    'Chi tiết giao dịch',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Icon(
+                    Icons.more_horiz,
+                    color: Colors.white,
+                  ), // Icon 3 chấm
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // 2. KHUNG NỘI DUNG MÀU TRẮNG BO GÓC TRÊN
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 10,
+                      offset: Offset(0, -5),
+                    ),
+                  ],
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(
+                    top: 40,
+                    bottom: 40,
+                    left: 24,
+                    right: 24,
+                  ),
+                  child: Column(
+                    children: [
+                      // ICON GIAO DỊCH CHÍNH GIỮA
+                      Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color: isIncome
+                              ? const Color(0xFFE8F5F3)
+                              : const Color(0xFFFEE2E2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(icon, color: statusColor, size: 36),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // VIÊN THUỐC TRẠNG THÁI (Thu nhập / Chi phí)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          statusText,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // SỐ TIỀN TO BỰ
+                      Text(
+                        amount,
+                        style: const TextStyle(
+                          color: Color(0xFF222222),
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // KHỐI CHI TIẾT GIAO DỊCH
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: const [
+                          Text(
+                            'Chi tiết giao dịch',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF222222),
+                            ),
+                          ),
+                          Icon(Icons.keyboard_arrow_up, color: Colors.grey),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // CÁC DÒNG THÔNG TIN
+                      _buildDetailRow(
+                        'Trạng thái',
+                        statusText,
+                        valueColor: statusColor,
+                      ),
+                      _buildDetailRow('Nội dung', title),
+                      _buildDetailRow('Thời gian', time),
+                      _buildDetailRow('Ngày', date),
+
+                      const SizedBox(height: 20),
+                      const Divider(color: Color(0xFFEEEEEE), thickness: 1),
+                      const SizedBox(height: 20),
+
+                      // TỔNG CỘNG
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Tổng',
+                            style: TextStyle(
+                              color: Color(0xFF666666),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            amount,
+                            style: const TextStyle(
+                              color: Color(0xFF222222),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- HÀM TẠO TỪNG DÒNG CHI TIẾT ---
+  Widget _buildDetailRow(String label, String value, {Color? valueColor}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF666666),
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: valueColor ?? const Color(0xFF222222),
+              fontSize: 16,
+              fontWeight: valueColor != null
+                  ? FontWeight.w600
+                  : FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
