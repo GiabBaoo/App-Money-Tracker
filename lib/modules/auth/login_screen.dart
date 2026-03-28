@@ -42,6 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (result.success) {
       if (!mounted) return;
+<<<<<<< HEAD
       
       // Kiem tra xem email co da xac nhan khong
       final currentUser = _authService.currentUser;
@@ -51,6 +52,8 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
       
+=======
+>>>>>>> funcionsettinggit
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomeScreen()),

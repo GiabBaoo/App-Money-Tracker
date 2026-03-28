@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import 'success_screen.dart';
+<<<<<<< HEAD
 import '../auth/login_screen.dart';
+=======
+import '../onboarding/onboarding_screen.dart';
+>>>>>>> funcionsettinggit
 
 class DeletePasswordScreen extends StatefulWidget {
   const DeletePasswordScreen({super.key});
@@ -38,9 +42,19 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
         appBarTitle: 'Xóa tài khoản',
         successTitle: 'Xóa tài khoản thành công',
         successMessage: 'Tất cả dữ liệu tài chính cá nhân của bạn đã được gỡ bỏ vĩnh viễn khỏi hệ thống.',
+<<<<<<< HEAD
         buttonText: 'Quay về đăng nhập',
         onButtonPressed: () {
           Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const LoginScreen()), (route) => false);
+=======
+          buttonText: 'Quay về trang bắt đầu',
+        onButtonPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+              (route) => false,
+            );
+>>>>>>> funcionsettinggit
         },
       )));
     } else {

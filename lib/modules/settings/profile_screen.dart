@@ -7,6 +7,7 @@ import '../settings/security_screen.dart';
 import 'privacy_screen.dart';
 import 'message_center_screen.dart';
 
+<<<<<<< HEAD
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -14,6 +15,27 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authService = AuthService();
 
+=======
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final AuthService _authService = AuthService();
+  late Stream<UserModel?> _userProfileStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _userProfileStream = _authService.getUserProfileStream();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+>>>>>>> funcionsettinggit
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -44,7 +66,11 @@ class ProfileScreen extends StatelessWidget {
 
                 // AVATAR & THÔNG TIN TỪ FIRESTORE
                 StreamBuilder<UserModel?>(
+<<<<<<< HEAD
                   stream: authService.getUserProfileStream(),
+=======
+                  stream: _userProfileStream,
+>>>>>>> funcionsettinggit
                   builder: (context, snapshot) {
                     final user = snapshot.data;
                     return Column(children: [

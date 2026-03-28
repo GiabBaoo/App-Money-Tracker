@@ -3,9 +3,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'modules/splash/splash_screen.dart';
+<<<<<<< HEAD
 import 'modules/auth/login_screen.dart';
 import 'modules/auth/register_screen.dart';
 import 'modules/auth/verify_email_screen.dart';
+=======
+>>>>>>> funcionsettinggit
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +35,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: SplashScreen(),
+<<<<<<< HEAD
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
@@ -40,6 +44,8 @@ class MyApp extends StatelessWidget {
           return VerifyEmailScreen(email: email);
         },
       },
+=======
+>>>>>>> funcionsettinggit
     );
   }
 }

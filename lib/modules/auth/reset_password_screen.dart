@@ -7,12 +7,20 @@ class ResetPasswordScreen extends StatefulWidget {
   final bool isFromSecurity;
   final String? emailForReset; // Email tu luong Quen MK (da xac thuc OTP)
   final String? otpCode; // Ma OTP da xac thuc
+<<<<<<< HEAD
+=======
+  final String? currentPassword; // Mat khau cu tu luong Doi MK
+>>>>>>> funcionsettinggit
 
   const ResetPasswordScreen({
     super.key,
     this.isFromSecurity = false,
     this.emailForReset,
     this.otpCode,
+<<<<<<< HEAD
+=======
+    this.currentPassword,
+>>>>>>> funcionsettinggit
   });
 
   @override
@@ -54,6 +62,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     setState(() => _isLoading = true);
 
+<<<<<<< HEAD
     if (widget.isFromSecurity) {
       // LUONG DOI MK TU CAI DAT: Khong can lam gi them (mat khau cu da xac thuc o trang truoc)
       // Chi can goi Firebase de doi mat khau
@@ -62,10 +71,26 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         email: _authService.currentUser?.email ?? '',
         newPassword: newPassword,
         otpCode: widget.otpCode ?? '',
+=======
+    if (widget.isFromSecurity && widget.currentPassword != null) {
+      // LUONG DOI MK TU CAI DAT: Thực hiện đổi trực tiếp bằng hàm đổi mật khẩu Firebase
+      final result = await _authService.changePassword(
+        currentPassword: widget.currentPassword!,
+        newPassword: newPassword,
+>>>>>>> funcionsettinggit
       );
       setState(() => _isLoading = false);
 
       if (!mounted) return;
+<<<<<<< HEAD
+=======
+
+      if (!result.success) {
+        _showSnackBar(result.message, isError: true);
+        return;
+      }
+
+>>>>>>> funcionsettinggit
       // Hien trang thanh cong
       Navigator.push(
         context,
@@ -85,7 +110,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     } else {
       // LUONG QUEN MK: Gui email reset password qua Firebase
       if (widget.emailForReset != null) {
+<<<<<<< HEAD
         await _authService.resetPasswordWithEmail(
+=======
+        final result = await _authService.resetPasswordWithEmail(
+>>>>>>> funcionsettinggit
           email: widget.emailForReset!,
           newPassword: newPassword,
           otpCode: widget.otpCode ?? '',
