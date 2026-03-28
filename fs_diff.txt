@@ -1,0 +1,123 @@
+﻿diff --git a/lib/services/firestore_service.dart b/lib/services/firestore_service.dart
+index adac255..877d243 100644
+--- a/lib/services/firestore_service.dart
++++ b/lib/services/firestore_service.dart
+@@ -1,8 +1,12 @@
+ import 'package:cloud_firestore/cloud_firestore.dart';
+ import 'package:firebase_auth/firebase_auth.dart';
++import 'package:http/http.dart' as http;
++import 'dart:convert';
+ import '../models/transaction_model.dart';
+ import '../models/notification_model.dart';
+ import '../models/user_model.dart';
++import '../models/message_model.dart';
++import '../models/device_session_model.dart';
+ 
+ class FirestoreService {
+   final FirebaseFirestore _db = FirebaseFirestore.instance;
+@@ -126,7 +130,7 @@ class FirestoreService {
+   // Cß║¡p nhß║¡t th├┤ng tin user
+   Future<void> updateUserProfile(Map<String, dynamic> data) async {
+     if (_uid == null) return;
+-    await _db.collection('users').doc(_uid).update(data);
++    await _db.collection('users').doc(_uid).set(data, SetOptions(merge: true));
+   }
+ 
+   // Stream th├┤ng tin user (realtime)
+@@ -135,4 +139,96 @@ class FirestoreService {
+     return _db.collection('users').doc(_uid).snapshots().map(
+         (doc) => doc.exists ? UserModel.fromFirestore(doc) : null);
+   }
++
++  // ======================== MESSAGES ========================
++
++  Future<void> addMessage(MessageModel message) async {
++    if (_uid == null) return;
++    await _db.collection('messages').add(message.toFirestore());
++  }
++
++  Future<void> deleteMessage(String messageId) async {
++    await _db.collection('messages').doc(messageId).delete();
++  }
++
++  Stream<List<MessageModel>> getMessagesStream() {
++    if (_uid == null) return Stream.value([]);
++
++    return _db
++        .collection('messages')
++        .where('uid', isEqualTo: _uid)
++        // Bß╗Å orderBy ─æß╗â tr├ính lß╗ùi Composite Index cß╗ºa Firestore, sau ─æ├│ sort ß╗ƒ client
++        .snapshots()
++        .map((snapshot) {
++      final messages = snapshot.docs
++          .map((doc) => MessageModel.fromFirestore(doc))
++          .toList();
++      messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
++      return messages;
++    });
++  }
++
++  // ======================== DEVICE SESSIONS ========================
++
++  Future<void> registerDeviceSession({
++    required String deviceName,
++    required String deviceType,
++  }) async {
++    if (_uid == null) return;
++    try {
++      // D├╣ng t├¬n thiß║┐t bß╗ï l├ám Doc ID ─æß╗â cß║¡p nhß║¡t thay v├¼ tß║ío mß╗¢i m├úi
++      String sanitizedId = deviceName.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_').toLowerCase();
++      String docId = '${_uid}_$sanitizedId';
++      
++      // Mß║╖c ─æß╗ïnh l├á IP hiß╗çn h├ánh
++      String realLocation = 'IP hiß╗çn h├ánh';
++      
++      // Thß╗¡ lß║Ñy vß╗ï tr├¡ thß║¡t qua IP (miß╗àn ph├¡)
++      try {
++        final response = await http.get(Uri.parse('http://ip-api.com/json/')).timeout(const Duration(seconds: 3));
++        if (response.statusCode == 200) {
++          final data = json.decode(response.body);
++          if (data['status'] == 'success') {
++            final city = data['city'] ?? '';
++            final country = data['country'] ?? '';
++            realLocation = [city, country].where((s) => s.isNotEmpty).join(', ');
++          }
++        }
++      } catch (e) {
++        // Lß╗ìt lß╗ùi network timeout th├¼ vß║½n d├╣ng location c┼⌐
++        print('Lß╗ùi lß║Ñy vß╗ï tr├¡ IP: $e');
++      }
++      
++      await _db.collection('device_sessions').doc(docId).set({
++        'uid': _uid,
++        'deviceName': deviceName,
++        'deviceType': deviceType,
++        'location': realLocation, // Vß╗ï tr├¡ thß║¡t (Hanoi, Vietnam)
++        'lastActive': FieldValue.serverTimestamp(),
++      }, SetOptions(merge: true)); // Ghi ─æ├¿ cß║¡p nhß║¡t lastActive
++    } catch (e) {
++      // Lß╗ùi bß╗Å qua
++      print('Lß╗ùi ─æ─âng k├╜ session: $e');
++    }
++  }
++
++  Stream<List<DeviceSessionModel>> getDeviceSessionsStream() {
++    if (_uid == null) return Stream.value([]);
++    return _db
++        .collection('device_sessions')
++        .where('uid', isEqualTo: _uid)
++        .snapshots()
++        .map((snapshot) {
++      final sessions = snapshot.docs
++          .map((doc) => DeviceSessionModel.fromFirestore(doc))
++          .toList();
++      // Sß║»p xß║┐p mß╗¢i nhß║Ñt l├¬n ─æß║ºu
++      sessions.sort((a, b) => b.lastActive.compareTo(a.lastActive));
++      return sessions;
++    });
++  }
++
++  Future<void> removeDeviceSession(String sessionId) async {
++    await _db.collection('device_sessions').doc(sessionId).delete();
++  }
+ }

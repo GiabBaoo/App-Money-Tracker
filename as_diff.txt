@@ -1,0 +1,240 @@
+﻿diff --git a/lib/services/auth_service.dart b/lib/services/auth_service.dart
+index a43651a..09680ce 100644
+--- a/lib/services/auth_service.dart
++++ b/lib/services/auth_service.dart
+@@ -11,48 +11,6 @@ class AuthService {
+   User? get currentUser => _auth.currentUser;
+   Stream<User?> get authStateChanges => _auth.authStateChanges();
+ 
+-  // ==================== GUI EMAIL XAC NHAN ====================
+-  Future<({bool success, String message})> sendEmailVerification() async {
+-    try {
+-      final user = _auth.currentUser;
+-      if (user == null) {
+-        return (success: false, message: 'Khong tim thay nguoi dung!');
+-      }
+-      
+-      await user.sendEmailVerification();
+-      return (success: true, message: 'Email xac nhan da duoc gui!');
+-    } on FirebaseAuthException catch (e) {
+-      return (success: false, message: _getAuthErrorMessage(e.code));
+-    } catch (e) {
+-      return (success: false, message: 'Loi: $e');
+-    }
+-  }
+-
+-  // ==================== RELOAD USER VA KIEM TRA EMAIL VERIFIED ====================
+-  Future<({bool success, String message, bool emailVerified})> reloadAndCheckEmailVerification() async {
+-    try {
+-      final user = _auth.currentUser;
+-      if (user == null) {
+-        return (success: false, message: 'Khong tim thay nguoi dung!', emailVerified: false);
+-      }
+-      
+-      await user.reload();
+-      final updatedUser = _auth.currentUser;
+-      
+-      if (updatedUser == null) {
+-        return (success: false, message: 'Co loi xay ra!', emailVerified: false);
+-      }
+-      
+-      if (updatedUser.emailVerified) {
+-        return (success: true, message: 'Email da duoc xac nhan!', emailVerified: true);
+-      } else {
+-        return (success: false, message: 'Email chua duoc xac nhan. Vui long kiem tra hop thu.', emailVerified: false);
+-      }
+-    } catch (e) {
+-      return (success: false, message: 'Loi: $e', emailVerified: false);
+-    }
+-  }
+-
+   // ==================== TAO VA GUI MA OTP QUA EMAIL ====================
+   Future<({bool success, String message})> sendOTP({
+     required String email,
+@@ -155,13 +113,6 @@ class AuthService {
+         print('Firestore loi (nhung Auth OK): $firestoreError');
+       }
+ 
+-      // GUI EMAIL XAC NHAN
+-      try {
+-        await credential.user?.sendEmailVerification();
+-      } catch (emailError) {
+-        print('Gui email xac nhan loi: $emailError');
+-      }
+-
+       return (success: true, message: 'Dang ky thanh cong!');
+     } on FirebaseAuthException catch (e) {
+       return (success: false, message: _getAuthErrorMessage(e.code));
+@@ -180,6 +131,18 @@ class AuthService {
+         email: email.trim(),
+         password: password,
+       );
++
++      // Ghi lß║íi thß╗¥i ─æiß╗âm ─æ─âng nhß║¡p ─æß╗â ─æß╗ông bß╗Ö trß║íng th├íi sinh trß║»c hß╗ìc theo ng╞░ß╗¥i d├╣ng.
++      final uid = _auth.currentUser?.uid;
++      if (uid != null) {
++        await _firestore
++            .collection('biometric_prefs')
++            .doc(uid)
++            .set(
++              {'lastPasswordLoginAt': FieldValue.serverTimestamp()},
++              SetOptions(merge: true),
++            );
++      }
+       return (success: true, message: 'Dang nhap thanh cong!');
+     } on FirebaseAuthException catch (e) {
+       return (success: false, message: _getAuthErrorMessage(e.code));
+@@ -216,28 +179,6 @@ class AuthService {
+     }
+   }
+ 
+-  // ==================== SEND PASSWORD RESET EMAIL (QUEN MAT KHAU) ====================
+-  Future<({bool success, String message})> sendPasswordResetEmail({required String email}) async {
+-    try {
+-      // Kiem tra email co hop le khong
+-      if (email.isEmpty) {
+-        return (success: false, message: 'Vui long nhap email!');
+-      }
+-      if (!email.contains('@') || !email.contains('.')) {
+-        return (success: false, message: 'Email khong hop le!');
+-      }
+-
+-      // Gui email dat lai mat khau
+-      await _auth.sendPasswordResetEmail(email: email.trim());
+-      
+-      return (success: true, message: 'Email dat lai mat khau da duoc gui den $email. Vui long kiem tra hop thu va click vao link.');
+-    } on FirebaseAuthException catch (e) {
+-      return (success: false, message: _getAuthErrorMessage(e.code));
+-    } catch (e) {
+-      return (success: false, message: 'Loi: $e');
+-    }
+-  }
+-
+   // ==================== GUI EMAIL RESET PASSWORD (LUONG QUEN MK) ====================
+   Future<({bool success, String message})> resetPasswordWithEmail({
+     required String email,
+@@ -245,19 +186,16 @@ class AuthService {
+     required String otpCode,
+   }) async {
+     try {
+-      // Neu co OTP, xac thuc OTP truoc (cho luong cu)
+-      if (otpCode.isNotEmpty) {
+-        final verifyResult = await verifyOTP(email: email, otpCode: otpCode);
+-        if (!verifyResult.success) {
+-          return (success: false, message: verifyResult.message);
+-        }
++      // X├íc thß╗▒c OTP tr╞░ß╗¢c
++      final verifyResult = await verifyOTP(email: email, otpCode: otpCode);
++      if (!verifyResult.success) {
++        return (success: false, message: verifyResult.message);
+       }
+-      // Neu khong co OTP, chi can gui email reset password (luong moi)
+ 
+-      // Gui email reset password
++      // Sau khi OTP hß╗úp lß╗ç, gß╗¡i email reset password
+       await _auth.sendPasswordResetEmail(email: email.trim());
+       
+-      // Luu mat khau moi tam thoi (user se click link trong email de hoan thanh)
++      // L╞░u mß║¡t khß║⌐u mß╗¢i tß║ím thß╗¥i (user sß║╜ click link trong email ─æß╗â ho├án th├ánh)
+       await _firestore.collection('password_resets').doc(email.trim()).set({
+         'email': email.trim(),
+         'newPassword': newPassword,
+@@ -265,11 +203,11 @@ class AuthService {
+         'expiresAt': DateTime.now().add(const Duration(hours: 1)),
+       });
+ 
+-      return (success: true, message: 'Email dat lai mat khau da duoc gui!');
++      return (success: true, message: 'Email ─æß║╖t lß║íi mß║¡t khß║⌐u ─æ├ú ─æ╞░ß╗úc gß╗¡i!');
+     } on FirebaseAuthException catch (e) {
+       return (success: false, message: _getAuthErrorMessage(e.code));
+     } catch (e) {
+-      return (success: false, message: 'Loi: $e');
++      return (success: false, message: 'Lß╗ùi: $e');
+     }
+   }
+ 
+@@ -302,9 +240,12 @@ class AuthService {
+       final user = _auth.currentUser;
+       if (user == null) return (success: false, message: 'Chua dang nhap!');
+ 
++      final rawEmail = user.email?.trim();
++      final lowerEmail = rawEmail?.toLowerCase();
++
+       final credential = EmailAuthProvider.credential(email: user.email!, password: password);
+       await user.reauthenticateWithCredential(credential);
+-      await _deleteUserData(user.uid);
++      await _deleteUserData(user.uid, rawEmail: rawEmail, lowerEmail: lowerEmail);
+       await user.delete();
+       return (success: true, message: 'Xoa tai khoan thanh cong!');
+     } on FirebaseAuthException catch (e) {
+@@ -314,14 +255,62 @@ class AuthService {
+     }
+   }
+ 
+-  Future<void> _deleteUserData(String uid) async {
+-    final batch = _firestore.batch();
+-    final transactions = await _firestore.collection('transactions').where('uid', isEqualTo: uid).get();
+-    for (var doc in transactions.docs) { batch.delete(doc.reference); }
+-    final notifications = await _firestore.collection('notifications').where('uid', isEqualTo: uid).get();
+-    for (var doc in notifications.docs) { batch.delete(doc.reference); }
+-    batch.delete(_firestore.collection('users').doc(uid));
+-    await batch.commit();
++  Future<void> _deleteUserData(
++    String uid, {
++    String? rawEmail,
++    String? lowerEmail,
++  }) async {
++    // Firestore batch tß╗æi ─æa 500 thao t├íc/1 batch, n├¬n cß║ºn chia nhß╗Å ─æß╗â tr├ính lß╗ùi.
++    Future<void> _deleteInChunks(Iterable<QueryDocumentSnapshot<Map<String, dynamic>>> docs) async {
++      const chunkSize = 450; // d╞░ ─æß╗ïa an to├án so vß╗¢i limit 500
++      final docList = docs.toList();
++      for (int i = 0; i < docList.length; i += chunkSize) {
++        final batch = _firestore.batch();
++        final end = (i + chunkSize).clamp(0, docList.length);
++        for (int j = i; j < end; j++) {
++          batch.delete(docList[j].reference);
++        }
++        await batch.commit();
++      }
++    }
++
++    final transactions = await _firestore
++        .collection('transactions')
++        .where('uid', isEqualTo: uid)
++        .get();
++    await _deleteInChunks(transactions.docs);
++
++    final notifications = await _firestore
++        .collection('notifications')
++        .where('uid', isEqualTo: uid)
++        .get();
++    await _deleteInChunks(notifications.docs);
++
++    final messages = await _firestore
++        .collection('messages')
++        .where('uid', isEqualTo: uid)
++        .get();
++    await _deleteInChunks(messages.docs);
++
++    final deviceSessions = await _firestore
++        .collection('device_sessions')
++        .where('uid', isEqualTo: uid)
++        .get();
++    await _deleteInChunks(deviceSessions.docs);
++
++    // X├│a hß╗ô s╞í user (dß║íng doc cß╗æ ─æß╗ïnh theo uid)
++    await _firestore.collection('users').doc(uid).delete();
++
++    // X├│a c├ái ─æß║╖t sinh trß║»c hß╗ìc cß╗ºa user
++    await _firestore.collection('biometric_prefs').doc(uid).delete();
++
++    // X├│a dß╗» liß╗çu kh├┤i phß╗Ñc t├ái khoß║ún theo email (nß║┐u tß╗ôn tß║íi)
++    if (lowerEmail != null && lowerEmail.isNotEmpty) {
++      await _firestore.collection('otp_codes').doc(lowerEmail).delete();
++    }
++    if (rawEmail != null && rawEmail.isNotEmpty) {
++      await _firestore.collection('password_resets').doc(rawEmail).delete();
++    }
+   }
+ 
+   // ==================== LAY THONG TIN USER ====================

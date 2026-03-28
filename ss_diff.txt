@@ -1,0 +1,74 @@
+﻿diff --git a/lib/modules/splash/splash_screen.dart b/lib/modules/splash/splash_screen.dart
+index af8da89..ea1e768 100644
+--- a/lib/modules/splash/splash_screen.dart
++++ b/lib/modules/splash/splash_screen.dart
+@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
+ import 'package:firebase_auth/firebase_auth.dart';
+ import '../onboarding/onboarding_screen.dart';
+ import '../home/home_screen.dart';
++import '../auth/fingerprint_unlock_screen.dart';
++
++import '../../services/biometric_service.dart';
+ 
+ class SplashScreen extends StatefulWidget {
+   @override
+@@ -11,23 +14,46 @@ class SplashScreen extends StatefulWidget {
+ }
+ 
+ class _SplashScreenState extends State<SplashScreen> {
++  Future<void> _checkAndNavigate() async {
++    final user = FirebaseAuth.instance.currentUser;
++
++    if (!mounted) return;
++
++    if (user == null) {
++      Navigator.pushReplacement(
++        context,
++        MaterialPageRoute(builder: (context) => const OnboardingScreen()),
++      );
++      return;
++    }
++
++    final fingerprintEnabled =
++        await BiometricService.instance.isFingerprintEnabledForUser(user.uid);
++
++    if (!mounted) return;
++
++    if (fingerprintEnabled) {
++      Navigator.pushReplacement(
++        context,
++        MaterialPageRoute(
++          builder: (context) => FingerprintUnlockScreen(
++            destination: const HomeScreen(),
++          ),
++        ),
++      );
++    } else {
++      Navigator.pushReplacement(
++        context,
++        MaterialPageRoute(builder: (context) => const HomeScreen()),
++      );
++    }
++  }
++
+   @override
+   void initState() {
+     super.initState();
+     Timer(Duration(seconds: 2), () {
+-      // Kiß╗âm tra nß║┐u ─æ├ú ─æ─âng nhß║¡p th├¼ v├áo thß║│ng Home, ch╞░a th├¼ v├áo Onboarding
+-      final user = FirebaseAuth.instance.currentUser;
+-      if (user != null) {
+-        Navigator.pushReplacement(
+-          context,
+-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+-        );
+-      } else {
+-        Navigator.pushReplacement(
+-          context,
+-          MaterialPageRoute(builder: (context) => OnboardingScreen()),
+-        );
+-      }
++      _checkAndNavigate();
+     });
+   }
+ 

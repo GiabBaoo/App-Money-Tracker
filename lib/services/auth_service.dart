@@ -180,6 +180,18 @@ class AuthService {
         email: email.trim(),
         password: password,
       );
+
+      // Ghi lại thời điểm đăng nhập để đồng bộ trạng thái sinh trắc học theo người dùng.
+      final uid = _auth.currentUser?.uid;
+      if (uid != null) {
+        await _firestore
+            .collection('biometric_prefs')
+            .doc(uid)
+            .set(
+              {'lastPasswordLoginAt': FieldValue.serverTimestamp()},
+              SetOptions(merge: true),
+            );
+      }
       return (success: true, message: 'Dang nhap thanh cong!');
     } on FirebaseAuthException catch (e) {
       return (success: false, message: _getAuthErrorMessage(e.code));
@@ -302,9 +314,12 @@ class AuthService {
       final user = _auth.currentUser;
       if (user == null) return (success: false, message: 'Chua dang nhap!');
 
+      final rawEmail = user.email?.trim();
+      final lowerEmail = rawEmail?.toLowerCase();
+
       final credential = EmailAuthProvider.credential(email: user.email!, password: password);
       await user.reauthenticateWithCredential(credential);
-      await _deleteUserData(user.uid);
+      await _deleteUserData(user.uid, rawEmail: rawEmail, lowerEmail: lowerEmail);
       await user.delete();
       return (success: true, message: 'Xoa tai khoan thanh cong!');
     } on FirebaseAuthException catch (e) {
@@ -314,14 +329,50 @@ class AuthService {
     }
   }
 
-  Future<void> _deleteUserData(String uid) async {
-    final batch = _firestore.batch();
+  Future<void> _deleteUserData(
+    String uid, {
+    String? rawEmail,
+    String? lowerEmail,
+  }) async {
+    // Firestore batch tối đa 500 thao tác/1 batch, nên cần chia nhỏ để tránh lỗi.
+    Future<void> deleteInChunks(Iterable<QueryDocumentSnapshot<Map<String, dynamic>>> docs) async {
+      const chunkSize = 450;
+      final docList = docs.toList();
+      for (int i = 0; i < docList.length; i += chunkSize) {
+        final batch = _firestore.batch();
+        final end = (i + chunkSize).clamp(0, docList.length);
+        for (int j = i; j < end; j++) {
+          batch.delete(docList[j].reference);
+        }
+        await batch.commit();
+      }
+    }
+
     final transactions = await _firestore.collection('transactions').where('uid', isEqualTo: uid).get();
-    for (var doc in transactions.docs) { batch.delete(doc.reference); }
+    await deleteInChunks(transactions.docs);
+
     final notifications = await _firestore.collection('notifications').where('uid', isEqualTo: uid).get();
-    for (var doc in notifications.docs) { batch.delete(doc.reference); }
-    batch.delete(_firestore.collection('users').doc(uid));
-    await batch.commit();
+    await deleteInChunks(notifications.docs);
+
+    final messages = await _firestore.collection('messages').where('uid', isEqualTo: uid).get();
+    await deleteInChunks(messages.docs);
+
+    final deviceSessions = await _firestore.collection('device_sessions').where('uid', isEqualTo: uid).get();
+    await deleteInChunks(deviceSessions.docs);
+
+    // Xóa hồ sơ user
+    await _firestore.collection('users').doc(uid).delete();
+
+    // Xóa cài đặt sinh trắc học của user
+    await _firestore.collection('biometric_prefs').doc(uid).delete();
+
+    // Xóa dữ liệu khôi phục tài khoản theo email (nếu tồn tại)
+    if (lowerEmail != null && lowerEmail.isNotEmpty) {
+      await _firestore.collection('otp_codes').doc(lowerEmail).delete();
+    }
+    if (rawEmail != null && rawEmail.isNotEmpty) {
+      await _firestore.collection('password_resets').doc(rawEmail).delete();
+    }
   }
 
   // ==================== LAY THONG TIN USER ====================

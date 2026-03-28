@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Ứng dụng cần vị trí để hiển thị vị trí hiện tại của thiết bị khi bạn bật tùy chọn này.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Ứng dụng cần truy cập danh bạ để hiển thị danh sách liên hệ khi bạn bật tùy chọn này.</string>
 </dict>
 </plist>

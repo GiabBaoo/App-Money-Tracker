@@ -7,11 +7,13 @@ import 'reset_password_screen.dart';
 class OTPScreen extends StatefulWidget {
   final String email;
   final bool isFromForgotPass;
+  final Map<String, dynamic>? userData; // Mới thêm: Chứa thông tin đăng ký
 
   const OTPScreen({
     super.key,
     required this.email,
     this.isFromForgotPass = false,
+    this.userData,
   });
 
   @override
@@ -87,6 +89,21 @@ class _OTPScreenState extends State<OTPScreen> {
         Navigator.pushReplacement(context, MaterialPageRoute(
           builder: (context) => ResetPasswordScreen(isFromSecurity: false, emailForReset: widget.email, otpCode: code),
         ));
+      } else if (widget.userData != null) {
+        // LUỒNG ĐĂNG KÝ: Giờ mới thực sự tạo account
+        final regResult = await _authService.register(
+          name: widget.userData!['name'],
+          email: widget.userData!['email'],
+          phone: widget.userData!['phone'],
+          gender: widget.userData!['gender'],
+          password: widget.userData!['password'],
+          dateOfBirth: widget.userData!['dateOfBirth'],
+        );
+        if (regResult.success) {
+           Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const HomeScreen()), (route) => false);
+        } else {
+           _showSnackBar(regResult.message, isError: true);
+        }
       } else {
         Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const HomeScreen()), (route) => false);
       }
