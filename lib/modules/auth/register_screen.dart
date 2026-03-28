@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Thêm thư viện này để dùng FilteringTextInputFormatter chặn nhập chữ vào sđt
 import '../../services/auth_service.dart';
-import 'otp_screen.dart';
+import 'verify_email_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -216,38 +216,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
 
-    // Thay vì tạo tài khoản ngay, ta gửi OTP trước
-    final otpResult = await _authService.sendOTP(email: email);
+    final regResult = await _authService.register(
+      name: name,
+      email: email,
+      phone: phone,
+      gender: _selectedGender,
+      password: password,
+      dateOfBirth: _selectedDate,
+    );
 
     setState(() => _isLoading = false);
 
     if (!mounted) return;
 
-    if (otpResult.success) {
-      _showSnackBar(
-        'Đã gửi mã OTP đến email của bạn!',
-        isError: false,
-      );
-      
-      Navigator.push(
+    if (regResult.success) {
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => OTPScreen(
-            email: email,
-            isFromForgotPass: false,
-            userData: {
-              'name': name,
-              'email': email,
-              'phone': phone,
-              'gender': _selectedGender,
-              'password': password,
-              'dateOfBirth': _selectedDate,
-            },
-          ),
+          builder: (context) => VerifyEmailScreen(email: email),
         ),
       );
     } else {
-      _showSnackBar(otpResult.message, isError: true);
+      _showSnackBar(regResult.message, isError: true);
     }
   }
 

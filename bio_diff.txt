@@ -1,0 +1,211 @@
+﻿diff --git a/lib/modules/settings/biometric_screen.dart b/lib/modules/settings/biometric_screen.dart
+index 4aedd70..fa1ff20 100644
+--- a/lib/modules/settings/biometric_screen.dart
++++ b/lib/modules/settings/biometric_screen.dart
+@@ -1,4 +1,7 @@
+ import 'package:flutter/material.dart';
++import 'package:firebase_auth/firebase_auth.dart';
++
++import '../../services/biometric_service.dart';
+ 
+ class BiometricScreen extends StatefulWidget {
+   const BiometricScreen({super.key});
+@@ -8,9 +11,33 @@ class BiometricScreen extends StatefulWidget {
+ }
+ 
+ class _BiometricScreenState extends State<BiometricScreen> {
+-  // C├íc biß║┐n ─æß╗â l╞░u trß║íng th├íi cß╗ºa c├┤ng tß║»c
+-  bool _isFaceIdEnabled = true;
+   bool _isFingerprintEnabled = false;
++  bool _isSaving = false;
++
++  final FirebaseAuth _auth = FirebaseAuth.instance;
++
++  @override
++  void initState() {
++    super.initState();
++    _loadCurrentPreference();
++  }
++
++  Future<void> _loadCurrentPreference() async {
++    final uid = _auth.currentUser?.uid;
++    if (uid == null) {
++      return;
++    }
++
++    try {
++      final enabled = await BiometricService.instance.isFingerprintEnabledForUser(uid);
++      if (!mounted) return;
++      setState(() {
++        _isFingerprintEnabled = enabled;
++      });
++    } catch (_) {
++      if (!mounted) return;
++    }
++  }
+ 
+   @override
+   Widget build(BuildContext context) {
+@@ -57,7 +84,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
+                               onPressed: () => Navigator.pop(context),
+                             ),
+                             const Text(
+-                              '─É─âng nhß║¡p sinh trß║»c hß╗ìc',
++                              '─É─âng nhß║¡p bß║▒ng v├ón tay',
+                               style: TextStyle(
+                                 color: Colors.white,
+                                 fontSize: 18,
+@@ -126,73 +153,35 @@ class _BiometricScreenState extends State<BiometricScreen> {
+                     ),
+                     child: Column(
+                       children: [
+-                        // C├öNG Tß║«C FACE ID
+-                        _buildSwitchItem(
+-                          icon: Icons.face_retouching_natural,
+-                          title: 'Sß╗¡ dß╗Ñng FaceID',
+-                          subtitle: '─É─âng nhß║¡p bß║▒ng nhß║¡n diß╗çn khu├┤n mß║╖t',
+-                          value: _isFaceIdEnabled,
+-                          onChanged: (val) {
+-                            setState(() {
+-                              _isFaceIdEnabled = val;
+-                            });
+-                          },
+-                          showDivider: true,
+-                        ),
+-
+                         // C├öNG Tß║«C V├éN TAY
+                         _buildSwitchItem(
+                           icon: Icons.fingerprint,
+                           title: 'Sß╗¡ dß╗Ñng V├ón tay',
+                           subtitle: 'Qu├⌐t v├ón tay ─æß╗â mß╗ƒ kh├│a ß╗⌐ng dß╗Ñng',
+                           value: _isFingerprintEnabled,
+-                          onChanged: (val) {
+-                            setState(() {
+-                              _isFingerprintEnabled = val;
+-                            });
+-                          },
++                          onChanged: _isSaving
++                              ? null
++                              : (val) async {
++                                  setState(() => _isSaving = true);
++                                  try {
++                                    final ok = await _persistPreference(val);
++                                    if (!mounted) return;
++                                    if (ok) {
++                                      setState(() => _isFingerprintEnabled = val);
++                                    }
++                                  } finally {
++                                    if (mounted) {
++                                      setState(() => _isSaving = false);
++                                    }
++                                  }
++                                },
+                           showDivider: false,
+                         ),
+                       ],
+                     ),
+                   ),
+ 
+-                  const SizedBox(height: 40),
+-
+-                  // N├ÜT L╞»U C├ÇI ─Éß║╢T
+-                  InkWell(
+-                    onTap: () {
+-                      // L╞░u trß║íng th├íi v├á tho├ít
+-                      Navigator.pop(context);
+-                    },
+-                    child: Container(
+-                      width: double.infinity,
+-                      padding: const EdgeInsets.symmetric(vertical: 16),
+-                      decoration: BoxDecoration(
+-                        color: const Color(0xFF4A9B7F),
+-                        borderRadius: BorderRadius.circular(12),
+-                        boxShadow: [
+-                          BoxShadow(
+-                            color: const Color(0xFF4A9B7F).withOpacity(0.3),
+-                            blurRadius: 8,
+-                            offset: const Offset(0, 4),
+-                          ),
+-                        ],
+-                      ),
+-                      child: const Center(
+-                        child: Text(
+-                          'L╞░u c├ái ─æß║╖t',
+-                          style: TextStyle(
+-                            color: Colors.white,
+-                            fontSize: 16,
+-                            fontWeight: FontWeight.w600,
+-                          ),
+-                        ),
+-                      ),
+-                    ),
+-                  ),
+-
+-                  const SizedBox(height: 20),
++                  const SizedBox(height: 24),
+ 
+                   // D├ÆNG CHß╗« L╞»U ├¥
+                   const Text(
+@@ -213,13 +202,61 @@ class _BiometricScreenState extends State<BiometricScreen> {
+     );
+   }
+ 
++  Future<bool> _persistPreference(bool enabled) async {
++    final uid = _auth.currentUser?.uid;
++    if (uid == null) {
++      if (!mounted) return false;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(
++          content: Text('Bß║ín cß║ºn ─æ─âng nhß║¡p ─æß╗â l╞░u c├ái ─æß║╖t v├ón tay.'),
++          backgroundColor: Colors.red,
++        ),
++      );
++      return false;
++    }
++
++    if (enabled) {
++      final status = await BiometricService.instance.getBiometricSupportStatus();
++      if (status != BiometricSupportStatus.supported) {
++        if (!mounted) return false;
++        final message = status == BiometricSupportStatus.notEnrolled
++            ? 'Thiß║┐t bß╗ï c├│ hß╗ù trß╗ú nh╞░ng ch╞░a ─æ─âng k├╜ v├ón tay. H├úy th├¬m v├ón tay trong C├ái ─æß║╖t hß╗ç thß╗æng.'
++            : 'Thiß║┐t bß╗ï n├áy kh├┤ng hß╗ù trß╗ú sinh trß║»c hß╗ìc.';
++        ScaffoldMessenger.of(context).showSnackBar(
++          SnackBar(
++            content: Text(message),
++            backgroundColor: Colors.red,
++          ),
++        );
++        return false;
++      }
++    }
++
++    try {
++      await BiometricService.instance.setFingerprintEnabledForUser(
++        uid: uid,
++        enabled: enabled,
++      );
++      return true;
++    } catch (_) {
++      if (!mounted) return false;
++      ScaffoldMessenger.of(context).showSnackBar(
++        const SnackBar(
++          content: Text('Kh├┤ng thß╗â l╞░u c├ái ─æß║╖t v├ón tay.'),
++          backgroundColor: Colors.red,
++        ),
++      );
++      return false;
++    }
++  }
++
+   // --- H├ÇM Tß║áO Tß╗¬NG D├ÆNG C├ô C├öNG Tß║«C Bß║¼T Tß║«T ---
+   Widget _buildSwitchItem({
+     required IconData icon,
+     required String title,
+     required String subtitle,
+     required bool value,
+-    required ValueChanged<bool> onChanged,
++    required ValueChanged<bool>? onChanged,
+     required bool showDivider,
+   }) {
+     return Column(

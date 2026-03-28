@@ -37,6 +37,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       final result = await _authService.reloadAndCheckEmailVerification();
       
       if (result.emailVerified && mounted) {
+        _autoCheckTimer?.cancel();
         _showSnackBar('Email da xac nhan! Dang nhap vao app...');
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {

@@ -1,0 +1,216 @@
+﻿diff --git a/lib/modules/settings/message_center_screen.dart b/lib/modules/settings/message_center_screen.dart
+index 07e3e93..88f660d 100644
+--- a/lib/modules/settings/message_center_screen.dart
++++ b/lib/modules/settings/message_center_screen.dart
+@@ -1,10 +1,25 @@
+ import 'package:flutter/material.dart';
++import '../../services/firestore_service.dart';
++import '../../models/message_model.dart';
+ import 'message_detail_screen.dart'; // ─Éß║úm bß║úo import trang chi tiß║┐t vß╗½a tß║ío
+ import 'support_request_screen.dart'; // ─Éß║úm bß║úo import trang Gß╗¡i y├¬u cß║ºu hß╗ù trß╗ú
+ 
+-class MessageCenterScreen extends StatelessWidget {
++class MessageCenterScreen extends StatefulWidget {
+   const MessageCenterScreen({super.key});
+ 
++  @override
++  State<MessageCenterScreen> createState() => _MessageCenterScreenState();
++}
++
++class _MessageCenterScreenState extends State<MessageCenterScreen> {
++  late Stream<List<MessageModel>> _messagesStream;
++
++  @override
++  void initState() {
++    super.initState();
++    _messagesStream = FirestoreService().getMessagesStream();
++  }
++
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+@@ -68,76 +83,114 @@ class MessageCenterScreen extends StatelessWidget {
+                     ),
+                   ],
+                 ),
+-                child: ListView(
+-                  padding: const EdgeInsets.only(bottom: 60),
+-                  children: [
+-                    // NH├ôM 1: Mß╗ÜI NHß║ñT
+-                    _buildTimeHeader('Mß╗ÜI NHß║ñT'),
+-                    _buildMessageItem(
+-                      context: context,
+-                      icon: Icons.support_agent,
+-                      iconBgColor: const Color(0xFFFF9800),
+-                      title: 'Phß║ún hß╗ôi y├¬u cß║ºu #12940',
+-                      shortMessage: 'Kß╗╣ thuß║¡t ─æ├ú xß╗¡ l├╜ xong y├¬u cß║ºu cß╗ºa bß║ín.',
+-                      fullMessage:
+-                          'Xin ch├áo L├¬ Trung Cao,\n\nCh├║ng t├┤i xin th├┤ng b├ío rß║▒ng y├¬u cß║ºu hß╗ù trß╗ú m├ú sß╗æ #12940 cß╗ºa bß║ín vß╗ü viß╗çc "Kiß╗âm tra giao dß╗ïch bß╗ï treo" ─æ├ú ─æ╞░ß╗úc bß╗Ö phß║¡n kß╗╣ thuß║¡t xß╗¡ l├╜ th├ánh c├┤ng.\n\nSß╗æ tiß╗ün giao dß╗ïch ─æ├ú ─æ╞░ß╗úc ho├án vß╗ü v├¡ cß╗ºa bß║ín. Vui l├▓ng kiß╗âm tra lß║íi sß╗æ d╞░.\n\nCß║úm ╞ín bß║ín ─æ├ú ki├¬n nhß║½n chß╗¥ ─æß╗úi v├á sß╗¡ dß╗Ñng dß╗ïch vß╗Ñ cß╗ºa ch├║ng t├┤i!',
+-                      time: '8 giß╗¥ tr╞░ß╗¢c',
+-                      isUnread: true,
+-                    ),
+-                    _buildDivider(),
+-                    _buildMessageItem(
+-                      context: context,
+-                      icon: Icons.build_circle,
+-                      iconBgColor: const Color(0xFF4CAF50),
+-                      title: 'Bß║úo tr├¼ hß╗ç thß╗æng ─æß╗ïnh kß╗│',
+-                      shortMessage:
+-                          'Dß╗ïch vß╗Ñ n├óng cß║Ñp tß╗½ 01:00 ─æß║┐n 03:00 s├íng mai.',
+-                      fullMessage:
+-                          'Th├┤ng b├ío bß║úo tr├¼ hß╗ç thß╗æng ─æß╗ïnh kß╗│,\n\n─Éß╗â n├óng cao chß║Ñt l╞░ß╗úng dß╗ïch vß╗Ñ v├á tß╗æi ╞░u h├│a hß╗ç thß╗æng bß║úo mß║¡t, ch├║ng t├┤i sß║╜ tiß║┐n h├ánh bß║úo tr├¼ m├íy chß╗º tß╗½ 01:00 ─æß║┐n 03:00 s├íng ng├áy mai.\n\nTrong khoß║úng thß╗¥i gian n├áy, c├íc t├¡nh n─âng chuyß╗ân tiß╗ün v├á thanh to├ín c├│ thß╗â bß╗ï gi├ín ─æoß║ín. \n\nMong bß║ín th├┤ng cß║úm cho sß╗▒ bß║Ñt tiß╗çn n├áy.',
+-                      time: '8 giß╗¥ tr╞░ß╗¢c',
+-                      isUnread: true,
+-                    ),
+-
+-                    // NH├ôM 2: TR╞»ß╗ÜC ─É├ô
+-                    _buildTimeHeader('TR╞»ß╗ÜC ─É├ô'),
+-                    _buildMessageItem(
+-                      context: context,
+-                      icon: Icons.headset_mic,
+-                      iconBgColor: const Color(0xFF6C5CE7),
+-                      title: 'Hß╗ù trß╗ú kh├ích h├áng',
+-                      shortMessage: 'Y├¬u cß║ºu hß╗ù trß╗ú cß╗ºa bß║ín ─æ├ú ─æ╞░ß╗úc tiß║┐p nhß║¡n.',
+-                      fullMessage:
+-                          'Ch├áo bß║ín,\n\nY├¬u cß║ºu hß╗ù trß╗ú cß╗ºa bß║ín ─æ├ú ─æ╞░ß╗úc gß╗¡i ─æß║┐n bß╗Ö phß║¡n Ch─âm s├│c kh├ích h├áng. T╞░ vß║Ñn vi├¬n cß╗ºa ch├║ng t├┤i sß║╜ li├¬n hß╗ç lß║íi vß╗¢i bß║ín trong v├▓ng 24 giß╗¥ tß╗¢i.\n\nTr├ón trß╗ìng!',
+-                      time: 'H├┤m qua',
+-                      isUnread: false,
+-                    ),
+-                    _buildDivider(),
+-                    _buildMessageItem(
+-                      context: context,
+-                      icon: Icons.article_outlined,
+-                      iconBgColor: const Color(0xFF009688),
+-                      title: 'Th├┤ng b├ío ch├¡nh s├ích mß╗¢i',
+-                      shortMessage:
+-                          'Cß║¡p nhß║¡t ─æiß╗üu khoß║ún sß╗¡ dß╗Ñng dß╗ïch vß╗Ñ mß╗¢i, hiß╗çu lß╗▒c tß╗½...',
+-                      fullMessage:
+-                          'K├¡nh gß╗¡i qu├╜ kh├ích,\n\nCh├║ng t├┤i vß╗½a cß║¡p nhß║¡t mß╗Öt sß╗æ ─æiß╗üu khoß║ún mß╗¢i trong Ch├¡nh s├ích bß║úo mß║¡t v├á ─Éiß╗üu khoß║ún sß╗¡ dß╗Ñng dß╗ïch vß╗Ñ.\n\nC├íc thay ─æß╗òi n├áy nhß║▒m tu├ón thß╗º quy ─æß╗ïnh mß╗¢i cß╗ºa ph├íp luß║¡t v├á bß║úo vß╗ç tß╗æt h╞ín dß╗» liß╗çu ng╞░ß╗¥i d├╣ng. Nhß╗»ng thay ─æß╗òi n├áy sß║╜ c├│ hiß╗çu lß╗▒c tß╗½ ng├áy 01/06.\n\nBß║ín c├│ thß╗â v├áo phß║ºn C├ái ─æß║╖t > Ch├¡nh s├ích bß║úo mß║¡t ─æß╗â xem chi tiß║┐t.',
+-                      time: 'H├┤m qua',
+-                      isUnread: false,
+-                    ),
+-                    _buildDivider(),
+-                    _buildMessageItem(
+-                      context: context,
+-                      icon: Icons.security,
+-                      iconBgColor: const Color(0xFF2196F3),
+-                      title: 'Cß║únh b├ío bß║úo mß║¡t',
+-                      shortMessage:
+-                          'Ph├ít hiß╗çn ─æ─âng nhß║¡p lß║í tß╗½ tr├¼nh duyß╗çt Chrome tr├¬n Windows...',
+-                      fullMessage:
+-                          'Cß║únh b├ío bß║úo mß║¡t t├ái khoß║ún!\n\nHß╗ç thß╗æng ghi nhß║¡n mß╗Öt l╞░ß╗út ─æ─âng nhß║¡p mß╗¢i v├áo t├ái khoß║ún cß╗ºa bß║ín:\nΓÇó Thiß║┐t bß╗ï: Windows PC - Chrome\nΓÇó Vß╗ï tr├¡: ─É├á Nß║╡ng, Viß╗çt Nam\nΓÇó Thß╗¥i gian: 3 ng├áy tr╞░ß╗¢c\n\nNß║┐u ─æ├óy kh├┤ng phß║úi l├á bß║ín, vui l├▓ng ─æß╗òi mß║¡t khß║⌐u ngay lß║¡p tß╗⌐c ─æß╗â bß║úo vß╗ç t├ái khoß║ún!',
+-                      time: 'H├┤m qua',
+-                      isUnread: false,
+-                    ),
+-                  ],
++                child: StreamBuilder<List<MessageModel>>(
++                  stream: _messagesStream,
++                  builder: (context, snapshot) {
++                    if (snapshot.connectionState == ConnectionState.waiting) {
++                      return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
++                    }
++                    
++                    final messages = snapshot.data ?? [];
++                    
++                    return ListView(
++                      padding: const EdgeInsets.only(bottom: 60),
++                      children: [
++                        if (messages.isNotEmpty) _buildTimeHeader('Mß╗ÜI NHß║ñT'),
++                        ...messages.map((msg) {
++                          String timeStr = 'Vß╗½a xong';
++                          final diff = DateTime.now().difference(msg.createdAt);
++                          if (diff.inDays > 0) timeStr = '${diff.inDays} ng├áy tr╞░ß╗¢c';
++                          else if (diff.inHours > 0) timeStr = '${diff.inHours} giß╗¥ tr╞░ß╗¢c';
++                          else if (diff.inMinutes > 0) timeStr = '${diff.inMinutes} ph├║t tr╞░ß╗¢c';
++                          
++                          return Dismissible(
++                            key: Key(msg.id),
++                            direction: DismissDirection.endToStart,
++                            background: Container(
++                              alignment: Alignment.centerRight,
++                              padding: const EdgeInsets.symmetric(horizontal: 20),
++                              color: Colors.red.shade400,
++                              child: const Icon(Icons.delete_outline, color: Colors.white, size: 30),
++                            ),
++                            onDismissed: (direction) {
++                              FirestoreService().deleteMessage(msg.id);
++                              ScaffoldMessenger.of(context).showSnackBar(
++                                const SnackBar(content: Text('─É├ú x├│a tin nhß║»n')),
++                              );
++                            },
++                            child: Column(
++                              children: [
++                                _buildMessageItem(
++                                  context: context,
++                                  icon: IconData(msg.iconCode, fontFamily: 'MaterialIcons'),
++                                  iconBgColor: Color(msg.iconBgColorValue),
++                                  title: msg.title,
++                                  shortMessage: msg.shortMessage,
++                                  fullMessage: msg.fullMessage,
++                                  time: timeStr,
++                                  isUnread: msg.isUnread,
++                                ),
++                                _buildDivider(),
++                              ],
++                            ),
++                          );
++                        }),
++                        
++                        // NH├ôM TR╞»ß╗ÜC ─É├ô (Dß╗» liß╗çu mß║½u ─æß╗â m├án h├¼nh kh├┤ng trß╗æng)
++                        _buildTimeHeader('TR╞»ß╗ÜC ─É├ô'),
++                        _buildMessageItem(
++                          context: context,
++                          icon: Icons.support_agent,
++                          iconBgColor: const Color(0xFFFF9800),
++                          title: 'Phß║ún hß╗ôi y├¬u cß║ºu #12940',
++                          shortMessage: 'Kß╗╣ thuß║¡t ─æ├ú xß╗¡ l├╜ xong y├¬u cß║ºu cß╗ºa bß║ín.',
++                          fullMessage:
++                              'Xin ch├áo,\n\nCh├║ng t├┤i xin th├┤ng b├ío rß║▒ng y├¬u cß║ºu hß╗ù trß╗ú m├ú sß╗æ #12940 cß╗ºa bß║ín vß╗ü viß╗çc "Kiß╗âm tra giao dß╗ïch bß╗ï treo" ─æ├ú ─æ╞░ß╗úc bß╗Ö phß║¡n kß╗╣ thuß║¡t xß╗¡ l├╜ th├ánh c├┤ng.\n\nSß╗æ tiß╗ün giao dß╗ïch ─æ├ú ─æ╞░ß╗úc ho├án vß╗ü v├¡ cß╗ºa bß║ín. Vui l├▓ng kiß╗âm tra lß║íi sß╗æ d╞░.\n\nCß║úm ╞ín bß║ín ─æ├ú ki├¬n nhß║½n chß╗¥ ─æß╗úi v├á sß╗¡ dß╗Ñng dß╗ïch vß╗Ñ cß╗ºa ch├║ng t├┤i!',
++                          time: '8 giß╗¥ tr╞░ß╗¢c',
++                          isUnread: true,
++                        ),
++                        _buildDivider(),
++                        _buildMessageItem(
++                          context: context,
++                          icon: Icons.build_circle,
++                          iconBgColor: const Color(0xFF4CAF50),
++                          title: 'Bß║úo tr├¼ hß╗ç thß╗æng ─æß╗ïnh kß╗│',
++                          shortMessage:
++                              'Dß╗ïch vß╗Ñ n├óng cß║Ñp tß╗½ 01:00 ─æß║┐n 03:00 s├íng mai.',
++                          fullMessage:
++                              'Th├┤ng b├ío bß║úo tr├¼ hß╗ç thß╗æng ─æß╗ïnh kß╗│,\n\n─Éß╗â n├óng cao chß║Ñt l╞░ß╗úng dß╗ïch vß╗Ñ v├á tß╗æi ╞░u h├│a hß╗ç thß╗æng bß║úo mß║¡t, ch├║ng t├┤i sß║╜ tiß║┐n h├ánh bß║úo tr├¼ m├íy chß╗º tß╗½ 01:00 ─æß║┐n 03:00 s├íng ng├áy mai.\n\nTrong khoß║úng thß╗¥i gian n├áy, c├íc t├¡nh n─âng chuyß╗ân tiß╗ün v├á thanh to├ín c├│ thß╗â bß╗ï gi├ín ─æoß║ín. \n\nMong bß║ín th├┤ng cß║úm cho sß╗▒ bß║Ñt tiß╗çn n├áy.',
++                          time: 'H├┤m qua',
++                          isUnread: true,
++                        ),
++                        _buildDivider(),
++                        _buildMessageItem(
++                          context: context,
++                          icon: Icons.article_outlined,
++                          iconBgColor: const Color(0xFF009688),
++                          title: 'Th├┤ng b├ío ch├¡nh s├ích mß╗¢i',
++                          shortMessage:
++                              'Cß║¡p nhß║¡t ─æiß╗üu khoß║ún sß╗¡ dß╗Ñng dß╗ïch vß╗Ñ mß╗¢i, hiß╗çu lß╗▒c tß╗½...',
++                          fullMessage:
++                              'K├¡nh gß╗¡i qu├╜ kh├ích,\n\nCh├║ng t├┤i vß╗½a cß║¡p nhß║¡t mß╗Öt sß╗æ ─æiß╗üu khoß║ún mß╗¢i trong Ch├¡nh s├ích bß║úo mß║¡t v├á ─Éiß╗üu khoß║ún sß╗¡ dß╗Ñng dß╗ïch vß╗Ñ.\n\nC├íc thay ─æß╗òi n├áy nhß║▒m tu├ón thß╗º quy ─æß╗ïnh mß╗¢i cß╗ºa ph├íp luß║¡t v├á bß║úo vß╗ç tß╗æt h╞ín dß╗» liß╗çu ng╞░ß╗¥i d├╣ng. Nhß╗»ng thay ─æß╗òi n├áy sß║╜ c├│ hiß╗çu lß╗▒c tß╗½ ng├áy 01/06.\n\nBß║ín c├│ thß╗â v├áo phß║ºn C├ái ─æß║╖t > Ch├¡nh s├ích bß║úo mß║¡t ─æß╗â xem chi tiß║┐t.',
++                          time: 'H├┤m qua',
++                          isUnread: false,
++                        ),
++                        _buildDivider(),
++                        _buildMessageItem(
++                          context: context,
++                          icon: Icons.security,
++                          iconBgColor: const Color(0xFF2196F3),
++                          title: 'Cß║únh b├ío bß║úo mß║¡t',
++                          shortMessage:
++                              'Ph├ít hiß╗çn ─æ─âng nhß║¡p lß║í tß╗½ tr├¼nh duyß╗çt Chrome tr├¬n Windows...',
++                          fullMessage:
++                              'Cß║únh b├ío bß║úo mß║¡t t├ái khoß║ún!\n\nHß╗ç thß╗æng ghi nhß║¡n mß╗Öt l╞░ß╗út ─æ─âng nhß║¡p mß╗¢i v├áo t├ái khoß║ún cß╗ºa bß║ín:\nΓÇó Thiß║┐t bß╗ï: Windows PC - Chrome\nΓÇó Vß╗ï tr├¡: ─É├á Nß║╡ng, Viß╗çt Nam\nΓÇó Thß╗¥i gian: 3 ng├áy tr╞░ß╗¢c\n\nNß║┐u ─æ├óy kh├┤ng phß║úi l├á bß║ín, vui l├▓ng ─æß╗òi mß║¡t khß║⌐u ngay lß║¡p tß╗⌐c ─æß╗â bß║úo vß╗ç t├ái khoß║ún!',
++                          time: 'H├┤m qua',
++                          isUnread: false,
++                        ),
++                      ],
++                    );
++                  }
+                 ),
+               ),
+             ),

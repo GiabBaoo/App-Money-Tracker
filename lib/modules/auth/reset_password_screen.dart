@@ -28,6 +28,47 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
 
+  bool _hasMinLength = false;
+  bool _hasLetter = false;
+  bool _hasNumber = false;
+  bool _hasSpecialChar = false;
+  bool _hasUpperCase = false;
+  String? _passwordError;
+  String? _confirmPasswordError;
+
+  void _updatePasswordValidation(String password) {
+    setState(() {
+      _hasMinLength = password.length >= 8;
+      _hasLetter = RegExp(r'[a-zA-Z]').hasMatch(password);
+      _hasNumber = RegExp(r'[0-9]').hasMatch(password);
+      _hasSpecialChar = RegExp(r"""[!@#$%^&*()_+\-=\[\]{};:'",./<>?\\|`~]""").hasMatch(password);
+      _hasUpperCase = RegExp(r'[A-Z]').hasMatch(password);
+      _passwordError = _validatePassword(password);
+    });
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) return 'Vui lòng nhập mật khẩu!';
+    if (!_hasMinLength) return 'Mật khẩu phải có ít nhất 8 ký tự!';
+    if (!_hasLetter) return 'Mật khẩu phải chứa ít nhất một chữ cái!';
+    if (!_hasNumber) return 'Mật khẩu phải chứa ít nhất một chữ số!';
+    if (!_hasSpecialChar) return 'Mật khẩu phải chứa ít nhất một ký tự đặc biệt!';
+    if (!_hasUpperCase) return 'Mật khẩu phải chứa ít nhất một chữ cái in hoa!';
+    return null;
+  }
+
+  void _onConfirmPasswordChanged(String value) {
+    setState(() {
+      if (value.isEmpty) {
+        _confirmPasswordError = 'Vui lòng nhập lại mật khẩu!';
+      } else if (value != _newPasswordController.text) {
+        _confirmPasswordError = 'Mật khẩu nhập lại không khớp!';
+      } else {
+        _confirmPasswordError = null;
+      }
+    });
+  }
+
   @override
   void dispose() {
     _newPasswordController.dispose();
@@ -40,11 +81,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final confirmPassword = _confirmPasswordController.text;
 
     if (newPassword.isEmpty || confirmPassword.isEmpty) {
-      _showSnackBar('Vui long nhap day du mat khau!', isError: true);
+      _showSnackBar('Vui lòng nhập đầy đủ mật khẩu!', isError: true);
       return;
     }
-    if (newPassword.length < 8) {
-      _showSnackBar('Mat khau phai co it nhat 8 ky tu!', isError: true);
+    if (_passwordError != null) {
+      _showSnackBar(_passwordError!, isError: true);
+      return;
+    }
+    if (_confirmPasswordError != null) {
+      _showSnackBar(_confirmPasswordError!, isError: true);
       return;
     }
     if (newPassword != confirmPassword) {
@@ -55,15 +100,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     setState(() => _isLoading = true);
 
     if (widget.isFromSecurity) {
-      // LUONG DOI MK TU CAI DAT: Khong can lam gi them (mat khau cu da xac thuc o trang truoc)
-      // Chi can goi Firebase de doi mat khau
-      // Nhung vi luong nay khong co mat khau cu o day, nen dung sendPasswordResetEmail
-      await _authService.resetPasswordWithEmail(
-        email: _authService.currentUser?.email ?? '',
-        newPassword: newPassword,
-        otpCode: widget.otpCode ?? '',
-      );
+      // LUONG DOI MK TU CAI DAT: Doi mat khau truc tiep vi da xac thuc o man hinh truoc
+      final updateResult = await _authService.updateCurrentPassword(newPassword: newPassword);
+      
       setState(() => _isLoading = false);
+      
+      if (!mounted) return;
+      if (!updateResult.success) {
+        _showSnackBar(updateResult.message, isError: true);
+        return;
+      }
 
       if (!mounted) return;
       // Hien trang thanh cong
@@ -171,8 +217,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       _buildLabel('Nhap mat khau moi'),
                       _buildTextField(
                         controller: _newPasswordController,
-                        hintText: 'Nhap mat khau moi cua ban',
+                        hintText: 'Nhập mật khẩu mới',
                         isObscure: _obscureNewPassword,
+                        errorText: _passwordError,
+                        onChanged: _updatePasswordValidation,
                         suffixIcon: IconButton(
                           icon: Icon(_obscureNewPassword ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
                           onPressed: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
@@ -184,10 +232,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(color: const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(8)),
                         child: Column(children: [
-                          _buildPasswordRule('Toi thieu 8 ky tu'),
-                          _buildPasswordRule('Bao gom chu cai va chu so'),
-                          _buildPasswordRule('Bao gom ky tu dac biet'),
-                          _buildPasswordRule('Bao gom chu cai in hoa'),
+                          _buildPasswordRule('Hiển thị từ 8 ký tự trở lên', _hasMinLength),
+                          _buildPasswordRule('Bao gồm chữ cái và chữ số', _hasLetter && _hasNumber),
+                          _buildPasswordRule('Bao gồm ký tự đặc biệt', _hasSpecialChar),
+                          _buildPasswordRule('Bao gồm chữ cái in hoa', _hasUpperCase),
                         ]),
                       ),
                       const SizedBox(height: 16),
@@ -195,8 +243,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       _buildLabel('Nhap lai mat khau moi'),
                       _buildTextField(
                         controller: _confirmPasswordController,
-                        hintText: 'Nhap lai mat khau moi cua ban',
+                        hintText: 'Nhập lại mật khẩu mới',
                         isObscure: _obscureConfirmPassword,
+                        errorText: _confirmPasswordError,
+                        onChanged: _onConfirmPasswordChanged,
                         suffixIcon: IconButton(
                           icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
                           onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
@@ -244,29 +294,44 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  Widget _buildTextField({required String hintText, TextEditingController? controller, bool isObscure = false, Widget? suffixIcon}) {
+  Widget _buildTextField({required String hintText, TextEditingController? controller, bool isObscure = false, Widget? suffixIcon, String? errorText, Function(String)? onChanged}) {
     return TextFormField(
       controller: controller,
       obscureText: isObscure,
+      onChanged: onChanged,
       style: const TextStyle(fontSize: 15),
       decoration: InputDecoration(
         hintText: hintText,
+        errorText: errorText,
         hintStyle: TextStyle(color: Colors.black.withOpacity(0.3), fontSize: 14),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFDDDDDD))),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.red.shade400, width: 1.5)),
+        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.red.shade400, width: 2)),
         suffixIcon: suffixIcon,
       ),
     );
   }
 
-  Widget _buildPasswordRule(String text) {
+  Widget _buildPasswordRule(String text, bool isValid) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(children: [
-        const Icon(Icons.check_circle_outline, color: Color(0xFF8B9098), size: 16),
+        Icon(
+          isValid ? Icons.check_circle : Icons.check_circle_outline,
+          color: isValid ? const Color(0xFF438883) : const Color(0xFF8B9098),
+          size: 16,
+        ),
         const SizedBox(width: 8),
-        Text(text, style: const TextStyle(color: Color(0xFF8B9098), fontSize: 13)),
+        Text(
+          text,
+          style: TextStyle(
+            color: isValid ? const Color(0xFF438883) : const Color(0xFF8B9098),
+            fontSize: 13,
+            fontWeight: isValid ? FontWeight.w500 : FontWeight.normal,
+          ),
+        ),
       ]),
     );
   }

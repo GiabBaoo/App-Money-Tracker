@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import '../../services/biometric_service.dart';
 
 class BiometricScreen extends StatefulWidget {
   const BiometricScreen({super.key});
@@ -8,9 +11,33 @@ class BiometricScreen extends StatefulWidget {
 }
 
 class _BiometricScreenState extends State<BiometricScreen> {
-  // Các biến để lưu trạng thái của công tắc
-  bool _isFaceIdEnabled = true;
   bool _isFingerprintEnabled = false;
+  bool _isSaving = false;
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentPreference();
+  }
+
+  Future<void> _loadCurrentPreference() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) {
+      return;
+    }
+
+    try {
+      final enabled = await BiometricService.instance.isFingerprintEnabledForUser(uid);
+      if (!mounted) return;
+      setState(() {
+        _isFingerprintEnabled = enabled;
+      });
+    } catch (_) {
+      if (!mounted) return;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +84,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
                               onPressed: () => Navigator.pop(context),
                             ),
                             const Text(
-                              'Đăng nhập sinh trắc học',
+                              'Đăng nhập bằng vân tay',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
@@ -126,73 +153,35 @@ class _BiometricScreenState extends State<BiometricScreen> {
                     ),
                     child: Column(
                       children: [
-                        // CÔNG TẮC FACE ID
-                        _buildSwitchItem(
-                          icon: Icons.face_retouching_natural,
-                          title: 'Sử dụng FaceID',
-                          subtitle: 'Đăng nhập bằng nhận diện khuôn mặt',
-                          value: _isFaceIdEnabled,
-                          onChanged: (val) {
-                            setState(() {
-                              _isFaceIdEnabled = val;
-                            });
-                          },
-                          showDivider: true,
-                        ),
-
                         // CÔNG TẮC VÂN TAY
                         _buildSwitchItem(
                           icon: Icons.fingerprint,
                           title: 'Sử dụng Vân tay',
                           subtitle: 'Quét vân tay để mở khóa ứng dụng',
                           value: _isFingerprintEnabled,
-                          onChanged: (val) {
-                            setState(() {
-                              _isFingerprintEnabled = val;
-                            });
-                          },
+                          onChanged: _isSaving
+                              ? null
+                              : (val) async {
+                                  setState(() => _isSaving = true);
+                                  try {
+                                    final ok = await _persistPreference(val);
+                                    if (!mounted) return;
+                                    if (ok) {
+                                      setState(() => _isFingerprintEnabled = val);
+                                    }
+                                  } finally {
+                                    if (mounted) {
+                                      setState(() => _isSaving = false);
+                                    }
+                                  }
+                                },
                           showDivider: false,
                         ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 40),
-
-                  // NÚT LƯU CÀI ĐẶT
-                  InkWell(
-                    onTap: () {
-                      // Lưu trạng thái và thoát
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4A9B7F),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF4A9B7F).withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'Lưu cài đặt',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
                   // DÒNG CHỮ LƯU Ý
                   const Text(
@@ -213,13 +202,61 @@ class _BiometricScreenState extends State<BiometricScreen> {
     );
   }
 
+  Future<bool> _persistPreference(bool enabled) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bạn cần đăng nhập để lưu cài đặt vân tay.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return false;
+    }
+
+    if (enabled) {
+      final status = await BiometricService.instance.getBiometricSupportStatus();
+      if (status != BiometricSupportStatus.supported) {
+        if (!mounted) return false;
+        final message = status == BiometricSupportStatus.notEnrolled
+            ? 'Thiết bị có hỗ trợ nhưng chưa đăng ký vân tay. Hãy thêm vân tay trong Cài đặt hệ thống.'
+            : 'Thiết bị này không hỗ trợ sinh trắc học.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return false;
+      }
+    }
+
+    try {
+      await BiometricService.instance.setFingerprintEnabledForUser(
+        uid: uid,
+        enabled: enabled,
+      );
+      return true;
+    } catch (_) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không thể lưu cài đặt vân tay.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return false;
+    }
+  }
+
   // --- HÀM TẠO TỪNG DÒNG CÓ CÔNG TẮC BẬT TẮT ---
   Widget _buildSwitchItem({
     required IconData icon,
     required String title,
     required String subtitle,
     required bool value,
-    required ValueChanged<bool> onChanged,
+    required ValueChanged<bool>? onChanged,
     required bool showDivider,
   }) {
     return Column(

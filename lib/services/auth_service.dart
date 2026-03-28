@@ -285,6 +285,27 @@ class AuthService {
     }
   }
 
+  // ==================== DOI MAT KHAU KHI DA DANG NHAP ====================
+  Future<({bool success, String message})> updateCurrentPassword({
+    required String newPassword,
+  }) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        return (success: false, message: 'Chưa đăng nhập!');
+      }
+      await user.updatePassword(newPassword);
+      return (success: true, message: 'Cập nhật mật khẩu thành công!');
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        return (success: false, message: 'Vui lòng xác thực lại mật khẩu hiện tại trước khi đổi.');
+      }
+      return (success: false, message: _getAuthErrorMessage(e.code));
+    } catch (e) {
+      return (success: false, message: 'Lỗi: $e');
+    }
+  }
+
   // ==================== XAC THUC MAT KHAU HIEN TAI ====================
   Future<({bool success, String message})> verifyCurrentPassword({
     required String password,

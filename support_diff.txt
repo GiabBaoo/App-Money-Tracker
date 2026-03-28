@@ -1,0 +1,169 @@
+﻿diff --git a/lib/modules/settings/support_request_screen.dart b/lib/modules/settings/support_request_screen.dart
+index 0299c91..918f890 100644
+--- a/lib/modules/settings/support_request_screen.dart
++++ b/lib/modules/settings/support_request_screen.dart
+@@ -1,4 +1,8 @@
++import 'dart:math';
+ import 'package:flutter/material.dart';
++import 'package:firebase_auth/firebase_auth.dart';
++import '../../services/firestore_service.dart';
++import '../../models/message_model.dart';
+ import 'success_screen.dart'; // Import trang Th├ánh C├┤ng ─æa n─âng cß╗ºa bß║ín
+ 
+ class SupportRequestScreen extends StatefulWidget {
+@@ -19,6 +23,17 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
+ 
+   // ─É├â Sß╗¼A: G├ín gi├í trß╗ï mß║╖c ─æß╗ïnh l├á phß║ºn tß╗¡ ─æß║ºu ti├¬n cß╗ºa mß║úng _topics
+   late String _selectedTopic = _topics[0];
++  final _titleController = TextEditingController();
++  final _detailsController = TextEditingController();
++  final FirestoreService _firestoreService = FirestoreService();
++  bool _isLoading = false;
++
++  @override
++  void dispose() {
++    _titleController.dispose();
++    _detailsController.dispose();
++    super.dispose();
++  }
+ 
+   @override
+   Widget build(BuildContext context) {
+@@ -124,6 +139,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
+                       // TI├èU ─Éß╗Ç
+                       _buildLabel('Ti├¬u ─æß╗ü'),
+                       TextFormField(
++                        controller: _titleController,
+                         style: const TextStyle(fontSize: 16),
+                         decoration: _buildInputDecoration(
+                           hintText: 'Nhß║¡p ti├¬u ─æß╗ü ngß║»n gß╗ìn',
+@@ -135,6 +151,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
+                       // Nß╗ÿI DUNG CHI TIß║╛T
+                       _buildLabel('Nß╗Öi dung chi tiß║┐t'),
+                       TextFormField(
++                        controller: _detailsController,
+                         maxLines: 5, // Cho ph├⌐p nhß║¡p nhiß╗üu d├▓ng
+                         style: const TextStyle(fontSize: 16, height: 1.5),
+                         decoration: _buildInputDecoration(
+@@ -146,33 +163,73 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
+ 
+                       // N├ÜT Gß╗¼I Y├èU Cß║ªU
+                       InkWell(
+-                        onTap: () {
+-                          // Gß╗¼I TH├ÇNH C├öNG -> Gß╗îI TRANG SUCCESS_SCREEN ─ÉA N─éNG
+-                          Navigator.push(
+-                            context,
+-                            MaterialPageRoute(
+-                              builder: (context) => SuccessScreen(
+-                                appBarTitle: 'Gß╗¡i y├¬u cß║ºu',
+-                                successTitle: 'Gß╗¡i y├¬u cß║ºu th├ánh c├┤ng',
+-                                successMessage:
+-                                    'Y├¬u cß║ºu cß╗ºa bß║ín ─æ├ú ─æ╞░ß╗úc chuyß╗ân ─æß║┐n bß╗Ö phß║¡n Ch─âm s├│c kh├ích h├áng. Ch├║ng t├┤i sß║╜ phß║ún hß╗ôi sß╗¢m nhß║Ñt c├│ thß╗â.',
+-                                buttonText: 'Quay lß║íi Hß╗Öp th╞░',
+-                                onButtonPressed: () {
+-                                  // Bß║Ñm n├║t th├¼ l├╣i vß╗ü 2 b╞░ß╗¢c (vß╗ü lß║íi trang Trung t├óm tin nhß║»n)
+-                                  int count = 0;
+-                                  Navigator.popUntil(context, (route) {
+-                                    return count++ == 2;
+-                                  });
+-                                },
++                        onTap: _isLoading ? null : () async {
++                          if (_titleController.text.trim().isEmpty || _detailsController.text.trim().isEmpty) {
++                            ScaffoldMessenger.of(context).showSnackBar(
++                              SnackBar(
++                                content: const Text('Vui l├▓ng nhß║¡p ─æß║ºy ─æß╗º ti├¬u ─æß╗ü v├á nß╗Öi dung!'),
++                                backgroundColor: Colors.red.shade600,
+                               ),
+-                            ),
+-                          );
++                            );
++                            return;
++                          }
++
++                          setState(() => _isLoading = true);
++                          try {
++                            // Tß║ío tin nhß║»n tß╗▒ ─æß╗Öng phß║ún hß╗ôi
++                            final user = FirebaseAuth.instance.currentUser;
++                            if (user != null) {
++                              final randomId = Random().nextInt(90000) + 10000; // random 10000 -> 99999
++                              final message = MessageModel(
++                                uid: user.uid,
++                                iconCode: Icons.headset_mic.codePoint,
++                                iconBgColorValue: 0xFF6C5CE7,
++                                title: 'Hß╗ù trß╗ú kh├ích h├áng #$randomId',
++                                shortMessage: 'Y├¬u cß║ºu hß╗ù trß╗ú cß╗ºa bß║ín ─æ├ú ─æ╞░ß╗úc tiß║┐p nhß║¡n.',
++                                fullMessage: 'Ch├áo bß║ín,\n\nY├¬u cß║ºu hß╗ù trß╗ú vß╗ü "${_titleController.text.trim()}" (M├ú sß╗æ: #$randomId) cß╗ºa bß║ín ─æ├ú ─æ╞░ß╗úc gß╗¡i ─æß║┐n bß╗Ö phß║¡n Ch─âm s├│c kh├ích h├áng. T╞░ vß║Ñn vi├¬n cß╗ºa ch├║ng t├┤i sß║╜ li├¬n hß╗ç lß║íi vß╗¢i bß║ín trong v├▓ng 24 giß╗¥ tß╗¢i.\n\nTr├ón trß╗ìng!',
++                              );
++                              await _firestoreService.addMessage(message);
++                            }
++
++                            if (!context.mounted) return;
++                            
++                            // Gß╗¼I TH├ÇNH C├öNG -> Gß╗îI TRANG SUCCESS_SCREEN ─ÉA N─éNG
++                            Navigator.push(
++                              context,
++                              MaterialPageRoute(
++                                builder: (context) => SuccessScreen(
++                                  appBarTitle: 'Gß╗¡i y├¬u cß║ºu',
++                                  successTitle: 'Gß╗¡i y├¬u cß║ºu th├ánh c├┤ng',
++                                  successMessage:
++                                      'Y├¬u cß║ºu cß╗ºa bß║ín ─æ├ú ─æ╞░ß╗úc chuyß╗ân ─æß║┐n bß╗Ö phß║¡n Ch─âm s├│c kh├ích h├áng. Ch├║ng t├┤i sß║╜ phß║ún hß╗ôi sß╗¢m nhß║Ñt c├│ thß╗â.',
++                                  buttonText: 'Quay lß║íi Hß╗Öp th╞░',
++                                  onButtonPressed: () {
++                                    // Bß║Ñm n├║t th├¼ l├╣i vß╗ü 2 b╞░ß╗¢c (vß╗ü lß║íi trang Trung t├óm tin nhß║»n)
++                                    int count = 0;
++                                    Navigator.popUntil(context, (route) {
++                                      return count++ == 2;
++                                    });
++                                  },
++                                ),
++                              ),
++                            );
++                          } catch (e) {
++                            if (!context.mounted) return;
++                            ScaffoldMessenger.of(context).showSnackBar(
++                              SnackBar(
++                                content: Text('C├│ lß╗ùi xß║úy ra: $e'),
++                                backgroundColor: Colors.red.shade600,
++                              ),
++                            );
++                          } finally {
++                            if (mounted) setState(() => _isLoading = false);
++                          }
+                         },
+                         child: Container(
+                           width: double.infinity,
+                           padding: const EdgeInsets.symmetric(vertical: 16),
+                           decoration: BoxDecoration(
+-                            color: const Color(0xFF4A9B7F), // M├áu xanh
++                            color: _isLoading ? Colors.grey : const Color(0xFF4A9B7F), // M├áu xanh hoß║╖c x├ím
+                             borderRadius: BorderRadius.circular(12),
+                             boxShadow: [
+                               BoxShadow(
+@@ -182,15 +239,17 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
+                               ),
+                             ],
+                           ),
+-                          child: const Center(
+-                            child: Text(
+-                              'Gß╗¡i y├¬u cß║ºu',
+-                              style: TextStyle(
+-                                color: Colors.white,
+-                                fontSize: 16,
+-                                fontWeight: FontWeight.w600,
+-                              ),
+-                            ),
++                          child: Center(
++                            child: _isLoading 
++                                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
++                                : const Text(
++                                    'Gß╗¡i y├¬u cß║ºu',
++                                    style: TextStyle(
++                                      color: Colors.white,
++                                      fontSize: 16,
++                                      fontWeight: FontWeight.w600,
++                                    ),
++                                  ),
+                           ),
+                         ),
+                       ),

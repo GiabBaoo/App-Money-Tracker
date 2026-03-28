@@ -1,0 +1,607 @@
+﻿diff --git a/lib/modules/settings/active_devices_screen.dart b/lib/modules/settings/active_devices_screen.dart
+index b0076b7..38ff70c 100644
+--- a/lib/modules/settings/active_devices_screen.dart
++++ b/lib/modules/settings/active_devices_screen.dart
+@@ -1,256 +1,344 @@
+ import 'package:flutter/material.dart';
++import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
++import 'package:device_info_plus/device_info_plus.dart';
++import '../../services/auth_service.dart';
++import '../../services/firestore_service.dart';
++import '../../models/device_session_model.dart';
+ 
+ class ActiveDevicesScreen extends StatelessWidget {
+   const ActiveDevicesScreen({super.key});
+ 
++  Future<Map<String, String>> _getDeviceInfoAndRegister() async {
++    final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
++    String deviceName = 'Thiß║┐t bß╗ï kh├┤ng x├íc ─æß╗ïnh';
++    String deviceType = 'mobile';
++
++    try {
++      if (kIsWeb) {
++        final webInfo = await deviceInfoPlugin.webBrowserInfo;
++        final browserName = webInfo.browserName.name.toUpperCase();
++        deviceName = 'Tr├¼nh duyß╗çt $browserName';
++        deviceType = 'desktop';
++      } else {
++        switch (defaultTargetPlatform) {
++          case TargetPlatform.android:
++            final androidInfo = await deviceInfoPlugin.androidInfo;
++            deviceName = '${androidInfo.brand} ${androidInfo.model}'.toUpperCase(); //VD: SAMSUNG SM-G998B
++            deviceType = 'mobile';
++            break;
++          case TargetPlatform.iOS:
++            final iosInfo = await deviceInfoPlugin.iosInfo;
++            deviceName = iosInfo.name; // VD: iPhone 13 Pro
++            deviceType = 'mobile';
++            break;
++          case TargetPlatform.windows:
++            final windowsInfo = await deviceInfoPlugin.windowsInfo;
++            deviceName = 'Windows PC (${windowsInfo.computerName})';
++            deviceType = 'desktop';
++            break;
++          case TargetPlatform.macOS:
++            final macInfo = await deviceInfoPlugin.macOsInfo;
++            deviceName = 'MacBook (${macInfo.computerName})';
++            deviceType = 'laptop';
++            break;
++          case TargetPlatform.linux:
++            final linuxInfo = await deviceInfoPlugin.linuxInfo;
++            deviceName = 'Linux PC (${linuxInfo.name})';
++            deviceType = 'desktop';
++            break;
++          default:
++            deviceName = 'Thiß║┐t bß╗ï kh├íc';
++            deviceType = 'mobile';
++        }
++      }
++    } catch (e) {
++      deviceName = 'Lß╗ùi lß║Ñy th├┤ng tin thiß║┐t bß╗ï';
++    }
++
++    // ─É─âng k├╜ trß╗▒c tiß║┐p thiß║┐t bß╗ï hiß╗çn h├ánh v├áo Firestore cß╗ºa User
++    await FirestoreService().registerDeviceSession(
++      deviceName: deviceName,
++      deviceType: deviceType,
++    );
++
++    return {'name': deviceName, 'type': deviceType};
++  }
++
+   @override
+   Widget build(BuildContext context) {
+-    // Dß╗» liß╗çu m├┤ phß╗Ång (Mock Data) c├íc thiß║┐t bß╗ï
+-    final List<Map<String, dynamic>> devices = [
+-      {
+-        'name': 'iPhone 13 Pro',
+-        'type': 'mobile',
+-        'location': 'H├á Nß╗Öi, Viß╗çt Nam',
+-        'status': '─Éang hoß║ít ─æß╗Öng',
+-        'isCurrent': true, // ─É├ính dß║Ñu thiß║┐t bß╗ï hiß╗çn tß║íi
+-      },
+-      {
+-        'name': 'MacBook Pro 14',
+-        'type': 'laptop',
+-        'location': 'H├á Nß╗Öi, Viß╗çt Nam',
+-        'status': '2 giß╗¥ tr╞░ß╗¢c',
+-        'isCurrent': false,
+-      },
+-      {
+-        'name': 'Samsung Galaxy S22',
+-        'type': 'mobile',
+-        'location': 'TP. Hß╗ô Ch├¡ Minh, Viß╗çt Nam',
+-        'status': '1 ng├áy tr╞░ß╗¢c',
+-        'isCurrent': false,
+-      },
+-      {
+-        'name': 'Windows PC - Chrome',
+-        'type': 'desktop',
+-        'location': '─É├á Nß║╡ng, Viß╗çt Nam',
+-        'status': '3 ng├áy tr╞░ß╗¢c',
+-        'isCurrent': false,
+-      },
+-    ];
++    return FutureBuilder<Map<String, String>>(
++      future: _getDeviceInfoAndRegister(),
++      builder: (context, snapshot) {
++        if (snapshot.connectionState == ConnectionState.waiting) {
++          return const Scaffold(
++            backgroundColor: Color(0xFF438883),
++            body: Center(child: CircularProgressIndicator(color: Colors.white)),
++          );
++        }
+ 
+-    return Scaffold(
+-      backgroundColor: const Color(0xFF438883), // Nß╗ün xanh l├í mß║í
+-      body: SafeArea(
+-        bottom: false,
+-        child: Column(
+-          children: [
+-            // 1. CUSTOM APP BAR
+-            Padding(
+-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+-              child: Row(
+-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+-                children: [
+-                  IconButton(
+-                    icon: const Icon(
+-                      Icons.arrow_back_ios,
+-                      color: Colors.white,
+-                      size: 20,
+-                    ),
+-                    onPressed: () => Navigator.pop(context),
+-                  ),
+-                  const Text(
+-                    'Thiß║┐t bß╗ï ─æang hoß║ít ─æß╗Öng',
+-                    style: TextStyle(
+-                      color: Colors.white,
+-                      fontSize: 18,
+-                      fontWeight: FontWeight.w600,
+-                    ),
+-                  ),
+-                  const SizedBox(width: 48), // C├ón bß║▒ng kh├┤ng gian
+-                ],
+-              ),
+-            ),
++        final localDeviceName = snapshot.data?['name'] ?? 'Lß╗ùi';
+ 
+-            const SizedBox(height: 20),
++        return StreamBuilder<List<DeviceSessionModel>>(
++          stream: FirestoreService().getDeviceSessionsStream(),
++          builder: (context, streamSnapshot) {
++            if (streamSnapshot.connectionState == ConnectionState.waiting) {
++              return const Scaffold(
++                backgroundColor: Color(0xFF438883),
++                body: Center(child: CircularProgressIndicator(color: Colors.white)),
++              );
++            }
++            
++            final sessions = streamSnapshot.data ?? [];
+ 
+-            // 2. KHUNG Nß╗ÿI DUNG M├ÇU TRß║«NG BO G├ôC
+-            Expanded(
+-              child: Container(
+-                width: double.infinity,
+-                decoration: const BoxDecoration(
+-                  color: Color(0xFFF8F9FA), // Nß╗ün x├ím nhß║ít
+-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+-                ),
++            return Scaffold(
++              backgroundColor: const Color(0xFF438883), // Nß╗ün xanh l├í mß║í
++              body: SafeArea(
++                bottom: false,
+                 child: Column(
+                   children: [
+-                    // HEADER Cß╗ªA BOX (Icon khi├¬n bß║úo vß╗ç)
+-                    Container(
+-                      width: double.infinity,
+-                      padding: const EdgeInsets.only(
+-                        top: 40,
+-                        bottom: 20,
+-                        left: 24,
+-                        right: 24,
+-                      ),
+-                      decoration: const BoxDecoration(
+-                        color: Colors.white,
+-                        borderRadius: BorderRadius.vertical(
+-                          top: Radius.circular(30),
+-                        ),
+-                      ),
+-                      child: Column(
++                    // 1. CUSTOM APP BAR
++                    Padding(
++                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
++                      child: Row(
++                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                         children: [
+-                          Container(
+-                            padding: const EdgeInsets.all(16),
+-                            decoration: BoxDecoration(
+-                              color: const Color(0xFFE8F5F3), // Xanh ngß╗ìc nhß║ít
+-                              borderRadius: BorderRadius.circular(24),
+-                            ),
+-                            child: const Icon(
+-                              Icons.shield,
+-                              color: Color(0xFF438883),
+-                              size: 40,
++                          IconButton(
++                            icon: const Icon(
++                              Icons.arrow_back_ios,
++                              color: Colors.white,
++                              size: 20,
+                             ),
++                            onPressed: () => Navigator.pop(context),
+                           ),
+-                          const SizedBox(height: 16),
+                           const Text(
+-                            'Quß║ún l├╜ phi├¬n ─æ─âng nhß║¡p',
++                            'Thiß║┐t bß╗ï ─æang hoß║ít ─æß╗Öng',
+                             style: TextStyle(
+-                              color: Color(0xFF333333),
++                              color: Colors.white,
+                               fontSize: 18,
+-                              fontWeight: FontWeight.w700,
+-                            ),
+-                          ),
+-                          const SizedBox(height: 8),
+-                          const Text(
+-                            'Xem v├á quß║ún l├╜ tß║Ñt cß║ú c├íc thiß║┐t bß╗ï ─æang\ntruy cß║¡p v├áo t├ái khoß║ún cß╗ºa bß║ín.',
+-                            textAlign: TextAlign.center,
+-                            style: TextStyle(
+-                              color: Color(0xFF888888),
+-                              fontSize: 14,
+-                              height: 1.4,
++                              fontWeight: FontWeight.w600,
+                             ),
+                           ),
++                          const SizedBox(width: 48), // C├ón bß║▒ng kh├┤ng gian
+                         ],
+                       ),
+                     ),
+ 
+-                    // DANH S├üCH THIß║╛T Bß╗è (Cuß╗Ön ─æ╞░ß╗úc)
++                    const SizedBox(height: 20),
++
++                    // 2. KHUNG Nß╗ÿI DUNG M├ÇU TRß║«NG BO G├ôC
+                     Expanded(
+                       child: Container(
+-                        color: Colors.white,
+-                        child: ListView.builder(
+-                          padding: const EdgeInsets.symmetric(
+-                            horizontal: 24,
+-                            vertical: 10,
+-                          ),
+-                          itemCount: devices.length,
+-                          itemBuilder: (context, index) {
+-                            return _buildDeviceItem(devices[index]);
+-                          },
++                        width: double.infinity,
++                        decoration: const BoxDecoration(
++                          color: Color(0xFFF8F9FA), // Nß╗ün x├ím nhß║ít
++                          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                         ),
+-                      ),
+-                    ),
+-
+-                    // PHß║ªN Cß║óNH B├üO V├Ç N├ÜT ─É─éNG XUß║ñT (D├¡nh ß╗ƒ d╞░ß╗¢i c├╣ng)
+-                    Container(
+-                      color: Colors.white,
+-                      padding: const EdgeInsets.only(
+-                        left: 24,
+-                        right: 24,
+-                        top: 10,
+-                        bottom: 40,
+-                      ),
+-                      child: Column(
+-                        children: [
+-                          // Hß╗Öp th├┤ng b├ío m├áu v├áng
+-                          Container(
+-                            padding: const EdgeInsets.all(16),
+-                            decoration: BoxDecoration(
+-                              color: const Color(0xFFFFFBEB), // V├áng rß║Ñt nhß║ít
+-                              borderRadius: BorderRadius.circular(12),
+-                            ),
+-                            child: Row(
+-                              crossAxisAlignment: CrossAxisAlignment.start,
+-                              children: const [
+-                                Icon(
+-                                  Icons.info_outline,
+-                                  color: Color(0xFFD97706),
+-                                  size: 20,
++                        child: Column(
++                          children: [
++                            // HEADER Cß╗ªA BOX (Icon khi├¬n bß║úo vß╗ç)
++                            Container(
++                              width: double.infinity,
++                              padding: const EdgeInsets.only(
++                                top: 40,
++                                bottom: 20,
++                                left: 24,
++                                right: 24,
++                              ),
++                              decoration: const BoxDecoration(
++                                color: Colors.white,
++                                borderRadius: BorderRadius.vertical(
++                                  top: Radius.circular(30),
+                                 ),
+-                                SizedBox(width: 12),
+-                                Expanded(
+-                                  child: Text(
+-                                    'Nß║┐u bß║ín thß║Ñy bß║Ñt kß╗│ thiß║┐t bß╗ï n├áo lß║í, h├úy ─æ─âng xuß║Ñt khß╗Åi thiß║┐t bß╗ï ─æ├│ ngay lß║¡p tß╗⌐c v├á ─æß╗òi mß║¡t khß║⌐u ─æß╗â bß║úo vß╗ç t├ái khoß║ún cß╗ºa bß║ín.',
++                              ),
++                              child: Column(
++                                children: [
++                                  Container(
++                                    padding: const EdgeInsets.all(16),
++                                    decoration: BoxDecoration(
++                                      color: const Color(0xFFE8F5F3), // Xanh ngß╗ìc nhß║ít
++                                      borderRadius: BorderRadius.circular(24),
++                                    ),
++                                    child: const Icon(
++                                      Icons.shield,
++                                      color: Color(0xFF438883),
++                                      size: 40,
++                                    ),
++                                  ),
++                                  const SizedBox(height: 16),
++                                  const Text(
++                                    'Quß║ún l├╜ phi├¬n ─æ─âng nhß║¡p',
++                                    style: TextStyle(
++                                      color: Color(0xFF333333),
++                                      fontSize: 18,
++                                      fontWeight: FontWeight.w700,
++                                    ),
++                                  ),
++                                  const SizedBox(height: 8),
++                                  const Text(
++                                    'Xem v├á quß║ún l├╜ tß║Ñt cß║ú c├íc thiß║┐t bß╗ï ─æang\ntruy cß║¡p v├áo t├ái khoß║ún cß╗ºa bß║ín.',
++                                    textAlign: TextAlign.center,
+                                     style: TextStyle(
+-                                      color: Color(0xFF92400E),
+-                                      fontSize: 13,
++                                      color: Color(0xFF888888),
++                                      fontSize: 14,
+                                       height: 1.4,
+                                     ),
+                                   ),
+-                                ),
+-                              ],
++                                ],
++                              ),
+                             ),
+-                          ),
+ 
+-                          const SizedBox(height: 20),
++                            // DANH S├üCH THIß║╛T Bß╗è (Cuß╗Ön ─æ╞░ß╗úc)
++                            Expanded(
++                              child: Container(
++                                color: Colors.white,
++                                child: streamSnapshot.connectionState == ConnectionState.waiting
++                                    ? const Center(child: CircularProgressIndicator(color: Color(0xFF438883)))
++                                    : ListView.builder(
++                                        padding: const EdgeInsets.symmetric(
++                                          horizontal: 24,
++                                          vertical: 10,
++                                        ),
++                                        itemCount: sessions.length,
++                                        itemBuilder: (context, index) {
++                                          final s = sessions[index];
++                                          
++                                          // Hiß╗ân thß╗ï thß╗¥i gian
++                                          String timeStr = '─Éang hoß║ít ─æß╗Öng';
++                                          final diff = DateTime.now().difference(s.lastActive);
++                                          if (diff.inDays > 0) timeStr = '${diff.inDays} ng├áy tr╞░ß╗¢c';
++                                          else if (diff.inHours > 0) timeStr = '${diff.inHours} giß╗¥ tr╞░ß╗¢c';
++                                          else if (diff.inMinutes > 0) timeStr = '${diff.inMinutes} ph├║t tr╞░ß╗¢c';
++                                          
++                                          return _buildDeviceItem(
++                                            name: s.deviceName,
++                                            type: s.deviceType,
++                                            location: s.location,
++                                            status: timeStr,
++                                            isCurrent: s.deviceName == localDeviceName, // So khß╗¢p xem c├│ phß║úi thiß║┐t bß╗ï ─æang mß╗ƒ app ko
++                                            onRemove: () {
++                                                FirestoreService().removeDeviceSession(s.id);
++                                            }
++                                          );
++                                        },
++                                      ),
++                              ),
++                            ),
+ 
+-                          // N├║t ─æ─âng xuß║Ñt tß║Ñt cß║ú
+-                          InkWell(
+-                            onTap: () {
+-                              // H├ánh ─æß╗Öng ─æ─âng xuß║Ñt
+-                            },
+-                            child: Container(
+-                              width: double.infinity,
+-                              padding: const EdgeInsets.symmetric(vertical: 16),
+-                              decoration: BoxDecoration(
+-                                color: const Color(0xFF4A9B7F), // M├áu xanh n├║t
+-                                borderRadius: BorderRadius.circular(16),
+-                                boxShadow: [
+-                                  BoxShadow(
+-                                    color: const Color(
+-                                      0xFF4A9B7F,
+-                                    ).withOpacity(0.3),
+-                                    blurRadius: 10,
+-                                    offset: const Offset(0, 4),
+-                                  ),
+-                                ],
++                            // N├ÜT ─É─éNG XUß║ñT CUß╗ÉI M├ÇN H├îNH
++                            Container(
++                              color: Colors.white,
++                              padding: const EdgeInsets.only(
++                                left: 24,
++                                right: 24,
++                                top: 10,
++                                bottom: 40,
+                               ),
+-                              child: Row(
+-                                mainAxisAlignment: MainAxisAlignment.center,
+-                                children: const [
+-                                  Icon(
+-                                    Icons.logout,
+-                                    color: Colors.white,
+-                                    size: 20,
++                              child: Column(
++                                children: [
++                                  // Hß╗Öp th├┤ng b├ío m├áu v├áng
++                                  Container(
++                                    padding: const EdgeInsets.all(16),
++                                    decoration: BoxDecoration(
++                                      color: const Color(0xFFFFFBEB), // V├áng rß║Ñt nhß║ít
++                                      borderRadius: BorderRadius.circular(12),
++                                    ),
++                                    child: Row(
++                                      crossAxisAlignment: CrossAxisAlignment.start,
++                                      children: const [
++                                        Icon(
++                                          Icons.info_outline,
++                                          color: Color(0xFFD97706),
++                                          size: 20,
++                                        ),
++                                        SizedBox(width: 12),
++                                        Expanded(
++                                          child: Text(
++                                            'Nß║┐u bß║ín thß║Ñy bß║Ñt kß╗│ thiß║┐t bß╗ï n├áo lß║í, h├úy ─æ─âng xuß║Ñt khß╗Åi thiß║┐t bß╗ï ─æ├│ ngay lß║¡p tß╗⌐c v├á ─æß╗òi mß║¡t khß║⌐u ─æß╗â bß║úo vß╗ç t├ái khoß║ún cß╗ºa bß║ín.',
++                                            style: TextStyle(
++                                              color: Color(0xFF92400E),
++                                              fontSize: 13,
++                                              height: 1.4,
++                                            ),
++                                          ),
++                                        ),
++                                      ],
++                                    ),
+                                   ),
+-                                  SizedBox(width: 8),
+-                                  Text(
+-                                    '─É─âng xuß║Ñt khß╗Åi tß║Ñt cß║ú thiß║┐t bß╗ï',
+-                                    style: TextStyle(
+-                                      color: Colors.white,
+-                                      fontSize: 16,
+-                                      fontWeight: FontWeight.w600,
++
++                                  const SizedBox(height: 20),
++
++                                  // N├║t ─æ─âng xuß║Ñt tß║Ñt cß║ú
++                                  InkWell(
++                                    onTap: () async {
++                                      // H├ánh ─æß╗Öng ─æ─âng xuß║Ñt
++                                      await AuthService().logout();
++                                      if (context.mounted) {
++                                        Navigator.of(context).popUntil((route) => route.isFirst);
++                                      }
++                                    },
++                                    child: Container(
++                                      width: double.infinity,
++                                      padding: const EdgeInsets.symmetric(vertical: 16),
++                                      decoration: BoxDecoration(
++                                        color: const Color(0xFF4A9B7F), // M├áu xanh n├║t
++                                        borderRadius: BorderRadius.circular(16),
++                                        boxShadow: [
++                                          BoxShadow(
++                                            color: const Color(
++                                              0xFF4A9B7F,
++                                            ).withOpacity(0.3),
++                                            blurRadius: 10,
++                                            offset: const Offset(0, 4),
++                                          ),
++                                        ],
++                                      ),
++                                      child: Row(
++                                        mainAxisAlignment: MainAxisAlignment.center,
++                                        children: const [
++                                          Icon(
++                                            Icons.logout,
++                                            color: Colors.white,
++                                            size: 20,
++                                          ),
++                                          SizedBox(width: 8),
++                                          Text(
++                                            '─É─âng xuß║Ñt khß╗Åi thiß║┐t bß╗ï n├áy', // Thay ─æß╗òi Title mß╗Öt ch├║t 
++                                            style: TextStyle(
++                                              color: Colors.white,
++                                              fontSize: 16,
++                                              fontWeight: FontWeight.w600,
++                                            ),
++                                          ),
++                                        ],
++                                      ),
+                                     ),
+                                   ),
+                                 ],
+                               ),
+                             ),
+-                          ),
+-                        ],
++                          ],
++                        ),
+                       ),
+                     ),
+                   ],
+                 ),
+               ),
+-            ),
+-          ],
+-        ),
+-      ),
++            );
++          },
++        );
++      },
+     );
+   }
+ 
+   // --- H├ÇM Tß║áO Tß╗¬NG D├ÆNG THIß║╛T Bß╗è ---
+-  Widget _buildDeviceItem(Map<String, dynamic> device) {
++  Widget _buildDeviceItem({
++      required String name, 
++      required String type, 
++      required String location, 
++      required String status, 
++      required bool isCurrent, 
++      required VoidCallback onRemove
++  }) {
+     IconData getDeviceIcon(String type) {
+       if (type == 'mobile') return Icons.phone_iphone;
+       if (type == 'laptop') return Icons.laptop_mac;
+@@ -271,7 +359,7 @@ class ActiveDevicesScreen extends StatelessWidget {
+               borderRadius: BorderRadius.circular(12),
+             ),
+             child: Icon(
+-              getDeviceIcon(device['type']),
++              getDeviceIcon(type),
+               color: const Color(0xFF438883),
+               size: 28,
+             ),
+@@ -286,7 +374,7 @@ class ActiveDevicesScreen extends StatelessWidget {
+                 Row(
+                   children: [
+                     Text(
+-                      device['name'],
++                      name,
+                       style: const TextStyle(
+                         color: Color(0xFF333333),
+                         fontSize: 16,
+@@ -295,7 +383,7 @@ class ActiveDevicesScreen extends StatelessWidget {
+                     ),
+                     const SizedBox(width: 8),
+                     // Nß║┐u l├á thiß║┐t bß╗ï HIß╗åN Tß║áI th├¼ th├¬m nh├ún xanh
+-                    if (device['isCurrent'] == true)
++                    if (isCurrent)
+                       Container(
+                         padding: const EdgeInsets.symmetric(
+                           horizontal: 8,
+@@ -318,7 +406,7 @@ class ActiveDevicesScreen extends StatelessWidget {
+                 ),
+                 const SizedBox(height: 4),
+                 Text(
+-                  '${device['location']} ┬╖ ${device['status']}',
++                  '$location ┬╖ $status',
+                   style: const TextStyle(
+                     color: Color(0xFF888888),
+                     fontSize: 13,
+@@ -328,13 +416,12 @@ class ActiveDevicesScreen extends StatelessWidget {
+             ),
+           ),
+ 
+-          // Icon 3 chß║Ñm (Menu t├╣y chß╗ìn)
+-          IconButton(
+-            icon: const Icon(Icons.more_horiz, color: Colors.grey),
+-            onPressed: () {
+-              // Mß╗ƒ popup ─æ─âng xuß║Ñt thiß║┐t bß╗ï n├áy
+-            },
+-          ),
++          // Icon th├╣ng r├íc thay cho 3 chß║Ñm ─æß╗â x├│a/─æ─âng xuß║Ñt thiß║┐t bß╗ï con
++          if (!isCurrent)
++            IconButton(
++              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
++              onPressed: onRemove,
++            ),
+         ],
+       ),
+     );
