@@ -20,7 +20,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   bool _isExpense = true;
   int _touchedIndex = -1;
 
-  final List<String> _timeFilters = ['Ngay', 'Tuan', 'Thang', 'Nam'];
+  final List<String> _timeFilters = ['Ngày', 'Tuần', 'Tháng', 'Năm'];
 
   @override
   void initState() {
@@ -31,7 +31,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -44,11 +44,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 children: [
                   const SizedBox(width: 40),
                   const Text(
-                    'Thong Ke',
-                    style: TextStyle(color: Color(0xFF222222), fontSize: 18, fontWeight: FontWeight.w600),
+                    'Thống kê',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.file_download_outlined, color: Color(0xFF222222), size: 24),
+                    icon: const Icon(Icons.file_download_outlined, size: 24),
                     onPressed: () => Navigator.push(context, PageTransitions.slideRight(const ExportReportScreen())),
                   ),
                 ],
@@ -78,7 +78,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       child: Text(
                         _timeFilters[index],
                         style: TextStyle(
-                          color: isSelected ? Colors.white : const Color(0xFF666666),
+                          color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
                           fontSize: 14,
                           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                         ),
@@ -220,14 +220,22 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           // === TOOLTIP KHI CHAM ===
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) => Colors.white,
+              getTooltipColor: (_) => Theme.of(context).brightness == Brightness.dark 
+                ? const Color(0xFF2E2E2E) 
+                : Colors.white,
               tooltipPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               tooltipBorder: BorderSide(color: const Color(0xFF438883).withOpacity(0.15), width: 1),
               getTooltipItems: (spots) {
                 return spots.map((spot) {
                   return LineTooltipItem(
                     _formatMoney(spot.y),
-                    const TextStyle(color: Color(0xFF438883), fontWeight: FontWeight.w600, fontSize: 13),
+                    TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.white 
+                        : const Color(0xFF438883), 
+                      fontWeight: FontWeight.w600, 
+                      fontSize: 13
+                    ),
                   );
                 }).toList();
               },
@@ -306,18 +314,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              _isExpense ? 'Chi Tieu Hang Dau' : 'Thu Nhap Hang Dau',
-              style: const TextStyle(color: Color(0xFF222222), fontSize: 18, fontWeight: FontWeight.w600),
+              _isExpense ? 'Chi Tiêu Hàng Đầu' : 'Thu Nhập Hàng Đầu',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
-            const Icon(Icons.swap_vert, color: Color(0xFF666666)),
+            const Icon(Icons.swap_vert),
           ],
         ),
         const SizedBox(height: 16),
 
         if (topList.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(40),
-            child: Center(child: Text('Chưa có dữ liệu', style: TextStyle(color: Color(0xFF999999), fontSize: 16))),
+          Padding(
+            padding: const EdgeInsets.all(40),
+            child: Center(child: Text('Chưa có dữ liệu', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 16))),
           )
         else
           ...topList.asMap().entries.map((entry) {
@@ -343,61 +351,79 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     required String amount,
     required bool isHighlight,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: isHighlight ? const Color(0xFF29756F) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: isHighlight
-            ? [BoxShadow(color: const Color(0xFF29756F).withOpacity(0.35), blurRadius: 20, offset: const Offset(0, 8))]
-            : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: isHighlight ? Colors.white.withOpacity(0.15) : const Color(0xFFF0F0F0),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: isHighlight ? Colors.white : const Color(0xFF555555), size: 24),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: isHighlight 
+              ? const Color(0xFF29756F) 
+              : (isDark ? const Color(0xFF2E2E2E) : Colors.white),
+            borderRadius: BorderRadius.circular(16),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: isHighlight ? Colors.white : const Color(0xFF222222),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: isHighlight 
+                    ? Colors.white.withOpacity(0.15) 
+                    : (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF0F6F5)),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  date,
-                  style: TextStyle(
-                    color: isHighlight ? Colors.white.withOpacity(0.7) : const Color(0xFF999999),
-                    fontSize: 13,
-                  ),
+                child: Icon(
+                  icon, 
+                  color: isHighlight 
+                    ? Colors.white 
+                    : (_isExpense ? const Color(0xFFF95B51) : const Color(0xFF24A869)),
+                  size: 28
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: isHighlight 
+                          ? Colors.white 
+                          : (isDark ? Colors.white : const Color(0xFF222222)),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      date,
+                      style: TextStyle(
+                        color: isHighlight 
+                          ? Colors.white.withOpacity(0.7) 
+                          : (isDark ? Colors.white70 : const Color(0xFF999999)),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                amount,
+                style: TextStyle(
+                  color: isHighlight 
+                    ? Colors.white 
+                    : (_isExpense ? const Color(0xFFF95B51) : const Color(0xFF24A869)),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
-          Text(
-            amount,
-            style: TextStyle(
-              color: isHighlight ? Colors.white : (_isExpense ? const Color(0xFFF95B51) : const Color(0xFF24A869)),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
+        );
+      }
     );
   }
 

@@ -10,7 +10,9 @@ class SecurityScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF438883), // Nền xanh lá mạ
+      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+        ? const Color(0xFF1E1E1E) 
+        : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -46,15 +48,13 @@ class SecurityScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // 2. KHUNG NỘI DUNG MÀU TRẮNG BO GÓC
+            // 2. KHUNG NỘI DUNG BO GÓC
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Color(
-                    0xFFF8F9FA,
-                  ), // Nền hơi xám nhạt để làm nổi bật các Card
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.only(
@@ -130,12 +130,12 @@ class SecurityScreen extends StatelessWidget {
                       const SizedBox(height: 30),
 
                       // TIÊU ĐỀ SECTION
-                      const Padding(
-                        padding: EdgeInsets.only(left: 4, bottom: 12),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4, bottom: 12),
                         child: Text(
                           'BẢO MẬT TÀI KHOẢN',
                           style: TextStyle(
-                            color: Color(0xFF888888),
+                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.5,
@@ -143,18 +143,13 @@ class SecurityScreen extends StatelessWidget {
                         ),
                       ),
 
-                      // DANH SÁCH CÁC TÙY CHỌN (Nằm trong 1 khối trắng)
+                      // DANH SÁCH CÁC TÙY CHỌN (Nằm trong 1 khối)
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).brightness == Brightness.dark 
+                            ? const Color(0xFF2E2E2E) 
+                            : Colors.white,
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
                         ),
                         child: Column(
                           children: [
@@ -215,77 +210,81 @@ class SecurityScreen extends StatelessWidget {
     );
   }
 
-  // ĐÃ CẬP NHẬT: Thêm tham số `required VoidCallback onTap`
   Widget _buildSecurityItem({
     required IconData icon,
     required String title,
     required String subtitle,
     required bool showDivider,
-    required VoidCallback onTap, // Nhận lệnh bấm từ bên ngoài truyền vào
+    required VoidCallback onTap,
   }) {
-    return Column(
-      children: [
-        InkWell(
-          onTap: onTap, // Sử dụng lệnh bấm ở đây
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Row(
-              children: [
-                // Icon nền xanh ngọc nhạt
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5F3), // Xanh ngọc rất nhạt
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: const Color(0xFF438883), size: 24),
-                ),
-                const SizedBox(width: 16),
-
-                // Chữ
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          color: Color(0xFF333333),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Column(
+          children: [
+            InkWell(
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Row(
+                  children: [
+                    // Icon nền xanh ngọc nhạt
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE8F5F3),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          color: Color(0xFF888888),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                      child: Icon(icon, color: const Color(0xFF438883), size: 24),
+                    ),
+                    const SizedBox(width: 16),
 
-                // Mũi tên phải
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  color: Colors.grey,
-                  size: 16,
+                    // Chữ
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              color: isDark ? Colors.white : const Color(0xFF333333),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            style: TextStyle(
+                              color: isDark ? Colors.white70 : const Color(0xFF888888),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Mũi tên phải
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      color: isDark ? Colors.white54 : Colors.grey,
+                      size: 16,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-        // Đường kẻ ngang mờ mờ giữa các dòng
-        if (showDivider)
-          Divider(
-            height: 1,
-            color: Colors.grey.shade200,
-            indent: 64,
-            endIndent: 16,
-          ),
-      ],
+            // Đường kẻ ngang mờ mờ giữa các dòng
+            if (showDivider)
+              Divider(
+                height: 1,
+                color: isDark ? const Color(0xFF3E3E3E) : Colors.grey.shade200,
+                indent: 64,
+                endIndent: 16,
+              ),
+          ],
+        );
+      }
     );
   }
 }

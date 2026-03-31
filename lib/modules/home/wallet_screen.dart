@@ -14,7 +14,9 @@ class WalletScreen extends StatelessWidget {
     final firestoreService = FirestoreService();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF438883),
+      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+        ? const Color(0xFF1E1E1E) 
+        : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -37,11 +39,14 @@ class WalletScreen extends StatelessWidget {
             ),
             const SizedBox(height: 30),
 
-            // NỘI DUNG TRẮNG
+            // NỘI DUNG
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor, 
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30))
+                ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.only(top: 40, bottom: 120),
                   child: Column(
@@ -52,9 +57,9 @@ class WalletScreen extends StatelessWidget {
                         builder: (context, snapshot) {
                           final balance = snapshot.data?.balance ?? 0;
                           return Column(children: [
-                            const Text('Tổng số dư', style: TextStyle(color: Color(0xFF666666), fontSize: 16)),
+                            Text('Tổng số dư', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 16)),
                             const SizedBox(height: 8),
-                            Text(HomeBody.formatCurrency(balance), style: const TextStyle(color: Color(0xFF222222), fontSize: 32, fontWeight: FontWeight.bold)),
+                            Text(HomeBody.formatCurrency(balance), style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 32, fontWeight: FontWeight.bold)),
                           ]);
                         },
                       ),
@@ -63,8 +68,13 @@ class WalletScreen extends StatelessWidget {
                       Container(
                         width: double.infinity, margin: const EdgeInsets.symmetric(horizontal: 24),
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                        decoration: BoxDecoration(color: const Color(0xFFF4F6F6), borderRadius: BorderRadius.circular(30)),
-                        child: const Text('Transactions', style: TextStyle(color: Color(0xFF666666), fontSize: 16, fontWeight: FontWeight.w600)),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).brightness == Brightness.dark 
+                            ? const Color(0xFF2E2E2E) 
+                            : const Color(0xFFF4F6F6), 
+                          borderRadius: BorderRadius.circular(30)
+                        ),
+                        child: Text('Transactions', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 16, fontWeight: FontWeight.w600)),
                       ),
                       const SizedBox(height: 20),
 
@@ -76,9 +86,9 @@ class WalletScreen extends StatelessWidget {
                           builder: (context, snapshot) {
                             final transactions = snapshot.data ?? [];
                             if (transactions.isEmpty) {
-                              return const Padding(
-                                padding: EdgeInsets.all(40),
-                                child: Text('Chưa có giao dịch nào', style: TextStyle(color: Color(0xFF999999), fontSize: 16)),
+                              return Padding(
+                                padding: const EdgeInsets.all(40),
+                                child: Text('Chưa có giao dịch nào', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 16)),
                               );
                             }
                             return Column(
@@ -126,14 +136,19 @@ class WalletScreen extends StatelessWidget {
         child: Row(children: [
           Container(
             width: 50, height: 50,
-            decoration: BoxDecoration(color: const Color(0xFFF0F6F5), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark 
+                ? const Color(0xFF2E2E2E) 
+                : const Color(0xFFF0F6F5), 
+              borderRadius: BorderRadius.circular(12)
+            ),
             child: Icon(icon, color: iconColor, size: 28),
           ),
           const SizedBox(width: 16),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(color: Color(0xFF222222), fontSize: 16, fontWeight: FontWeight.w600)),
+            Text(title, style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
-            Text(date, style: const TextStyle(color: Color(0xFF666666), fontSize: 13)),
+            Text(date, style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 13)),
           ])),
           Text(amount, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isIncome ? const Color(0xFF24A869) : const Color(0xFFF95B51))),
         ]),

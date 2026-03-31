@@ -19,8 +19,9 @@ class MessageDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFF438883), // Nền xanh lá mạ
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -58,16 +59,9 @@ class MessageDetailScreen extends StatelessWidget {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 10,
-                      offset: Offset(0, -5),
-                    ),
-                  ],
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: Column(
                   children: [
@@ -79,6 +73,76 @@ class MessageDetailScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // HEADER CỦA TIN NHẮN (Icon + Tiêu đề + Thời gian)
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    color: iconBgColor,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Icon(
+                                    icon,
+                                    color: Colors.white,
+                                    size: 30,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        title,
+                                        style: TextStyle(
+                                          color: isDark ? Colors.white : const Color(0xFF212121),
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.access_time,
+                                            size: 14,
+                                            color: isDark ? Colors.white54 : const Color(0xFFAAAAAA),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            time,
+                                            style: TextStyle(
+                                              color: isDark ? Colors.white54 : const Color(0xFFAAAAAA),
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 24),
+                            Divider(
+                              color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFEEEEEE),
+                              height: 1,
+                            ),
+                            const SizedBox(height: 24),
+
+                            // NỘI DUNG CHI TIẾT
+                            Text(
+                              fullMessage,
+                              style: TextStyle(
+                                color: isDark ? Colors.white : const Color(0xFF444444),
+                                fontSize: 16,
+                                height: 1.6, // Giãn dòng cho dễ đọc
+                              ),
+                            ),
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -160,14 +224,7 @@ class MessageDetailScreen extends StatelessWidget {
                         top: 16,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, -5),
-                          ),
-                        ],
+                        color: Theme.of(context).scaffoldBackgroundColor,
                       ),
                       child: InkWell(
                         onTap: () => Navigator.pop(context), // Đóng trang

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'modules/splash/splash_screen.dart';
 import 'modules/auth/login_screen.dart';
 import 'modules/auth/register_screen.dart';
 import 'modules/auth/verify_email_screen.dart';
+import 'services/theme_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,7 +17,16 @@ void main() async {
   await FirebaseAuth.instance.setSettings(
     appVerificationDisabledForTesting: true,
   );
-  runApp(const MyApp());
+  
+  final themeService = ThemeService();
+  await themeService.init();
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => themeService,
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -23,15 +34,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeService = Provider.of<ThemeService>(context);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'App Thu Chi',
-      theme: ThemeData(
-        primaryColor: const Color(0xFF438883),
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF438883)),
-        useMaterial3: true,
-      ),
-      home: SplashScreen(),
+      theme: themeService.lightTheme,
+      darkTheme: themeService.darkTheme,
+      themeMode: themeService.themeMode,
+      home: const SplashScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
@@ -42,4 +53,4 @@ class MyApp extends StatelessWidget {
       },
     );
   }
-}
+}

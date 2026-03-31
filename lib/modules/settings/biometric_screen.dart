@@ -41,8 +41,9 @@ class _BiometricScreenState extends State<BiometricScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Colors.white, // Nền chính của Scaffold là màu trắng
+      backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       body: Column(
         children: [
           // 1. PHẦN NỀN XANH BO CONG DƯỚI (Kết hợp AppBar và Icon to)
@@ -56,9 +57,9 @@ class _BiometricScreenState extends State<BiometricScreen> {
                 padding: const EdgeInsets.only(
                   bottom: 60,
                 ), // Chừa chỗ cho icon lòi ra
-                decoration: const BoxDecoration(
-                  color: Color(0xFF438883),
-                  borderRadius: BorderRadius.vertical(
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFF438883),
+                  borderRadius: const BorderRadius.vertical(
                     bottom: Radius.circular(50),
                   ), // Bo cong ở dưới
                 ),
@@ -105,15 +106,15 @@ class _BiometricScreenState extends State<BiometricScreen> {
                 bottom: 0,
                 child: Container(
                   padding: const EdgeInsets.all(8), // Viền trắng bao quanh
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
                     shape: BoxShape.circle,
                   ),
                   child: Container(
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5F0), // Nền xanh nhạt
+                      color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE8F5F0), // Nền xanh nhạt
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: const Color(0xFF4A9B7F),
@@ -141,15 +142,8 @@ class _BiometricScreenState extends State<BiometricScreen> {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
                     child: Column(
                       children: [
@@ -184,11 +178,11 @@ class _BiometricScreenState extends State<BiometricScreen> {
                   const SizedBox(height: 24),
 
                   // DÒNG CHỮ LƯU Ý
-                  const Text(
+                  Text(
                     'Dữ liệu sinh trắc học được bảo mật bởi hệ thống và không chia sẻ với bên thứ ba.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFFAAAAAA),
+                      color: isDark ? Colors.white54 : const Color(0xFFAAAAAA),
                       fontSize: 12,
                       height: 1.5,
                     ),
@@ -259,68 +253,73 @@ class _BiometricScreenState extends State<BiometricScreen> {
     required ValueChanged<bool>? onChanged,
     required bool showDivider,
   }) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              // Icon
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5F0),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: const Color(0xFF438883), size: 24),
-              ),
-              const SizedBox(width: 16),
-
-              // Chữ
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: Color(0xFF333333),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // Icon
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE8F5F0),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        color: Color(0xFF999999),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                    child: Icon(icon, color: const Color(0xFF438883), size: 24),
+                  ),
+                  const SizedBox(width: 16),
 
-              // Công tắc (Switch)
-              Switch(
-                value: value,
-                onChanged: onChanged,
-                activeColor: Colors.white,
-                activeTrackColor: const Color(0xFF4A9B7F),
-                inactiveThumbColor: Colors.white,
-                inactiveTrackColor: const Color(0xFFE0E0E0),
+                  // Chữ
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : const Color(0xFF333333),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            color: isDark ? Colors.white70 : const Color(0xFF999999),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Công tắc (Switch)
+                  Switch(
+                    value: value,
+                    onChanged: onChanged,
+                    activeColor: Colors.white,
+                    activeTrackColor: const Color(0xFF4A9B7F),
+                    inactiveThumbColor: Colors.white,
+                    inactiveTrackColor: const Color(0xFFE0E0E0),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-        if (showDivider)
-          Divider(
-            height: 1,
-            color: Colors.grey.shade200,
-            indent: 70,
-            endIndent: 16,
-          ),
-      ],
+            ),
+            if (showDivider)
+              Divider(
+                height: 1,
+                color: isDark ? const Color(0xFF3E3E3E) : Colors.grey.shade200,
+                indent: 70,
+                endIndent: 16,
+              ),
+          ],
+        );
+      }
     );
   }
 }

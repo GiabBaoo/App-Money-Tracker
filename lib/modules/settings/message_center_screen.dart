@@ -24,7 +24,9 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF438883),
+      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+        ? const Color(0xFF1E1E1E) 
+        : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -73,16 +75,9 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 10,
-                      offset: Offset(0, -5),
-                    ),
-                  ],
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: StreamBuilder<List<MessageModel>>(
                   stream: _messagesStream,
@@ -202,25 +197,30 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
   }
 
   Widget _buildTimeHeader(String title) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF8F8F8),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
-      ),
-      child: Text(
-        title,
-        style: const TextStyle(
-          color: Color(0xFF9E9E9E),
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-        ),
-      ),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF8F8F8),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(30),
+              topRight: Radius.circular(30),
+            ),
+          ),
+          child: Text(
+            title,
+            style: TextStyle(
+              color: isDark ? Colors.white54 : const Color(0xFF9E9E9E),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
+        );
+      }
     );
   }
 
@@ -235,6 +235,7 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
     required String time,
     required bool isUnread,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: () {
         // MỞ TRANG CHI TIẾT VÀ TRUYỀN DỮ LIỆU SANG ĐÓ
@@ -274,7 +275,7 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                   Text(
                     title,
                     style: TextStyle(
-                      color: const Color(0xFF212121),
+                      color: isDark ? Colors.white : const Color(0xFF212121),
                       fontSize: 16,
                       fontWeight: isUnread ? FontWeight.w600 : FontWeight.w400,
                     ),
@@ -285,7 +286,7 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: const Color(0xFF757575),
+                      color: isDark ? Colors.white70 : const Color(0xFF757575),
                       fontSize: 14,
                       height: 1.4,
                       fontWeight: isUnread ? FontWeight.w500 : FontWeight.w400,
@@ -299,7 +300,10 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
 
             Text(
               time,
-              style: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 12),
+              style: TextStyle(
+                color: isDark ? Colors.white54 : const Color(0xFFAAAAAA),
+                fontSize: 12,
+              ),
             ),
           ],
         ),
@@ -308,11 +312,15 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
   }
 
   Widget _buildDivider() {
-    return const Divider(
-      height: 1,
-      color: Color(0xFFEEEEEE),
-      indent: 84,
-      endIndent: 20,
+    return Builder(
+      builder: (context) => Divider(
+        height: 1,
+        color: Theme.of(context).brightness == Brightness.dark 
+          ? const Color(0xFF3E3E3E) 
+          : const Color(0xFFEEEEEE),
+        indent: 84,
+        endIndent: 20,
+      ),
     );
   }
 }

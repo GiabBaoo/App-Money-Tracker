@@ -6,7 +6,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF438883), // Nền xanh lá mạ
+      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+        ? const Color(0xFF1E1E1E) 
+        : const Color(0xFF438883), // Nền xanh lá mạ
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -44,9 +46,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white, // Nền trắng toàn bộ
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor, // Nền trắng toàn bộ
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 // NỘI DUNG CÓ THỂ CUỘN (Đã bỏ khối Expanded và Column bọc ngoài thừa thãi)
                 child: SingleChildScrollView(
@@ -60,19 +62,19 @@ class PrivacyPolicyScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Lời chào và cam kết
-                      const Text(
+                      Text(
                         'Sự riêng tư của bạn là ưu tiên hàng đầu',
                         style: TextStyle(
-                          color: Color(0xFF333333),
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 12),
-                      const Text(
+                      Text(
                         'Chào mừng bạn đến với ứng dụng của chúng tôi. Chúng tôi cam kết bảo vệ thông tin cá nhân và quyền riêng tư của bạn một cách tuyệt đối theo các tiêu chuẩn bảo mật hiện đại nhất.',
                         style: TextStyle(
-                          color: Color(0xFF666666),
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                           fontSize: 15,
                           height: 1.5,
                         ),
@@ -87,12 +89,14 @@ class PrivacyPolicyScreen extends StatelessWidget {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE8F5F0), // Xanh ngọc nhạt
+                          color: Theme.of(context).brightness == Brightness.dark 
+                            ? const Color(0xFF3E3E3E) 
+                            : const Color(0xFFE8F5F0), // Xanh ngọc nhạt
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
+                          children: [
                             Icon(
                               Icons.calendar_today,
                               color: Color(0xFF4A9B7F),
@@ -148,71 +152,78 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       const SizedBox(height: 10),
 
                       // HỘP LIÊN HỆ HỖ TRỢ
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE5E7EB)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Bạn có câu hỏi?',
-                              style: TextStyle(
-                                color: Color(0xFF333333),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                      Builder(
+                        builder: (context) {
+                          final isDark = Theme.of(context).brightness == Brightness.dark;
+                          return Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE5E7EB),
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Nếu bạn có bất kỳ thắc mắc nào về Chính sách bảo mật này, xin liên hệ với chúng tôi.',
-                              style: TextStyle(
-                                color: Color(0xFF666666),
-                                fontSize: 14,
-                                height: 1.4,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            InkWell(
-                              onTap: () {
-                                // TODO: Mở trang liên hệ
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Bạn có câu hỏi?',
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white : const Color(0xFF333333),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
-                                decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFFE8F5F0,
-                                  ), // Xanh ngọc nhạt
-                                  borderRadius: BorderRadius.circular(8),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Nếu bạn có bất kỳ thắc mắc nào về Chính sách bảo mật này, xin liên hệ với chúng tôi.',
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white70 : const Color(0xFF666666),
+                                    fontSize: 14,
+                                    height: 1.4,
+                                  ),
                                 ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
-                                    Icon(
-                                      Icons.support_agent,
-                                      color: Color(0xFF4A9B7F),
-                                      size: 20,
+                                const SizedBox(height: 16),
+                                InkWell(
+                                  onTap: () {
+                                    // TODO: Mở trang liên hệ
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
                                     ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Liên hệ hỗ trợ',
-                                      style: TextStyle(
-                                        color: Color(0xFF4A9B7F),
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF3E3E3E) : const Color(
+                                        0xFFE8F5F0,
+                                      ), // Xanh ngọc nhạt
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
-                                  ],
+                                    child: const Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.support_agent,
+                                          color: Color(0xFF4A9B7F),
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Liên hệ hỗ trợ',
+                                          style: TextStyle(
+                                            color: Color(0xFF4A9B7F),
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
+                          );
+                        }
                       ),
                     ],
                   ),
@@ -231,56 +242,63 @@ class PrivacyPolicyScreen extends StatelessWidget {
     required String title,
     required String content,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        shape: const Border(),
-        leading: Container(
-          width: 40,
-          height: 40,
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
-            color: const Color(0xFFE8F5F0),
-            borderRadius: BorderRadius.circular(8),
+            color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE5E7EB),
+            ),
           ),
-          child: Center(
-            child: Text(
-              step,
-              style: const TextStyle(
-                color: Color(0xFF4A9B7F),
+          child: ExpansionTile(
+            tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            shape: const Border(),
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE8F5F0),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  step,
+                  style: const TextStyle(
+                    color: Color(0xFF4A9B7F),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            title: Text(
+              title,
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF333333),
                 fontSize: 16,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: Color(0xFF333333),
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 72, right: 16, bottom: 16),
-            child: Text(
-              content,
-              style: const TextStyle(
-                color: Color(0xFF666666),
-                fontSize: 14,
-                height: 1.5,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 72, right: 16, bottom: 16),
+                child: Text(
+                  content,
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : const Color(0xFF666666),
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      }
     );
   }
 }

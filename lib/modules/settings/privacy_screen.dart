@@ -10,7 +10,9 @@ class PrivacyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF438883), // Nền xanh lá mạ
+      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+        ? const Color(0xFF1E1E1E) 
+        : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -48,9 +50,9 @@ class PrivacyScreen extends StatelessWidget {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF8F9FA), // Nền xám nhạt
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.only(
@@ -63,12 +65,12 @@ class PrivacyScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Tiêu đề khối
-                      const Padding(
-                        padding: EdgeInsets.only(left: 4, bottom: 12),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4, bottom: 12),
                         child: Text(
                           'Quản lý dữ liệu',
                           style: TextStyle(
-                            color: Color(0xFF888888),
+                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
@@ -78,15 +80,10 @@ class PrivacyScreen extends StatelessWidget {
                       // Hộp chứa các cài đặt
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).brightness == Brightness.dark 
+                            ? const Color(0xFF2E2E2E) 
+                            : Colors.white,
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
                         ),
                         child: Column(
                           children: [
@@ -173,71 +170,76 @@ class PrivacyScreen extends StatelessWidget {
     required bool showDivider,
     required VoidCallback onTap,
   }) {
-    return Column(
-      children: [
-        InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Row(
-              children: [
-                // Icon
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: iconBgColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: iconColor, size: 24),
-                ),
-                const SizedBox(width: 16),
-
-                // Nội dung
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          color: titleColor ?? const Color(0xFF333333),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Column(
+          children: [
+            InkWell(
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Row(
+                  children: [
+                    // Icon
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF3E3E3E) : iconBgColor,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          color: Color(0xFF888888),
-                          fontSize: 13,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                      child: Icon(icon, color: iconColor, size: 24),
+                    ),
+                    const SizedBox(width: 16),
 
-                // Mũi tên điều hướng
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  color: Colors.grey,
-                  size: 16,
+                    // Nội dung
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: TextStyle(
+                              color: titleColor ?? (isDark ? Colors.white : const Color(0xFF333333)),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            style: TextStyle(
+                              color: isDark ? Colors.white70 : const Color(0xFF888888),
+                              fontSize: 13,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Mũi tên điều hướng
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      color: isDark ? Colors.white54 : Colors.grey,
+                      size: 16,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
 
-        // Kẻ ngang
-        if (showDivider)
-          Divider(
-            height: 1,
-            color: Colors.grey.shade200,
-            indent: 76,
-            endIndent: 16,
-          ),
-      ],
+            // Kẻ ngang
+            if (showDivider)
+              Divider(
+                height: 1,
+                color: isDark ? const Color(0xFF3E3E3E) : Colors.grey.shade200,
+                indent: 76,
+                endIndent: 16,
+              ),
+          ],
+        );
+      }
     );
   }
 }

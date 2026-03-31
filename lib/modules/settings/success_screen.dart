@@ -18,8 +18,10 @@ class SuccessScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: const Color(0xFF438883),
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -61,9 +63,9 @@ class SuccessScreen extends StatelessWidget {
                   horizontal: 24,
                   vertical: 40,
                 ),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -72,8 +74,8 @@ class SuccessScreen extends StatelessWidget {
                     Container(
                       width: 100,
                       height: 100,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFE8F7F0),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFE8F7F0),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -98,8 +100,8 @@ class SuccessScreen extends StatelessWidget {
                     Text(
                       successTitle,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Color(0xFF333333),
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                       ),
@@ -110,8 +112,8 @@ class SuccessScreen extends StatelessWidget {
                     Text(
                       successMessage,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Color(0xFF666666),
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                         fontSize: 16,
                         height: 1.4,
                       ),

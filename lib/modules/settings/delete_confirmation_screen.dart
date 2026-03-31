@@ -8,7 +8,9 @@ class DeleteConfirmationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF438883),
+      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+        ? const Color(0xFF1E1E1E) 
+        : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -45,9 +47,9 @@ class DeleteConfirmationScreen extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -55,8 +57,10 @@ class DeleteConfirmationScreen extends StatelessWidget {
                     Container(
                       width: 100,
                       height: 100,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFEE2E2),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark 
+                          ? const Color(0xFF3E2E2E) 
+                          : const Color(0xFFFEE2E2),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -78,11 +82,11 @@ class DeleteConfirmationScreen extends StatelessWidget {
 
                     const SizedBox(height: 30),
 
-                    const Text(
+                    Text(
                       'Bạn có chắc chắn muốn xóa?',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Color(0xFF333333),
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                       ),
@@ -90,11 +94,11 @@ class DeleteConfirmationScreen extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
-                    const Text(
+                    Text(
                       'Sau khi xóa, toàn bộ dữ liệu, giao dịch và thông tin cá nhân của bạn sẽ bị mất vĩnh viễn. Hành động này không thể hoàn tác.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Color(0xFF666666),
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                         fontSize: 15,
                         height: 1.5,
                       ),
@@ -140,14 +144,16 @@ class DeleteConfirmationScreen extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF3F4F6),
+                          color: Theme.of(context).brightness == Brightness.dark 
+                            ? const Color(0xFF2E2E2E) 
+                            : const Color(0xFFF3F4F6),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
                             'Hủy bỏ',
                             style: TextStyle(
-                              color: Color(0xFF333333),
+                              color: Theme.of(context).textTheme.bodyLarge?.color,
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),

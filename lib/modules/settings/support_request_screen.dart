@@ -39,7 +39,9 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF438883), // Nền xanh lá mạ
+      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+        ? const Color(0xFF1E1E1E) 
+        : const Color(0xFF438883), // Nền xanh lá mạ
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -77,35 +79,28 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 10,
-                      offset: Offset(0, -5),
-                    ),
-                  ],
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Chúng tôi có thể giúp gì cho bạn?',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Vui lòng mô tả chi tiết vấn đề bạn đang gặp phải, đội ngũ CSKH sẽ phản hồi trong thời gian sớm nhất.',
                         style: TextStyle(
-                          color: Color(0xFF666666),
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                           fontSize: 15,
                           height: 1.5,
                         ),
@@ -267,14 +262,16 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
 
   // Hàm phụ tạo Label cho gọn
   Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8, left: 4),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Color(0xFF6B7280),
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
+    return Builder(
+      builder: (context) => Padding(
+        padding: const EdgeInsets.only(bottom: 8, left: 4),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -282,15 +279,21 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
 
   // Hàm phụ tạo khung Input viền xanh cho đồng bộ
   InputDecoration _buildInputDecoration({String? hintText}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecoration(
       hintText: hintText,
-      hintStyle: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 15),
+      hintStyle: TextStyle(
+        color: isDark ? Colors.white38 : const Color(0xFFAAAAAA),
+        fontSize: 15,
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       filled: true,
-      fillColor: const Color(0xFFF9FAFB), // Nền xám cực nhạt
+      fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF9FAFB), // Nền xám cực nhạt
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        borderSide: BorderSide(
+          color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE5E7EB),
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

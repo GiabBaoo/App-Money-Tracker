@@ -42,8 +42,10 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: const Color(0xFF438883), // Nền xanh lá mạ
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -79,39 +81,32 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
 
             const SizedBox(height: 20),
 
-            // 2. KHUNG NỘI DUNG TRẮNG
+            // 2. KHUNG NỘI DUNG
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 10,
-                      offset: Offset(0, -5),
-                    ),
-                  ],
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Nhập mật khẩu hiện tại',
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Vui lòng nhập mật khẩu bạn đang sử dụng để xác minh danh tính trước khi đổi mật khẩu mới.',
                         style: TextStyle(
-                          color: Color(0xFF666666),
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                           fontSize: 14,
                           height: 1.5,
                         ),
@@ -119,12 +114,12 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
 
                       const SizedBox(height: 40),
 
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 8, left: 4),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8, left: 4),
                         child: Text(
                           'Mật khẩu hiện tại',
                           style: TextStyle(
-                            color: Color(0xFF666666),
+                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -133,21 +128,26 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
-                        style: const TextStyle(fontSize: 15),
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Nhập mật khẩu hiện tại',
                           hintStyle: TextStyle(
-                            color: Colors.black.withOpacity(0.3),
+                            color: isDark ? Colors.white38 : Colors.black.withOpacity(0.3),
                             fontSize: 14,
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 16,
                           ),
+                          filled: true,
+                          fillColor: isDark ? const Color(0xFF2E2E2E) : Colors.white,
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: Color(0xFFDDDDDD),
+                            borderSide: BorderSide(
+                              color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFDDDDDD),
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
@@ -162,7 +162,7 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                               _obscurePassword
                                   ? Icons.visibility_off
                                   : Icons.visibility,
-                              color: Colors.grey,
+                              color: isDark ? Colors.white54 : Colors.grey,
                             ),
                             onPressed: () => setState(
                               () => _obscurePassword = !_obscurePassword,
@@ -184,13 +184,6 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                               colors: [Color(0xFF68AEA9), Color(0xFF3E8681)],
                             ),
                             borderRadius: BorderRadius.circular(40),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF3E8681).withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
                           ),
                           child: const Center(
                             child: Text(

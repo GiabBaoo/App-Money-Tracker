@@ -9,6 +9,8 @@ import '../auth/fingerprint_unlock_screen.dart';
 import '../../services/biometric_service.dart';
 
 class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }

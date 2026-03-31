@@ -14,7 +14,7 @@ class AllTransactionsScreen extends StatelessWidget {
     final firestoreService = FirestoreService();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -22,9 +22,9 @@ class AllTransactionsScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
               child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                IconButton(icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF222222), size: 20), onPressed: () => Navigator.pop(context)),
-                const Text('Lịch sử giao dịch', style: TextStyle(color: Color(0xFF222222), fontSize: 18, fontWeight: FontWeight.w600)),
-                IconButton(icon: const Icon(Icons.filter_list, color: Color(0xFF222222), size: 24), onPressed: () {}),
+                IconButton(icon: const Icon(Icons.arrow_back_ios, size: 20), onPressed: () => Navigator.pop(context)),
+                const Text('Lịch sử giao dịch', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                IconButton(icon: const Icon(Icons.filter_list, size: 24), onPressed: () {}),
               ]),
             ),
             const SizedBox(height: 10),
@@ -41,9 +41,9 @@ class AllTransactionsScreen extends StatelessWidget {
                   final transactions = snapshot.data ?? [];
                   if (transactions.isEmpty) {
                     return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Icon(Icons.receipt_long, size: 60, color: Colors.grey.shade300),
+                      Icon(Icons.receipt_long, size: 60, color: Theme.of(context).iconTheme.color?.withOpacity(0.3)),
                       const SizedBox(height: 16),
-                      const Text('Chưa có giao dịch nào', style: TextStyle(color: Color(0xFF999999), fontSize: 16)),
+                      Text('Chưa có giao dịch nào', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 16)),
                     ]));
                   }
 
@@ -93,9 +93,11 @@ class AllTransactionsScreen extends StatelessWidget {
   }
 
   Widget _buildDateHeader(String date) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16, top: 8),
-      child: Text(date, style: const TextStyle(color: Color(0xFF666666), fontSize: 16, fontWeight: FontWeight.w600)),
+    return Builder(
+      builder: (context) => Padding(
+        padding: const EdgeInsets.only(bottom: 16, top: 8),
+        child: Text(date, style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 16, fontWeight: FontWeight.w600)),
+      ),
     );
   }
 
@@ -117,14 +119,19 @@ class AllTransactionsScreen extends StatelessWidget {
         child: Row(children: [
           Container(
             width: 50, height: 50,
-            decoration: BoxDecoration(color: const Color(0xFFF0F6F5), borderRadius: BorderRadius.circular(12)),
-            child: Icon(icon, color: const Color(0xFF438883), size: 24),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark 
+                ? const Color(0xFF2E2E2E) 
+                : const Color(0xFFF0F6F5), 
+              borderRadius: BorderRadius.circular(12)
+            ),
+            child: Icon(icon, color: isIncome ? const Color(0xFF24A869) : const Color(0xFFF95B51), size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF222222))),
+            Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Theme.of(context).textTheme.bodyLarge?.color)),
             const SizedBox(height: 4),
-            Text(date, style: const TextStyle(fontSize: 13, color: Color(0xFF666666))),
+            Text(date, style: TextStyle(fontSize: 13, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6))),
           ])),
           Text(amount, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isIncome ? const Color(0xFF24A869) : const Color(0xFFF95B51))),
         ]),

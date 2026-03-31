@@ -52,7 +52,9 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF438883),
+      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+        ? const Color(0xFF1E1E1E) 
+        : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -88,9 +90,9 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.only(
@@ -102,19 +104,19 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Nhập mật khẩu',
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
                         ),
                       ),
                       const SizedBox(height: 12),
-                      const Text(
+                      Text(
                         'Vui lòng nhập mật khẩu của bạn để xác nhận hành động xóa tài khoản.',
                         style: TextStyle(
-                          color: Color(0xFF666666),
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                           fontSize: 15,
                           height: 1.5,
                         ),
@@ -122,12 +124,12 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
 
                       const SizedBox(height: 30),
 
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 8, left: 4),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8, left: 4),
                         child: Text(
                           'Mật khẩu',
                           style: TextStyle(
-                            color: Color(0xFF6B7280),
+                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -136,17 +138,28 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
+                        style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
                         decoration: InputDecoration(
                           hintText: 'Nhập mật khẩu của bạn',
-                          hintStyle: const TextStyle(color: Color(0xFFAAAAAA)),
+                          hintStyle: TextStyle(
+                            color: Theme.of(context).brightness == Brightness.dark 
+                              ? Colors.white38 
+                              : const Color(0xFFAAAAAA),
+                          ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 16,
                           ),
+                          filled: true,
+                          fillColor: Theme.of(context).brightness == Brightness.dark 
+                            ? const Color(0xFF2E2E2E) 
+                            : Colors.white,
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Color(0xFFE5E7EB),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).brightness == Brightness.dark 
+                                ? const Color(0xFF3E3E3E) 
+                                : const Color(0xFFE5E7EB),
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(

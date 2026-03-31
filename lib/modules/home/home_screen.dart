@@ -32,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: _pages[_selectedIndex],
       floatingActionButton: SizedBox(
         width: 65,
@@ -50,19 +50,61 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,
-        color: Colors.white,
+        color: Theme.of(context).brightness == Brightness.dark 
+          ? const Color(0xFF1E1E1E) 
+          : Colors.white,
         child: SizedBox(
           height: 75,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                MaterialButton(minWidth: 50, onPressed: () => setState(() => _selectedIndex = 0), child: Icon(Icons.home_filled, size: 32, color: _selectedIndex == 0 ? const Color(0xFF438883) : Colors.grey)),
-                MaterialButton(minWidth: 50, onPressed: () => setState(() => _selectedIndex = 1), child: Icon(Icons.bar_chart, size: 32, color: _selectedIndex == 1 ? const Color(0xFF438883) : Colors.grey)),
+                MaterialButton(
+                  minWidth: 50, 
+                  onPressed: () => setState(() => _selectedIndex = 0), 
+                  child: Icon(
+                    Icons.home_filled, 
+                    size: 32, 
+                    color: _selectedIndex == 0 
+                      ? const Color(0xFF438883) 
+                      : (Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade600 : Colors.grey)
+                  )
+                ),
+                MaterialButton(
+                  minWidth: 50, 
+                  onPressed: () => setState(() => _selectedIndex = 1), 
+                  child: Icon(
+                    Icons.bar_chart, 
+                    size: 32, 
+                    color: _selectedIndex == 1 
+                      ? const Color(0xFF438883) 
+                      : (Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade600 : Colors.grey)
+                  )
+                ),
               ]),
               Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                MaterialButton(minWidth: 50, onPressed: () => setState(() => _selectedIndex = 2), child: Icon(Icons.account_balance_wallet, size: 32, color: _selectedIndex == 2 ? const Color(0xFF438883) : Colors.grey)),
-                MaterialButton(minWidth: 50, onPressed: () => setState(() => _selectedIndex = 3), child: Icon(Icons.person, size: 32, color: _selectedIndex == 3 ? const Color(0xFF438883) : Colors.grey)),
+                MaterialButton(
+                  minWidth: 50, 
+                  onPressed: () => setState(() => _selectedIndex = 2), 
+                  child: Icon(
+                    Icons.account_balance_wallet, 
+                    size: 32, 
+                    color: _selectedIndex == 2 
+                      ? const Color(0xFF438883) 
+                      : (Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade600 : Colors.grey)
+                  )
+                ),
+                MaterialButton(
+                  minWidth: 50, 
+                  onPressed: () => setState(() => _selectedIndex = 3), 
+                  child: Icon(
+                    Icons.person, 
+                    size: 32, 
+                    color: _selectedIndex == 3 
+                      ? const Color(0xFF438883) 
+                      : (Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade600 : Colors.grey)
+                  )
+                ),
               ]),
             ],
           ),
@@ -109,9 +151,11 @@ class HomeBody extends StatelessWidget {
       children: [
         Container(
           height: 280,
-          decoration: const BoxDecoration(
-            color: Color(0xFF438883),
-            borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark 
+              ? const Color(0xFF1E1E1E) 
+              : const Color(0xFF438883),
+            borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
           ),
         ),
         SafeArea(
@@ -124,7 +168,8 @@ class HomeBody extends StatelessWidget {
                     final user = snapshot.data;
                     final greeting = _getGreeting();
                     final name = user?.name ?? 'Người dùng';
-                    return _buildHeader(context, greeting, name);
+                    final avatarUrl = user?.avatarUrl ?? '';
+                    return _buildHeader(context, greeting, name, avatarUrl);
                   },
                 ),
                 const SizedBox(height: 20),
@@ -160,17 +205,39 @@ class HomeBody extends StatelessWidget {
     return 'Chào buổi tối';
   }
 
-  Widget _buildHeader(BuildContext context, String greeting, String name) {
+  Widget _buildHeader(BuildContext context, String greeting, String name, String avatarUrl) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(greeting, style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 4),
-            Text(name, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600)),
-          ]),
+          Row(
+            children: [
+              // Avatar
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                  ? const Color(0xFF3E3E3E) 
+                  : Colors.white,
+                backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                child: avatarUrl.isEmpty
+                  ? Icon(
+                      Icons.person,
+                      size: 28,
+                      color: Theme.of(context).brightness == Brightness.dark 
+                        ? Colors.white38 
+                        : const Color(0xFF438883),
+                    )
+                  : null,
+              ),
+              const SizedBox(width: 12),
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(greeting, style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 4),
+                Text(name, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600)),
+              ]),
+            ],
+          ),
           GestureDetector(
             onTap: () => Navigator.push(context, PageTransitions.slideRight(const NotificationScreen())),
             child: Container(
@@ -185,33 +252,44 @@ class HomeBody extends StatelessWidget {
   }
 
   Widget _buildBalanceCard(double balance, double income, double expense) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2E7E78),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: const Color(0xFF2E7E78).withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 8))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: const [
-            Text('Tổng số dư', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-            Icon(Icons.more_horiz, color: Colors.white),
-          ]),
-          const SizedBox(height: 8),
-          Text(formatCurrency(balance), style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 25),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFF2E7E78),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [BoxShadow(
+              color: isDark 
+                ? Colors.black.withOpacity(0.3) 
+                : const Color(0xFF2E7E78).withOpacity(0.4), 
+              blurRadius: 15, 
+              offset: const Offset(0, 8)
+            )],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildIncomeExpenseColumn('Thu nhập', formatCurrency(income), Icons.arrow_downward),
-              _buildIncomeExpenseColumn('Chi phí', formatCurrency(expense), Icons.arrow_upward),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: const [
+                Text('Tổng số dư', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                Icon(Icons.more_horiz, color: Colors.white),
+              ]),
+              const SizedBox(height: 8),
+              Text(formatCurrency(balance), style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 25),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildIncomeExpenseColumn('Thu nhập', formatCurrency(income), Icons.arrow_downward),
+                  _buildIncomeExpenseColumn('Chi phí', formatCurrency(expense), Icons.arrow_upward),
+                ],
+              ),
             ],
           ),
-        ],
-      ),
+        );
+      }
     );
   }
 
@@ -240,10 +318,10 @@ class HomeBody extends StatelessWidget {
       child: Column(
         children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('Lịch sử giao dịch', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF222222))),
+            Text('Lịch sử giao dịch', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
             GestureDetector(
               onTap: () => Navigator.push(context, PageTransitions.slideRight(const AllTransactionsScreen())),
-              child: const Text('Xem tất cả', style: TextStyle(fontSize: 14, color: Color(0xFF666666))),
+              child: Text('Xem tất cả', style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6))),
             ),
           ]),
           const SizedBox(height: 20),
@@ -251,11 +329,11 @@ class HomeBody extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(40),
               child: Column(children: [
-                Icon(Icons.receipt_long, size: 60, color: Colors.grey.shade300),
+                Icon(Icons.receipt_long, size: 60, color: Theme.of(context).iconTheme.color?.withOpacity(0.3)),
                 const SizedBox(height: 16),
-                const Text('Chưa có giao dịch nào', style: TextStyle(color: Color(0xFF999999), fontSize: 16)),
+                Text('Chưa có giao dịch nào', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 16)),
                 const SizedBox(height: 8),
-                const Text('Bấm nút + để thêm giao dịch đầu tiên', style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 14)),
+                Text('Bấm nút + để thêm giao dịch đầu tiên', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4), fontSize: 14)),
               ]),
             )
           else
@@ -303,15 +381,20 @@ class HomeBody extends StatelessWidget {
             Container(
               width: 50,
               height: 50,
-              decoration: BoxDecoration(color: const Color(0xFFF0F6F5), borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: const Color(0xFF438883), size: 24),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark 
+                  ? const Color(0xFF2E2E2E) 
+                  : const Color(0xFFF0F6F5), 
+                borderRadius: BorderRadius.circular(12)
+              ),
+              child: Icon(icon, color: isIncome ? const Color(0xFF24A869) : const Color(0xFFF95B51), size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Theme.of(context).textTheme.bodyLarge?.color)),
               const SizedBox(height: 4),
-              Text(date, style: const TextStyle(fontSize: 13, color: Color(0xFF666666))),
+              Text(date, style: TextStyle(fontSize: 13, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6))),
             ])),
             Text(amount, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isIncome ? const Color(0xFF24A869) : const Color(0xFFF95B51))),
           ],

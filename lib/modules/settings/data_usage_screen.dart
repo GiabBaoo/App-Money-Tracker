@@ -303,7 +303,9 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
         }
 
         return Scaffold(
-          backgroundColor: const Color(0xFF438883),
+          backgroundColor: Theme.of(context).brightness == Brightness.dark 
+            ? const Color(0xFF1E1E1E) 
+            : const Color(0xFF438883),
           body: SafeArea(
             bottom: false,
             child: Column(
@@ -340,9 +342,9 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
                 Expanded(
                   child: Container(
                     width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF8F9FA),
-                      borderRadius: BorderRadius.vertical(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(30),
                       ),
                     ),
@@ -356,12 +358,12 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Padding(
-                            padding: EdgeInsets.only(left: 4, bottom: 12),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4, bottom: 12),
                             child: Text(
                               'DỮ LIỆU ĐƯỢC THU THẬP',
                               style: TextStyle(
-                                color: Color(0xFF888888),
+                                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 0.5,
@@ -370,15 +372,10 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
                           ),
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Theme.of(context).brightness == Brightness.dark 
+                                ? const Color(0xFF2E2E2E) 
+                                : Colors.white,
                               borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
                             ),
                             child: Column(
                               children: [
@@ -398,58 +395,63 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
                             ),
                           ),
                           const SizedBox(height: 30),
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF0F7F5),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: const Color(0xFFCCFEEB),
-                              ),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.verified_user,
-                                    color: Color(0xFF4A9B7F),
-                                    size: 24,
+                          Builder(
+                            builder: (context) {
+                              final isDark = Theme.of(context).brightness == Brightness.dark;
+                              return Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF0F7F5),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFCCFEEB),
                                   ),
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: const [
-                                      Text(
-                                        'Cam kết bảo mật',
-                                        style: TextStyle(
-                                          color: Color(0xFF333333),
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: isDark ? const Color(0xFF3E3E3E) : Colors.white,
+                                        shape: BoxShape.circle,
                                       ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        'Dữ liệu của bạn được mã hóa và bảo vệ theo tiêu chuẩn quốc tế.',
-                                        style: TextStyle(
-                                          color: Color(0xFF666666),
-                                          fontSize: 14,
-                                          height: 1.4,
-                                        ),
+                                      child: const Icon(
+                                        Icons.verified_user,
+                                        color: Color(0xFF4A9B7F),
+                                        size: 24,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Cam kết bảo mật',
+                                            style: TextStyle(
+                                              color: isDark ? Colors.white : const Color(0xFF333333),
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Dữ liệu của bạn được mã hóa và bảo vệ theo tiêu chuẩn quốc tế.',
+                                            style: TextStyle(
+                                              color: isDark ? Colors.white70 : const Color(0xFF666666),
+                                              fontSize: 14,
+                                              height: 1.4,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              );
+                            }
                           ),
                         ],
                       ),
@@ -468,22 +470,103 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
     required bool value,
     required ValueChanged<bool>? onChanged,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE8F5F0),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.location_on_outlined,
+                      color: Color(0xFF438883),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Vị trí',
+                          style: TextStyle(
+                            color: isDark ? Colors.white : const Color(0xFF333333),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Cho phép truy cập vị trí hiện tại để tối ưu hóa gợi ý địa phương',
+                          style: TextStyle(
+                            color: isDark ? Colors.white70 : const Color(0xFF888888),
+                            fontSize: 14,
+                          ),
+                        ),
+
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Switch(
+                    value: value,
+                    onChanged: onChanged,
+                    activeThumbColor: Colors.white,
+                    activeTrackColor: const Color(0xFF4A9B7F),
+                    inactiveThumbColor: Colors.white,
+                    inactiveTrackColor: const Color(0xFFE0E0E0),
+                  ),
+                ],
+              ),
+            ),
+            Divider(
+              height: 1,
+              color: isDark ? const Color(0xFF3E3E3E) : Colors.grey.shade200,
+              indent: 76,
+              endIndent: 16,
+            ),
+          ],
+        );
+      }
+    );
+  }
+
+  Widget _buildContactsToggleItem({
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+  }) {
+    final snap = _contactsSnapshot;
+    final remaining = snap != null && snap.total > snap.previewLines.length
+        ? snap.total - snap.previewLines.length
+        : 0;
+
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5F0),
+                  color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE8F5F0),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
-                  Icons.location_on_outlined,
+                  Icons.contacts_outlined,
                   color: Color(0xFF438883),
                   size: 24,
                 ),
@@ -493,89 +576,23 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Vị trí',
+                    Text(
+                      'Danh bạ',
                       style: TextStyle(
-                        color: Color(0xFF333333),
+                        color: isDark ? Colors.white : const Color(0xFF333333),
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'Cho phép truy cập vị trí hiện tại để tối ưu hóa gợi ý địa phương',
-                      style: TextStyle(color: Color(0xFF888888), fontSize: 14),
+                    Text(
+                      'Đồng bộ hóa danh bạ để kết nối nhanh chóng với bạn bè',
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : const Color(0xFF888888),
+                        fontSize: 14,
+                      ),
                     ),
-                    if (value && (_locationLoading || _locationEnabling)) ...[
-                      const SizedBox(height: 12),
-                      const Row(
-                        children: [
-                          SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Color(0xFF4A9B7F),
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          Text(
-                            'Đang lấy vị trí…',
-                            style: TextStyle(
-                              color: Color(0xFF4A9B7F),
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    if (value &&
-                        _locationDisplayText != null &&
-                        !_locationLoading &&
-                        !_locationEnabling) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF0F7F5),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFCCFEEB)),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(
-                              Icons.place,
-                              size: 18,
-                              color: Color(0xFF4A9B7F),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _locationDisplayText!,
-                                style: const TextStyle(
-                                  color: Color(0xFF333333),
-                                  fontSize: 13,
-                                  height: 1.35,
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.refresh,
-                                size: 20,
-                                color: Color(0xFF4A9B7F),
-                              ),
-                              onPressed: _locationLoading
-                                  ? null
-                                  : () => _fetchLocationDisplay(),
-                              tooltip: 'Cập nhật vị trí',
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+
                   ],
                 ),
               ),
@@ -590,181 +607,8 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
               ),
             ],
           ),
-        ),
-        Divider(
-          height: 1,
-          color: Colors.grey.shade200,
-          indent: 76,
-          endIndent: 16,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildContactsToggleItem({
-    required bool value,
-    required ValueChanged<bool>? onChanged,
-  }) {
-    final snap = _contactsSnapshot;
-    final remaining = snap != null && snap.total > snap.previewLines.length
-        ? snap.total - snap.previewLines.length
-        : 0;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8F5F0),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.contacts_outlined,
-              color: Color(0xFF438883),
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Danh bạ',
-                  style: TextStyle(
-                    color: Color(0xFF333333),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Đồng bộ hóa danh bạ để kết nối nhanh chóng với bạn bè',
-                  style: TextStyle(color: Color(0xFF888888), fontSize: 14),
-                ),
-                if (value && (_contactsLoading || _contactsEnabling)) ...[
-                  const SizedBox(height: 12),
-                  const Row(
-                    children: [
-                      SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0xFF4A9B7F),
-                        ),
-                      ),
-                      SizedBox(width: 10),
-                      Text(
-                        'Đang đọc danh bạ…',
-                        style: TextStyle(
-                          color: Color(0xFF4A9B7F),
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                if (value &&
-                    snap != null &&
-                    !_contactsLoading &&
-                    !_contactsEnabling) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0F7F5),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFCCFEEB)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.people_outline,
-                              size: 18,
-                              color: Color(0xFF4A9B7F),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Tổng: ${snap.total} liên hệ',
-                                style: const TextStyle(
-                                  color: Color(0xFF333333),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.refresh,
-                                size: 20,
-                                color: Color(0xFF4A9B7F),
-                              ),
-                              onPressed: _contactsLoading
-                                  ? null
-                                  : () => _fetchContactsDisplay(),
-                              tooltip: 'Làm mới danh bạ',
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxHeight: 220),
-                          child: SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                for (final line in snap.previewLines)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 6),
-                                    child: Text(
-                                      line,
-                                      style: const TextStyle(
-                                        color: Color(0xFF333333),
-                                        fontSize: 13,
-                                        height: 1.3,
-                                      ),
-                                    ),
-                                  ),
-                                if (remaining > 0)
-                                  Text(
-                                    '… và $remaining liên hệ khác',
-                                    style: const TextStyle(
-                                      color: Color(0xFF888888),
-                                      fontSize: 12,
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: Colors.white,
-            activeTrackColor: const Color(0xFF4A9B7F),
-            inactiveThumbColor: Colors.white,
-            inactiveTrackColor: const Color(0xFFE0E0E0),
-          ),
-        ],
-      ),
+        );
+      }
     );
   }
 }

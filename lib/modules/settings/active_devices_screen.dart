@@ -70,9 +70,11 @@ class ActiveDevicesScreen extends StatelessWidget {
       future: _getDeviceInfoAndRegister(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            backgroundColor: Color(0xFF438883),
-            body: Center(child: CircularProgressIndicator(color: Colors.white)),
+          return Scaffold(
+            backgroundColor: Theme.of(context).brightness == Brightness.dark 
+              ? const Color(0xFF1E1E1E) 
+              : const Color(0xFF438883),
+            body: const Center(child: CircularProgressIndicator(color: Colors.white)),
           );
         }
 
@@ -82,16 +84,20 @@ class ActiveDevicesScreen extends StatelessWidget {
           stream: FirestoreService().getDeviceSessionsStream(),
           builder: (context, streamSnapshot) {
             if (streamSnapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                backgroundColor: Color(0xFF438883),
-                body: Center(child: CircularProgressIndicator(color: Colors.white)),
+              return Scaffold(
+                backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                  ? const Color(0xFF1E1E1E) 
+                  : const Color(0xFF438883),
+                body: const Center(child: CircularProgressIndicator(color: Colors.white)),
               );
             }
             
             final sessions = streamSnapshot.data ?? [];
 
             return Scaffold(
-              backgroundColor: const Color(0xFF438883), // Nền xanh lá mạ
+              backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                ? const Color(0xFF1E1E1E) 
+                : const Color(0xFF438883),
               body: SafeArea(
                 bottom: false,
                 child: Column(
@@ -129,9 +135,9 @@ class ActiveDevicesScreen extends StatelessWidget {
                     Expanded(
                       child: Container(
                         width: double.infinity,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFF8F9FA), // Nền xám nhạt
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                         ),
                         child: Column(
                           children: [
@@ -144,9 +150,9 @@ class ActiveDevicesScreen extends StatelessWidget {
                                 left: 24,
                                 right: 24,
                               ),
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.vertical(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).scaffoldBackgroundColor,
+                                borderRadius: const BorderRadius.vertical(
                                   top: Radius.circular(30),
                                 ),
                               ),
@@ -155,7 +161,9 @@ class ActiveDevicesScreen extends StatelessWidget {
                                   Container(
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFE8F5F3), // Xanh ngọc nhạt
+                                      color: Theme.of(context).brightness == Brightness.dark 
+                                        ? const Color(0xFF3E3E3E) 
+                                        : const Color(0xFFE8F5F3), // Xanh ngọc nhạt
                                       borderRadius: BorderRadius.circular(24),
                                     ),
                                     child: const Icon(
@@ -165,20 +173,20 @@ class ActiveDevicesScreen extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(height: 16),
-                                  const Text(
+                                  Text(
                                     'Quản lý phiên đăng nhập',
                                     style: TextStyle(
-                                      color: Color(0xFF333333),
+                                      color: Theme.of(context).textTheme.bodyLarge?.color,
                                       fontSize: 18,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-                                  const Text(
+                                  Text(
                                     'Xem và quản lý tất cả các thiết bị đang\ntruy cập vào tài khoản của bạn.',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      color: Color(0xFF888888),
+                                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                                       fontSize: 14,
                                       height: 1.4,
                                     ),
@@ -190,7 +198,7 @@ class ActiveDevicesScreen extends StatelessWidget {
                             // DANH SÁCH THIẾT BỊ (Cuộn được)
                             Expanded(
                               child: Container(
-                                color: Colors.white,
+                                color: Theme.of(context).scaffoldBackgroundColor,
                                 child: streamSnapshot.connectionState == ConnectionState.waiting
                                     ? const Center(child: CircularProgressIndicator(color: Color(0xFF438883)))
                                     : ListView.builder(
@@ -226,7 +234,7 @@ class ActiveDevicesScreen extends StatelessWidget {
 
                             // NÚT ĐĂNG XUẤT CUỐI MÀN HÌNH
                             Container(
-                              color: Colors.white,
+                              color: Theme.of(context).scaffoldBackgroundColor,
                               padding: const EdgeInsets.only(
                                 left: 24,
                                 right: 24,
@@ -345,85 +353,90 @@ class ActiveDevicesScreen extends StatelessWidget {
       return Icons.desktop_windows;
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start, // Căn trên cùng để giống thiết kế
-        children: [
-          // Icon nền xanh nhạt
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0F6F5),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              getDeviceIcon(type),
-              color: const Color(0xFF438883),
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 16),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          child: Row(
+            crossAxisAlignment:
+                CrossAxisAlignment.start, // Căn trên cùng để giống thiết kế
+            children: [
+              // Icon nền xanh nhạt
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFF0F6F5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  getDeviceIcon(type),
+                  color: const Color(0xFF438883),
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
 
-          // Thông tin thiết bị
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              // Thông tin thiết bị
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        color: Color(0xFF333333),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Nếu là thiết bị HIỆN TẠI thì thêm nhãn xanh
-                    if (isCurrent)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE8F5F3),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'HIỆN TẠI',
+                    Row(
+                      children: [
+                        Text(
+                          name,
                           style: TextStyle(
-                            color: Color(0xFF438883),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : const Color(0xFF333333),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        // Nếu là thiết bị HIỆN TẠI thì thêm nhãn xanh
+                        if (isCurrent)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE8F5F3),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'HIỆN TẠI',
+                              style: TextStyle(
+                                color: Color(0xFF438883),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$location · $status',
+                      style: TextStyle(
+                        color: isDark ? Colors.white70 : const Color(0xFF888888),
+                        fontSize: 13,
                       ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '$location · $status',
-                  style: const TextStyle(
-                    color: Color(0xFF888888),
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
 
-          // Icon thùng rác thay cho 3 chấm để xóa/đăng xuất thiết bị con
-          if (!isCurrent)
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-              onPressed: onRemove,
-            ),
-        ],
-      ),
+              // Icon thùng rác thay cho 3 chấm để xóa/đăng xuất thiết bị con
+              if (!isCurrent)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                  onPressed: onRemove,
+                ),
+            ],
+          ),
+        );
+      }
     );
   }
 }

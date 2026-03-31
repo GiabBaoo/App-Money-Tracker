@@ -105,11 +105,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final dateFormatted = '${_selectedDate.day.toString().padLeft(2, '0')}/${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.year}';
     final timeFormatted = '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF438883),
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -125,7 +126,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(30)), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -5))]),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.only(top: 30, bottom: 40, left: 24, right: 24),
                   child: Column(
@@ -134,7 +138,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       // TAB CHUYỂN ĐỔI CHI / THU
                       Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(30)),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
                         child: Row(children: [
                           _buildTab('Khoản Chi', !isIncome, () => setState(() { isIncome = false; selectedCategoryName = 'Chọn danh mục'; selectedCategoryIcon = Icons.category; })),
                           _buildTab('Khoản Thu', isIncome, () => setState(() { isIncome = true; selectedCategoryName = 'Chọn danh mục'; selectedCategoryIcon = Icons.category; })),
@@ -151,17 +158,33 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE5E7EB)), borderRadius: BorderRadius.circular(12)),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
+                            border: Border.all(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE5E7EB)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           child: Row(children: [
                             Container(
                               padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(color: isIncome ? const Color(0xFFDBEAFE) : const Color(0xFFCCFBF1), borderRadius: BorderRadius.circular(8)),
+                              decoration: BoxDecoration(
+                                color: isDark 
+                                  ? const Color(0xFF3E3E3E) 
+                                  : (isIncome ? const Color(0xFFDBEAFE) : const Color(0xFFCCFBF1)),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                               child: Icon(selectedCategoryIcon, color: isIncome ? Colors.blue : const Color(0xFF1A7B73), size: 20),
                             ),
                             const SizedBox(width: 12),
-                            Text(selectedCategoryName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                            Text(
+                              selectedCategoryName,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Theme.of(context).textTheme.bodyLarge?.color,
+                              ),
+                            ),
                             const Spacer(),
-                            const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                            Icon(Icons.keyboard_arrow_down, color: isDark ? Colors.white54 : Colors.grey),
                           ]),
                         ),
                       ),
@@ -175,9 +198,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         style: const TextStyle(color: Color(0xFF1A7B73), fontSize: 18, fontWeight: FontWeight.bold),
                         decoration: InputDecoration(
                           hintText: '0đ', hintStyle: const TextStyle(color: Color(0xFF1A7B73)),
-                          filled: true, fillColor: const Color(0xFFE8F5F3),
+                          filled: true, fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFE8F5F3),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF1A7B73))),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFF1A7B73)),
+                          ),
                           focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF1A7B73), width: 2)),
                           suffixIcon: TextButton(onPressed: () => _amountController.clear(), child: const Text('Xóa', style: TextStyle(color: Color(0xFF1A7B73), fontSize: 14))),
                         ),
@@ -204,10 +230,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       _buildLabel('Nội dung'),
                       TextFormField(
                         controller: _descriptionController,
+                        style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                        ),
                         decoration: InputDecoration(
-                          hintText: 'Thêm nội dung', hintStyle: const TextStyle(color: Color(0xFF666666), fontSize: 14),
+                          hintText: 'Thêm nội dung',
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.white38 : const Color(0xFF666666),
+                            fontSize: 14,
+                          ),
+                          filled: true,
+                          fillColor: isDark ? const Color(0xFF2E2E2E) : Colors.white,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE5E7EB)),
+                          ),
                           focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5)),
                         ),
                       ),
@@ -221,7 +259,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           decoration: BoxDecoration(
                             color: _isLoading ? Colors.grey : const Color(0xFF1A7B73),
                             borderRadius: BorderRadius.circular(30),
-                            boxShadow: [BoxShadow(color: const Color(0xFF1A7B73).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5))],
                           ),
                           child: Center(
                             child: _isLoading
@@ -243,30 +280,67 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Widget _buildTab(String text, bool isSelected, VoidCallback onTap) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(color: isSelected ? const Color(0xFF1A7B73) : Colors.transparent, borderRadius: BorderRadius.circular(30)),
-          child: Center(child: Text(text, style: TextStyle(color: isSelected ? Colors.white : const Color(0xFF6B7280), fontWeight: FontWeight.w600, fontSize: 14))),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF1A7B73) : Colors.transparent,
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Center(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: isSelected ? Colors.white : (isDark ? Colors.white54 : const Color(0xFF6B7280)),
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildLabel(String text) {
-    return Padding(padding: const EdgeInsets.only(bottom: 8, left: 4), child: Text(text, style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13, fontWeight: FontWeight.w500)));
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, left: 4),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
   }
 
   Widget _buildReadOnlyField(String text, IconData icon) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE5E7EB)), borderRadius: BorderRadius.circular(12)),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(text, style: const TextStyle(color: Color(0xFF666666), fontSize: 14)),
-        Icon(icon, color: Colors.grey),
-      ]),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
+        border: Border.all(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            text,
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+              fontSize: 14,
+            ),
+          ),
+          Icon(icon, color: isDark ? Colors.white54 : Colors.grey),
+        ],
+      ),
     );
   }
 }
