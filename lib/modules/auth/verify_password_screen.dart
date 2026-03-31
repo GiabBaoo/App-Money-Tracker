@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import 'reset_password_screen.dart';
 
@@ -33,7 +34,7 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
 
     if (result.success) {
       if (!mounted) return;
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const ResetPasswordScreen(isFromSecurity: true)));
+      Navigator.push(context, PageTransitions.slideRight(const ResetPasswordScreen(isFromSecurity: true)));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message), backgroundColor: Colors.red));
     }

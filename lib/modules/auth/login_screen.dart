@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import '../home/home_screen.dart';
 import 'register_screen.dart';
@@ -46,14 +47,14 @@ class _LoginScreenState extends State<LoginScreen> {
       // Kiem tra xem email co da xac nhan khong
       final currentUser = _authService.currentUser;
       if (currentUser != null && !currentUser.emailVerified) {
-        _showSnackBar('Vui long xac nhan email truoc khi dang nhap!', isError: true);
+        _showSnackBar('Vui lòng xác nhận email trước khi đăng nhập!', isError: true);
         await _authService.logout();
         return;
       }
       
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        PageTransitions.fade(const HomeScreen()),
       );
     } else {
       _showSnackBar(result.message, isError: true);
@@ -136,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             const Text('Ghi nhớ mật khẩu', style: TextStyle(color: Color(0xFF666666), fontSize: 13)),
                           ]),
                           GestureDetector(
-                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ForgotPasswordScreen())),
+                            onTap: () => Navigator.push(context, PageTransitions.slideRight(const ForgotPasswordScreen())),
                             child: const Text('Quên mật khẩu?', style: TextStyle(color: Color(0xFF438883), fontSize: 13, fontWeight: FontWeight.w500)),
                           ),
                         ]),
@@ -163,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 40),
                   TextButton(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterScreen())),
+                    onPressed: () => Navigator.push(context, PageTransitions.slideRight(const RegisterScreen())),
                     child: const Text.rich(TextSpan(children: [
                       TextSpan(text: 'Chưa có tài khoản? ', style: TextStyle(color: Color(0xFF666666), fontSize: 14)),
                       TextSpan(text: 'Đăng ký ngay', style: TextStyle(color: Color(0xFF4E8F8A), fontWeight: FontWeight.bold, fontSize: 14)),

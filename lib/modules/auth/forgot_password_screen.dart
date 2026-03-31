@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import 'forgot_password_confirmation_screen.dart';
 
@@ -25,7 +26,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     // Validate email
     if (email.isEmpty) {
-      _showSnackBar('Vui long nhap email!', isError: true);
+      _showSnackBar('Vui lòng nhập email!', isError: true);
       return;
     }
 
@@ -50,8 +51,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (context) => ForgotPasswordConfirmationScreen(email: email),
+            PageTransitions.slideRight(
+              ForgotPasswordConfirmationScreen(email: email),
             ),
           );
         }
@@ -102,12 +103,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Quen mat khau',
+                        'Quên mật khẩu',
                         style: TextStyle(color: Color(0xFF549B96), fontSize: 28, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Vui long nhap email cua ban. Chung toi se gui link dat lai mat khau.',
+                        'Vui lòng nhập email của bạn. Chúng tôi sẽ gửi link đặt lại mật khẩu.',
                         style: TextStyle(color: Color(0xFF666666), fontSize: 14, height: 1.5),
                       ),
                       const SizedBox(height: 40),
@@ -120,7 +121,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         style: const TextStyle(fontSize: 15),
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                          hintText: 'Nhap email cua ban',
+                          hintText: 'Nhập email của bạn',
                           hintStyle: TextStyle(color: Colors.black.withOpacity(0.3), fontSize: 14),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           enabledBorder: OutlineInputBorder(
@@ -139,7 +140,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         child: InkWell(
                           onTap: () => Navigator.pop(context),
                           child: const Text(
-                            'Quay lai Dang nhap',
+                            'Quay lại Đăng nhập',
                             style: TextStyle(color: Color(0xFF438883), fontSize: 15, fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -176,7 +177,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                     ),
                                   )
                                 : const Text(
-                                    'Gui email dat lai mat khau',
+                                    'Gửi email đặt lại mật khẩu',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 18,

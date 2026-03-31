@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../services/biometric_service.dart';
@@ -61,7 +62,7 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
     setState(() => _isAuthenticating = false);
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => widget.destination),
+      PageTransitions.fade(widget.destination),
     );
   }
 
@@ -70,7 +71,7 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      PageTransitions.fade(const LoginScreen()),
     );
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../services/firestore_service.dart';
 import '../../models/transaction_model.dart';
@@ -48,7 +49,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.file_download_outlined, color: Color(0xFF222222), size: 24),
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExportReportScreen())),
+                    onPressed: () => Navigator.push(context, PageTransitions.slideRight(const ExportReportScreen())),
                   ),
                 ],
               ),
@@ -110,7 +111,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          _isExpense ? 'Chi phi' : 'Thu nhap',
+                          _isExpense ? 'Chi phí' : 'Thu nhập',
                           style: const TextStyle(color: Color(0xFF666666), fontSize: 14, fontWeight: FontWeight.w500),
                         ),
                         const SizedBox(width: 8),
@@ -168,7 +169,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       return Container(
         height: 250,
         decoration: BoxDecoration(color: const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(16)),
-        child: const Center(child: Text('Chua co du lieu', style: TextStyle(color: Color(0xFF999999)))),
+        child: const Center(child: Text('Chưa có dữ liệu', style: TextStyle(color: Color(0xFF999999)))),
       );
     }
 
@@ -316,7 +317,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         if (topList.isEmpty)
           const Padding(
             padding: EdgeInsets.all(40),
-            child: Center(child: Text('Chua co du lieu', style: TextStyle(color: Color(0xFF999999), fontSize: 16))),
+            child: Center(child: Text('Chưa có dữ liệu', style: TextStyle(color: Color(0xFF999999), fontSize: 16))),
           )
         else
           ...topList.asMap().entries.map((entry) {
@@ -500,8 +501,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
     final d = DateTime(date.year, date.month, date.day);
-    if (d == today) return 'Hom nay';
-    if (d == yesterday) return 'Hom qua';
+    if (d == today) return 'Hôm nay';
+    if (d == yesterday) return 'Hôm qua';
     return 'Th${date.month} ${date.day}, ${date.year}';
   }
 }

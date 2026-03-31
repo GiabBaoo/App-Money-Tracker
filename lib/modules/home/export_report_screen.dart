@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import '../settings/success_screen.dart'; // Import trang Thành công đa năng
 
 class ExportReportScreen extends StatefulWidget {
@@ -255,8 +256,8 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                           // TẢI THÀNH CÔNG -> GỌI TRANG SUCCESS_SCREEN
                           Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => SuccessScreen(
+                            PageTransitions.scale(
+                              SuccessScreen(
                                 appBarTitle: 'Tải báo cáo',
                                 successTitle: 'Tải xuống thành công',
                                 successMessage:

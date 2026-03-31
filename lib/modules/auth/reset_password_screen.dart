@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import '../settings/success_screen.dart';
 import 'login_screen.dart';
@@ -93,7 +94,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
     if (newPassword != confirmPassword) {
-      _showSnackBar('Mat khau nhap lai khong khop!', isError: true);
+      _showSnackBar('Mật khẩu nhập lại không khớp!', isError: true);
       return;
     }
 
@@ -115,12 +116,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       // Hien trang thanh cong
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => SuccessScreen(
-            appBarTitle: 'Doi mat khau',
-            successTitle: 'Thanh cong!',
-            successMessage: 'Mat khau cua ban da duoc cap nhat an toan.',
-            buttonText: 'Quay lai Bao mat',
+        PageTransitions.scale(
+          SuccessScreen(
+            appBarTitle: 'Đổi mật khẩu',
+            successTitle: 'Thành công!',
+            successMessage: 'Mật khẩu của bạn đã được cập nhật an toàn.',
+            buttonText: 'Quay lại Bảo mật',
             onButtonPressed: () {
               int count = 0;
               Navigator.popUntil(context, (route) => count++ == 3);
@@ -142,16 +143,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => SuccessScreen(
-              appBarTitle: 'Khoi phuc mat khau',
-              successTitle: 'Thanh cong!',
-              successMessage: 'Email dat lai mat khau da duoc gui den ${widget.emailForReset}. Vui long kiem tra hop thu va lam theo huong dan.',
-              buttonText: 'Dang nhap ngay',
+          PageTransitions.scale(
+            SuccessScreen(
+              appBarTitle: 'Khôi phục mật khẩu',
+              successTitle: 'Thành công!',
+              successMessage: 'Email đặt lại mật khẩu đã được gửi đến ${widget.emailForReset}. Vui lòng kiểm tra hộp thư và làm theo hướng dẫn.',
+              buttonText: 'Đăng nhập ngay',
               onButtonPressed: () {
                 Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  PageTransitions.fade(const LoginScreen()),
                   (route) => false,
                 );
               },
@@ -189,7 +190,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   IconButton(icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20), onPressed: () => Navigator.pop(context)),
                   const Spacer(),
                   widget.isFromSecurity
-                      ? const Text('Doi mat khau', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600))
+                      ? const Text('Đổi mật khẩu', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600))
                       : const Text('mono', style: TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold, letterSpacing: -1.5)),
                   const Spacer(flex: 2),
                 ],
@@ -209,12 +210,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Dat lai mat khau', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF549B96))),
+                      const Text('Đặt lại mật khẩu', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF549B96))),
                       const SizedBox(height: 8),
-                      const Text('Vui long nhap mat khau moi cua ban de bao mat tai khoan.', style: TextStyle(color: Color(0xFF666666), fontSize: 14, height: 1.4)),
+                      const Text('Vui lòng nhập mật khẩu mới của bạn để bảo mật tài khoản.', style: TextStyle(color: Color(0xFF666666), fontSize: 14, height: 1.4)),
                       const SizedBox(height: 30),
 
-                      _buildLabel('Nhap mat khau moi'),
+                      _buildLabel('Nhập mật khẩu mới'),
                       _buildTextField(
                         controller: _newPasswordController,
                         hintText: 'Nhập mật khẩu mới',
@@ -240,7 +241,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      _buildLabel('Nhap lai mat khau moi'),
+                      _buildLabel('Nhập lại mật khẩu mới'),
                       _buildTextField(
                         controller: _confirmPasswordController,
                         hintText: 'Nhập lại mật khẩu mới',
@@ -271,7 +272,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           child: Center(
                             child: _isLoading
                                 ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                                : const Text('Luu mat khau', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
+                                : const Text('Lưu mật khẩu', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
                           ),
                         ),
                       ),

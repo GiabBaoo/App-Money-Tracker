@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import 'success_screen.dart';
 import '../auth/login_screen.dart';
@@ -34,13 +35,13 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
 
     if (result.success) {
       if (!mounted) return;
-      Navigator.push(context, MaterialPageRoute(builder: (context) => SuccessScreen(
+      Navigator.push(context, PageTransitions.scale(SuccessScreen(
         appBarTitle: 'Xóa tài khoản',
         successTitle: 'Xóa tài khoản thành công',
         successMessage: 'Tất cả dữ liệu tài chính cá nhân của bạn đã được gỡ bỏ vĩnh viễn khỏi hệ thống.',
         buttonText: 'Quay về đăng nhập',
         onButtonPressed: () {
-          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const LoginScreen()), (route) => false);
+          Navigator.pushAndRemoveUntil(context, PageTransitions.fade(const LoginScreen()), (route) => false);
         },
       )));
     } else {

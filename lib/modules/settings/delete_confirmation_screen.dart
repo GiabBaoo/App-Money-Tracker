@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import 'delete_password_screen.dart'; // Gọi trang nhập mật khẩu ở Bước 2
 
 class DeleteConfirmationScreen extends StatelessWidget {
@@ -106,8 +107,8 @@ class DeleteConfirmationScreen extends StatelessWidget {
                         // CHUYỂN SANG BƯỚC NHẬP MẬT KHẨU
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => const DeletePasswordScreen(),
+                          PageTransitions.slideRight(
+                            const DeletePasswordScreen(),
                           ),
                         );
                       },

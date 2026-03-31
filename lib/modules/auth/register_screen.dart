@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import 'package:flutter/services.dart'; // Thêm thư viện này để dùng FilteringTextInputFormatter chặn nhập chữ vào sđt
 import '../../services/auth_service.dart';
 import 'verify_email_screen.dart';
@@ -232,9 +233,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (regResult.success) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => VerifyEmailScreen(email: email),
-        ),
+        PageTransitions.slideRight(VerifyEmailScreen(email: email)),
       );
     } else {
       _showSnackBar(regResult.message, isError: true);

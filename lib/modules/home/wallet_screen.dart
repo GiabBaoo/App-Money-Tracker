@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import '../../services/firestore_service.dart';
 import '../../models/transaction_model.dart';
 import '../home/home_screen.dart';
@@ -25,7 +26,7 @@ class WalletScreen extends StatelessWidget {
                 const SizedBox(width: 32),
                 const Text('Ví', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
                 InkWell(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationScreen())),
+                  onTap: () => Navigator.push(context, PageTransitions.slideRight(const NotificationScreen())),
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
@@ -119,7 +120,7 @@ class WalletScreen extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: InkWell(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => TransactionDetailScreen(
+        onTap: () => Navigator.push(context, PageTransitions.slideRight(TransactionDetailScreen(
           isIncome: isIncome, title: title, amount: amount, date: date, time: transaction.time, icon: icon,
         ))),
         child: Row(children: [

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import 'login_screen.dart';
 
 class ForgotPasswordConfirmationScreen extends StatelessWidget {
@@ -62,23 +63,23 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
 
                       // Description with email
                       Text(
-                        'Chung toi da gui email dat lai mat khau toi\n$email',
+                        'Chúng tôi đã gửi email đặt lại mật khẩu tới\n$email',
                         style: const TextStyle(color: Color(0xFF666666), fontSize: 14, height: 1.5),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Vui long kiem tra hop thu va click vao link de dat lai mat khau.',
+                        'Vui lòng kiểm tra hộp thư và nhấp vào link để đặt lại mật khẩu.',
                         style: TextStyle(color: Color(0xFF999999), fontSize: 13),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 40),
 
                       // Steps
-                      _buildStep(1, 'Kiem tra hop thu (hoac tuc nhan) cua ban'),
-                      _buildStep(2, 'Tim email toi tu "no-reply@accounts.google.com"'),
-                      _buildStep(3, 'Click link "Dat lai mat khau" trong email'),
-                      _buildStep(4, 'Tao mat khau moi va luu thay doi'),
+                      _buildStep(1, 'Kiểm tra hộp thư (hoặc thư rác) của bạn'),
+                      _buildStep(2, 'Tìm email từ "no-reply@accounts.google.com"'),
+                      _buildStep(3, 'Nhấp vào link "Đặt lại mật khẩu" trong email'),
+                      _buildStep(4, 'Tạo mật khẩu mới và lưu thay đổi'),
                       const SizedBox(height: 40),
 
                       // Instruction box
@@ -110,7 +111,7 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
                         onTap: () {
                           Navigator.pushAndRemoveUntil(
                             context,
-                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            PageTransitions.fade(const LoginScreen()),
                             (route) => false,
                           );
                         },
@@ -124,7 +125,7 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
                           ),
                           child: const Center(
                             child: Text(
-                              'Quay lai Dang nhap',
+                              'Quay lại Đăng nhập',
                               style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -138,7 +139,7 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Vui long lien he support@mono.com'),
+                                content: const Text('Vui lòng liên hệ support@mono.com'),
                                 backgroundColor: const Color(0xFF438883),
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

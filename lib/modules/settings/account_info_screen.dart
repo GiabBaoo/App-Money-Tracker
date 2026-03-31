@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 
 import '../../services/auth_service.dart';
 import '../../models/user_model.dart';
@@ -89,7 +90,7 @@ class AccountInfoScreen extends StatelessWidget {
                             onTap: () async {
                               await authService.logout();
                               if (!context.mounted) return;
-                              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const LoginScreen()), (route) => false);
+                              Navigator.pushAndRemoveUntil(context, PageTransitions.fade(const LoginScreen()), (route) => false);
                             },
                             child: Container(
                               width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 16),

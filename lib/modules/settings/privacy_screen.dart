@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import 'data_usage_screen.dart'; // Đảm bảo đường dẫn đúng
 import 'delete_confirmation_screen.dart'; // Import trang hỏi xác nhận xóa
 import 'privacy_policy_screen.dart'; // Đảm bảo đường dẫn đúng
@@ -103,10 +104,8 @@ class PrivacyScreen extends StatelessWidget {
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const DataUsageScreen(),
-                                  ),
+                                  PageTransitions.slideRight(
+                                      const DataUsageScreen()),
                                 );
                               },
                             ),
@@ -124,10 +123,8 @@ class PrivacyScreen extends StatelessWidget {
                                 // GỌI MÀN HÌNH CHÍNH SÁCH VỪA TẠO
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const PrivacyPolicyScreen(),
-                                  ),
+                                  PageTransitions.slideRight(
+                                      const PrivacyPolicyScreen()),
                                 );
                               },
                             ),
@@ -146,10 +143,8 @@ class PrivacyScreen extends StatelessWidget {
                                 // CHUYỂN TỚI MÀN HÌNH HỎI XÁC NHẬN ĐẦU TIÊN TRONG LUỒNG XÓA
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const DeleteConfirmationScreen(),
-                                  ),
+                                  PageTransitions.slideRight(
+                                      const DeleteConfirmationScreen()),
                                 );
                               },
                             ),

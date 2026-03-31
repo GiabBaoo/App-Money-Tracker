@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../services/firestore_service.dart';
@@ -145,7 +146,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       _buildLabel(isIncome ? 'Nguồn thu' : 'Nguồn Chi'),
                       InkWell(
                         onTap: () async {
-                          final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => CategoryScreen(isIncome: isIncome)));
+                          final result = await Navigator.push(context, PageTransitions.slideRight(CategoryScreen(isIncome: isIncome)));
                           if (result != null) setState(() { selectedCategoryName = result['name']; selectedCategoryIcon = result['icon']; });
                         },
                         child: Container(

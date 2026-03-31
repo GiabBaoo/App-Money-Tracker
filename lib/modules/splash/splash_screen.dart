@@ -1,6 +1,7 @@
 // splash_screen.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../home/home_screen.dart';
@@ -21,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen> {
     if (user == null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+        PageTransitions.fade(const OnboardingScreen()),
       );
       return;
     }
@@ -33,8 +34,8 @@ class _SplashScreenState extends State<SplashScreen> {
     if (fingerprintEnabled) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => FingerprintUnlockScreen(
+        PageTransitions.fade(
+          FingerprintUnlockScreen(
             destination: const HomeScreen(),
           ),
         ),
@@ -42,7 +43,7 @@ class _SplashScreenState extends State<SplashScreen> {
     } else {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        PageTransitions.fade(const HomeScreen()),
       );
     }
   }

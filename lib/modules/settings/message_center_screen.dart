@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import '../../services/firestore_service.dart';
 import '../../models/message_model.dart';
 import 'message_detail_screen.dart'; // Đảm bảo import trang chi tiết vừa tạo
@@ -56,8 +57,8 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const SupportRequestScreen(),
+                        PageTransitions.slideRight(
+                          const SupportRequestScreen(),
                         ),
                       );
                     },
@@ -239,8 +240,8 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
         // MỞ TRANG CHI TIẾT VÀ TRUYỀN DỮ LIỆU SANG ĐÓ
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => MessageDetailScreen(
+          PageTransitions.slideRight(
+            MessageDetailScreen(
               icon: icon,
               iconBgColor: iconBgColor,
               title: title,

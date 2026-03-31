@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import '../../models/user_model.dart';
 import '../home/notification_screen.dart';
@@ -31,7 +32,7 @@ class ProfileScreen extends StatelessWidget {
                     const SizedBox(width: 32),
                     const Text('Hồ sơ', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
                     InkWell(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationScreen())),
+                      onTap: () => Navigator.push(context, PageTransitions.slideRight(const NotificationScreen())),
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
@@ -66,10 +67,10 @@ class ProfileScreen extends StatelessWidget {
                   child: ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     children: [
-                      _buildMenuItem(Icons.person_outline, 'Thông tin tài khoản', () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AccountInfoScreen()))),
-                      _buildMenuItem(Icons.mail_outline, 'Trung tâm tin nhắn', () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MessageCenterScreen()))),
-                      _buildMenuItem(Icons.shield_outlined, 'Đăng nhập và bảo mật', () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SecurityScreen()))),
-                      _buildMenuItem(Icons.lock_outline, 'Dữ liệu và riêng tư', () => Navigator.push(context, MaterialPageRoute(builder: (context) => const PrivacyScreen()))),
+                      _buildMenuItem(Icons.person_outline, 'Thông tin tài khoản', () => Navigator.push(context, PageTransitions.slideRight(const AccountInfoScreen()))),
+                      _buildMenuItem(Icons.mail_outline, 'Trung tâm tin nhắn', () => Navigator.push(context, PageTransitions.slideRight(const MessageCenterScreen()))),
+                      _buildMenuItem(Icons.shield_outlined, 'Đăng nhập và bảo mật', () => Navigator.push(context, PageTransitions.slideRight(const SecurityScreen()))),
+                      _buildMenuItem(Icons.lock_outline, 'Dữ liệu và riêng tư', () => Navigator.push(context, PageTransitions.slideRight(const PrivacyScreen()))),
                       const SizedBox(height: 100),
                     ],
                   ),

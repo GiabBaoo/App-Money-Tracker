@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
 import '../../models/message_model.dart';
@@ -196,8 +197,8 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                             // GỬI THÀNH CÔNG -> GỌI TRANG SUCCESS_SCREEN ĐA NĂNG
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) => SuccessScreen(
+                              PageTransitions.scale(
+                                SuccessScreen(
                                   appBarTitle: 'Gửi yêu cầu',
                                   successTitle: 'Gửi yêu cầu thành công',
                                   successMessage:

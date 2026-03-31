@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import '../auth/login_screen.dart'; // Đảm bảo bạn đã có file này
 import '../auth/register_screen.dart'; // ĐÃ THÊM: Cần có file này để điều hướng khi bấm "Bắt đầu"
 
@@ -70,12 +71,7 @@ class OnboardingScreen extends StatelessWidget {
                   child: InkWell(
                     onTap: () {
                       // LUỒNG 1: Chuyển sang màn hình ĐĂNG KÝ
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RegisterScreen(),
-                        ),
-                      );
+                      Navigator.push(context, PageTransitions.slideRight(const RegisterScreen()));
                     },
                     child: Container(
                       width: double.infinity,
@@ -113,12 +109,7 @@ class OnboardingScreen extends StatelessWidget {
                 TextButton(
                   onPressed: () {
                     // LUỒNG 2: Chuyển sang màn hình ĐĂNG NHẬP
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                    );
+                    Navigator.push(context, PageTransitions.slideRight(const LoginScreen()));
                   },
                   child: const Text.rich(
                     TextSpan(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import '../home/home_screen.dart';
 
@@ -38,12 +39,12 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       
       if (result.emailVerified && mounted) {
         _autoCheckTimer?.cancel();
-        _showSnackBar('Email da xac nhan! Dang nhap vao app...');
+        _showSnackBar('Email đã xác nhận! Đang nhập vào ứng dụng...');
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
+              PageTransitions.fade(const HomeScreen()),
               (route) => false,
             );
           }
@@ -62,12 +63,12 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     if (!mounted) return;
 
     if (result.emailVerified) {
-      _showSnackBar('Email da xac nhan! Dang nhap vao app...', isError: false);
+      _showSnackBar('Email đã xác nhận! Đang nhập vào ứng dụng...', isError: false);
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) {
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
+            PageTransitions.fade(const HomeScreen()),
             (route) => false,
           );
         }
@@ -87,7 +88,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     if (!mounted) return;
 
     if (result.success) {
-      _showSnackBar('Email xac nhan da duoc gui lai!', isError: false);
+      _showSnackBar('Email xác nhận đã được gửi lại!', isError: false);
     } else {
       _showSnackBar(result.message, isError: true);
     }
@@ -153,7 +154,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
                       // Title
                       const Text(
-                        'Xac nhan email cua ban',
+                        'Xác nhận email của bạn',
                         style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
                         textAlign: TextAlign.center,
                       ),
@@ -161,22 +162,22 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
                       // Description
                       Text(
-                        'Chung toi da gui email xac nhan toi\n$widget.email',
+                        'Chúng tôi đã gửi email xác nhận tới\n$widget.email',
                         style: const TextStyle(color: Color(0xFF666666), fontSize: 14, height: 1.5),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Vui long kiem tra hop thu va click vao link de xac nhan.',
+                        'Vui lòng kiểm tra hộp thư và nhấp vào link để xác nhận.',
                         style: TextStyle(color: Color(0xFF999999), fontSize: 13),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 40),
 
                       // Steps
-                      _buildStep(1, 'Mo email ma chung toi vua gui'),
-                      _buildStep(2, 'Click link xac nhan trong email'),
-                      _buildStep(3, 'Quay tro lai ung dung'),
+                      _buildStep(1, 'Mở email mà chúng tôi vừa gửi'),
+                      _buildStep(2, 'Nhấp vào link xác nhận trong email'),
+                      _buildStep(3, 'Quay trở lại ứng dụng'),
                       const SizedBox(height: 40),
 
                       // Manual Check Button
@@ -196,7 +197,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                             child: _isLoading
                                 ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                                 : const Text(
-                                    'Da xac nhan email',
+                                    'Đã xác nhận email',
                                     style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
                                   ),
                           ),
@@ -216,7 +217,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           ),
                           child: Center(
                             child: Text(
-                              'Gui lai email xac nhan',
+                              'Gửi lại email xác nhận',
                               style: TextStyle(color: const Color(0xFF438883), fontSize: 16, fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -231,7 +232,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           Navigator.pushReplacementNamed(context, '/login');
                         },
                         child: const Text(
-                          'Quay lai Dang nhap',
+                          'Quay lại Đăng nhập',
                           style: TextStyle(color: Color(0xFF438883), fontSize: 14, fontWeight: FontWeight.w500),
                         ),
                       ),

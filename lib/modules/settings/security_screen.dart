@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import 'active_devices_screen.dart'; // Import trang Thiết bị đang hoạt động
 import 'biometric_screen.dart'; // Đảm bảo đường dẫn đúng
 import '../auth/verify_password_screen.dart'; // ĐÃ THÊM: Import trang xác minh mật khẩu cũ
@@ -166,10 +167,8 @@ class SecurityScreen extends StatelessWidget {
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const VerifyPasswordScreen(),
-                                  ),
+                                  PageTransitions.slideRight(
+                                      const VerifyPasswordScreen()),
                                 );
                               },
                             ),
@@ -181,10 +180,8 @@ class SecurityScreen extends StatelessWidget {
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const BiometricScreen(),
-                                  ),
+                                  PageTransitions.slideRight(
+                                      const BiometricScreen()),
                                 );
                               },
                             ),
@@ -199,10 +196,8 @@ class SecurityScreen extends StatelessWidget {
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const ActiveDevicesScreen(),
-                                  ),
+                                  PageTransitions.slideRight(
+                                      const ActiveDevicesScreen()),
                                 );
                               },
                             ),

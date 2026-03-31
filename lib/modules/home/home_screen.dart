@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
@@ -38,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
         height: 65,
         child: FloatingActionButton(
           onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const AddTransactionScreen()));
+            Navigator.push(context, PageTransitions.slideUp(const AddTransactionScreen()));
           },
           backgroundColor: const Color(0xFF438883),
           shape: const CircleBorder(),
@@ -85,7 +86,7 @@ class HomeBody extends StatelessWidget {
         result = '.$result';
       }
     }
-    return '$result d';
+    return '$result đ';
   }
 
   static String formatDate(DateTime date) {
@@ -94,8 +95,8 @@ class HomeBody extends StatelessWidget {
     final yesterday = today.subtract(const Duration(days: 1));
     final dateOnly = DateTime(date.year, date.month, date.day);
 
-    if (dateOnly == today) return 'Hom nay';
-    if (dateOnly == yesterday) return 'Hom qua';
+    if (dateOnly == today) return 'Hôm nay';
+    if (dateOnly == yesterday) return 'Hôm qua';
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
@@ -122,7 +123,7 @@ class HomeBody extends StatelessWidget {
                   builder: (context, snapshot) {
                     final user = snapshot.data;
                     final greeting = _getGreeting();
-                    final name = user?.name ?? 'Nguoi dung';
+                    final name = user?.name ?? 'Người dùng';
                     return _buildHeader(context, greeting, name);
                   },
                 ),
@@ -154,9 +155,9 @@ class HomeBody extends StatelessWidget {
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Chao buoi sang';
-    if (hour < 18) return 'Chao buoi chieu';
-    return 'Chao buoi toi';
+    if (hour < 12) return 'Chào buổi sáng';
+    if (hour < 18) return 'Chào buổi chiều';
+    return 'Chào buổi tối';
   }
 
   Widget _buildHeader(BuildContext context, String greeting, String name) {
@@ -171,7 +172,7 @@ class HomeBody extends StatelessWidget {
             Text(name, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600)),
           ]),
           GestureDetector(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationScreen())),
+            onTap: () => Navigator.push(context, PageTransitions.slideRight(const NotificationScreen())),
             child: Container(
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
@@ -196,7 +197,7 @@ class HomeBody extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: const [
-            Text('Tong so du', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+            Text('Tổng số dư', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
             Icon(Icons.more_horiz, color: Colors.white),
           ]),
           const SizedBox(height: 8),
@@ -205,8 +206,8 @@ class HomeBody extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildIncomeExpenseColumn('Thu nhap', formatCurrency(income), Icons.arrow_downward),
-              _buildIncomeExpenseColumn('Chi phi', formatCurrency(expense), Icons.arrow_upward),
+              _buildIncomeExpenseColumn('Thu nhập', formatCurrency(income), Icons.arrow_downward),
+              _buildIncomeExpenseColumn('Chi phí', formatCurrency(expense), Icons.arrow_upward),
             ],
           ),
         ],
@@ -239,10 +240,10 @@ class HomeBody extends StatelessWidget {
       child: Column(
         children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('Lich su giao dich', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF222222))),
+            const Text('Lịch sử giao dịch', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF222222))),
             GestureDetector(
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AllTransactionsScreen())),
-              child: const Text('Xem tat ca', style: TextStyle(fontSize: 14, color: Color(0xFF666666))),
+              onTap: () => Navigator.push(context, PageTransitions.slideRight(const AllTransactionsScreen())),
+              child: const Text('Xem tất cả', style: TextStyle(fontSize: 14, color: Color(0xFF666666))),
             ),
           ]),
           const SizedBox(height: 20),
@@ -252,9 +253,9 @@ class HomeBody extends StatelessWidget {
               child: Column(children: [
                 Icon(Icons.receipt_long, size: 60, color: Colors.grey.shade300),
                 const SizedBox(height: 16),
-                const Text('Chua co giao dich nao', style: TextStyle(color: Color(0xFF999999), fontSize: 16)),
+                const Text('Chưa có giao dịch nào', style: TextStyle(color: Color(0xFF999999), fontSize: 16)),
                 const SizedBox(height: 8),
-                const Text('Bam nut + de them giao dich dau tien', style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 14)),
+                const Text('Bấm nút + để thêm giao dịch đầu tiên', style: TextStyle(color: Color(0xFFBBBBBB), fontSize: 14)),
               ]),
             )
           else
@@ -288,8 +289,7 @@ class HomeBody extends StatelessWidget {
         onTap: () {
           Navigator.push(
               context,
-              MaterialPageRoute(
-                  builder: (context) => TransactionDetailScreen(
+              PageTransitions.slideRight(TransactionDetailScreen(
                         isIncome: isIncome,
                         title: title,
                         amount: amount,

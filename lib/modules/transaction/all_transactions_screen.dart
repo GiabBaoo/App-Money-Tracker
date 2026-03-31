@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/page_transitions.dart';
 
 import '../../services/firestore_service.dart';
 import '../../models/transaction_model.dart';
@@ -110,7 +111,7 @@ class AllTransactionsScreen extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: InkWell(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => TransactionDetailScreen(
+        onTap: () => Navigator.push(context, PageTransitions.slideRight(TransactionDetailScreen(
           isIncome: isIncome, title: title, amount: amount, date: date, time: transaction.time, icon: icon,
         ))),
         child: Row(children: [
