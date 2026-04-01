@@ -58,7 +58,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
                   bottom: 60,
                 ), // Chừa chỗ cho icon lòi ra
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFF438883),
+                  color: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
                   borderRadius: const BorderRadius.vertical(
                     bottom: Radius.circular(50),
                   ), // Bo cong ở dưới

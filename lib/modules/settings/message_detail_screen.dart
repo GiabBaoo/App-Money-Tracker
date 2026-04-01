@@ -21,7 +21,7 @@ class MessageDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFF438883),
+      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -143,73 +143,6 @@ class MessageDetailScreen extends StatelessWidget {
                                 height: 1.6, // Giãn dòng cho dễ đọc
                               ),
                             ),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: 60,
-                                  height: 60,
-                                  decoration: BoxDecoration(
-                                    color: iconBgColor,
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Icon(
-                                    icon,
-                                    color: Colors.white,
-                                    size: 30,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        title,
-                                        style: const TextStyle(
-                                          color: Color(0xFF212121),
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.access_time,
-                                            size: 14,
-                                            color: Color(0xFFAAAAAA),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            time,
-                                            style: const TextStyle(
-                                              color: Color(0xFFAAAAAA),
-                                              fontSize: 13,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 24),
-                            const Divider(color: Color(0xFFEEEEEE), height: 1),
-                            const SizedBox(height: 24),
-
-                            // NỘI DUNG CHI TIẾT
-                            Text(
-                              fullMessage,
-                              style: const TextStyle(
-                                color: Color(0xFF444444),
-                                fontSize: 16,
-                                height: 1.6, // Giãn dòng cho dễ đọc
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -232,14 +165,14 @@ class MessageDetailScreen extends StatelessWidget {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5F0), // Nền xanh nhạt
+                            color: isDark ? const Color(0xFF1A3635) : const Color(0xFFE8F5F0),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text(
                               'Đã hiểu',
                               style: TextStyle(
-                                color: Color(0xFF4A9B7F),
+                                color: isDark ? const Color(0xFF80CBC4) : const Color(0xFF4A9B7F),
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                               ),

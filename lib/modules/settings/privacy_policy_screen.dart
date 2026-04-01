@@ -7,7 +7,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark 
-        ? const Color(0xFF1E1E1E) 
+        ? const Color(0xFF0F2625) 
         : const Color(0xFF438883), // Nền xanh lá mạ
       body: SafeArea(
         bottom: false,

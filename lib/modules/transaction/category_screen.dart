@@ -143,8 +143,12 @@ class CategoryScreen extends StatelessWidget {
         ? 'Danh mục khoản thu'
         : 'Danh mục khoản chi';
 
+    // Xác định màu nền dựa trên theme hiện tại
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? const Color(0xFF0F2625) : const Color(0xFF438883);
+    
     return Scaffold(
-      backgroundColor: const Color(0xFF438883),
+      backgroundColor: backgroundColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -180,10 +184,10 @@ class CategoryScreen extends StatelessWidget {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  boxShadow: const [
                     BoxShadow(
                       color: Colors.black12,
                       blurRadius: 10,
@@ -219,6 +223,9 @@ class CategoryScreen extends StatelessWidget {
   }
 
   Widget _buildCategoryItem(BuildContext context, Map<String, dynamic> cat) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? const Color(0xFFE0E0E0) : const Color(0xFF333333);
+    
     return GestureDetector(
       onTap: () {
         Navigator.pop(context, cat);
@@ -239,8 +246,8 @@ class CategoryScreen extends StatelessWidget {
           Text(
             cat['name'],
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFF333333),
+            style: TextStyle(
+              color: textColor,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),

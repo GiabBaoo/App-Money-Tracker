@@ -24,7 +24,7 @@ class ProfileScreen extends StatelessWidget {
             height: 280, width: double.infinity,
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark 
-                ? const Color(0xFF1E1E1E) 
+                ? const Color(0xFF0F2625) 
                 : const Color(0xFF438883), 
               borderRadius: const BorderRadius.vertical(bottom: Radius.elliptical(400, 60))
             ),

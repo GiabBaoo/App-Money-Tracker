@@ -21,6 +21,8 @@ class TransactionDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     // Tự động chọn màu tùy theo trạng thái Thu / Chi
     final Color statusColor = isIncome
         ? const Color(0xFF438883)
@@ -28,7 +30,9 @@ class TransactionDetailScreen extends StatelessWidget {
     final String statusText = isIncome ? 'Thu nhập' : 'Chi phí';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF438883), // Nền xanh lá mạ
+      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+        ? const Color(0xFF0F2625) 
+        : const Color(0xFF438883), // Nền xanh lá mạ
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -65,14 +69,14 @@ class TransactionDetailScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // 2. KHUNG NỘI DUNG MÀU TRẮNG BO GÓC TRÊN
+            // 2. KHUNG NỘI DUNG BO GÓC TRÊN
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  boxShadow: const [
                     BoxShadow(
                       color: Colors.black12,
                       blurRadius: 10,
@@ -95,8 +99,8 @@ class TransactionDetailScreen extends StatelessWidget {
                         height: 70,
                         decoration: BoxDecoration(
                           color: isIncome
-                              ? const Color(0xFFE8F5F3)
-                              : const Color(0xFFFEE2E2),
+                              ? (isDark ? const Color(0xFF2E4E4C) : const Color(0xFFE8F5F3))
+                              : (isDark ? const Color(0xFF4E2E2E) : const Color(0xFFFEE2E2)),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(icon, color: statusColor, size: 36),
@@ -127,8 +131,8 @@ class TransactionDetailScreen extends StatelessWidget {
                       // SỐ TIỀN TO BỰ
                       Text(
                         amount,
-                        style: const TextStyle(
-                          color: Color(0xFF222222),
+                        style: TextStyle(
+                          color: isDark ? Colors.white : const Color(0xFF222222),
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
                         ),
@@ -139,16 +143,16 @@ class TransactionDetailScreen extends StatelessWidget {
                       // KHỐI CHI TIẾT GIAO DỊCH
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
+                        children: [
                           Text(
                             'Chi tiết giao dịch',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF222222),
+                              color: isDark ? Colors.white : const Color(0xFF222222),
                             ),
                           ),
-                          Icon(Icons.keyboard_arrow_up, color: Colors.grey),
+                          Icon(Icons.keyboard_arrow_up, color: isDark ? Colors.white54 : Colors.grey),
                         ],
                       ),
                       const SizedBox(height: 20),
@@ -164,25 +168,25 @@ class TransactionDetailScreen extends StatelessWidget {
                       _buildDetailRow('Ngày', date),
 
                       const SizedBox(height: 20),
-                      const Divider(color: Color(0xFFEEEEEE), thickness: 1),
+                      Divider(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFEEEEEE), thickness: 1),
                       const SizedBox(height: 20),
 
                       // TỔNG CỘNG
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             'Tổng',
                             style: TextStyle(
-                              color: Color(0xFF666666),
+                              color: isDark ? Colors.white70 : const Color(0xFF666666),
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           Text(
                             amount,
-                            style: const TextStyle(
-                              color: Color(0xFF222222),
+                            style: TextStyle(
+                              color: isDark ? Colors.white : const Color(0xFF222222),
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -202,31 +206,36 @@ class TransactionDetailScreen extends StatelessWidget {
 
   // --- HÀM TẠO TỪNG DÒNG CHI TIẾT ---
   Widget _buildDetailRow(String label, String value, {Color? valueColor}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF666666),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : const Color(0xFF666666),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  color: valueColor ?? (isDark ? Colors.white : const Color(0xFF222222)),
+                  fontSize: 16,
+                  fontWeight: valueColor != null
+                      ? FontWeight.w600
+                      : FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-          Text(
-            value,
-            style: TextStyle(
-              color: valueColor ?? const Color(0xFF222222),
-              fontSize: 16,
-              fontWeight: valueColor != null
-                  ? FontWeight.w600
-                  : FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
+        );
+      }
     );
   }
 }

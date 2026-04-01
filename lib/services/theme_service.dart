@@ -38,13 +38,16 @@ class ThemeService extends ChangeNotifier {
       );
 
   ThemeData get darkTheme => ThemeData(
-        primaryColor: const Color(0xFF438883),
+        primaryColor: const Color(0xFF0F2625),
         scaffoldBackgroundColor: const Color(0xFF121212),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF438883),
+          seedColor: const Color(0xFF0F2625),
           brightness: Brightness.dark,
+          surface: const Color(0xFF1E1E1E),
+          onSurface: const Color(0xFFE0E0E0),
+          onSurfaceVariant: const Color(0xFFB0B0B0),
         ),
         useMaterial3: true,
-        bottomAppBarTheme: const BottomAppBarThemeData(color: Color(0xFF1E1E1E)),
+        bottomAppBarTheme: const BottomAppBarThemeData(color: Color(0xFF121212)),
       );
 }

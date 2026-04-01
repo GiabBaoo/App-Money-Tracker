@@ -41,7 +41,9 @@ class _HomeScreenState extends State<HomeScreen> {
           onPressed: () {
             Navigator.push(context, PageTransitions.slideUp(const AddTransactionScreen()));
           },
-          backgroundColor: const Color(0xFF438883),
+          backgroundColor: Theme.of(context).brightness == Brightness.dark 
+            ? const Color(0xFF0F2625) 
+            : const Color(0xFF438883),
           shape: const CircleBorder(),
           child: const Icon(Icons.add, color: Colors.white, size: 36),
         ),
@@ -66,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icons.home_filled, 
                     size: 32, 
                     color: _selectedIndex == 0 
-                      ? const Color(0xFF438883) 
+                      ? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF0F2625) : const Color(0xFF438883))
                       : (Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade600 : Colors.grey)
                   )
                 ),
@@ -77,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icons.bar_chart, 
                     size: 32, 
                     color: _selectedIndex == 1 
-                      ? const Color(0xFF438883) 
+                      ? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF0F2625) : const Color(0xFF438883))
                       : (Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade600 : Colors.grey)
                   )
                 ),
@@ -90,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icons.account_balance_wallet, 
                     size: 32, 
                     color: _selectedIndex == 2 
-                      ? const Color(0xFF438883) 
+                      ? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF0F2625) : const Color(0xFF438883))
                       : (Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade600 : Colors.grey)
                   )
                 ),
@@ -101,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icons.person, 
                     size: 32, 
                     color: _selectedIndex == 3 
-                      ? const Color(0xFF438883) 
+                      ? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF0F2625) : const Color(0xFF438883))
                       : (Theme.of(context).brightness == Brightness.dark ? Colors.grey.shade600 : Colors.grey)
                   )
                 ),
@@ -153,7 +155,7 @@ class HomeBody extends StatelessWidget {
           height: 280,
           decoration: BoxDecoration(
             color: Theme.of(context).brightness == Brightness.dark 
-              ? const Color(0xFF1E1E1E) 
+              ? const Color(0xFF0F2625) 
               : const Color(0xFF438883),
             borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
           ),
@@ -259,7 +261,7 @@ class HomeBody extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 24),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFF2E7E78),
+            color: isDark ? const Color(0xFF1A3635) : const Color(0xFF2E7E78),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [BoxShadow(
               color: isDark 

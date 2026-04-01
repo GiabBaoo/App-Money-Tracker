@@ -72,7 +72,7 @@ class ActiveDevicesScreen extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
             backgroundColor: Theme.of(context).brightness == Brightness.dark 
-              ? const Color(0xFF1E1E1E) 
+              ? const Color(0xFF0F2625) 
               : const Color(0xFF438883),
             body: const Center(child: CircularProgressIndicator(color: Colors.white)),
           );
@@ -86,7 +86,7 @@ class ActiveDevicesScreen extends StatelessWidget {
             if (streamSnapshot.connectionState == ConnectionState.waiting) {
               return Scaffold(
                 backgroundColor: Theme.of(context).brightness == Brightness.dark 
-                  ? const Color(0xFF1E1E1E) 
+                  ? const Color(0xFF0F2625) 
                   : const Color(0xFF438883),
                 body: const Center(child: CircularProgressIndicator(color: Colors.white)),
               );
@@ -96,7 +96,7 @@ class ActiveDevicesScreen extends StatelessWidget {
 
             return Scaffold(
               backgroundColor: Theme.of(context).brightness == Brightness.dark 
-                ? const Color(0xFF1E1E1E) 
+                ? const Color(0xFF0F2625) 
                 : const Color(0xFF438883),
               body: SafeArea(
                 bottom: false,

@@ -177,8 +177,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: const Color(0xFF438883),
+      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -200,19 +202,19 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -5))],
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 20, offset: const Offset(0, -5))],
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Đặt lại mật khẩu', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF549B96))),
+                      Text('Đặt lại mật khẩu', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isDark ? const Color(0xFF4A9B7F) : const Color(0xFF549B96))),
                       const SizedBox(height: 8),
-                      const Text('Vui lòng nhập mật khẩu mới của bạn để bảo mật tài khoản.', style: TextStyle(color: Color(0xFF666666), fontSize: 14, height: 1.4)),
+                      Text('Vui lòng nhập mật khẩu mới của bạn để bảo mật tài khoản.', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF666666), fontSize: 14, height: 1.4)),
                       const SizedBox(height: 30),
 
                       _buildLabel('Nhập mật khẩu mới'),
@@ -231,7 +233,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
                       Container(
                         padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(color: const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(8)),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF9FAFB), 
+                          borderRadius: BorderRadius.circular(8)
+                        ),
                         child: Column(children: [
                           _buildPasswordRule('Hiển thị từ 8 ký tự trở lên', _hasMinLength),
                           _buildPasswordRule('Bao gồm chữ cái và chữ số', _hasLetter && _hasNumber),
@@ -289,28 +294,32 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Widget _buildLabel(String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 2),
-      child: Text(text, style: const TextStyle(color: Color(0xFF666666), fontSize: 14, fontWeight: FontWeight.w500)),
+      child: Text(text, style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF666666), fontSize: 14, fontWeight: FontWeight.w500)),
     );
   }
 
   Widget _buildTextField({required String hintText, TextEditingController? controller, bool isObscure = false, Widget? suffixIcon, String? errorText, Function(String)? onChanged}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return TextFormField(
       controller: controller,
       obscureText: isObscure,
       onChanged: onChanged,
-      style: const TextStyle(fontSize: 15),
+      style: TextStyle(fontSize: 15, color: isDark ? Colors.white : Colors.black),
       decoration: InputDecoration(
         hintText: hintText,
         errorText: errorText,
-        hintStyle: TextStyle(color: Colors.black.withOpacity(0.3), fontSize: 14),
+        hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black.withOpacity(0.3), fontSize: 14),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFDDDDDD))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFDDDDDD))),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5)),
         errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.red.shade400, width: 1.5)),
         focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.red.shade400, width: 2)),
         suffixIcon: suffixIcon,
+        filled: isDark,
+        fillColor: isDark ? const Color(0xFF2E2E2E) : null,
       ),
     );
   }

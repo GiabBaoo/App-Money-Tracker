@@ -11,7 +11,7 @@ class NotificationScreen extends StatelessWidget {
     final firestoreService = FirestoreService();
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFF438883),
+      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
