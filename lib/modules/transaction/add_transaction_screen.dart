@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../services/firestore_service.dart';
 import '../../models/transaction_model.dart';
+import '../../utils/currency_format_utils.dart';
 import 'category_screen.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -18,7 +19,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
 
-  bool isIncome = true;
+  bool isIncome = false; // Mặc định là Khoản Chi theo yêu cầu
   bool _isLoading = false;
 
   String selectedCategoryName = 'Chọn danh mục';
@@ -58,8 +59,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    final amountText = _amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
-    if (amountText.isEmpty || double.tryParse(amountText) == null || double.parse(amountText) <= 0) {
+    final amount = CurrencyUtils.parseCurrency(_amountController.text);
+    if (amount <= 0) {
       _showSnackBar('Vui lòng nhập số tiền hợp lệ!', isError: true);
       return;
     }
@@ -76,7 +77,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         type: isIncome ? 'income' : 'expense',
         category: selectedCategoryName,
         categoryIconCode: selectedCategoryIcon.codePoint,
-        amount: double.parse(amountText),
+        amount: amount,
         date: _selectedDate,
         time: '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
         description: _descriptionController.text.trim(),
@@ -195,7 +196,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       TextFormField(
                         controller: _amountController,
                         keyboardType: TextInputType.number,
-                        style: const TextStyle(color: Color(0xFF1A7B73), fontSize: 18, fontWeight: FontWeight.bold),
+                        inputFormatters: [CurrencyInputFormatter()],
                         decoration: InputDecoration(
                           hintText: '0đ', hintStyle: const TextStyle(color: Color(0xFF1A7B73)),
                           filled: true, fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFE8F5F3),
@@ -205,7 +206,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             borderSide: BorderSide(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFF1A7B73)),
                           ),
                           focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF1A7B73), width: 2)),
-                          suffixIcon: TextButton(onPressed: () => _amountController.clear(), child: const Text('Xóa', style: TextStyle(color: Color(0xFF1A7B73), fontSize: 14))),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.close, color: Color(0xFF1A7B73), size: 18),
+                            onPressed: () => _amountController.clear(),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),

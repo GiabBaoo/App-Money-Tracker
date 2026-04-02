@@ -5,6 +5,7 @@ import '../../models/transaction_model.dart';
 import '../home/home_screen.dart';
 import '../transaction/transaction_detail_screen.dart';
 import '../home/notification_screen.dart';
+import '../../utils/currency_format_utils.dart';
 
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
@@ -59,7 +60,7 @@ class WalletScreen extends StatelessWidget {
                           return Column(children: [
                             Text('Tổng số dư', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 16)),
                             const SizedBox(height: 8),
-                            Text(HomeBody.formatCurrency(balance), style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 32, fontWeight: FontWeight.bold)),
+                            Text(CurrencyUtils.formatCurrency(balance), style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 32, fontWeight: FontWeight.bold)),
                           ]);
                         },
                       ),
@@ -97,8 +98,8 @@ class WalletScreen extends StatelessWidget {
                                 icon: tx.icon,
                                 iconColor: tx.isIncome ? Colors.green : Colors.red,
                                 title: tx.category,
-                                date: HomeBody.formatDate(tx.date),
-                                amount: '${tx.isIncome ? "+" : "-"} ${HomeBody.formatCurrency(tx.amount)}',
+                                date: CurrencyUtils.formatDate(tx.date),
+                                amount: '${tx.isIncome ? "+" : "-"} ${CurrencyUtils.formatCurrency(tx.amount)}',
                                 isIncome: tx.isIncome,
                                 transaction: tx,
                               )).toList(),
@@ -131,7 +132,7 @@ class WalletScreen extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 20),
       child: InkWell(
         onTap: () => Navigator.push(context, PageTransitions.slideRight(TransactionDetailScreen(
-          isIncome: isIncome, title: title, amount: amount, date: date, time: transaction.time, icon: icon,
+          transaction: transaction,
         ))),
         child: Row(children: [
           Container(
@@ -150,7 +151,7 @@ class WalletScreen extends StatelessWidget {
             const SizedBox(height: 4),
             Text(date, style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 13)),
           ])),
-          Text(amount, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isIncome ? const Color(0xFF24A869) : const Color(0xFFF95B51))),
+          Text(amount, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isIncome ? const Color(0xFF24A869) : const Color(0xFFE17E5B))),
         ]),
       ),
     );

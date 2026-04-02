@@ -13,6 +13,7 @@ class UserModel {
   final String currency;
   final String role;
   final Map<String, bool> dataUsage;
+  final DateTime? lastPasswordUpdate; // THÊM: Theo dõi thời điểm đổi MK gần nhất
 
   UserModel({
     required this.uid,
@@ -27,6 +28,7 @@ class UserModel {
     this.currency = 'VND',
     this.role = 'user',
     Map<String, bool>? dataUsage,
+    this.lastPasswordUpdate,
   })  : joinDate = joinDate ?? DateTime.now(),
         dataUsage = dataUsage ??
             {
@@ -56,6 +58,9 @@ class UserModel {
       dataUsage: data['dataUsage'] != null
           ? Map<String, bool>.from(data['dataUsage'] as Map)
           : null,
+      lastPasswordUpdate: data['lastPasswordUpdate'] != null
+          ? (data['lastPasswordUpdate'] as Timestamp).toDate()
+          : null,
     );
   }
 
@@ -74,6 +79,9 @@ class UserModel {
       'currency': currency,
       'role': role,
       'dataUsage': dataUsage,
+      'lastPasswordUpdate': lastPasswordUpdate != null
+          ? Timestamp.fromDate(lastPasswordUpdate!)
+          : null,
     };
   }
 }

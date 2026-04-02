@@ -3,7 +3,11 @@ import '../../utils/page_transitions.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../services/firestore_service.dart';
 import '../../models/transaction_model.dart';
+import '../../utils/currency_format_utils.dart';
+import '../transaction/transaction_detail_screen.dart';
 import 'export_report_screen.dart';
+
+// Đã xóa enum SortState để dùng bool đơn giản theo yêu cầu
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -16,8 +20,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   late Stream<List<TransactionModel>> _transactionStream;
 
-  int _selectedTimeIndex = 1;
+  int _selectedTimeIndex = 0;
   bool _isExpense = true;
+  bool _isDescending = true; // Mặc định sắp xếp giảm dần (cao xuống thấp)
+  String? _highlightedId;
   int _touchedIndex = -1;
 
   final List<String> _timeFilters = ['Ngày', 'Tuần', 'Tháng', 'Năm'];
@@ -317,7 +323,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               _isExpense ? 'Chi Tiêu Hàng Đầu' : 'Thu Nhập Hàng Đầu',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
-            const Icon(Icons.swap_vert),
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  _isDescending = !_isDescending;
+                });
+              },
+              icon: Icon(
+                _isDescending ? Icons.arrow_downward : Icons.arrow_upward, 
+                size: 22,
+                color: const Color(0xFF438883),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -328,33 +345,38 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             child: Center(child: Text('Chưa có dữ liệu', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 16))),
           )
         else
-          ...topList.asMap().entries.map((entry) {
-            final idx = entry.key;
-            final tx = entry.value;
-            final isHighlight = idx == 1 && topList.length > 1;
-            return _buildSpendingItem(
-              icon: tx.icon,
-              title: tx.category,
-              date: _formatSimpleDate(tx.date),
-              amount: '${_isExpense ? "- " : "+ "}${_formatMoney(tx.amount)}',
-              isHighlight: isHighlight,
-            );
-          }),
+          for (var tx in topList)
+            _buildSpendingItem(
+              context: context,
+              transaction: tx,
+              isHighlight: _highlightedId == tx.id,
+              onTap: () {
+                setState(() => _highlightedId = tx.id);
+                Navigator.push(context, PageTransitions.slideRight(TransactionDetailScreen(
+                  transaction: tx,
+                )));
+              },
+            ),
       ],
     );
   }
 
   Widget _buildSpendingItem({
-    required IconData icon,
-    required String title,
-    required String date,
-    required String amount,
+    required BuildContext context,
+    required TransactionModel transaction,
     required bool isHighlight,
+    required VoidCallback onTap,
   }) {
-    return Builder(
-      builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Container(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final amount = '${_isExpense ? "- " : "+ "}${_formatMoney(transaction.amount)}';
+    final icon = transaction.icon;
+    final title = transaction.category;
+    final date = _formatSimpleDate(transaction.date);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
@@ -378,7 +400,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   icon, 
                   color: isHighlight 
                     ? Colors.white 
-                    : (_isExpense ? const Color(0xFFF95B51) : const Color(0xFF24A869)),
+                    : (_isExpense ? const Color(0xFFE17E5B) : const Color(0xFF24A869)),
                   size: 28
                 ),
               ),
@@ -415,16 +437,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 style: TextStyle(
                   color: isHighlight 
                     ? Colors.white 
-                    : (_isExpense ? const Color(0xFFF95B51) : const Color(0xFF24A869)),
+                    : (_isExpense ? const Color(0xFFE17E5B) : const Color(0xFF24A869)),
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
-        );
-      }
-    );
+        ),
+      );
   }
 
   // ================================================================
@@ -503,23 +524,22 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   List<TransactionModel> _getTopSpending(List<TransactionModel> txs) {
+    if (txs.isEmpty) return [];
     final sorted = List<TransactionModel>.from(txs);
-    sorted.sort((a, b) => b.amount.compareTo(a.amount));
-    return sorted.take(3).toList();
+    
+    if (_isDescending) {
+      sorted.sort((a, b) => b.amount.compareTo(a.amount));
+    } else {
+      sorted.sort((a, b) => a.amount.compareTo(b.amount));
+    }
+    
+    return sorted.take(10).toList(); 
   }
 
+  // Cần import TransactionDetailScreen
+
   String _formatMoney(double amount) {
-    String text = amount.toStringAsFixed(0);
-    String result = '';
-    int count = 0;
-    for (int i = text.length - 1; i >= 0; i--) {
-      count++;
-      result = text[i] + result;
-      if (count % 3 == 0 && i > 0) {
-        result = '.$result';
-      }
-    }
-    return '${result}d';
+    return CurrencyUtils.formatCurrency(amount);
   }
 
   String _formatSimpleDate(DateTime date) {

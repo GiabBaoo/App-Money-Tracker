@@ -4,6 +4,7 @@ import '../../utils/page_transitions.dart';
 import '../../services/firestore_service.dart';
 import '../../models/transaction_model.dart';
 import '../home/home_screen.dart';
+import '../../utils/currency_format_utils.dart';
 import 'transaction_detail_screen.dart';
 
 class AllTransactionsScreen extends StatelessWidget {
@@ -61,8 +62,8 @@ class AllTransactionsScreen extends StatelessWidget {
                             context: context,
                             icon: tx.icon,
                             title: tx.category,
-                            date: HomeBody.formatDate(tx.date),
-                            amount: '${tx.isIncome ? "+" : "-"} ${HomeBody.formatCurrency(tx.amount)}',
+                            date: CurrencyUtils.formatDate(tx.date),
+                            amount: '${tx.isIncome ? "+" : "-"} ${CurrencyUtils.formatCurrency(tx.amount)}',
                             isIncome: tx.isIncome,
                             transaction: tx,
                           )),
@@ -85,7 +86,7 @@ class AllTransactionsScreen extends StatelessWidget {
   Map<String, List<TransactionModel>> _groupByDate(List<TransactionModel> transactions) {
     final Map<String, List<TransactionModel>> grouped = {};
     for (var tx in transactions) {
-      final key = HomeBody.formatDate(tx.date);
+      final key = CurrencyUtils.formatDate(tx.date);
       grouped.putIfAbsent(key, () => []);
       grouped[key]!.add(tx);
     }
@@ -114,7 +115,7 @@ class AllTransactionsScreen extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16),
       child: InkWell(
         onTap: () => Navigator.push(context, PageTransitions.slideRight(TransactionDetailScreen(
-          isIncome: isIncome, title: title, amount: amount, date: date, time: transaction.time, icon: icon,
+          transaction: transaction,
         ))),
         child: Row(children: [
           Container(
@@ -125,7 +126,7 @@ class AllTransactionsScreen extends StatelessWidget {
                 : const Color(0xFFF0F6F5), 
               borderRadius: BorderRadius.circular(12)
             ),
-            child: Icon(icon, color: isIncome ? const Color(0xFF24A869) : const Color(0xFFF95B51), size: 24),
+            child: Icon(icon, color: isIncome ? const Color(0xFF24A869) : const Color(0xFFE17E5B), size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -133,7 +134,7 @@ class AllTransactionsScreen extends StatelessWidget {
             const SizedBox(height: 4),
             Text(date, style: TextStyle(fontSize: 13, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6))),
           ])),
-          Text(amount, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isIncome ? const Color(0xFF24A869) : const Color(0xFFF95B51))),
+          Text(amount, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isIncome ? const Color(0xFF24A869) : const Color(0xFFE17E5B))),
         ]),
       ),
     );

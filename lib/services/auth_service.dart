@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import 'email_service.dart';
+import 'firestore_service.dart';
+import '../utils/device_utils.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -192,6 +194,13 @@ class AuthService {
               SetOptions(merge: true),
             );
       }
+      // ĐĂNG KÝ THIẾT BỊ HOẠT ĐỘNG
+      final deviceInfo = await DeviceUtils.getDeviceInfo();
+      await FirestoreService().registerDeviceSession(
+        deviceName: deviceInfo['name']!,
+        deviceType: deviceInfo['type']!,
+      );
+
       return (success: true, message: 'Dang nhap thanh cong!');
     } on FirebaseAuthException catch (e) {
       return (success: false, message: _getAuthErrorMessage(e.code));
@@ -202,6 +211,13 @@ class AuthService {
 
   // ==================== DANG XUAT ====================
   Future<void> logout() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      // XÓA THIẾT BỊ HIỆN TẠI KHỎI LIST HOẠT ĐỘNG KHI ĐĂNG XUẤT
+      final deviceInfo = await DeviceUtils.getDeviceInfo();
+      final sessionId = DeviceUtils.getSessionId(user.uid, deviceInfo['name']!);
+      await FirestoreService().removeDeviceSession(sessionId);
+    }
     await _auth.signOut();
   }
 
@@ -217,6 +233,12 @@ class AuthService {
       final credential = EmailAuthProvider.credential(email: user.email!, password: currentPassword);
       await user.reauthenticateWithCredential(credential);
       await user.updatePassword(newPassword);
+      
+      // CẬP NHẬT THỜI GIAN ĐỔI MK TRÊN FIRESTORE
+      await _firestore.collection('users').doc(user.uid).update({
+        'lastPasswordUpdate': FieldValue.serverTimestamp(),
+      });
+
       return (success: true, message: 'Doi mat khau thanh cong!');
     } on FirebaseAuthException catch (e) {
       if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
@@ -295,6 +317,12 @@ class AuthService {
         return (success: false, message: 'Chưa đăng nhập!');
       }
       await user.updatePassword(newPassword);
+
+      // CẬP NHẬT THỜI GIAN ĐỔI MK TRÊN FIRESTORE
+      await _firestore.collection('users').doc(user.uid).update({
+        'lastPasswordUpdate': FieldValue.serverTimestamp(),
+      });
+
       return (success: true, message: 'Cập nhật mật khẩu thành công!');
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {

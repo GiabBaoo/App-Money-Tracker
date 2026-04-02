@@ -1,33 +1,34 @@
 import 'package:flutter/material.dart';
+import '../../services/firestore_service.dart';
+import '../../models/transaction_model.dart';
+import '../../utils/page_transitions.dart';
+import 'edit_transaction_screen.dart';
 
 class TransactionDetailScreen extends StatelessWidget {
-  // Khai báo các biến để nhận dữ liệu từ màn hình trước truyền sang
-  final bool isIncome; // true = Thu, false = Chi
-  final String title;
-  final String date;
-  final String time;
-  final String amount;
-  final IconData icon;
+  final TransactionModel transaction;
 
   const TransactionDetailScreen({
     super.key,
-    required this.isIncome,
-    required this.title,
-    required this.date,
-    required this.time,
-    required this.amount,
-    required this.icon,
+    required this.transaction,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
+    final isIncome = transaction.isIncome;
+    final category = transaction.category;
+    final description = transaction.description;
+    final date = '${transaction.date.day.toString().padLeft(2, '0')}/${transaction.date.month.toString().padLeft(2, '0')}/${transaction.date.year}';
+    final time = transaction.time;
+    final amount = '${isIncome ? "+" : "-"} ${transaction.amount.toStringAsFixed(0)}đ'; 
+    final icon = transaction.icon;
+
     // Tự động chọn màu tùy theo trạng thái Thu / Chi
     final Color statusColor = isIncome
-        ? const Color(0xFF438883)
-        : const Color(0xFFF95B51);
-    final String statusText = isIncome ? 'Thu nhập' : 'Chi phí';
+        ? const Color(0xFF24A869) // Xanh lá đậm hơn cho rõ
+        : const Color(0xFFE17E5B); // Cam đất (Thay cho Đỏ)
+    final String statusText = isIncome ? 'Khoản Thu' : 'Khoản Chi';
 
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark 
@@ -59,10 +60,56 @@ class TransactionDetailScreen extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const Icon(
-                    Icons.more_horiz,
-                    color: Colors.white,
-                  ), // Icon 3 chấm
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, color: Colors.white),
+                    offset: const Offset(0, 50),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    onSelected: (value) async {
+                      if (value == 'edit') {
+                        await Navigator.push(context, PageTransitions.slideRight(EditTransactionScreen(transaction: transaction)));
+                      } else if (value == 'delete') {
+                        // Gọi logic xóa từ một helper hoặc Navigator pop với kết quả
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            title: const Text('Xác nhận xóa'),
+                            content: const Text('Bạn có chắc chắn muốn xóa giao dịch này không?'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy', style: TextStyle(color: Colors.grey))),
+                              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Xóa', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          await FirestoreService().deleteTransaction(transaction.id);
+                          if (context.mounted) Navigator.pop(context);
+                        }
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: const [
+                            Icon(Icons.edit_outlined, color: Color(0xFF438883), size: 20),
+                            SizedBox(width: 10),
+                            Text('Chỉnh sửa'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: const [
+                            Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                            SizedBox(width: 10),
+                            Text('Xóa giao dịch', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -158,12 +205,8 @@ class TransactionDetailScreen extends StatelessWidget {
                       const SizedBox(height: 20),
 
                       // CÁC DÒNG THÔNG TIN
-                      _buildDetailRow(
-                        'Trạng thái',
-                        statusText,
-                        valueColor: statusColor,
-                      ),
-                      _buildDetailRow('Nội dung', title),
+                      _buildDetailRow('Danh mục', category),
+                      _buildDetailRow('Nội dung', description.isEmpty ? 'Không có nội dung' : description),
                       _buildDetailRow('Thời gian', time),
                       _buildDetailRow('Ngày', date),
 
@@ -222,14 +265,17 @@ class TransactionDetailScreen extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              Text(
-                value,
-                style: TextStyle(
-                  color: valueColor ?? (isDark ? Colors.white : const Color(0xFF222222)),
-                  fontSize: 16,
-                  fontWeight: valueColor != null
-                      ? FontWeight.w600
-                      : FontWeight.w500,
+              Flexible(
+                child: Text(
+                  value,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: valueColor ?? (isDark ? Colors.white : const Color(0xFF222222)),
+                    fontSize: 16,
+                    fontWeight: valueColor != null
+                        ? FontWeight.w600
+                        : FontWeight.w500,
+                  ),
                 ),
               ),
             ],

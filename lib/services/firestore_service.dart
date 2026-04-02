@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -60,9 +61,11 @@ class FirestoreService {
   }
 
   // Cập nhật giao dịch
-  Future<void> updateTransaction(
-      String transactionId, Map<String, dynamic> data) async {
-    await _db.collection('transactions').doc(transactionId).update(data);
+  Future<void> updateTransaction(TransactionModel transaction) async {
+    await _db
+        .collection('transactions')
+        .doc(transaction.id)
+        .update(transaction.toFirestore());
   }
 
   // ======================== THỐNG KÊ (HOME) ========================
@@ -110,11 +113,16 @@ class FirestoreService {
     return _db
         .collection('notifications')
         .where('uid', isEqualTo: _uid)
-        .orderBy('createdAt', descending: true)
+        // Sắp xếp ở phía Client để tránh lỗi yêu cầu tạo Index trên Firebase
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => NotificationModel.fromFirestore(doc))
-            .toList());
+        .map((snapshot) {
+      final list = snapshot.docs
+          .map((doc) => NotificationModel.fromFirestore(doc))
+          .toList();
+      // Sắp xếp giảm dần theo thời gian (mới nhất lên đầu)
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return list;
+    });
   }
 
   // Đánh dấu thông báo đã đọc
@@ -123,6 +131,53 @@ class FirestoreService {
         .collection('notifications')
         .doc(notificationId)
         .update({'isRead': true});
+  }
+
+  // HÀM ĐẨY DỮ LIỆU THÔNG BÁO ẢO (MOCK DATA) THEO YÊU CẦU
+  Future<void> pushMockNotifications() async {
+    if (_uid == null) {
+      print('PUSH ERROR: UI IS NULL');
+      return;
+    }
+    
+    print('STARTING PUSH MOCK DATA FOR UID: $_uid');
+
+    final List<NotificationModel> mockData = [
+      NotificationModel(
+        uid: _uid!,
+        iconCode: Icons.notifications_active_outlined.codePoint,
+        title: 'Nhắc nhở chi tiêu',
+        description: 'Nhắc nhở: Đừng quên ghi lại đầy đủ các khoản chi tiêu hôm nay của bạn nhé!',
+        isRead: false,
+      ),
+      NotificationModel(
+        uid: _uid!,
+        iconCode: Icons.warning_rounded.codePoint,
+        title: 'Cảnh báo hạn mức',
+        description: 'Cảnh báo: Bạn đã chi vượt mức 500.000đ so với kế hoạch đặt ra.',
+        isRead: false,
+      ),
+      NotificationModel(
+        uid: _uid!,
+        iconCode: Icons.celebration_rounded.codePoint,
+        title: 'Chào mừng',
+        description: 'Chào mừng bạn đến với hệ thống Money Tracker phiên bản mới nhất!',
+        isRead: true,
+      ),
+    ];
+
+    try {
+      final batch = _db.batch();
+      for (var noti in mockData) {
+        final docRef = _db.collection('notifications').doc();
+        batch.set(docRef, noti.toFirestore());
+      }
+      await batch.commit();
+      print('PUSH SUCCESS: 3 NOTIFICATIONS ADDED');
+    } catch (e) {
+      print('PUSH FAILED: $e');
+      rethrow;
+    }
   }
 
   // ======================== USER PROFILE ========================
