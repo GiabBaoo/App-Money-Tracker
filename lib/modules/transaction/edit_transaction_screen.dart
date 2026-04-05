@@ -39,6 +39,8 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     _descriptionController = TextEditingController(
       text: widget.transaction.description,
     );
+    
+    // NÂNG CẤP LOGIC: Lưu giữ ngày gốc từ giao dịch, không tự ý reset sang ngày hiện tại
     _selectedDate = widget.transaction.date;
     
     final timeParts = widget.transaction.time.split(':');
@@ -47,7 +49,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
       minute: int.parse(timeParts[1])
     );
     
-    // Khởi tạo danh mục hiện tại
+    // Khởi tạo danh mục hiện tại và IconCode từ data gốc
     _currentCategory = widget.transaction.category;
     _currentIconCode = widget.transaction.categoryIconCode;
   }

@@ -6,8 +6,9 @@ import '../../models/transaction_model.dart';
 import '../../utils/currency_format_utils.dart';
 import '../transaction/transaction_detail_screen.dart';
 import 'export_report_screen.dart';
-
-// Đã xóa enum SortState để dùng bool đơn giản theo yêu cầu
+import '../../widgets/transaction_item.dart';
+import '../../utils/category_utils.dart';
+import 'package:intl/intl.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -20,13 +21,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   late Stream<List<TransactionModel>> _transactionStream;
 
-  int _selectedTimeIndex = 0;
+  int _selectedMainTab = 0; // Mặc định là Tuần (0)
+  int _selectedFilterIndex = 0; // Mặc định là Tuần này (index 0)
+  
   bool _isExpense = true;
-  bool _isDescending = true; // Mặc định sắp xếp giảm dần (cao xuống thấp)
-  String? _highlightedId;
+  bool _isDescending = true;
   int _touchedIndex = -1;
-
-  final List<String> _timeFilters = ['Ngày', 'Tuần', 'Tháng', 'Năm'];
 
   @override
   void initState() {
@@ -34,128 +34,367 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     _transactionStream = _firestoreService.getTransactionsStream();
   }
 
+  List<String> _getFilterOptions() {
+    final now = DateTime.now();
+    if (_selectedMainTab == 0) {
+      return ['Tuần này', 'Tuần trước', 'Tuần 1 tháng ${now.month}', 'Tuần 2 tháng ${now.month}', 'Tuần 3 tháng ${now.month}', 'Tuần 4 tháng ${now.month}'];
+    } else if (_selectedMainTab == 1) {
+      return List.generate(12, (i) => 'Tháng ${i + 1}');
+    } else {
+      return [now.year.toString(), (now.year - 1).toString(), (now.year - 2).toString()];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            // === APP BAR ===
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+      body: Column(
+        children: [
+          // === HEADER CURVE ===
+          Stack(
+            children: [
+              Container(
+                height: 140, width: double.infinity,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.elliptical(400, 30))
+                ),
+              ),
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SizedBox(width: 40),
+                      const Text('Thống kê', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white)),
+                      IconButton(
+                        icon: const Icon(Icons.file_download_outlined, size: 24, color: Colors.white),
+                        onPressed: () => Navigator.push(context, PageTransitions.slideRight(const ExportReportScreen())),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // === MAIN TABS (TUẦN/THÁNG/NĂM) ===
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(14),
+              ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const SizedBox(width: 40),
-                  const Text(
-                    'Thống kê',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.file_download_outlined, size: 24),
-                    onPressed: () => Navigator.push(context, PageTransitions.slideRight(const ExportReportScreen())),
-                  ),
+                  _buildMainTab(0, 'Tuần'),
+                  _buildMainTab(1, 'Tháng'),
+                  _buildMainTab(2, 'Năm'),
                 ],
               ),
             ),
+          ),
 
-            const SizedBox(height: 10),
+          const SizedBox(height: 20),
 
-            // === TAB THOI GIAN ===
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(_timeFilters.length, (index) {
-                  bool isSelected = _selectedTimeIndex == index;
-                  return GestureDetector(
-                    onTap: () => setState(() {
-                      _selectedTimeIndex = index;
-                      _touchedIndex = -1;
-                    }),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFF438883) : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        _timeFilters[index],
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
-                          fontSize: 14,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                        ),
-                      ),
+          // === CAPSULE FILTER (PICKER) ===
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                GestureDetector(
+                  onTap: () => _showFilterPickerSheet(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+                      boxShadow: [
+                         if(!isDark) BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))
+                      ]
                     ),
-                  );
-                }),
-              ),
-            ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.calendar_today_outlined, size: 14, color: isDark ? Colors.white70 : const Color(0xFF438883)),
+                        const SizedBox(width: 8),
+                        Text(
+                          _getFilterOptions()[_selectedFilterIndex >= _getFilterOptions().length ? 0 : _selectedFilterIndex],
+                          style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF333333), fontSize: 13, fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Colors.grey),
+                      ],
+                    ),
+                  ),
+                ),
 
-            const SizedBox(height: 16),
-
-            // === NUT CHUYEN CHI PHI / THU NHAP ===
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: GestureDetector(
+                // NÚT LOẠI GIAO DỊCH
+                GestureDetector(
                   onTap: () => setState(() {
                     _isExpense = !_isExpense;
                     _touchedIndex = -1;
                   }),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                      borderRadius: BorderRadius.circular(10),
+                      color: _isExpense ? (isDark ? const Color(0xFF3D1B1B) : const Color(0xFFFEF2F2)) : (isDark ? const Color(0xFF1B3D2F) : const Color(0xFFE8F5EE)),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           _isExpense ? 'Chi phí' : 'Thu nhập',
-                          style: const TextStyle(color: Color(0xFF666666), fontSize: 14, fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            color: _isExpense ? (isDark ? const Color(0xFFF87171) : const Color(0xFFE63946)) : (isDark ? const Color(0xFF4ADE80) : const Color(0xFF24A869)),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.keyboard_arrow_down, color: Color(0xFF666666), size: 18),
+                        const SizedBox(width: 6),
+                        Icon(Icons.swap_horiz, color: _isExpense ? (isDark ? const Color(0xFFF87171) : const Color(0xFFE63946)) : (isDark ? const Color(0xFF4ADE80) : const Color(0xFF24A869)), size: 16),
                       ],
                     ),
                   ),
                 ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // === CONTENT ===
+          Expanded(
+            child: StreamBuilder<List<TransactionModel>>(
+              stream: _transactionStream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
+                }
+
+                final allTx = snapshot.data ?? [];
+                final range = _getRangeFromFilter();
+                
+                final filteredAll = allTx.where((tx) {
+                  final d = DateTime(tx.date.year, tx.date.month, tx.date.day);
+                  return !d.isBefore(range.start) && !d.isAfter(range.end);
+                }).toList();
+
+                final filtered = filteredAll.where((tx) => _isExpense ? !tx.isIncome : tx.isIncome).toList();
+                
+                final chartPoints = _buildChartData(filtered, range);
+                final total = filtered.fold<double>(0, (sum, tx) => sum + tx.amount);
+                final topList = _getTopSpending(filtered);
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  child: Column(
+                    children: [
+                      _buildWaveChart(chartPoints, total),
+                      const SizedBox(height: 32),
+                      _buildEnhancedTopSection(topList, total),
+                      const SizedBox(height: 100),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // === NÂNG CẤP PHẦN DANH SÁCH THỐNG KÊ ===
+  Widget _buildEnhancedTopSection(List<TransactionModel> topList, double total) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              _isExpense ? 'Danh sách chi tiêu' : 'Danh sách thu nhập',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            GestureDetector(
+              onTap: () => setState(() => _isDescending = !_isDescending),
+              child: Row(
+                children: [
+                  Text(_isDescending ? 'Cao nhất' : 'Thấp nhất', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600)),
+                  Icon(_isDescending ? Icons.expand_more : Icons.expand_less, color: Colors.grey, size: 20),
+                ],
               ),
             ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        
+        if (topList.isEmpty) 
+          _buildEmptyState()
+        else 
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: topList.length,
+            itemBuilder: (context, index) {
+              final tx = topList[index];
+              final double percent = total > 0 ? (tx.amount / total) : 0;
+              final color = CategoryUtils.getVibrantColor(tx.category);
+              final bgColor = CategoryUtils.getLightBgColor(tx.category, isDark);
 
-            const SizedBox(height: 10),
-
-            // === BIEU DO + DANH SACH ===
-            Expanded(
-              child: StreamBuilder<List<TransactionModel>>(
-                stream: _transactionStream,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
-                  }
-
-                  final allTx = snapshot.data ?? [];
-                  final filtered = allTx.where((tx) => _isExpense ? !tx.isIncome : tx.isIncome).toList();
-                  final chartPoints = _buildChartData(filtered);
-                  final total = filtered.fold<double>(0, (sum, tx) => sum + tx.amount);
-                  final topList = _getTopSpending(filtered);
-
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    if(!isDark) BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))
+                  ],
+                  border: isDark ? Border.all(color: Colors.white.withOpacity(0.05)) : null,
+                ),
+                child: Column(
+                  children: [
+                    Row(
                       children: [
-                        _buildWaveChart(chartPoints, total),
-                        const SizedBox(height: 30),
-                        _buildTopSpendingSection(topList),
-                        const SizedBox(height: 100),
+                        // Icon Badge
+                        Container(
+                          width: 48, height: 48,
+                          decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(15)),
+                          child: Icon(tx.icon, color: color, size: 22),
+                        ),
+                        const SizedBox(width: 14),
+                        // Content
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(tx.category, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+                              const SizedBox(height: 2),
+                              Text(tx.description.isEmpty ? 'Không có nội dung' : tx.description, style: const TextStyle(color: Colors.grey, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ],
+                          ),
+                        ),
+                        // Amount
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              CurrencyUtils.formatCurrency(tx.amount),
+                              style: TextStyle(color: isDark ? Colors.white : const Color(0xFF333333), fontWeight: FontWeight.w800, fontSize: 15),
+                            ),
+                            Text('${(percent * 100).toStringAsFixed(1)}%', style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
                       ],
+                    ),
+                    const SizedBox(height: 14),
+                    // Progress Bar
+                    Stack(
+                      children: [
+                        Container(
+                          height: 6, width: double.infinity,
+                          decoration: BoxDecoration(color: isDark ? Colors.white10 : Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
+                        ),
+                        FractionallySizedBox(
+                          widthFactor: percent,
+                          child: Container(
+                            height: 6,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(colors: [color, color.withOpacity(0.6)]),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        children: [
+          const SizedBox(height: 40),
+          Icon(Icons.analytics_outlined, size: 60, color: Colors.grey.withOpacity(0.2)),
+          const SizedBox(height: 16),
+          const Text('Chưa có dữ liệu thống kê', style: TextStyle(color: Colors.grey, fontSize: 14)),
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  // BOTTOM SHEET PICKER CHO BỘ LỌC
+  void _showFilterPickerSheet(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).primaryColor;
+    final options = _getFilterOptions();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: 400,
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Container(width: 50, height: 5, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(10))),
+            const SizedBox(height: 24),
+            Text('Chọn ${_selectedMainTab == 0 ? 'Tuần' : _selectedMainTab == 1 ? 'Tháng' : 'Năm'}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
+            Expanded(
+              child: ListView.builder(
+                itemCount: options.length,
+                itemBuilder: (context, index) {
+                  final isSelected = index == _selectedFilterIndex;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedFilterIndex = index;
+                        _touchedIndex = -1;
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: isSelected ? primaryColor : (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6)),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            options[index],
+                            style: TextStyle(color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87), fontWeight: isSelected ? FontWeight.bold : FontWeight.w500),
+                          ),
+                          if (isSelected) const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -167,389 +406,149 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
-  // ================================================================
-  // BIEU DO SONG
-  // ================================================================
+  // --- LOGIC HỖ TRỢ ---
+  ({DateTime start, DateTime end}) _getRangeFromFilter() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    if (_selectedMainTab == 0) {
+      if (_selectedFilterIndex == 0) return (start: today.subtract(Duration(days: today.weekday - 1)), end: today);
+      if (_selectedFilterIndex == 1) return (start: today.subtract(Duration(days: today.weekday - 1 + 7)), end: today.subtract(Duration(days: today.weekday)));
+      final weekIdx = _selectedFilterIndex - 2;
+      final startOfMonth = DateTime(now.year, now.month, 1);
+      final start = startOfMonth.add(Duration(days: weekIdx * 7));
+      var end = start.add(const Duration(days: 6));
+      if (end.month != now.month) end = DateTime(now.year, now.month + 1, 0);
+      return (start: start, end: end);
+    } else if (_selectedMainTab == 1) {
+      final month = _selectedFilterIndex + 1;
+      return (start: DateTime(now.year, month, 1), end: DateTime(now.year, month + 1, 0));
+    } else {
+      final year = now.year - _selectedFilterIndex;
+      return (start: DateTime(year, 1, 1), end: DateTime(year, 12, 31));
+    }
+  }
+
+  Widget _buildMainTab(int index, String label) {
+    bool isSelected = _selectedMainTab == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() {
+          _selectedMainTab = index;
+          if (index == 0) _selectedFilterIndex = 0;
+          if (index == 1) _selectedFilterIndex = DateTime.now().month - 1;
+          if (index == 2) _selectedFilterIndex = 0;
+          _touchedIndex = -1;
+        }),
+        child: Container(
+          margin: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF438883) : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : (Theme.of(context).brightness == Brightness.dark ? Colors.white60 : Colors.black54),
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildWaveChart(List<_ChartPoint> data, double total) {
     if (data.isEmpty) {
       return Container(
-        height: 250,
-        decoration: BoxDecoration(color: const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(16)),
+        height: 250, width: double.infinity,
+        decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(16)),
         child: const Center(child: Text('Chưa có dữ liệu', style: TextStyle(color: Color(0xFF999999)))),
       );
     }
-
     final maxY = data.map((e) => e.value).reduce((a, b) => a > b ? a : b);
     final safeMaxY = maxY <= 0 ? 1.0 : maxY * 1.3;
-
     return SizedBox(
       height: 240,
       child: LineChart(
         LineChartData(
           gridData: const FlGridData(show: false),
           borderData: FlBorderData(show: false),
-          minX: 0,
-          maxX: (data.length - 1).toDouble(),
-          minY: 0,
-          maxY: safeMaxY,
-
-          // === LABELS TRUC X ===
+          minX: 0, maxX: (data.length - 1).toDouble(),
+          minY: 0, maxY: safeMaxY,
           titlesData: FlTitlesData(
             leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 32,
-                interval: 1,
+                showTitles: true, reservedSize: 32, interval: 1,
                 getTitlesWidget: (value, meta) {
                   final idx = value.toInt();
                   if (idx < 0 || idx >= data.length) return const SizedBox();
-                  final isSelected = idx == _touchedIndex;
                   return Padding(
                     padding: const EdgeInsets.only(top: 10),
-                    child: Text(
-                      data[idx].label,
-                      style: TextStyle(
-                        color: isSelected ? const Color(0xFF438883) : const Color(0xFFAAAAAA),
-                        fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                      ),
-                    ),
+                    child: Text(data[idx].label, style: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 10)),
                   );
                 },
               ),
             ),
           ),
-
-          // === TOOLTIP KHI CHAM ===
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) => Theme.of(context).brightness == Brightness.dark 
-                ? const Color(0xFF2E2E2E) 
-                : Colors.white,
-              tooltipPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              tooltipBorder: BorderSide(color: const Color(0xFF438883).withOpacity(0.15), width: 1),
-              getTooltipItems: (spots) {
-                return spots.map((spot) {
-                  return LineTooltipItem(
-                    _formatMoney(spot.y),
-                    TextStyle(
-                      color: Theme.of(context).brightness == Brightness.dark 
-                        ? Colors.white 
-                        : const Color(0xFF438883), 
-                      fontWeight: FontWeight.w600, 
-                      fontSize: 13
-                    ),
-                  );
-                }).toList();
-              },
+              getTooltipColor: (_) => Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2E2E2E) : Colors.white,
+              getTooltipItems: (spots) => spots.map((s) => LineTooltipItem(CurrencyUtils.formatCurrency(s.y), const TextStyle(color: Color(0xFF438883), fontWeight: FontWeight.bold))).toList(),
             ),
-            touchCallback: (event, response) {
-              if (response != null && response.lineBarSpots != null && response.lineBarSpots!.isNotEmpty) {
-                setState(() => _touchedIndex = response.lineBarSpots!.first.x.toInt());
-              }
-            },
             handleBuiltInTouches: true,
-            // DUONG KE DOC DASHED KHI CHAM
-            getTouchedSpotIndicator: (barData, spotIndexes) {
-              return spotIndexes.map((index) {
-                return TouchedSpotIndicatorData(
-                  FlLine(
-                    color: const Color(0xFF438883).withOpacity(0.3),
-                    strokeWidth: 1.5,
-                    dashArray: [5, 4],
-                  ),
-                  FlDotData(
-                    show: true,
-                    getDotPainter: (spot, percent, bar, idx) {
-                      return FlDotCirclePainter(
-                        radius: 6,
-                        color: const Color(0xFF438883),
-                        strokeWidth: 3,
-                        strokeColor: Colors.white,
-                      );
-                    },
-                  ),
-                );
-              }).toList();
-            },
           ),
-
-          // === DUONG BIEU DO ===
           lineBarsData: [
             LineChartBarData(
               spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.value)).toList(),
-              isCurved: true,
-              curveSmoothness: 0.35,
-              preventCurveOverShooting: true,
-              color: const Color(0xFF438883),
-              barWidth: 2.5,
-              isStrokeCapRound: true,
-              dotData: const FlDotData(show: false),
+              isCurved: true, color: const Color(0xFF438883), barWidth: 3, isStrokeCapRound: true,
               belowBarData: BarAreaData(
                 show: true,
                 gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    const Color(0xFF438883).withOpacity(0.25),
-                    const Color(0xFF438883).withOpacity(0.08),
-                    const Color(0xFF438883).withOpacity(0.0),
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
+                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  colors: [const Color(0xFF438883).withOpacity(0.2), const Color(0xFF438883).withOpacity(0)],
                 ),
               ),
             ),
           ],
         ),
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
       ),
     );
   }
 
-  // ================================================================
-  // PHAN CHI TIEU HANG DAU
-  // ================================================================
-  Widget _buildTopSpendingSection(List<TransactionModel> topList) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              _isExpense ? 'Chi Tiêu Hàng Đầu' : 'Thu Nhập Hàng Đầu',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-            ),
-            IconButton(
-              onPressed: () {
-                setState(() {
-                  _isDescending = !_isDescending;
-                });
-              },
-              icon: Icon(
-                _isDescending ? Icons.arrow_downward : Icons.arrow_upward, 
-                size: 22,
-                color: const Color(0xFF438883),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        if (topList.isEmpty)
-          Padding(
-            padding: const EdgeInsets.all(40),
-            child: Center(child: Text('Chưa có dữ liệu', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 16))),
-          )
-        else
-          for (var tx in topList)
-            _buildSpendingItem(
-              context: context,
-              transaction: tx,
-              isHighlight: _highlightedId == tx.id,
-              onTap: () {
-                setState(() => _highlightedId = tx.id);
-                Navigator.push(context, PageTransitions.slideRight(TransactionDetailScreen(
-                  transaction: tx,
-                )));
-              },
-            ),
-      ],
-    );
-  }
-
-  Widget _buildSpendingItem({
-    required BuildContext context,
-    required TransactionModel transaction,
-    required bool isHighlight,
-    required VoidCallback onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final amount = '${_isExpense ? "- " : "+ "}${_formatMoney(transaction.amount)}';
-    final icon = transaction.icon;
-    final title = transaction.category;
-    final date = _formatSimpleDate(transaction.date);
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: isHighlight 
-              ? const Color(0xFF29756F) 
-              : (isDark ? const Color(0xFF2E2E2E) : Colors.white),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: isHighlight 
-                    ? Colors.white.withOpacity(0.15) 
-                    : (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF0F6F5)),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon, 
-                  color: isHighlight 
-                    ? Colors.white 
-                    : (_isExpense ? const Color(0xFFE17E5B) : const Color(0xFF24A869)),
-                  size: 28
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: isHighlight 
-                          ? Colors.white 
-                          : (isDark ? Colors.white : const Color(0xFF222222)),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      date,
-                      style: TextStyle(
-                        color: isHighlight 
-                          ? Colors.white.withOpacity(0.7) 
-                          : (isDark ? Colors.white70 : const Color(0xFF999999)),
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                amount,
-                style: TextStyle(
-                  color: isHighlight 
-                    ? Colors.white 
-                    : (_isExpense ? const Color(0xFFE17E5B) : const Color(0xFF24A869)),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-  }
-
-  // ================================================================
-  // XU LY DU LIEU CHART
-  // ================================================================
-  List<_ChartPoint> _buildChartData(List<TransactionModel> transactions) {
-    switch (_selectedTimeIndex) {
-      case 0:
-        return _groupByDay(transactions, 7);
-      case 1:
-        return _groupByWeek(transactions, 7);
-      case 2:
-        return _groupByMonth(transactions, 7);
-      case 3:
-        return _groupByYear(transactions, 6);
-      default:
-        return _groupByMonth(transactions, 7);
-    }
-  }
-
-  List<_ChartPoint> _groupByDay(List<TransactionModel> txs, int count) {
-    final now = DateTime.now();
+  List<_ChartPoint> _buildChartData(List<TransactionModel> transactions, ({DateTime start, DateTime end}) range) {
     List<_ChartPoint> result = [];
-    final dayNames = ['CN', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7'];
-    
-    for (int i = count - 1; i >= 0; i--) {
-      final day = now.subtract(Duration(days: i));
-      final total = txs
-          .where((tx) => tx.date.year == day.year && tx.date.month == day.month && tx.date.day == day.day)
-          .fold<double>(0, (s, tx) => s + tx.amount);
-      // weekday: 1=Monday, 7=Sunday => Convert to 0=Sunday, 1=Monday, ...
-      final dayName = dayNames[day.weekday % 7];
-      result.add(_ChartPoint(label: dayName, value: total));
-    }
-    return result;
-  }
-
-  List<_ChartPoint> _groupByWeek(List<TransactionModel> txs, int count) {
-    final now = DateTime.now();
-    List<_ChartPoint> result = [];
-    for (int i = count - 1; i >= 0; i--) {
-      final weekStart = now.subtract(Duration(days: now.weekday - 1 + (i * 7)));
-      final weekEnd = weekStart.add(const Duration(days: 6));
-      final total = txs
-          .where((tx) =>
-              !tx.date.isBefore(DateTime(weekStart.year, weekStart.month, weekStart.day)) &&
-              !tx.date.isAfter(DateTime(weekEnd.year, weekEnd.month, weekEnd.day, 23, 59, 59)))
-          .fold<double>(0, (s, tx) => s + tx.amount);
-      result.add(_ChartPoint(label: '${weekStart.day}T${weekStart.month}', value: total));
-    }
-    return result;
-  }
-
-  List<_ChartPoint> _groupByMonth(List<TransactionModel> txs, int count) {
-    final now = DateTime.now();
-    List<_ChartPoint> result = [];
-    for (int i = count - 1; i >= 0; i--) {
-      final month = DateTime(now.year, now.month - i, 1);
-      final total = txs
-          .where((tx) => tx.date.year == month.year && tx.date.month == month.month)
-          .fold<double>(0, (s, tx) => s + tx.amount);
-      result.add(_ChartPoint(label: 'Th${month.month}', value: total));
-    }
-    return result;
-  }
-
-  List<_ChartPoint> _groupByYear(List<TransactionModel> txs, int count) {
-    final now = DateTime.now();
-    List<_ChartPoint> result = [];
-    for (int i = count - 1; i >= 0; i--) {
-      final year = now.year - i;
-      final total = txs.where((tx) => tx.date.year == year).fold<double>(0, (s, tx) => s + tx.amount);
-      result.add(_ChartPoint(label: '$year', value: total));
+    final diff = range.end.difference(range.start).inDays;
+    if (diff <= 10) {
+      final dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+      for (int i = 0; i <= diff; i++) {
+        final d = range.start.add(Duration(days: i));
+        final val = transactions.where((tx) => tx.date.day == d.day && tx.date.month == d.month).fold<double>(0, (s, tx) => s + tx.amount);
+        result.add(_ChartPoint(label: dayNames[d.weekday % 7], value: val));
+      }
+    } else if (diff <= 31) {
+      for (int i = 0; i < 4; i++) {
+        final val = transactions.where((tx) => tx.date.day > i * 7 && tx.date.day <= (i + 1) * 7).fold<double>(0, (s, tx) => s + tx.amount);
+        result.add(_ChartPoint(label: 'W${i+1}', value: val));
+      }
+    } else {
+      for (int i = 1; i <= 12; i++) {
+        final val = transactions.where((tx) => tx.date.month == i).fold<double>(0, (s, tx) => s + tx.amount);
+        result.add(_ChartPoint(label: 'T$i', value: val));
+      }
     }
     return result;
   }
 
   List<TransactionModel> _getTopSpending(List<TransactionModel> txs) {
-    if (txs.isEmpty) return [];
-    final sorted = List<TransactionModel>.from(txs);
-    
-    if (_isDescending) {
-      sorted.sort((a, b) => b.amount.compareTo(a.amount));
-    } else {
-      sorted.sort((a, b) => a.amount.compareTo(b.amount));
-    }
-    
-    return sorted.take(10).toList(); 
-  }
-
-  // Cần import TransactionDetailScreen
-
-  String _formatMoney(double amount) {
-    return CurrencyUtils.formatCurrency(amount);
-  }
-
-  String _formatSimpleDate(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-    final d = DateTime(date.year, date.month, date.day);
-    if (d == today) return 'Hôm nay';
-    if (d == yesterday) return 'Hôm qua';
-    return 'Th${date.month} ${date.day}, ${date.year}';
+    final list = List<TransactionModel>.from(txs);
+    list.sort((a, b) => _isDescending ? b.amount.compareTo(a.amount) : a.amount.compareTo(b.amount));
+    return list.take(5).toList();
   }
 }
 

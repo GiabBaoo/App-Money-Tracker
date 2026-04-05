@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
 import '../../models/transaction_model.dart';
 import '../../utils/currency_format_utils.dart';
+import '../../utils/category_utils.dart';
 import 'category_screen.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -166,14 +167,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                           child: Row(children: [
                             Container(
-                              padding: const EdgeInsets.all(6),
+                              padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: isDark 
-                                  ? const Color(0xFF3E3E3E) 
-                                  : (isIncome ? const Color(0xFFDBEAFE) : const Color(0xFFCCFBF1)),
-                                borderRadius: BorderRadius.circular(8),
+                                color: CategoryUtils.getLightBgColor(selectedCategoryName, isDark),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Icon(selectedCategoryIcon, color: isIncome ? Colors.blue : const Color(0xFF1A7B73), size: 20),
+                              child: Icon(
+                                selectedCategoryIcon, 
+                                color: CategoryUtils.getVibrantColor(selectedCategoryName), 
+                                size: 24,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Text(

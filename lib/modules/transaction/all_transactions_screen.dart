@@ -1,54 +1,141 @@
 import 'package:flutter/material.dart';
 import '../../utils/page_transitions.dart';
-
 import '../../services/firestore_service.dart';
 import '../../models/transaction_model.dart';
-import '../home/home_screen.dart';
 import '../../utils/currency_format_utils.dart';
-import 'transaction_detail_screen.dart';
+import '../../widgets/transaction_item.dart';
 
-class AllTransactionsScreen extends StatelessWidget {
+class AllTransactionsScreen extends StatefulWidget {
   const AllTransactionsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final firestoreService = FirestoreService();
+  State<AllTransactionsScreen> createState() => _AllTransactionsScreenState();
+}
 
+class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
+  final FirestoreService _firestoreService = FirestoreService();
+  String _selectedType = 'Tất cả';
+  DateTimeRange? _selectedDateRange;
+
+  @override
+  void initState() {
+    super.initState();
+    // Mặc định lọc tháng hiện tại theo yêu cầu
+    final now = DateTime.now();
+    _selectedDateRange = DateTimeRange(
+      start: DateTime(now.year, now.month, 1),
+      end: DateTime(now.year, now.month, now.day, 23, 59, 59),
+    );
+  }
+
+  void _resetFilters() {
+    setState(() {
+      _selectedType = 'Tất cả';
+      _selectedDateRange = null; // Khi reset hoàn toàn thì cho xem tất cả hoặc tùy ý
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
+            // HEADER & FILTER ICON
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                IconButton(icon: const Icon(Icons.arrow_back_ios, size: 20), onPressed: () => Navigator.pop(context)),
-                const Text('Lịch sử giao dịch', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                IconButton(icon: const Icon(Icons.filter_list, size: 24), onPressed: () {}),
-              ]),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const Text('Lịch sử giao dịch', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(
+                    icon: Icon(
+                      Icons.filter_list,
+                      size: 26,
+                      color: (_selectedType != 'Tất cả' || _selectedDateRange != null)
+                          ? const Color(0xFF438883)
+                          : Theme.of(context).iconTheme.color,
+                    ),
+                    onPressed: () => _showFilterBottomSheet(context),
+                  ),
+                ],
+              ),
             ),
+
+            // CHIP HIỂN THỊ BỘ LỌC ĐANG CHỌN (NẾU CÓ)
+            if (_selectedType != 'Tất cả' || _selectedDateRange != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      if (_selectedType != 'Tất cả')
+                        _buildFilterChip(_selectedType, () => setState(() => _selectedType = 'Tất cả')),
+                      if (_selectedDateRange != null)
+                        _buildFilterChip(
+                          '${CurrencyUtils.formatDate(_selectedDateRange!.start)} - ${CurrencyUtils.formatDate(_selectedDateRange!.end)}',
+                          () => setState(() => _selectedDateRange = null),
+                        ),
+                      TextButton(
+                        onPressed: _resetFilters,
+                        child: const Text('Xóa tất cả', style: TextStyle(color: Colors.red, fontSize: 13)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
             const SizedBox(height: 10),
 
-            // DANH SÁCH GIAO DỊCH REALTIME
+            // DANH SÁCH GIAO DỊCH REALTIME VỚI BỘ LỌC
             Expanded(
               child: StreamBuilder<List<TransactionModel>>(
-                stream: firestoreService.getTransactionsStream(),
+                stream: _firestoreService.getTransactionsStream(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
                   }
 
-                  final transactions = snapshot.data ?? [];
-                  if (transactions.isEmpty) {
-                    return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Icon(Icons.receipt_long, size: 60, color: Theme.of(context).iconTheme.color?.withOpacity(0.3)),
-                      const SizedBox(height: 16),
-                      Text('Chưa có giao dịch nào', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 16)),
-                    ]));
+                  // 1. ÁP DỤNG BỘ LỌC
+                  List<TransactionModel> transactions = snapshot.data ?? [];
+                  
+                  // Lọc theo loại hình
+                  if (_selectedType == 'Thu nhập') {
+                    transactions = transactions.where((tx) => tx.isIncome).toList();
+                  } else if (_selectedType == 'Chi tiêu') {
+                    transactions = transactions.where((tx) => !tx.isIncome).toList();
+                  }
+                  
+                  // Lọc theo thời gian
+                  if (_selectedDateRange != null) {
+                    transactions = transactions.where((tx) {
+                      final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
+                      return !txDate.isBefore(_selectedDateRange!.start) && 
+                             !txDate.isAfter(_selectedDateRange!.end);
+                    }).toList();
                   }
 
-                  // Nhóm giao dịch theo ngày
+                  if (transactions.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search_off, size: 60, color: Colors.grey.withOpacity(0.3)),
+                          const SizedBox(height: 16),
+                          Text('Không tìm thấy giao dịch nào', style: TextStyle(color: Colors.grey.withOpacity(0.6), fontSize: 16)),
+                        ],
+                      ),
+                    );
+                  }
+
+                  // 2. NHÓM GIAO DỊCH THEO NGÀY
                   final grouped = _groupByDate(transactions);
 
                   return SingleChildScrollView(
@@ -58,15 +145,10 @@ class AllTransactionsScreen extends StatelessWidget {
                       children: [
                         ...grouped.entries.expand((entry) => [
                           _buildDateHeader(entry.key),
-                          ...entry.value.map((tx) => _buildTransactionItem(
-                            context: context,
-                            icon: tx.icon,
-                            title: tx.category,
-                            date: CurrencyUtils.formatDate(tx.date),
-                            amount: '${tx.isIncome ? "+" : "-"} ${CurrencyUtils.formatCurrency(tx.amount)}',
-                            isIncome: tx.isIncome,
-                            transaction: tx,
-                          )),
+                          ...entry.value.map((tx) => TransactionItem(
+                                transaction: tx,
+                                showDate: false, // Vì đã có Header ngày rồi
+                              )),
                           const SizedBox(height: 16),
                         ]),
                         const SizedBox(height: 40),
@@ -79,6 +161,157 @@ class AllTransactionsScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, VoidCallback onDeleted) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      child: Chip(
+        label: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+        onDeleted: onDeleted,
+        deleteIcon: const Icon(Icons.close, size: 14),
+        backgroundColor: const Color(0xFF438883).withOpacity(0.1),
+        side: BorderSide.none,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+    );
+  }
+
+  // BỘ LỌC BOTTOM SHEET
+  void _showFilterBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            return Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Bộ lọc giao dịch', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 24),
+                  
+                  // LỌC THEO LOẠI HÌNH
+                  const Text('Loại giao dịch', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: ['Tất cả', 'Thu nhập', 'Chi tiêu'].map((tp) {
+                      final isSelected = _selectedType == tp;
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setModalState(() => _selectedType = tp);
+                            setState(() {}); // Cập nhật màn hình chính
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: isSelected ? const Color(0xFF438883) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: isSelected ? const Color(0xFF438883) : Colors.grey.withOpacity(0.3)),
+                            ),
+                            child: Center(
+                              child: Text(
+                                tp,
+                                style: TextStyle(
+                                  color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  
+                  const SizedBox(height: 30),
+                  
+                  // LỌC THEO THỜI GIAN
+                  const Text('Thời gian', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: () async {
+                      final range = await showDateRangePicker(
+                        context: context,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                        initialDateRange: _selectedDateRange,
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: const ColorScheme.light(
+                                primary: Color(0xFF438883),
+                                onPrimary: Colors.white,
+                                surface: Colors.white,
+                                onSurface: Colors.black,
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+                      if (range != null) {
+                        setModalState(() => _selectedDateRange = range);
+                        setState(() {});
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_month, color: Color(0xFF438883)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _selectedDateRange == null
+                                  ? 'Chọn khoảng thời gian'
+                                  : '${CurrencyUtils.formatDate(_selectedDateRange!.start)} - ${CurrencyUtils.formatDate(_selectedDateRange!.end)}',
+                              style: TextStyle(fontSize: 15, color: isDark ? Colors.white : Colors.black87),
+                            ),
+                          ),
+                          const Icon(Icons.keyboard_arrow_down, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 40),
+                  
+                  // NÚT HOÀN TẤT
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF438883),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Xem kết quả', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -96,46 +329,16 @@ class AllTransactionsScreen extends StatelessWidget {
   Widget _buildDateHeader(String date) {
     return Builder(
       builder: (context) => Padding(
-        padding: const EdgeInsets.only(bottom: 16, top: 8),
-        child: Text(date, style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 16, fontWeight: FontWeight.w600)),
-      ),
-    );
-  }
-
-  Widget _buildTransactionItem({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String date,
-    required String amount,
-    required bool isIncome,
-    required TransactionModel transaction,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        onTap: () => Navigator.push(context, PageTransitions.slideRight(TransactionDetailScreen(
-          transaction: transaction,
-        ))),
-        child: Row(children: [
-          Container(
-            width: 50, height: 50,
-            decoration: BoxDecoration(
-              color: Theme.of(context).brightness == Brightness.dark 
-                ? const Color(0xFF2E2E2E) 
-                : const Color(0xFFF0F6F5), 
-              borderRadius: BorderRadius.circular(12)
-            ),
-            child: Icon(icon, color: isIncome ? const Color(0xFF24A869) : const Color(0xFFE17E5B), size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Theme.of(context).textTheme.bodyLarge?.color)),
-            const SizedBox(height: 4),
-            Text(date, style: TextStyle(fontSize: 13, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6))),
-          ])),
-          Text(amount, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isIncome ? const Color(0xFF24A869) : const Color(0xFFE17E5B))),
-        ]),
+        padding: const EdgeInsets.only(bottom: 12, top: 12),
+        child: Text(
+          date, 
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5), 
+            fontSize: 14, 
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+          )
+        ),
       ),
     );
   }

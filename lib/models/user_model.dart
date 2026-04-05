@@ -12,8 +12,9 @@ class UserModel {
   final DateTime joinDate;
   final String currency;
   final String role;
-  final Map<String, bool> dataUsage;
-  final DateTime? lastPasswordUpdate; // THÊM: Theo dõi thời điểm đổi MK gần nhất
+  final Map<String, dynamic> dataUsage;
+  final List<dynamic> customCategories;
+  final DateTime? lastPasswordUpdate;
 
   UserModel({
     required this.uid,
@@ -27,7 +28,8 @@ class UserModel {
     DateTime? joinDate,
     this.currency = 'VND',
     this.role = 'user',
-    Map<String, bool>? dataUsage,
+    Map<String, dynamic>? dataUsage,
+    this.customCategories = const [],
     this.lastPasswordUpdate,
   })  : joinDate = joinDate ?? DateTime.now(),
         dataUsage = dataUsage ??
@@ -38,30 +40,45 @@ class UserModel {
 
   // Chuyển từ Firestore Document sang Object
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return UserModel(
-      uid: doc.id,
-      name: data['name'] ?? '',
-      email: data['email'] ?? '',
-      phone: data['phone'] ?? '',
-      gender: data['gender'] ?? 'Nam',
-      dateOfBirth: data['dateOfBirth'] != null
-          ? (data['dateOfBirth'] as Timestamp).toDate()
-          : null,
-      avatarUrl: data['avatarUrl'] ?? '',
-      accountType: data['accountType'] ?? 'FREE',
-      joinDate: data['joinDate'] != null
-          ? (data['joinDate'] as Timestamp).toDate()
-          : DateTime.now(),
-      currency: data['currency'] ?? 'VND',
-      role: data['role'] ?? 'user',
-      dataUsage: data['dataUsage'] != null
-          ? Map<String, bool>.from(data['dataUsage'] as Map)
-          : null,
-      lastPasswordUpdate: data['lastPasswordUpdate'] != null
-          ? (data['lastPasswordUpdate'] as Timestamp).toDate()
-          : null,
-    );
+    try {
+      final data = doc.data() as Map<String, dynamic>? ?? {};
+      return UserModel(
+        uid: doc.id,
+        name: data['name'] ?? '',
+        email: data['email'] ?? '',
+        phone: data['phone'] ?? '',
+        gender: data['gender'] ?? 'Nam',
+        dateOfBirth: data['dateOfBirth'] != null
+            ? (data['dateOfBirth'] as Timestamp).toDate()
+            : null,
+        avatarUrl: data['avatarUrl'] ?? '',
+        accountType: data['accountType'] ?? 'FREE',
+        joinDate: data['joinDate'] != null
+            ? (data['joinDate'] as Timestamp).toDate()
+            : DateTime.now(),
+        currency: data['currency'] ?? 'VND',
+        role: data['role'] ?? 'user',
+        dataUsage: data['dataUsage'] is Map
+            ? Map<String, dynamic>.from(data['dataUsage'] as Map)
+            : {'location': true, 'contacts': false},
+        customCategories: data['customCategories'] is List
+            ? List<dynamic>.from(data['customCategories'] as List)
+            : [],
+        lastPasswordUpdate: data['lastPasswordUpdate'] != null
+            ? (data['lastPasswordUpdate'] as Timestamp).toDate()
+            : null,
+      );
+    } catch (e) {
+      print('UserModel parse error: $e');
+      // Trả về object tối thiểu để tránh sập app hoàn toàn
+      return UserModel(
+        uid: doc.id,
+        name: 'User',
+        email: '',
+        dataUsage: {'location': true, 'contacts': false},
+        customCategories: [],
+      );
+    }
   }
 
   // Chuyển Object sang Map để lưu vào Firestore
@@ -79,6 +96,7 @@ class UserModel {
       'currency': currency,
       'role': role,
       'dataUsage': dataUsage,
+      'customCategories': customCategories,
       'lastPasswordUpdate': lastPasswordUpdate != null
           ? Timestamp.fromDate(lastPasswordUpdate!)
           : null,

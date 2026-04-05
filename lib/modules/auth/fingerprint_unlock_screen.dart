@@ -6,11 +6,13 @@ import '../../services/biometric_service.dart';
 import 'login_screen.dart';
 
 class FingerprintUnlockScreen extends StatefulWidget {
-  final Widget destination;
+  final Widget? destination;
+  final VoidCallback? onUnlock;
 
   const FingerprintUnlockScreen({
     super.key,
-    required this.destination,
+    this.destination,
+    this.onUnlock,
   });
 
   @override
@@ -60,28 +62,39 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
   void _goNext() {
     if (!mounted) return;
     setState(() => _isAuthenticating = false);
-    Navigator.pushReplacement(
-      context,
-      PageTransitions.fade(widget.destination),
-    );
+    
+    if (widget.onUnlock != null) {
+      widget.onUnlock!();
+      return;
+    }
+
+    if (widget.destination != null) {
+      Navigator.pushReplacement(
+        context,
+        PageTransitions.fade(widget.destination!),
+      );
+    }
   }
 
   Future<void> _logoutToLogin() async {
     await FirebaseAuth.instance.signOut();
     if (!mounted) return;
-    Navigator.pushReplacement(
+    Navigator.pushAndRemoveUntil(
       context,
       PageTransitions.fade(const LoginScreen()),
+      (route) => false,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF438883),
-      body: SafeArea(
-        bottom: false,
-        child: Column(
+    return PopScope(
+      canPop: false, // Ngăn người dùng nhấn nút Back để thoát màn hình xác thực
+      child: Scaffold(
+        backgroundColor: const Color(0xFF438883),
+        body: SafeArea(
+          bottom: false,
+          child: Column(
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
@@ -170,7 +183,8 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
                 ),
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );

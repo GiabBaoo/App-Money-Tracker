@@ -74,14 +74,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF0F2625) : Colors.white,
       body: Stack(
         children: [
           Container(
             height: MediaQuery.of(context).size.height * 0.4,
             width: double.infinity,
-            color: const Color(0xFF5E9387),
+            color: isDark ? const Color(0xFF163836) : const Color(0xFF5E9387),
             child: const SafeArea(
               child: Padding(
                 padding: EdgeInsets.only(top: 40),
@@ -97,34 +99,48 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 24),
                     padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 35, offset: const Offset(0, 22))]),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E1E1E) : Colors.white, 
+                      borderRadius: BorderRadius.circular(20), 
+                      boxShadow: [
+                        BoxShadow(
+                          color: isDark ? Colors.black45 : Colors.black.withOpacity(0.08), 
+                          blurRadius: 35, 
+                          offset: const Offset(0, 22)
+                        )
+                      ]
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Center(child: Text('Đăng Nhập', style: TextStyle(color: Color(0xFF549B96), fontSize: 28, fontWeight: FontWeight.w700, letterSpacing: 1.5))),
+                        Center(child: Text('Đăng Nhập', style: TextStyle(color: isDark ? const Color(0xFF68AEA9) : const Color(0xFF549B96), fontSize: 28, fontWeight: FontWeight.w700, letterSpacing: 1.5))),
                         const SizedBox(height: 30),
-                        const Text('Email', style: TextStyle(color: Color(0xFF666666), fontSize: 14, fontWeight: FontWeight.w500)),
+                        Text('Email', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF666666), fontSize: 14, fontWeight: FontWeight.w500)),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
+                          style: TextStyle(color: isDark ? Colors.white : Colors.black),
                           decoration: InputDecoration(
-                            hintText: 'Nhập email của bạn', hintStyle: TextStyle(color: Colors.black.withOpacity(0.29), fontSize: 13),
+                            hintText: 'Nhập email của bạn', 
+                            hintStyle: TextStyle(color: isDark ? Colors.white24 : Colors.black.withOpacity(0.29), fontSize: 13),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFDDDDDD))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? Colors.white12 : const Color(0xFFDDDDDD))),
                             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5)),
                           ),
                         ),
                         const SizedBox(height: 20),
-                        const Text('Mật khẩu', style: TextStyle(color: Color(0xFF666666), fontSize: 14, fontWeight: FontWeight.w500)),
+                        Text('Mật khẩu', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF666666), fontSize: 14, fontWeight: FontWeight.w500)),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _passwordController,
                           obscureText: !_isPasswordVisible,
+                          style: TextStyle(color: isDark ? Colors.white : Colors.black),
                           decoration: InputDecoration(
-                            hintText: 'Nhập mật khẩu của bạn', hintStyle: TextStyle(color: Colors.black.withOpacity(0.29), fontSize: 13),
+                            hintText: 'Nhập mật khẩu của bạn', 
+                            hintStyle: TextStyle(color: isDark ? Colors.white24 : Colors.black.withOpacity(0.29), fontSize: 13),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFDDDDDD))),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? Colors.white12 : const Color(0xFFDDDDDD))),
                             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5)),
                             suffixIcon: IconButton(icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey), onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible)),
                           ),
@@ -134,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Row(children: [
                             SizedBox(width: 24, height: 24, child: Checkbox(value: _rememberMe, activeColor: const Color(0xFF438883), onChanged: (v) => setState(() => _rememberMe = v ?? false))),
                             const SizedBox(width: 8),
-                            const Text('Ghi nhớ mật khẩu', style: TextStyle(color: Color(0xFF666666), fontSize: 13)),
+                            Text('Ghi nhớ mật khẩu', style: TextStyle(color: isDark ? Colors.white60 : const Color(0xFF666666), fontSize: 13)),
                           ]),
                           GestureDetector(
                             onTap: () => Navigator.push(context, PageTransitions.slideRight(const ForgotPasswordScreen())),
@@ -165,9 +181,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 40),
                   TextButton(
                     onPressed: () => Navigator.push(context, PageTransitions.slideRight(const RegisterScreen())),
-                    child: const Text.rich(TextSpan(children: [
-                      TextSpan(text: 'Chưa có tài khoản? ', style: TextStyle(color: Color(0xFF666666), fontSize: 14)),
-                      TextSpan(text: 'Đăng ký ngay', style: TextStyle(color: Color(0xFF4E8F8A), fontWeight: FontWeight.bold, fontSize: 14)),
+                    child: Text.rich(TextSpan(children: [
+                      TextSpan(text: 'Chưa có tài khoản? ', style: TextStyle(color: isDark ? Colors.white60 : const Color(0xFF666666), fontSize: 14)),
+                      TextSpan(text: 'Đăng ký ngay', style: TextStyle(color: isDark ? const Color(0xFF68AEA9) : const Color(0xFF4E8F8A), fontWeight: FontWeight.bold, fontSize: 14)),
                     ])),
                   ),
                 ],

@@ -286,4 +286,12 @@ class FirestoreService {
   Future<void> removeDeviceSession(String sessionId) async {
     await _db.collection('device_sessions').doc(sessionId).delete();
   }
+
+  // Cập nhật tùy chọn sử dụng dữ liệu
+  Future<void> updateDataUsagePreference(String key, bool value) async {
+    if (_uid == null) return;
+    await _db.collection('users').doc(_uid).update({
+      'dataUsage.$key': value,
+    });
+  }
 }

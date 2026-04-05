@@ -8,6 +8,7 @@ import 'modules/auth/login_screen.dart';
 import 'modules/auth/register_screen.dart';
 import 'modules/auth/verify_email_screen.dart';
 import 'services/theme_service.dart';
+import 'widgets/lifecycle_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,13 +25,15 @@ void main() async {
   runApp(
     ChangeNotifierProvider(
       create: (_) => themeService,
-      child: const MyApp(),
+      child: MyApp(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+  MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -38,11 +41,16 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       title: 'App Thu Chi',
       theme: themeService.lightTheme,
       darkTheme: themeService.darkTheme,
       themeMode: themeService.themeMode,
       home: const SplashScreen(),
+      builder: (context, child) => LifecycleManager(
+        child: child!,
+        navigatorKey: navigatorKey,
+      ),
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
