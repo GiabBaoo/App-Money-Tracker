@@ -3,6 +3,7 @@ import '../../services/firestore_service.dart';
 import '../../models/transaction_model.dart';
 import '../../utils/page_transitions.dart';
 import 'edit_transaction_screen.dart';
+import '../../utils/currency_format_utils.dart';
 
 class TransactionDetailScreen extends StatelessWidget {
   final TransactionModel transaction;
@@ -21,7 +22,7 @@ class TransactionDetailScreen extends StatelessWidget {
     final description = transaction.description;
     final date = '${transaction.date.day.toString().padLeft(2, '0')}/${transaction.date.month.toString().padLeft(2, '0')}/${transaction.date.year}';
     final time = transaction.time;
-    final amount = '${isIncome ? "+" : "-"} ${transaction.amount.toStringAsFixed(0)}đ'; 
+    final amount = '${isIncome ? "+" : "-"} ${CurrencyUtils.formatCurrency(transaction.amount)}'; 
     final icon = transaction.icon;
 
     // Tự động chọn màu tùy theo trạng thái Thu / Chi

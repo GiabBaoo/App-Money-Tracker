@@ -22,10 +22,7 @@ class CurrencyInputFormatter extends TextInputFormatter {
     }
 
     double value = double.parse(cleanText);
-    
-    // Format with thousands separator
-    final formatter = NumberFormat.decimalPattern('vi_VN');
-    String newText = '${formatter.format(value)}đ';
+    String newText = CurrencyUtils.formatCurrency(value);
 
     return newValue.copyWith(
       text: newText,
@@ -33,12 +30,20 @@ class CurrencyInputFormatter extends TextInputFormatter {
     );
   }
 }
-
 class CurrencyUtils {
   static String formatCurrency(double amount) {
-    final formatter = NumberFormat.decimalPattern('vi_VN');
-    // Định dạng 50.000đ chuẩn theo yêu cầu
-    return '${formatter.format(amount)}đ';
+    // Sử dụng NumberFormat.currency để đảm bảo định dạng chuẩn vi_VN
+    final formatter = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: 'đ',
+      decimalDigits: 0, // Tiền Việt thường không dùng số thập phân
+    );
+    return formatter.format(amount);
+  }
+
+  static String formatAmountWithSign(double amount, bool isIncome) {
+    String formatted = formatCurrency(amount);
+    return isIncome ? "+$formatted" : "-$formatted";
   }
 
   static double parseCurrency(String text) {

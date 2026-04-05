@@ -200,9 +200,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).brightness == Brightness.dark 
-        ? const Color(0xFF0F2625) 
-        : const Color(0xFF438883),
+      backgroundColor: Theme.of(context).primaryColor,
       body: SafeArea(
         bottom: false,
         child: Column(

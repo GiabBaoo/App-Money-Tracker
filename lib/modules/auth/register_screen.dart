@@ -255,8 +255,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: const Color(0xFF438883),
+      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -291,14 +293,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black12,
+                      color: isDark ? Colors.black45 : Colors.black12,
                       blurRadius: 20,
-                      offset: Offset(0, -5),
+                      offset: const Offset(0, -5),
                     ),
                   ],
                 ),
@@ -310,19 +312,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Đăng ký tài khoản',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
+                          color: isDark ? Colors.white : const Color(0xFF333333),
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Vui lòng điền đầy đủ thông tin bên dưới.',
                         style: TextStyle(
-                          color: Color(0xFF666666),
+                          color: isDark ? Colors.white70 : const Color(0xFF666666),
                           fontSize: 14,
                           height: 1.4,
                         ),
@@ -391,9 +393,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       border: Border.all(
                                         color: _dateError != null
                                             ? Colors.red
-                                            : const Color(0xFFDDDDDD),
+                                            : (isDark ? Colors.white24 : const Color(0xFFDDDDDD)),
                                       ),
                                       borderRadius: BorderRadius.circular(8),
+                                      color: isDark ? const Color(0xFF2E2E2E) : Colors.transparent,
                                     ),
                                     child: Row(
                                       mainAxisAlignment:
@@ -405,8 +408,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                               : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
                                           style: TextStyle(
                                             color: _selectedDate == null
-                                                ? Colors.grey.shade400
-                                                : const Color(0xFF333333),
+                                                ? (isDark ? Colors.white30 : Colors.grey.shade400)
+                                                : (isDark ? Colors.white : const Color(0xFF333333)),
                                             fontSize: 14,
                                           ),
                                         ),
@@ -462,7 +465,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF9FAFB),
+                          color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF9FAFB),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Column(
@@ -567,17 +570,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildLabel(String t, {String? error}) => Padding(
-    padding: const EdgeInsets.only(bottom: 8, left: 2, top: 16),
-    child: Text(
-      t,
-      style: TextStyle(
-        color: error != null ? Colors.red : const Color(0xFF666666),
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
+  Widget _buildLabel(String t, {String? error}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, left: 2, top: 16),
+      child: Text(
+        t,
+        style: TextStyle(
+          color: error != null ? Colors.red : (isDark ? Colors.white70 : const Color(0xFF666666)),
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   Widget _buildTextField({
     required String hintText,
@@ -592,6 +598,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     inputFormatters, // Thêm tham số này để hỗ trợ format
   }) {
     bool hasError = errorText != null && errorText.isNotEmpty;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -602,7 +609,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           onChanged: onChanged,
           maxLength: maxLength,
           inputFormatters: inputFormatters, // Truyền format vào TextFormField
-          style: const TextStyle(fontSize: 15),
+          style: TextStyle(fontSize: 15, color: isDark ? Colors.white : Colors.black),
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: TextStyle(
@@ -617,7 +624,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: hasError ? Colors.red : const Color(0xFFDDDDDD),
+                color: hasError ? Colors.red : (isDark ? Colors.white24 : const Color(0xFFDDDDDD)),
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -644,6 +651,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildGenderOption(String gender) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     bool s = _selectedGender == gender;
     return Expanded(
       child: InkWell(
@@ -651,9 +659,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Container(
           height: 50,
           decoration: BoxDecoration(
-            color: s ? const Color(0xFFE8F5F0) : Colors.transparent,
+            color: s ? (isDark ? const Color(0xFF2E4E4C) : const Color(0xFFE8F5F0)) : Colors.transparent,
             border: Border.all(
-              color: s ? const Color(0xFF438883) : const Color(0xFFDDDDDD),
+              color: s ? const Color(0xFF438883) : (isDark ? Colors.white24 : const Color(0xFFDDDDDD)),
             ),
             borderRadius: BorderRadius.circular(8),
           ),
@@ -661,7 +669,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Text(
               gender,
               style: TextStyle(
-                color: s ? const Color(0xFF438883) : const Color(0xFF666666),
+                color: s ? (isDark ? const Color(0xFF68AEA9) : const Color(0xFF438883)) : (isDark ? Colors.white70 : const Color(0xFF666666)),
                 fontWeight: s ? FontWeight.w600 : FontWeight.normal,
               ),
             ),

@@ -7,44 +7,67 @@ class ThemeService extends ChangeNotifier {
   ThemeService._internal();
 
   final _storage = const FlutterSecureStorage();
-  bool _isDarkMode = false;
+  ThemeMode _themeMode = ThemeMode.system;
 
-  bool get isDarkMode => _isDarkMode;
+  ThemeMode get themeMode => _themeMode;
 
-  ThemeMode get themeMode => _isDarkMode ? ThemeMode.dark : ThemeMode.light;
+  // Helper to check dark mode with context for 'system' mode support
+  bool isDarkMode(BuildContext context) {
+    if (_themeMode == ThemeMode.system) {
+      return MediaQuery.of(context).platformBrightness == Brightness.dark;
+    }
+    return _themeMode == ThemeMode.dark;
+  }
+
+  // Backward compatibility getter (defaults to false for system)
+  bool get isDarkModeLegacy => _themeMode == ThemeMode.dark;
 
   Future<void> init() async {
-    final value = await _storage.read(key: 'isDarkMode');
-    _isDarkMode = value == 'true';
+    final value = await _storage.read(key: 'themeMode');
+    if (value == 'light') _themeMode = ThemeMode.light;
+    else if (value == 'dark') _themeMode = ThemeMode.dark;
+    else _themeMode = ThemeMode.system;
     notifyListeners();
   }
 
-  Future<void> toggleDarkMode() async {
-    _isDarkMode = !_isDarkMode;
-    await _storage.write(key: 'isDarkMode', value: _isDarkMode.toString());
+  Future<void> setThemeMode(ThemeMode mode) async {
+    _themeMode = mode;
+    String value = 'system';
+    if (mode == ThemeMode.light) value = 'light';
+    else if (mode == ThemeMode.dark) value = 'dark';
+    
+    await _storage.write(key: 'themeMode', value: value);
     notifyListeners();
   }
+
+  // BIẾN MÀU HỆ THỐNG ĐỒNG NHẤT
+  static Color primary(BuildContext context) => Theme.of(context).primaryColor;
+  static Color surface(BuildContext context) => Theme.of(context).colorScheme.surface;
+  static Color onSurface(BuildContext context) => Theme.of(context).colorScheme.onSurface;
+  static Color accent(BuildContext context) => Theme.of(context).brightness == Brightness.dark ? const Color(0xFF00E5FF) : const Color(0xFF438883);
 
   // Cấu trúc theme
   ThemeData get lightTheme => ThemeData(
         primaryColor: const Color(0xFF438883),
-        scaffoldBackgroundColor: Colors.white,
+        scaffoldBackgroundColor: const Color(0xFFF6F8F7),
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF438883),
           brightness: Brightness.light,
+          surface: Colors.white,
+          onSurface: Colors.black87,
         ),
         useMaterial3: true,
         bottomAppBarTheme: const BottomAppBarThemeData(color: Colors.white),
       );
 
   ThemeData get darkTheme => ThemeData(
-        primaryColor: const Color(0xFF0F2625),
+        primaryColor: const Color(0xFF0F2625), // Dark Moss Green cho Header
         scaffoldBackgroundColor: const Color(0xFF121212),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0F2625),
+          seedColor: const Color(0xFF1A3351),
           brightness: Brightness.dark,
           surface: const Color(0xFF1E1E1E),
-          onSurface: const Color(0xFFE0E0E0),
+          onSurface: Colors.white,
           onSurfaceVariant: const Color(0xFFB0B0B0),
         ),
         useMaterial3: true,
