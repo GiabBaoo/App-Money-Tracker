@@ -105,8 +105,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: const Color(0xFF438883),
+      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -130,10 +132,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -5))],
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  boxShadow: [BoxShadow(color: isDark ? Colors.black45 : Colors.black12, blurRadius: 20, offset: const Offset(0, -5))],
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
@@ -145,39 +147,39 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE8F5F0),
+                          color: isDark ? const Color(0xFF2E4E4C) : const Color(0xFFE8F5F0),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Icon(Icons.mail_outline, color: Color(0xFF438883), size: 40),
+                        child: Icon(Icons.mail_outline, color: isDark ? const Color(0xFF68AEA9) : const Color(0xFF438883), size: 40),
                       ),
                       const SizedBox(height: 24),
 
                       // Title
-                      const Text(
+                      Text(
                         'Xác nhận email của bạn',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF333333)),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 12),
 
                       // Description
                       Text(
-                        'Chúng tôi đã gửi email xác nhận tới\n$widget.email',
-                        style: const TextStyle(color: Color(0xFF666666), fontSize: 14, height: 1.5),
+                        'Chúng tôi đã gửi email xác nhận tới\n${widget.email}',
+                        style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF666666), fontSize: 14, height: 1.5),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Vui lòng kiểm tra hộp thư và nhấp vào link để xác nhận.',
-                        style: TextStyle(color: Color(0xFF999999), fontSize: 13),
+                        style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF999999), fontSize: 13),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 40),
 
                       // Steps
-                      _buildStep(1, 'Mở email mà chúng tôi vừa gửi'),
-                      _buildStep(2, 'Nhấp vào link xác nhận trong email'),
-                      _buildStep(3, 'Quay trở lại ứng dụng'),
+                      _buildStep(context, 1, 'Mở email mà chúng tôi vừa gửi'),
+                      _buildStep(context, 2, 'Nhấp vào link xác nhận trong email'),
+                      _buildStep(context, 3, 'Quay trở lại ứng dụng'),
                       const SizedBox(height: 40),
 
                       // Manual Check Button
@@ -247,7 +249,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     );
   }
 
-  Widget _buildStep(int number, String text) {
+  Widget _buildStep(BuildContext context, int number, String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
@@ -257,13 +260,13 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: const Color(0xFF438883),
+              color: isDark ? const Color(0xFF2E4E4C) : const Color(0xFF438883),
               borderRadius: BorderRadius.circular(50),
             ),
             child: Center(
               child: Text(
                 '$number',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                style: TextStyle(color: isDark ? const Color(0xFF68AEA9) : Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
               ),
             ),
           ),
@@ -273,7 +276,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
               padding: const EdgeInsets.only(top: 6),
               child: Text(
                 text,
-                style: const TextStyle(color: Color(0xFF666666), fontSize: 14, height: 1.4),
+                style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF666666), fontSize: 14, height: 1.4),
               ),
             ),
           ),

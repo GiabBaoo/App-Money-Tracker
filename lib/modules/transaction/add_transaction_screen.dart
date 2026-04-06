@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../utils/page_transitions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -9,7 +10,9 @@ import '../../utils/category_utils.dart';
 import 'category_screen.dart';
 
 class AddTransactionScreen extends StatefulWidget {
-  const AddTransactionScreen({super.key});
+  final Map<String, dynamic>? initialData;
+
+  const AddTransactionScreen({super.key, this.initialData});
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -17,8 +20,8 @@ class AddTransactionScreen extends StatefulWidget {
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final FirestoreService _firestoreService = FirestoreService();
-  final _amountController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  late final TextEditingController _amountController;
+  late final TextEditingController _descriptionController;
 
   bool isIncome = false; // Mặc định là Khoản Chi theo yêu cầu
   bool _isLoading = false;
@@ -30,6 +33,34 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   TimeOfDay _selectedTime = TimeOfDay.now();
 
   @override
+  void initState() {
+    super.initState();
+    
+    // Khởi tạo data nếu được truyền từ Voice Input
+    if (widget.initialData != null) {
+      isIncome = widget.initialData!['type'] == 'income';
+      selectedCategoryName = widget.initialData!['category'] ?? 'Chọn danh mục';
+      if (widget.initialData!['iconCode'] != null) {
+         selectedCategoryIcon = IconData(widget.initialData!['iconCode'], fontFamily: 'MaterialIcons');
+      }
+      _amountController = TextEditingController(
+          text: widget.initialData!['amount'] != null 
+                ? NumberFormat.currency(locale: 'vi_VN', symbol: '').format(widget.initialData!['amount']).trim()
+                : ''
+      );
+      _descriptionController = TextEditingController(text: widget.initialData!['description'] ?? '');
+      
+      if (widget.initialData!['hour'] != null && widget.initialData!['minute'] != null) {
+        _selectedTime = TimeOfDay(hour: widget.initialData!['hour'], minute: widget.initialData!['minute']);
+      }
+    } else {
+      _amountController = TextEditingController();
+      _descriptionController = TextEditingController();
+    }
+  }
+
+  @override
+
   void dispose() {
     _amountController.dispose();
     _descriptionController.dispose();

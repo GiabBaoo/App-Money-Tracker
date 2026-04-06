@@ -12,6 +12,9 @@ import 'wallet_screen.dart';
 import '../transaction/add_transaction_screen.dart';
 import '../transaction/transaction_detail_screen.dart';
 import 'notification_screen.dart';
+import '../../widgets/voice_input_bottom_sheet.dart';
+import 'category_statistics_screen.dart';
+
 import '../transaction/all_transactions_screen.dart';
 import '../../utils/currency_format_utils.dart';
 import '../../widgets/transaction_item.dart';
@@ -127,79 +130,12 @@ class _HomeBodyState extends State<HomeBody> {
     _transactionStream = _firestoreService.getTransactionsStream();
   }
 
-  void _showVoiceDialog() {
-    showDialog(
+  void _showVoiceInput() {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          return AlertDialog(
-            backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Đang lắng nghe...', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 20),
-                const Icon(Icons.mic, size: 64, color: Color(0xFF438883)),
-                const SizedBox(height: 20),
-                const Text('Hãy nói: "Ăn sáng 30 ngàn"', style: TextStyle(color: Colors.grey)),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade200),
-                  child: const Text('Hủy', style: TextStyle(color: Colors.black)),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-
-    _voiceService.startListening(
-      onResult: (text) async {
-        final result = _voiceService.parseVoiceCommand(text);
-        if (result != null) {
-          final user = await _firestoreService.getUserStream().first;
-          if (user != null) {
-            // Get Icon from Default if possible (or just fallback)
-            int iconCode = Icons.category_outlined.codePoint;
-            if (result['category'] == 'Ăn uống') iconCode = Icons.restaurant_outlined.codePoint;
-            else if (result['category'] == 'Di chuyển') iconCode = Icons.directions_car_outlined.codePoint;
-            else if (result['category'] == 'Tiền lương') iconCode = Icons.bar_chart_rounded.codePoint;
-
-            final tx = TransactionModel(
-              uid: user.uid,
-              category: result['category'],
-              categoryIconCode: iconCode,
-              description: result['note'],
-              amount: result['amount'],
-              type: result['isIncome'] ? 'income' : 'expense',
-              date: DateTime.now(),
-              time: "${DateTime.now().hour}:${DateTime.now().minute}",
-            );
-            await _firestoreService.addTransaction(tx);
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Đã thêm: ${result['category']} ${CurrencyUtils.formatCurrency(result['amount'])}'),
-                  backgroundColor: const Color(0xFF4A9B7F),
-                ),
-              );
-            }
-          }
-        } else {
-           if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Không hiểu câu lệnh. Thử lại!')),
-              );
-            }
-        }
-      },
-      onDone: () {
-        if (Navigator.canPop(context)) Navigator.pop(context);
-      },
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const VoiceInputBottomSheet(),
     );
   }
 
@@ -251,8 +187,10 @@ class _HomeBodyState extends State<HomeBody> {
                           StreamBuilder<UserModel?>(
                             stream: _firestoreService.getUserStream(),
                             builder: (context, snapshot) {
-                              final micEnabled = snapshot.data?.dataUsage['microphone'] == true;
-                              if (!micEnabled) return const SizedBox();
+                              // Nếu chưa có cài đặt mic thì mặc định ẩn, nhưng theo yêu cầu này ta sẽ hiện mic luôn để test/sử dụng
+                              // final micEnabled = snapshot.data?.dataUsage['microphone'] == true;
+                              // if (!micEnabled) return const SizedBox(); 
+                              
                               return Container(
                                 margin: const EdgeInsets.only(right: 12),
                                 decoration: BoxDecoration(
@@ -261,7 +199,7 @@ class _HomeBodyState extends State<HomeBody> {
                                 ),
                                 child: IconButton(
                                   icon: const Icon(Icons.mic, color: Colors.white),
-                                  onPressed: _showVoiceDialog,
+                                  onPressed: _showVoiceInput,
                                 ),
                               );
                             }
@@ -288,9 +226,13 @@ class _HomeBodyState extends State<HomeBody> {
                       double totalIncome = 0;
                       double totalExpense = 0;
                       if (snapshot.hasData) {
+                        final now = DateTime.now();
                         for (var tx in snapshot.data!) {
-                          if (tx.type == 'income') totalIncome += tx.amount;
-                          else totalExpense += tx.amount;
+                          // Chỉ tính cho tháng và năm hiện tại
+                          if (tx.date.month == now.month && tx.date.year == now.year) {
+                            if (tx.type == 'income') totalIncome += tx.amount;
+                            else totalExpense += tx.amount;
+                          }
                         }
                       }
                       return _buildBalanceCard(totalIncome, totalExpense);
@@ -328,12 +270,21 @@ class _HomeBodyState extends State<HomeBody> {
               }
               
               final now = DateTime.now();
-              final transactions = (snapshot.data ?? [])
+              var transactions = (snapshot.data ?? [])
                   .where((tx) => tx.date.month == now.month && tx.date.year == now.year)
-                  .take(10)
                   .toList();
+              transactions.sort((a, b) {
+                DateTime dateA = DateTime(a.date.year, a.date.month, a.date.day);
+                DateTime dateB = DateTime(b.date.year, b.date.month, b.date.day);
+                int dateCompare = dateB.compareTo(dateA);
+                if (dateCompare != 0) return dateCompare;
+                int timeCompare = b.time.compareTo(a.time);
+                if (timeCompare != 0) return timeCompare;
+                return b.createdAt.compareTo(a.createdAt);
+              });
+              final displayTransactions = transactions.take(10).toList();
               
-              if (transactions.isEmpty) {
+              if (displayTransactions.isEmpty) {
                 return const Center(child: Padding(
                   padding: EdgeInsets.only(top: 20),
                   child: Text('Chưa có giao dịch trong tháng này'),
@@ -342,10 +293,10 @@ class _HomeBodyState extends State<HomeBody> {
 
               return ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                itemCount: transactions.length,
+                itemCount: displayTransactions.length,
                 itemBuilder: (context, index) {
                   return TransactionItem(
-                    transaction: transactions[index],
+                    transaction: displayTransactions[index],
                     showDate: true,
                   );
                 },
@@ -359,70 +310,87 @@ class _HomeBodyState extends State<HomeBody> {
 
   Widget _buildBalanceCard(double income, double expense) {
     final balance = income - expense;
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2F7E79),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF438883).withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          )
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Tổng số dư', style: TextStyle(color: Colors.white, fontSize: 16)),
-                  const SizedBox(height: 8),
-                  Text(CurrencyUtils.formatCurrency(balance),
-                      style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 30),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildBalanceInfo(Icons.arrow_downward, 'Thu nhập', income),
-              _buildBalanceInfo(Icons.arrow_upward, 'Chi phí', expense),
-            ],
-          ),
-        ],
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          PageTransitions.slideRight(const CategoryStatisticsScreen(type: 'expense')),
+        );
+      },
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2F7E79),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF438883).withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            )
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Tổng số dư', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    const SizedBox(height: 8),
+                    Text(CurrencyUtils.formatCurrency(balance),
+                        style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 30),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildBalanceInfo(Icons.arrow_downward, 'Thu nhập', income, 'income'),
+                _buildBalanceInfo(Icons.arrow_upward, 'Chi phí', expense, 'expense'),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildBalanceInfo(IconData icon, String label, double amount) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            shape: BoxShape.circle,
+  Widget _buildBalanceInfo(IconData icon, String label, double amount, String type) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          PageTransitions.slideRight(CategoryStatisticsScreen(type: type)),
+        );
+      },
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Colors.white, size: 20),
           ),
-          child: Icon(icon, color: Colors.white, size: 20),
-        ),
-        const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-            const SizedBox(height: 4),
-            Text(CurrencyUtils.formatCurrency(amount),
-                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-          ],
-        ),
-      ],
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              const SizedBox(height: 4),
+              Text(CurrencyUtils.formatCurrency(amount),
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ],
+      ),
     );
   }
-}
+}

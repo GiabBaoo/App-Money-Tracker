@@ -83,7 +83,7 @@ class TransactionDetailScreen extends StatelessWidget {
                           ),
                         );
                         if (confirm == true) {
-                          await FirestoreService().deleteTransaction(transaction.id);
+                          FirestoreService().deleteTransaction(transaction.id);
                           if (context.mounted) Navigator.pop(context);
                         }
                       }

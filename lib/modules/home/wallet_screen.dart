@@ -108,7 +108,15 @@ class _WalletScreenState extends State<WalletScreen> {
                       return _buildEmptyState(context);
                     }
 
-                    filteredTx.sort((a, b) => b.date.compareTo(a.date));
+                    filteredTx.sort((a, b) {
+                      DateTime dateA = DateTime(a.date.year, a.date.month, a.date.day);
+                      DateTime dateB = DateTime(b.date.year, b.date.month, b.date.day);
+                      int dateCompare = dateB.compareTo(dateA);
+                      if (dateCompare != 0) return dateCompare;
+                      int timeCompare = b.time.compareTo(a.time);
+                      if (timeCompare != 0) return timeCompare;
+                      return b.createdAt.compareTo(a.createdAt);
+                    });
                     final grouped = _groupTransactionsByDate(filteredTx);
 
                     return ListView.builder(

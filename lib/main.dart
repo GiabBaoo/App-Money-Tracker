@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'firebase_options.dart';
 import 'modules/splash/splash_screen.dart';
 import 'modules/auth/login_screen.dart';
@@ -15,6 +17,13 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize App Check to resolve the 'No AppCheckProvider installed' error
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+    appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
+  );
+
   await FirebaseAuth.instance.setSettings(
     appVerificationDisabledForTesting: true,
   );
@@ -61,4 +70,4 @@ class MyApp extends StatelessWidget {
       },
     );
   }
-}
+}

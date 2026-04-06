@@ -106,6 +106,20 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   // 1. ÁP DỤNG BỘ LỌC
                   List<TransactionModel> transactions = snapshot.data ?? [];
                   
+                  // LỌC THỨ TỰ (Tie-breaker cho các giao dịch cùng ngày bằng time và createdAt)
+                  transactions.sort((a, b) {
+                    DateTime dateA = DateTime(a.date.year, a.date.month, a.date.day);
+                    DateTime dateB = DateTime(b.date.year, b.date.month, b.date.day);
+                    int dateComp = dateB.compareTo(dateA);
+                    if (dateComp != 0) return dateComp;
+                    int timeComp = b.time.compareTo(a.time);
+                    if (timeComp != 0) return timeComp;
+                    if (a.createdAt != null && b.createdAt != null) {
+                      return b.createdAt!.compareTo(a.createdAt!);
+                    }
+                    return 0;
+                  });
+                  
                   // Lọc theo loại hình
                   if (_selectedType == 'Thu nhập') {
                     transactions = transactions.where((tx) => tx.isIncome).toList();

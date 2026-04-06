@@ -10,9 +10,10 @@ class OnboardingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Lấy kích thước màn hình để tự động co dãn
     final size = MediaQuery.of(context).size;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF0F2625) : Colors.white,
       // DÙNG STACK ĐỂ XẾP CHỒNG CÁC LỚP LÊN NHAU
       body: Stack(
         children: [
@@ -51,11 +52,11 @@ class OnboardingScreen extends StatelessWidget {
                 // PHẦN NỘI DUNG CHỮ
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 40),
-                  child: const Text(
+                  child: Text(
                     'Chi tiêu thông minh, tiết kiệm hơn',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFF438883),
+                      color: isDark ? const Color(0xFF68AEA9) : const Color(0xFF438883),
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                       letterSpacing: -0.72,
@@ -111,19 +112,19 @@ class OnboardingScreen extends StatelessWidget {
                     // LUỒNG 2: Chuyển sang màn hình ĐĂNG NHẬP
                     Navigator.push(context, PageTransitions.slideRight(const LoginScreen()));
                   },
-                  child: const Text.rich(
+                  child: Text.rich(
                     TextSpan(
                       children: [
                         TextSpan(
                           text: 'Đã có tài khoản? ',
                           style: TextStyle(
-                            color: Color(0xFF444444),
+                            color: isDark ? Colors.white70 : const Color(0xFF444444),
                             fontSize: 14,
                           ),
                         ),
                         TextSpan(
                           text: 'Đăng nhập',
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: Color(0xFF438883),
                             fontWeight: FontWeight.bold,
                             fontSize: 14,

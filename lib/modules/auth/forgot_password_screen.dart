@@ -73,8 +73,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: const Color(0xFF438883),
+      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -92,41 +94,41 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -5))],
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  boxShadow: [BoxShadow(color: isDark ? Colors.black45 : Colors.black12, blurRadius: 20, offset: const Offset(0, -5))],
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Quên mật khẩu',
-                        style: TextStyle(color: Color(0xFF549B96), fontSize: 28, fontWeight: FontWeight.w700),
+                        style: TextStyle(color: isDark ? Colors.white : const Color(0xFF549B96), fontSize: 28, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Vui lòng nhập email của bạn. Chúng tôi sẽ gửi link đặt lại mật khẩu.',
-                        style: TextStyle(color: Color(0xFF666666), fontSize: 14, height: 1.5),
+                        style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF666666), fontSize: 14, height: 1.5),
                       ),
                       const SizedBox(height: 40),
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 8, left: 4),
-                        child: Text('Email', style: TextStyle(color: Color(0xFF666666), fontSize: 14, fontWeight: FontWeight.w500)),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8, left: 4),
+                        child: Text('Email', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF666666), fontSize: 14, fontWeight: FontWeight.w500)),
                       ),
                       TextFormField(
                         controller: _emailController,
-                        style: const TextStyle(fontSize: 15),
+                        style: TextStyle(fontSize: 15, color: isDark ? Colors.white : Colors.black),
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           hintText: 'Nhập email của bạn',
-                          hintStyle: TextStyle(color: Colors.black.withOpacity(0.3), fontSize: 14),
+                          hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black.withOpacity(0.3), fontSize: 14),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: Color(0xFFDDDDDD)),
+                            borderSide: BorderSide(color: isDark ? Colors.white24 : const Color(0xFFDDDDDD)),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
