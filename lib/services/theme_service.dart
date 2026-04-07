@@ -23,10 +23,15 @@ class ThemeService extends ChangeNotifier {
   bool get isDarkModeLegacy => _themeMode == ThemeMode.dark;
 
   Future<void> init() async {
-    final value = await _storage.read(key: 'themeMode');
-    if (value == 'light') _themeMode = ThemeMode.light;
-    else if (value == 'dark') _themeMode = ThemeMode.dark;
-    else _themeMode = ThemeMode.system;
+    try {
+      final value = await _storage.read(key: 'themeMode');
+      if (value == 'light') _themeMode = ThemeMode.light;
+      else if (value == 'dark') _themeMode = ThemeMode.dark;
+      else _themeMode = ThemeMode.system;
+    } catch (e) {
+      // Fallback to system mode if storage fails (common on web)
+      _themeMode = ThemeMode.system;
+    }
     notifyListeners();
   }
 
@@ -36,7 +41,11 @@ class ThemeService extends ChangeNotifier {
     if (mode == ThemeMode.light) value = 'light';
     else if (mode == ThemeMode.dark) value = 'dark';
     
-    await _storage.write(key: 'themeMode', value: value);
+    try {
+      await _storage.write(key: 'themeMode', value: value);
+    } catch (e) {
+      // Ignore storage errors on web
+    }
     notifyListeners();
   }
 

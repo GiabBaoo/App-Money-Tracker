@@ -201,7 +201,18 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                             final amount = categorySums[category]!;
                             final percentage = amount / totalSum;
                             final color = CategoryUtils.getVibrantColor(category);
-                            final icon = CategoryUtils.getCategoryIcon(category);
+                            
+                            // Kiểm tra xem có phải là giao dịch quỹ không (Góp quỹ / Rút quỹ)
+                            bool isGroupCategory = category.startsWith('Góp quỹ') || category.startsWith('Rút quỹ');
+                            IconData icon = CategoryUtils.getCategoryIcon(category);
+                            
+                            // Nếu là giao dịch quỹ, lấy icon từ groupIconCode
+                            if (isGroupCategory) {
+                              final groupTransactions = filteredData.where((tx) => tx.category == category).toList();
+                              if (groupTransactions.isNotEmpty && groupTransactions.first.groupIconCode != null) {
+                                icon = IconData(groupTransactions.first.groupIconCode as int, fontFamily: 'MaterialIcons');
+                              }
+                            }
                             
                             return Card(
                               elevation: 0,

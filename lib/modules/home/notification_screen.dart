@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/firestore_service.dart';
 import '../../models/notification_model.dart';
+import '../../features/group_expense/presentation/screens/join_group_screen.dart';
 
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
@@ -155,6 +156,16 @@ class NotificationScreen extends StatelessWidget {
       onTap: () {
         if (!notification.isRead) {
           firestoreService.markNotificationAsRead(notification.id);
+        }
+        
+        // Handle group invite notifications
+        if (notification.type == 'group_invite' && notification.groupId != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => JoinGroupScreen(groupId: notification.groupId!),
+            ),
+          );
         }
       },
       child: Container(

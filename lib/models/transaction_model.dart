@@ -12,6 +12,8 @@ class TransactionModel {
   final String time;
   final String description;
   final DateTime createdAt;
+  final String? groupId; // ID của quỹ (nếu là giao dịch quỹ)
+  final int? groupIconCode; // Icon code của quỹ (nếu là giao dịch quỹ)
 
   TransactionModel({
     this.id = '',
@@ -24,6 +26,8 @@ class TransactionModel {
     this.time = '',
     this.description = '',
     DateTime? createdAt,
+    this.groupId,
+    this.groupIconCode,
   }) : createdAt = createdAt ?? DateTime.now();
 
   // Lấy IconData từ codePoint đã lưu
@@ -49,6 +53,8 @@ class TransactionModel {
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
+      groupId: data['groupId'],
+      groupIconCode: data['groupIconCode'],
     );
   }
 
@@ -64,6 +70,8 @@ class TransactionModel {
       'time': time,
       'description': description,
       'createdAt': Timestamp.fromDate(createdAt),
+      'groupId': groupId,
+      'groupIconCode': groupIconCode,
     };
   }
 }

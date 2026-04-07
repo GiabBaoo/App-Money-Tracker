@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
-import '../../services/device_contacts_service.dart';
 import '../../services/voice_service.dart';
 
 class DataUsageScreen extends StatefulWidget {

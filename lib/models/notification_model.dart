@@ -9,6 +9,9 @@ class NotificationModel {
   final String description;
   final bool isRead;
   final DateTime createdAt;
+  final String? type; // 'group_invite', etc.
+  final String? groupId;
+  final String? groupName;
 
   NotificationModel({
     this.id = '',
@@ -18,6 +21,9 @@ class NotificationModel {
     required this.description,
     this.isRead = false,
     DateTime? createdAt,
+    this.type,
+    this.groupId,
+    this.groupName,
   }) : createdAt = createdAt ?? DateTime.now();
 
   IconData get icon => IconData(iconCode, fontFamily: 'MaterialIcons');
@@ -34,6 +40,9 @@ class NotificationModel {
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
+      type: data['type'] as String?,
+      groupId: data['groupId'] as String?,
+      groupName: data['groupName'] as String?,
     );
   }
 
@@ -45,6 +54,9 @@ class NotificationModel {
       'description': description,
       'isRead': isRead,
       'createdAt': Timestamp.fromDate(createdAt),
+      if (type != null) 'type': type,
+      if (groupId != null) 'groupId': groupId,
+      if (groupName != null) 'groupName': groupName,
     };
   }
 }

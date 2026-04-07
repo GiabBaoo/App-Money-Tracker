@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
 import '../../utils/category_utils.dart';
+import '../../features/group_expense/presentation/screens/group_list_screen.dart';
+import '../../utils/page_transitions.dart';
 
 class CategoryScreen extends StatefulWidget {
   final bool isIncome;
@@ -68,6 +70,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
       ],
       'Khác': [
         {'name': 'Chi khác', 'icon': Icons.receipt_long_outlined, 'group': 'Khác'},
+        {'name': 'Nhóm Chi Tiêu', 'icon': Icons.group, 'group': 'Khác', 'isSpecial': true},
       ]
     };
 
@@ -218,11 +221,22 @@ class _CategoryScreenState extends State<CategoryScreen> {
     final bgColor = CategoryUtils.getLightBgColor(cat['name'], isDark);
 
     return GestureDetector(
-      onTap: () => Navigator.pop(context, {
-        'name': cat['name'],
-        'icon': cat['icon'],
-        'color': color,
-      }),
+      onTap: () {
+        // Nếu là "Nhóm Chi Tiêu", navigate đến GroupListScreen
+        if (cat['isSpecial'] == true && cat['name'] == 'Nhóm Chi Tiêu') {
+          Navigator.push(
+            context,
+            PageTransitions.slideRight(const GroupListScreen()),
+          );
+        } else {
+          // Trả về category như bình thường
+          Navigator.pop(context, {
+            'name': cat['name'],
+            'icon': cat['icon'],
+            'color': color,
+          });
+        }
+      },
       child: Column(
         children: [
           Container(

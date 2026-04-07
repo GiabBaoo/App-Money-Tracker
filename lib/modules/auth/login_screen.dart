@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import '../home/home_screen.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
+import '../../features/group_expense/presentation/screens/join_group_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -49,6 +51,24 @@ class _LoginScreenState extends State<LoginScreen> {
       if (currentUser != null && !currentUser.emailVerified) {
         _showSnackBar('Vui lòng xác nhận email trước khi đăng nhập!', isError: true);
         await _authService.logout();
+        return;
+      }
+      
+      // Kiểm tra xem có pendingGroupId không (sau khi login từ invite link)
+      final prefs = await SharedPreferences.getInstance();
+      final pendingGroupId = prefs.getString('pendingGroupId');
+      if (pendingGroupId != null && pendingGroupId.isNotEmpty) {
+        print('DEBUG: Found pendingGroupId after login: $pendingGroupId');
+        // Xóa pendingGroupId
+        await prefs.remove('pendingGroupId');
+        
+        // Chuyển đến JoinGroupScreen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => JoinGroupScreen(groupId: pendingGroupId),
+          ),
+        );
         return;
       }
       

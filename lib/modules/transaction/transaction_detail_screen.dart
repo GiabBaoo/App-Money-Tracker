@@ -22,8 +22,13 @@ class TransactionDetailScreen extends StatelessWidget {
     final description = transaction.description;
     final date = '${transaction.date.day.toString().padLeft(2, '0')}/${transaction.date.month.toString().padLeft(2, '0')}/${transaction.date.year}';
     final time = transaction.time;
-    final amount = '${isIncome ? "+" : "-"} ${CurrencyUtils.formatCurrency(transaction.amount)}'; 
-    final icon = transaction.icon;
+    final amount = '${isIncome ? "+" : "-"} ${CurrencyUtils.formatCurrency(transaction.amount)}';
+    
+    // Kiểm tra xem đây có phải là giao dịch quỹ không
+    final isGroupTransaction = transaction.groupIconCode != null && transaction.groupId != null;
+    final icon = isGroupTransaction
+        ? IconData(transaction.groupIconCode as int, fontFamily: 'MaterialIcons')
+        : transaction.icon;
 
     // Tự động chọn màu tùy theo trạng thái Thu / Chi
     final Color statusColor = isIncome

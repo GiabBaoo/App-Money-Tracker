@@ -6,6 +6,7 @@ import '../../services/firestore_service.dart';
 import '../../services/voice_service.dart';
 import '../../models/user_model.dart';
 import '../../models/transaction_model.dart';
+import '../../models/notification_model.dart';
 import 'statistics_screen.dart';
 import '../settings/profile_screen.dart';
 import 'wallet_screen.dart';
@@ -18,6 +19,7 @@ import 'category_statistics_screen.dart';
 import '../transaction/all_transactions_screen.dart';
 import '../../utils/currency_format_utils.dart';
 import '../../widgets/transaction_item.dart';
+import '../../features/group_expense/presentation/screens/group_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -205,13 +207,67 @@ class _HomeBodyState extends State<HomeBody> {
                             }
                           ),
                           Container(
+                            margin: const EdgeInsets.only(right: 12),
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: IconButton(
-                              icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-                              onPressed: () => Navigator.push(context, PageTransitions.slideRight(const NotificationScreen())),
+                              icon: const Icon(Icons.group, color: Colors.white),
+                              onPressed: () => Navigator.push(
+                                context, 
+                                PageTransitions.slideRight(const GroupListScreen())
+                              ),
+                            ),
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Stack(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                                  onPressed: () => Navigator.push(context, PageTransitions.slideRight(const NotificationScreen())),
+                                ),
+                                // Badge hiển thị số thông báo chưa đọc
+                                StreamBuilder<List<NotificationModel>>(
+                                  stream: _firestoreService.getNotificationsStream(),
+                                  builder: (context, snapshot) {
+                                    if (!snapshot.hasData) return const SizedBox.shrink();
+                                    
+                                    final unreadCount = snapshot.data!.where((n) => !n.isRead).length;
+                                    
+                                    if (unreadCount == 0) return const SizedBox.shrink();
+                                    
+                                    return Positioned(
+                                      right: 8,
+                                      top: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.red,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 18,
+                                          minHeight: 18,
+                                        ),
+                                        child: Text(
+                                          unreadCount > 99 ? '99+' : unreadCount.toString(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -393,4 +449,4 @@ class _HomeBodyState extends State<HomeBody> {
       ),
     );
   }
-}
+}

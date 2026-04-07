@@ -4,8 +4,10 @@ import '../utils/currency_format_utils.dart';
 import '../utils/page_transitions.dart';
 import '../modules/transaction/transaction_detail_screen.dart';
 import '../utils/category_utils.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../features/group_expense/presentation/providers/group_expense_providers.dart';
 
-class TransactionItem extends StatelessWidget {
+class TransactionItem extends ConsumerWidget {
   final TransactionModel transaction;
   final bool showDate;
 
@@ -16,12 +18,35 @@ class TransactionItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final bool isIncome = transaction.isIncome;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Màu sắc sống động từ CategoryUtils (Yêu cầu mới)
-    final Color iconColor = CategoryUtils.getVibrantColor(transaction.category);
+    // Kiểm tra xem đây có phải là giao dịch quỹ không
+    final bool isGroupTransaction = transaction.groupId != null;
+    
+    // Lấy icon: nếu là giao dịch quỹ, lấy từ groupIconCode hoặc query group
+    IconData displayIcon = transaction.icon;
+    
+    if (isGroupTransaction) {
+      // Nếu có groupIconCode, dùng nó
+      if (transaction.groupIconCode != null) {
+        displayIcon = IconData(transaction.groupIconCode as int, fontFamily: 'MaterialIcons');
+      } else if (transaction.groupId != null) {
+        // Nếu không có groupIconCode nhưng có groupId, query group để lấy icon
+        final groupAsync = ref.watch(groupStreamProvider(transaction.groupId!));
+        displayIcon = groupAsync.maybeWhen(
+          data: (group) => group?.iconCode != null 
+              ? IconData(group!.iconCode as int, fontFamily: 'MaterialIcons')
+              : Icons.group,
+          orElse: () => Icons.group,
+        );
+      }
+    }
+
+    final Color iconColor = isGroupTransaction
+        ? CategoryUtils.getVibrantColor(transaction.category)
+        : CategoryUtils.getVibrantColor(transaction.category);
     final Color bgColor = CategoryUtils.getLightBgColor(transaction.category, isDark);
 
     return Padding(
@@ -36,7 +61,7 @@ class TransactionItem extends StatelessWidget {
           padding: const EdgeInsets.all(4),
           child: Row(
             children: [
-              // Icon Hạng mục (Đồng bộ thiết kế mới)
+              // Icon Hạng mục (Đồng bộ thiết kế mới) - Hiển thị group icon nếu là giao dịch quỹ
               Container(
                 width: 54,
                 height: 54,
@@ -44,7 +69,7 @@ class TransactionItem extends StatelessWidget {
                   color: bgColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(transaction.icon, color: iconColor, size: 26),
+                child: Icon(displayIcon, color: iconColor, size: 26),
               ),
               const SizedBox(width: 16),
               
