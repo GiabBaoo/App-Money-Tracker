@@ -11,6 +11,7 @@ import '../settings/profile_screen.dart';
 import 'wallet_screen.dart';
 import '../transaction/add_transaction_screen.dart';
 import '../transaction/transaction_detail_screen.dart';
+import '../transaction/transaction_gallery_screen.dart';
 import 'notification_screen.dart';
 import '../../widgets/voice_input_bottom_sheet.dart';
 import 'category_statistics_screen.dart';
@@ -252,9 +253,23 @@ class _HomeBodyState extends State<HomeBody> {
             children: [
               const Text('Lịch sử giao dịch',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              TextButton(
-                onPressed: () => Navigator.push(context, PageTransitions.slideRight(const AllTransactionsScreen())),
-                child: const Text('Xem tất cả', style: TextStyle(color: Color(0xFF438883))),
+              Row(
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      PageTransitions.slideRight(const AllTransactionsScreen()),
+                    ),
+                    child: const Text('Xem tất cả', style: TextStyle(color: Color(0xFF438883))),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.photo_library_outlined, color: Color(0xFF438883)),
+                    onPressed: () => Navigator.push(
+                      context,
+                      PageTransitions.slideRight(const TransactionGalleryScreen()),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -393,4 +408,4 @@ class _HomeBodyState extends State<HomeBody> {
       ),
     );
   }
-}
+}

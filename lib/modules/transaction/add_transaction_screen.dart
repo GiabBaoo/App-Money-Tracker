@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../utils/page_transitions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 
 import '../../services/firestore_service.dart';
 import '../../models/transaction_model.dart';
@@ -20,11 +23,14 @@ class AddTransactionScreen extends StatefulWidget {
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  final ImagePicker _imagePicker = ImagePicker();
   late final TextEditingController _amountController;
   late final TextEditingController _descriptionController;
 
   bool isIncome = false; // Mặc định là Khoản Chi theo yêu cầu
   bool _isLoading = false;
+
+  XFile? _pickedPhoto; // Ảnh người dùng chọn/chụp (1 ảnh)
 
   String selectedCategoryName = 'Chọn danh mục';
   IconData selectedCategoryIcon = Icons.category;
@@ -87,6 +93,114 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     if (picked != null) setState(() => _selectedTime = picked);
   }
 
+  Future<void> _pickTransactionPhotoFromSource(ImageSource source) async {
+    final picked = await _imagePicker.pickImage(
+      source: source,
+      maxWidth: 1600,
+      imageQuality: 85,
+    );
+
+    if (picked == null) return;
+    setState(() => _pickedPhoto = picked);
+  }
+
+  Future<void> _showPhotoPickerSheet() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 4),
+              Text(
+                'Thêm ảnh',
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF111827),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 18),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF438883),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.camera_alt_outlined),
+                label: const Text('Chụp ảnh'),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await _pickTransactionPhotoFromSource(ImageSource.camera);
+                },
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.photo_library_outlined),
+                label: const Text('Chọn từ thư viện'),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await _pickTransactionPhotoFromSource(ImageSource.gallery);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Upload ảnh lên Firebase Storage và trả về photoUrl + storagePath
+  Future<({String photoUrl, String photoStoragePath})> _uploadTransactionPhoto({
+    required String uid,
+    required String transactionId,
+    required XFile pickedPhoto,
+  }) async {
+    final ext = pickedPhoto.name.contains('.')
+        ? pickedPhoto.name.split('.').last.toLowerCase()
+        : 'jpg';
+
+    final fileName = '$transactionId.${ext.isEmpty ? 'jpg' : ext}';
+    final photoStoragePath = 'transaction_images/$uid/$transactionId/$fileName';
+
+    final storageRef = FirebaseStorage.instance.ref().child(photoStoragePath);
+
+    // Tách lỗi rõ ràng để dễ xác định nguyên nhân:
+    // - Nếu lỗi ở putFile => upload không thành công (rule/network/uri/file...)
+    // - Nếu lỗi ở getDownloadURL => object tồn tại nhưng không lấy được link (rule/permission/bucket...)
+    try {
+      await storageRef.putFile(File(pickedPhoto.path));
+    } on FirebaseException catch (e) {
+      throw Exception('Upload failed (${e.code}): ${e.message} (path: $photoStoragePath)');
+    } catch (e) {
+      throw Exception('Upload failed: $e (path: $photoStoragePath)');
+    }
+
+    late final String photoUrl;
+    try {
+      photoUrl = await storageRef.getDownloadURL();
+    } on FirebaseException catch (e) {
+      throw Exception('getDownloadURL failed (${e.code}): ${e.message} (path: $photoStoragePath)');
+    } catch (e) {
+      throw Exception('getDownloadURL failed: $e (path: $photoStoragePath)');
+    }
+
+    return (photoUrl: photoUrl, photoStoragePath: photoStoragePath);
+  }
+
   Future<void> _handleSave() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -115,7 +229,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         description: _descriptionController.text.trim(),
       );
 
-      await _firestoreService.addTransaction(transaction);
+      // 1) Tạo doc Firestore trước để lấy id
+      final transactionId = await _firestoreService.addTransactionAndGetId(transaction);
+
+      // 2) Nếu có ảnh -> upload lên Storage -> lưu link vào Firestore
+      if (_pickedPhoto != null) {
+        final uploadRes = await _uploadTransactionPhoto(
+          uid: uid,
+          transactionId: transactionId,
+          pickedPhoto: _pickedPhoto!,
+        );
+
+        await _firestoreService.updateTransactionPhoto(
+          transactionId: transactionId,
+          photoUrl: uploadRes.photoUrl,
+          photoStoragePath: uploadRes.photoStoragePath,
+        );
+      }
 
       if (!mounted) return;
       _showSnackBar('Đã lưu giao dịch thành công!');
@@ -287,6 +417,77 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5)),
                         ),
                       ),
+                      const SizedBox(height: 18),
+
+                      // ẢNH
+                      _buildLabel('Ảnh (hóa đơn, đồ ăn...)'),
+                      InkWell(
+                        onTap: _showPhotoPickerSheet,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
+                            border: Border.all(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE5E7EB)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF438883).withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.camera_alt_outlined, color: Color(0xFF438883)),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _pickedPhoto == null ? 'Chụp ảnh để lưu kèm giao dịch' : 'Đã chọn ảnh',
+                                  style: TextStyle(
+                                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.75),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.keyboard_arrow_right,
+                                color: isDark ? Colors.white54 : Colors.grey,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      if (_pickedPhoto != null) ...[
+                        const SizedBox(height: 12),
+                        Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Image.file(
+                                File(_pickedPhoto!.path),
+                                width: double.infinity,
+                                height: 170,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            Positioned(
+                              top: 10,
+                              right: 10,
+                              child: Material(
+                                color: Colors.black.withOpacity(0.4),
+                                borderRadius: BorderRadius.circular(14),
+                                child: IconButton(
+                                  icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                                  onPressed: () => setState(() => _pickedPhoto = null),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: 40),
 
                       // NÚT LƯU

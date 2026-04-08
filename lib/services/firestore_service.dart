@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../models/transaction_model.dart';
 import '../models/notification_model.dart';
 import '../models/user_model.dart';
@@ -21,6 +22,17 @@ class FirestoreService {
   Future<void> addTransaction(TransactionModel transaction) async {
     if (_uid == null) return;
     await _db.collection('transactions').add(transaction.toFirestore());
+  }
+
+  // Thêm giao dịch mới và trả về documentId
+  // (dùng cho luồng upload ảnh: cần id để tạo path trong Firebase Storage)
+  Future<String> addTransactionAndGetId(TransactionModel transaction) async {
+    if (_uid == null) {
+      throw StateError('User is not authenticated');
+    }
+
+    final docRef = await _db.collection('transactions').add(transaction.toFirestore());
+    return docRef.id;
   }
 
   // Stream danh sách giao dịch (realtime - sắp xếp theo ngày mới nhất)
@@ -57,7 +69,24 @@ class FirestoreService {
 
   // Xóa giao dịch
   Future<void> deleteTransaction(String transactionId) async {
-    await _db.collection('transactions').doc(transactionId).delete();
+    final docRef = _db.collection('transactions').doc(transactionId);
+    final snapshot = await docRef.get();
+    final data = snapshot.data() as Map<String, dynamic>?;
+
+    // Nếu có ảnh, xóa luôn object trong Firebase Storage để tránh rác.
+    final storagePath = data?['photoStoragePath'] as String?;
+    if (storagePath != null && storagePath.isNotEmpty) {
+      try {
+        await FirebaseStorage.instance.ref(storagePath).delete();
+      } catch (e) {
+        // Xóa storage có thể fail vì rule/quyền hoặc ảnh đã bị xóa trước đó.
+        // Ta vẫn xóa document để app không bị kẹt.
+        // ignore: avoid_print
+        print('Failed to delete storage object: $e');
+      }
+    }
+
+    await docRef.delete();
   }
 
   // Cập nhật giao dịch
@@ -66,6 +95,33 @@ class FirestoreService {
         .collection('transactions')
         .doc(transaction.id)
         .update(transaction.toFirestore());
+  }
+
+  // Cập nhật ảnh cho giao dịch
+  Future<void> updateTransactionPhoto({
+    required String transactionId,
+    required String photoUrl,
+    required String photoStoragePath,
+  }) async {
+    await _db.collection('transactions').doc(transactionId).update({
+      'hasPhoto': true,
+      'photoUrl': photoUrl,
+      'photoStoragePath': photoStoragePath,
+    });
+  }
+
+  // Gallery: Stream các giao dịch có ảnh (realtime)
+  Stream<List<TransactionModel>> getTransactionsWithPhotosStream() {
+    if (_uid == null) return Stream.value([]);
+
+    return _db
+        .collection('transactions')
+        .where('uid', isEqualTo: _uid)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => TransactionModel.fromFirestore(doc))
+            .where((tx) => tx.hasPhoto)
+            .toList());
   }
 
   // ======================== THỐNG KÊ (HOME) ========================

@@ -13,6 +13,11 @@ class TransactionModel {
   final String description;
   final DateTime createdAt;
 
+  // Ảnh (hóa đơn, đồ ăn, vật dụng...)
+  final bool hasPhoto;
+  final String photoUrl; // URL tải ảnh từ Firebase Storage
+  final String photoStoragePath; // Path trong Storage để xóa khi xóa giao dịch
+
   TransactionModel({
     this.id = '',
     required this.uid,
@@ -23,6 +28,9 @@ class TransactionModel {
     required this.date,
     this.time = '',
     this.description = '',
+    this.hasPhoto = false,
+    this.photoUrl = '',
+    this.photoStoragePath = '',
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -34,6 +42,10 @@ class TransactionModel {
   // Chuyển từ Firestore sang Object
   factory TransactionModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    final photoUrl = data['photoUrl'] as String? ?? '';
+    final photoStoragePath = data['photoStoragePath'] as String? ?? '';
+    final hasPhoto = data['hasPhoto'] as bool? ?? photoUrl.isNotEmpty;
+
     return TransactionModel(
       id: doc.id,
       uid: data['uid'] ?? '',
@@ -46,6 +58,9 @@ class TransactionModel {
           : DateTime.now(),
       time: data['time'] ?? '',
       description: data['description'] ?? '',
+      hasPhoto: hasPhoto,
+      photoUrl: photoUrl,
+      photoStoragePath: photoStoragePath,
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
@@ -64,6 +79,11 @@ class TransactionModel {
       'time': time,
       'description': description,
       'createdAt': Timestamp.fromDate(createdAt),
+
+      // Ảnh
+      'hasPhoto': hasPhoto,
+      'photoUrl': photoUrl,
+      'photoStoragePath': photoStoragePath,
     };
   }
 }

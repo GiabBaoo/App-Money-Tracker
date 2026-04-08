@@ -125,6 +125,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         time: timeStr,
         description: _descriptionController.text.trim(),
         createdAt: widget.transaction.createdAt,
+        hasPhoto: widget.transaction.hasPhoto,
+        photoUrl: widget.transaction.photoUrl,
+        photoStoragePath: widget.transaction.photoStoragePath,
       );
 
       await _firestoreService.updateTransaction(updatedTransaction);
