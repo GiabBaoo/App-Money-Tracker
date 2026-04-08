@@ -67,6 +67,50 @@ class FirestoreService {
         .toList();
   }
 
+  // Lấy giao dịch theo khoảng thời gian (dùng cho export báo cáo)
+  Future<List<TransactionModel>> getTransactionsByDateRange({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    if (_uid == null) return [];
+
+    // Chuẩn hóa range theo ngày để truy vấn chính xác:
+    // start: 00:00:00, end: 23:59:59
+    final rangeStart = DateTime(startDate.year, startDate.month, startDate.day);
+    final rangeEnd = DateTime(
+      endDate.year,
+      endDate.month,
+      endDate.day,
+      23,
+      59,
+      59,
+      999,
+    );
+
+    // Tránh phụ thuộc composite index: chỉ query theo uid rồi lọc range ở client.
+    final snapshot = await _db
+        .collection('transactions')
+        .where('uid', isEqualTo: _uid)
+        .get();
+
+    final txs = snapshot.docs
+        .map((doc) => TransactionModel.fromFirestore(doc))
+        .where((tx) {
+          final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
+          return !txDate.isBefore(rangeStart) && !txDate.isAfter(DateTime(rangeEnd.year, rangeEnd.month, rangeEnd.day));
+        })
+        // Báo cáo chi tiêu: chỉ lấy expense
+        .where((tx) => !tx.isIncome)
+        .toList();
+
+    txs.sort((a, b) {
+      final dateCompare = a.date.compareTo(b.date);
+      if (dateCompare != 0) return dateCompare;
+      return a.createdAt.compareTo(b.createdAt);
+    });
+    return txs;
+  }
+
   // Xóa giao dịch
   Future<void> deleteTransaction(String transactionId) async {
     final docRef = _db.collection('transactions').doc(transactionId);

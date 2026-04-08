@@ -1,6 +1,11 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
-import '../../utils/page_transitions.dart';
-import '../settings/success_screen.dart'; // Import trang Thành công đa năng
+import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
+
+import '../../services/report_export_service.dart';
 
 class ExportReportScreen extends StatefulWidget {
   const ExportReportScreen({super.key});
@@ -10,7 +15,8 @@ class ExportReportScreen extends StatefulWidget {
 }
 
 class _ExportReportScreenState extends State<ExportReportScreen> {
-  // Biến lưu trạng thái thời gian và định dạng file
+  final ReportExportService _reportExportService = ReportExportService();
+
   String _selectedDateRange = 'Tháng này';
   final List<String> _dateRanges = [
     'Tháng này',
@@ -20,12 +26,10 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     'Tùy chỉnh',
   ];
 
-  String _selectedFormat = 'PDF'; // Mặc định chọn PDF
-
-  // BIẾN MỚI: Lưu trữ khoảng thời gian do người dùng tự chọn
+  String _selectedFormat = 'PDF';
   DateTimeRange? _customDateRange;
+  bool _isLoading = false;
 
-  // HÀM MỚI: Mở lịch để chọn khoảng thời gian
   Future<void> _pickDateRange() async {
     DateTimeRange? picked = await showDateRangePicker(
       context: context,
@@ -54,6 +58,134 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
         _customDateRange = picked;
       });
     }
+  }
+
+  Future<void> _handleDownload() async {
+    if (_isLoading) return;
+
+    if (_selectedDateRange == 'Tùy chỉnh' && _customDateRange == null) {
+      _showSnackBar('Vui lòng chọn khoảng thời gian!', isError: true);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      // 1) Xử lý khoảng thời gian
+      final range = _reportExportService.resolveDateRange(
+        selectedOption: _selectedDateRange,
+        customDateRange: _customDateRange,
+      );
+
+      // 2) Query Firestore theo range
+      final transactions = await _reportExportService.fetchTransactions(range: range);
+      if (transactions.isEmpty) {
+        _showSnackBar('Không có dữ liệu chi tiêu trong khoảng thời gian này.');
+        return;
+      }
+
+      // 3) Tạo file bytes
+      final isPdf = _selectedFormat == 'PDF';
+      final bytes = isPdf
+          ? await _reportExportService.buildPdfBytes(transactions: transactions, range: range)
+          : await _reportExportService.buildExcelBytes(transactions: transactions, range: range);
+
+      // 4) Lưu file + mở/share
+      final fileName = _reportExportService.buildFileName(format: _selectedFormat, range: range);
+      final savedPath = await _reportExportService.saveToDeviceDownloads(
+        bytes: bytes,
+        fileName: fileName,
+        format: _selectedFormat,
+      );
+      final file = await _reportExportService.saveToTempFile(bytes: bytes, fileName: fileName);
+
+      if (!mounted) return;
+      _showSnackBar('Đã lưu file: $savedPath');
+      await _showExportDoneSheet(file: file, bytes: bytes, isPdf: isPdf, savedPath: savedPath);
+    } catch (e) {
+      _showSnackBar('Tạo báo cáo thất bại: $e', isError: true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _showExportDoneSheet({
+    required File file,
+    required Uint8List bytes,
+    required bool isPdf,
+    required String savedPath,
+  }) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Đã tải file về máy thành công',
+                style: TextStyle(
+                  color: isDark ? Colors.white : const Color(0xFF111827),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                savedPath,
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : const Color(0xFF4B5563),
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 14),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await SharePlus.instance.share(
+                    ShareParams(
+                      files: [XFile(file.path)],
+                      text: 'Báo cáo chi tiêu',
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF438883),
+                  foregroundColor: Colors.white,
+                ),
+                icon: const Icon(Icons.share),
+                label: const Text('Chia sẻ file'),
+              ),
+              if (isPdf) ...[
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    await Printing.layoutPdf(onLayout: (_) async => bytes);
+                  },
+                  icon: const Icon(Icons.picture_as_pdf_outlined),
+                  label: const Text('Mở/Xem trước PDF'),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : const Color(0xFF438883),
+      ),
+    );
   }
 
   @override
@@ -137,7 +269,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                       // CHỌN THỜI GIAN (Dropdown)
                       _buildLabel('Thời gian xuất báo cáo'),
                       DropdownButtonFormField<String>(
-                        value: _selectedDateRange,
+                        initialValue: _selectedDateRange,
                         icon: const Icon(
                           Icons.keyboard_arrow_down,
                           color: Color(0xFF438883),
@@ -238,47 +370,12 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
 
                       // NÚT TẢI XUỐNG
                       InkWell(
-                        onTap: () {
-                          // Bắt lỗi nếu chọn Tùy chỉnh mà quên chưa chọn ngày
-                          if (_selectedDateRange == 'Tùy chỉnh' &&
-                              _customDateRange == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Vui lòng chọn khoảng thời gian!',
-                                ),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          // TẢI THÀNH CÔNG -> GỌI TRANG SUCCESS_SCREEN
-                          Navigator.push(
-                            context,
-                            PageTransitions.scale(
-                              SuccessScreen(
-                                appBarTitle: 'Tải báo cáo',
-                                successTitle: 'Tải xuống thành công',
-                                successMessage:
-                                    'Báo cáo thống kê của bạn (định dạng $_selectedFormat) đã được lưu thành công vào thư mục Tải xuống trên thiết bị.',
-                                buttonText: 'Quay lại Thống kê',
-                                onButtonPressed: () {
-                                  // Lùi về trang Thống kê (lùi 2 bước)
-                                  int count = 0;
-                                  Navigator.popUntil(context, (route) {
-                                    return count++ == 2;
-                                  });
-                                },
-                              ),
-                            ),
-                          );
-                        },
+                        onTap: _isLoading ? null : _handleDownload,
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF438883), // Màu xanh chủ đạo
+                            color: _isLoading ? Colors.grey : const Color(0xFF438883),
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
@@ -290,22 +387,42 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(
-                                Icons.download,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'Tải xuống ngay',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                            children: _isLoading
+                                ? const [
+                                    SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.4,
+                                      ),
+                                    ),
+                                    SizedBox(width: 10),
+                                    Text(
+                                      'Đang tạo báo cáo...',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ]
+                                : const [
+                                    Icon(
+                                      Icons.download,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Tải xuống ngay',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                           ),
                         ),
                       ),
