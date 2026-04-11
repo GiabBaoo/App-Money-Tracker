@@ -84,99 +84,91 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                   children: [
                     const SizedBox(height: 24),
                     
-                    // Banner - Card Style (Refined)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            primaryColor.withOpacity(0.12),
-                            primaryColor.withOpacity(0.04),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: primaryColor.withOpacity(0.12),
-                          width: 1.2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: primaryColor.withOpacity(0.06),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Icon + Title Row
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Icon Container
-                              Container(
-                                width: 56,
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  color: primaryColor.withOpacity(0.14),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: Icon(
-                                  Icons.send_rounded,
-                                  size: 28,
-                                  color: primaryColor.withOpacity(0.65),
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      'Chuyển tiền,',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                        color: primaryColor,
-                                        height: 1.2,
-                                      ),
-                                    ),
-                                    Text(
-                                      'thanh toán mọi',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                        color: primaryColor,
-                                        height: 1.2,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                    // Banner - Inspirational Card Style
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Container(
+                        padding: const EdgeInsets.all(28),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              primaryColor,
+                              primaryColor.withOpacity(0.75),
                             ],
                           ),
-                          const SizedBox(height: 14),
-                          // Subtitle badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: primaryColor.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: primaryColor.withOpacity(0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
                             ),
-                            child: Text(
-                              '📱 dịch vụ với quỹ',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: primaryColor.withOpacity(0.65),
-                                fontWeight: FontWeight.w500,
+                          ],
+                        ),
+                        child: Stack(
+                          children: [
+                            // Decorative circle background
+                            Positioned(
+                              right: -50,
+                              top: -50,
+                              child: Container(
+                                width: 220,
+                                height: 220,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withOpacity(0.08),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                            // Content
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Icon
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white.withOpacity(0.15),
+                                  ),
+                                  child: const Icon(
+                                    Icons.auto_awesome_rounded,
+                                    size: 26,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                
+                                // Title with italic style
+                                const Text(
+                                  'Tạo Quỹ Mới',
+                                  style: TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                    height: 1.1,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                
+                                // Description
+                                const Text(
+                                  'Kiến tạo tương lai tài chính vững chắc với các giải pháp tiết kiệm ưu việt',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white,
+                                    height: 1.5,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     
@@ -259,7 +251,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                               runSpacing: 12,
                               children: _templates.map((template) {
                                 final isSelected = _selectedTemplate == template['name'];
-                                return InkWell(
+                                return GestureDetector(
                                   onTap: () {
                                     setState(() {
                                       _selectedTemplate = template['name'];
@@ -267,27 +259,43 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                                       _nameController.text = template['name'];
                                     });
                                   },
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? primaryColor.withOpacity(0.1)
-                                          : (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6)),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: isSelected ? primaryColor : Colors.transparent,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      template['name'],
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                  child: AnimatedScale(
+                                    duration: const Duration(milliseconds: 200),
+                                    scale: isSelected ? 1.05 : 1.0,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      decoration: BoxDecoration(
                                         color: isSelected
-                                            ? primaryColor
-                                            : (isDark ? Colors.white70 : Colors.black87),
+                                            ? primaryColor.withOpacity(0.12)
+                                            : (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6)),
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(
+                                          color: isSelected 
+                                              ? primaryColor 
+                                              : (isDark 
+                                                  ? Colors.white.withOpacity(0.1)
+                                                  : Colors.black.withOpacity(0.08)),
+                                          width: isSelected ? 2 : 1,
+                                        ),
+                                        boxShadow: isSelected
+                                            ? [
+                                                BoxShadow(
+                                                  color: primaryColor.withOpacity(0.15),
+                                                  blurRadius: 8,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ]
+                                            : [],
+                                      ),
+                                      child: Text(
+                                        template['name'],
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                          color: isSelected
+                                              ? primaryColor
+                                              : (isDark ? Colors.white70 : Colors.black87),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -338,27 +346,55 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                             
                             const SizedBox(height: 16),
                             
-                            // Create button
-                            SizedBox(
+                            // Create button with gradient
+                            Container(
                               width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: _nameController.text.trim().isEmpty
-                                    ? null
-                                    : () => _createGroup(context),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryColor,
-                                  disabledBackgroundColor: Colors.grey[300],
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    primaryColor,
+                                    primaryColor.withOpacity(0.8),
+                                  ],
                                 ),
-                                child: const Text(
-                                  'Tạo quỹ',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: primaryColor.withOpacity(0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: _nameController.text.trim().isEmpty
+                                      ? null
+                                      : () => _createGroup(context),
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: const [
+                                        Icon(
+                                          Icons.add_rounded,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Tạo quỹ',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),

@@ -12,6 +12,7 @@ class NotificationModel {
   final String? type; // 'group_invite', etc.
   final String? groupId;
   final String? groupName;
+  final String? status; // 'accepted', 'rejected', etc.
 
   NotificationModel({
     this.id = '',
@@ -24,6 +25,7 @@ class NotificationModel {
     this.type,
     this.groupId,
     this.groupName,
+    this.status,
   }) : createdAt = createdAt ?? DateTime.now();
 
   IconData get icon => IconData(iconCode, fontFamily: 'MaterialIcons');
@@ -43,6 +45,7 @@ class NotificationModel {
       type: data['type'] as String?,
       groupId: data['groupId'] as String?,
       groupName: data['groupName'] as String?,
+      status: data['status'] as String?,
     );
   }
 
@@ -57,6 +60,7 @@ class NotificationModel {
       if (type != null) 'type': type,
       if (groupId != null) 'groupId': groupId,
       if (groupName != null) 'groupName': groupName,
+      if (status != null) 'status': status,
     };
   }
 }

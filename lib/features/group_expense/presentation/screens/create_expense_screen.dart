@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../utils/currency_format_utils.dart';
 import '../../data/dtos/create_expense_dto.dart';
 import '../../data/models/expense_model.dart';
 import '../providers/group_expense_providers.dart';
@@ -60,7 +61,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
       final dto = CreateExpenseDto(
         groupId: widget.groupId,
         name: _nameController.text.trim(),
-        amount: double.parse(_amountController.text),
+        amount: CurrencyUtils.parseCurrency(_amountController.text),
         payerId: _selectedPayerId!,
         participantIds: _selectedParticipantIds,
         splitMethod: _splitMethod,
@@ -135,6 +136,9 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                 ),
                 child: groupAsync.when(
                   data: (group) {
+                    if (group == null) {
+                      return const Center(child: Text('Không tìm thấy dữ liệu nhóm'));
+                    }
                     final members = group.memberIds;
 
                     if (_selectedPayerId == null && members.isNotEmpty) {
@@ -178,12 +182,13 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                               suffixText: 'đ',
                             ),
                             keyboardType: TextInputType.number,
+                            inputFormatters: [CurrencyInputFormatter()],
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
                                 return 'Vui lòng nhập số tiền';
                               }
-                              if (double.tryParse(value) == null) {
-                                return 'Số tiền không hợp lệ';
+                              if (CurrencyUtils.parseCurrency(value) <= 0) {
+                                return 'Số tiền phải lớn hơn 0';
                               }
                               return null;
                             },

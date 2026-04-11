@@ -82,115 +82,164 @@ class GroupListScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Banner - Card Style (Refined)
+          // Exclusive Feature Banner
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 22),
+            padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
                   primaryColor,
-                  primaryColor.withOpacity(0.8),
+                  primaryColor.withOpacity(0.75),
                 ],
               ),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: primaryColor.withOpacity(0.25),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: primaryColor.withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Stack(
               children: [
-                // Icon + Title Row
-                Row(
+                // Decorative circle background
+                Positioned(
+                  right: -40,
+                  top: -40,
+                  child: Container(
+                    width: 200,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.08),
+                    ),
+                  ),
+                ),
+                // Content
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Icon Container
+                    // Badge
                     Container(
-                      width: 56,
-                      height: 56,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.25),
-                        borderRadius: BorderRadius.circular(14),
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(
-                        Icons.savings_rounded,
-                        size: 30,
-                        color: Colors.white.withOpacity(0.9),
+                      child: const Text(
+                        'TÍNH NĂNG ĐẶC BIỆT',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Một quỹ,',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                              height: 1.2,
-                            ),
+                    const SizedBox(height: 16),
+                    
+                    // Title with icon
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Một quỹ, một',
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  height: 1.1,
+                                ),
+                              ),
+                              const Text(
+                                'việc',
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            'một việc',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                              height: 1.2,
-                            ),
+                        ),
+                        const SizedBox(width: 16),
+                        // Decorative icon circle
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.12),
                           ),
-                        ],
+                          child: Icon(
+                            Icons.groups_rounded,
+                            size: 40,
+                            color: Colors.white.withOpacity(0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Description
+                    const Text(
+                      'Quản lý tài chính hợp tác cho mục tiêu chung. Xây dựng tương lai cùng nhau với độ chính xác và dễ dàng.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white,
+                        height: 1.5,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // Create Fund Button
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateGroupScreen(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      icon: Icon(
+                        Icons.add_rounded,
+                        color: primaryColor,
+                        size: 20,
+                      ),
+                      label: Text(
+                        'Tạo Quỹ',
+                        style: TextStyle(
+                          color: primaryColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                // Subtitle badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '💰 Chi tiêu đúng mục đích!',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.white.withOpacity(0.9),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
               ],
             ),
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Action button - only Create Group
-          _buildActionButton(
-            context,
-            icon: Icons.add,
-            label: 'Tạo quỹ (${groups.length}/10)',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CreateGroupScreen(),
-                ),
-              );
-            },
-            isDark: isDark,
-            isPrimary: true,
           ),
           
           const SizedBox(height: 32),
@@ -463,6 +512,15 @@ class GroupListScreen extends ConsumerWidget {
                       ),
                       onPressed: () => _changeGroupImage(context, ref, group.id),
                     ),
+                    if (ref.watch(currentUserIdProvider) == group.adminId)
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: Colors.red,
+                          size: 20,
+                        ),
+                        onPressed: () => _deleteGroup(context, ref, group.id, group.name),
+                      ),
                   ],
                 ),
               ],
@@ -471,6 +529,52 @@ class GroupListScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _deleteGroup(BuildContext context, WidgetRef ref, String groupId, String groupName) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xóa quỹ'),
+        content: Text('Bạn có chắc chắn muốn xóa quỹ "$groupName" không? Hành động này không thể hoàn tác.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final groupRepository = ref.read(groupRepositoryProvider);
+        await groupRepository.delete(groupId);
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Đã xóa quỹ "$groupName"'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi khi xóa quỹ: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _changeGroupImage(BuildContext context, WidgetRef ref, String groupId) async {

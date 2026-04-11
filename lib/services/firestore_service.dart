@@ -133,6 +133,28 @@ class FirestoreService {
         .update({'isRead': true});
   }
 
+  // Thêm thông báo mới cho người dùng
+  Future<void> addNotification(NotificationModel notification) async {
+    try {
+      await _db.collection('notifications').add(notification.toFirestore());
+    } catch (e) {
+      print('Error adding notification: $e');
+      rethrow;
+    }
+  }
+
+  // Thêm thông báo cho người dùng khác (không phải người dùng hiện tại)
+  Future<void> addNotificationForUser(String userId, NotificationModel notification) async {
+    try {
+      final notificationData = notification.toFirestore();
+      notificationData['uid'] = userId;
+      await _db.collection('notifications').add(notificationData);
+    } catch (e) {
+      print('Error adding notification for user: $e');
+      rethrow;
+    }
+  }
+
   // HÀM ĐẨY DỮ LIỆU THÔNG BÁO ẢO (MOCK DATA) THEO YÊU CẦU
   Future<void> pushMockNotifications() async {
     if (_uid == null) {

@@ -18,6 +18,10 @@ class InviteMemberScreen extends StatefulWidget {
 class _InviteMemberScreenState extends State<InviteMemberScreen> {
   final _phoneController = TextEditingController();
   bool _isLoading = false;
+  String? _foundUserName;
+  String? _foundUserId;
+  bool _isSearching = false;
+  String? _searchError;
 
   @override
   void dispose() {
@@ -25,15 +29,21 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
     super.dispose();
   }
 
-  void _inviteByPhone(String phone) async {
+  Future<void> _searchUser(String phone) async {
     if (phone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập số điện thoại')),
-      );
+      setState(() {
+        _foundUserName = null;
+        _foundUserId = null;
+        _searchError = null;
+        _isSearching = false;
+      });
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isSearching = true;
+      _searchError = null;
+    });
 
     try {
       // Tìm user theo số điện thoại
@@ -42,28 +52,52 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
           .where('phone', isEqualTo: phone)
           .limit(1)
           .get();
-      
+
       if (usersSnapshot.docs.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Không tìm thấy người dùng với số điện thoại này'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-        setState(() => _isLoading = false);
+        setState(() {
+          _foundUserName = null;
+          _foundUserId = null;
+          _searchError = 'Không tìm thấy người dùng';
+          _isSearching = false;
+        });
         return;
       }
-      
-      final targetUserId = usersSnapshot.docs.first.id;
+
       final userData = usersSnapshot.docs.first.data();
-      final targetUserName = userData['name'] as String? ?? 'Người dùng';
-      
+      final userName = userData['name'] as String? ?? 'Người dùng';
+      final userId = usersSnapshot.docs.first.id;
+
+      setState(() {
+        _foundUserName = userName;
+        _foundUserId = userId;
+        _searchError = null;
+        _isSearching = false;
+      });
+    } catch (e) {
+      setState(() {
+        _foundUserName = null;
+        _foundUserId = null;
+        _searchError = 'Lỗi tìm kiếm: $e';
+        _isSearching = false;
+      });
+    }
+  }
+
+  void _inviteByPhone(String phone) async {
+    if (_foundUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn người dùng hợp lệ')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
       // Tạo notification
       final now = Timestamp.now();
       final notificationData = {
-        'uid': targetUserId,
+        'uid': _foundUserId,
         'iconCode': Icons.account_balance_wallet.codePoint,
         'title': 'Lời mời tham gia quỹ',
         'description': 'Bạn được mời tham gia quỹ "${widget.groupName}"',
@@ -73,20 +107,25 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
         'groupId': widget.groupId,
         'groupName': widget.groupName,
       };
-      
+
       await FirebaseFirestore.instance
           .collection('notifications')
           .add(notificationData);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✓ Đã gửi lời mời đến $targetUserName'),
+            content: Text('✓ Đã gửi lời mời đến $_foundUserName'),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
         );
         _phoneController.clear();
+        setState(() {
+          _foundUserName = null;
+          _foundUserId = null;
+          _searchError = null;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -196,6 +235,9 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
                         enabled: !_isLoading,
+                        onChanged: (phone) {
+                          _searchUser(phone.trim());
+                        },
                         decoration: InputDecoration(
                           hintText: 'Ví dụ: 0912345678',
                           hintStyle: TextStyle(
@@ -205,6 +247,19 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                             Icons.phone_rounded,
                             color: primaryColor,
                           ),
+                          suffixIcon: _isSearching
+                              ? Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                                    ),
+                                  ),
+                                )
+                              : null,
                           filled: true,
                           fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
                           border: OutlineInputBorder(
@@ -218,13 +273,103 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                         ),
                       ),
                       
+                      // Display found user name or error
+                      if (_phoneController.text.isNotEmpty)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 12),
+                            if (_searchError != null)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.info_outline,
+                                      size: 18,
+                                      color: Colors.orange,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _searchError!,
+                                      style: const TextStyle(
+                                        color: Colors.orange,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (_foundUserName != null)
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.green.withOpacity(0.3),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.withOpacity(0.2),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.person_outline,
+                                        color: Colors.green,
+                                        size: 22,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            'Sẽ mời',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.green,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            _foundUserName!,
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.green,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                      size: 24,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      
                       const SizedBox(height: 24),
                       
                       // Submit button
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _isLoading
+                          onPressed: (_isLoading || _foundUserId == null)
                               ? null
                               : () => _inviteByPhone(_phoneController.text.trim()),
                           style: ElevatedButton.styleFrom(

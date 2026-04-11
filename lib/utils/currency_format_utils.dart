@@ -1,5 +1,4 @@
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 
 class CurrencyInputFormatter extends TextInputFormatter {
   @override
@@ -32,18 +31,31 @@ class CurrencyInputFormatter extends TextInputFormatter {
 }
 class CurrencyUtils {
   static String formatCurrency(double amount) {
-    // Sử dụng NumberFormat.currency để đảm bảo định dạng chuẩn vi_VN
-    final formatter = NumberFormat.currency(
-      locale: 'vi_VN',
-      symbol: 'đ',
-      decimalDigits: 0, // Tiền Việt thường không dùng số thập phân
-    );
-    return formatter.format(amount);
+    // Format tiền kiểu Việt: 1000000 -> 1.000.000đ
+    String amountStr = amount.toStringAsFixed(0);
+    
+    // Thêm dấu chấm vào mỗi 3 chữ số từ phải sang
+    final buffer = StringBuffer();
+    int count = 0;
+    
+    for (int i = amountStr.length - 1; i >= 0; i--) {
+      if (count > 0 && count % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(amountStr[i]);
+      count++;
+    }
+    
+    // Đảo lại chuỗi và thêm đ
+    String reversed = buffer.toString().split('').reversed.join('');
+    return '${reversed}đ';
   }
 
   static String formatAmountWithSign(double amount, bool isIncome) {
     String formatted = formatCurrency(amount);
-    return isIncome ? "+$formatted" : "-$formatted";
+    // Remove 'đ' symbol, add sign, then add 'đ' back
+    String withoutSymbol = formatted.replaceAll('đ', '').trim();
+    return isIncome ? "+${withoutSymbol}đ" : "-${withoutSymbol}đ";
   }
 
   static double parseCurrency(String text) {

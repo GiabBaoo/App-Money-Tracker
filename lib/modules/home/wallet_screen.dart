@@ -101,7 +101,8 @@ class _WalletScreenState extends State<WalletScreen> {
 
                     final allTx = snapshot.data ?? [];
                     final filteredTx = allTx.where((tx) => 
-                      tx.date.year == _selectedMonth.year && tx.date.month == _selectedMonth.month
+                      (tx.date.year == _selectedMonth.year && tx.date.month == _selectedMonth.month) &&
+                      tx.source == 'personal' // Chỉ show personal expenses, filter bỏ fund transactions
                     ).toList();
 
                     if (filteredTx.isEmpty) {

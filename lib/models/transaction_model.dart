@@ -14,6 +14,7 @@ class TransactionModel {
   final DateTime createdAt;
   final String? groupId; // ID của quỹ (nếu là giao dịch quỹ)
   final int? groupIconCode; // Icon code của quỹ (nếu là giao dịch quỹ)
+  final String source; // 'personal' hoặc 'fund' - để phân biệt loại giao dịch
 
   TransactionModel({
     this.id = '',
@@ -28,6 +29,7 @@ class TransactionModel {
     DateTime? createdAt,
     this.groupId,
     this.groupIconCode,
+    this.source = 'personal', // Default là personal
   }) : createdAt = createdAt ?? DateTime.now();
 
   // Lấy IconData từ codePoint đã lưu
@@ -55,6 +57,7 @@ class TransactionModel {
           : DateTime.now(),
       groupId: data['groupId'],
       groupIconCode: data['groupIconCode'],
+      source: data['source'] ?? 'personal', // Backward compatibility
     );
   }
 
@@ -72,6 +75,7 @@ class TransactionModel {
       'createdAt': Timestamp.fromDate(createdAt),
       'groupId': groupId,
       'groupIconCode': groupIconCode,
+      'source': source, // Thêm field source
     };
   }
 }

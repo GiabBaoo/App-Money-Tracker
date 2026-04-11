@@ -56,12 +56,23 @@ class GroupService {
 
   Future<void> removeMember(String groupId, String memberId, String requesterId) async {
     final group = await _repository.getById(groupId);
-    if (group.adminId != requesterId) {
-      throw Exception('Chỉ admin mới có thể xóa thành viên');
-    }
+    
+    // Nếu admin muốn xóa bản thân
     if (memberId == group.adminId) {
       throw Exception('Không thể xóa admin khỏi nhóm');
     }
+    
+    // Cho phép thành viên tự rời nhóm
+    if (memberId == requesterId) {
+      await _repository.removeMember(groupId, memberId);
+      return;
+    }
+    
+    // Chỉ admin mới có thể xóa thành viên khác
+    if (group.adminId != requesterId) {
+      throw Exception('Chỉ admin mới có thể xóa thành viên khác');
+    }
+    
     await _repository.removeMember(groupId, memberId);
   }
 

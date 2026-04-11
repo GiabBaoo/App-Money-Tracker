@@ -18,6 +18,7 @@ class GroupMembersScreen extends ConsumerWidget {
     final groupAsync = ref.watch(groupStreamProvider(groupId));
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).primaryColor;
+    final currentUserId = ref.watch(currentUserIdProvider);
 
     return Scaffold(
       backgroundColor: primaryColor,
@@ -56,12 +57,27 @@ class GroupMembersScreen extends ConsumerWidget {
                 ),
                 child: groupAsync.when(
                   data: (group) {
+                    if (group == null) {
+                      return const Center(child: Text('Không tìm thấy dữ liệu nhóm'));
+                    }
                     return ListView.builder(
                       padding: const EdgeInsets.all(24),
                       itemCount: group.memberIds.length,
                       itemBuilder: (context, index) {
                         final memberId = group.memberIds[index];
-                        return _buildMemberItem(context, memberId, group.adminId == memberId, isDark);
+                        final isOwner = group.adminId == memberId;
+                        final isCurrentUser = currentUserId == memberId;
+                        return _buildMemberItem(
+                          context,
+                          ref,
+                          memberId,
+                          isOwner,
+                          isDark,
+                          groupId,
+                          group.adminId,
+                          isCurrentUser,
+                          group.memberIds.length,
+                        );
                       },
                     );
                   },
@@ -78,7 +94,17 @@ class GroupMembersScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMemberItem(BuildContext context, String memberId, bool isOwner, bool isDark) {
+  Widget _buildMemberItem(
+    BuildContext context,
+    WidgetRef ref,
+    String memberId,
+    bool isOwner,
+    bool isDark,
+    String groupId,
+    String adminId,
+    bool isCurrentUser,
+    int totalMembers,
+  ) {
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance.collection('users').doc(memberId).get(),
       builder: (context, snapshot) {
@@ -210,10 +236,211 @@ class GroupMembersScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+              
+              // Action buttons
+              if (isCurrentUser && !isOwner)
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'leave') {
+                      _showLeaveConfirmDialog(context, ref, groupId, name);
+                    }
+                  },
+                  itemBuilder: (BuildContext context) => [
+                    PopupMenuItem<String>(
+                      value: 'leave',
+                      child: Row(
+                        children: [
+                          Icon(Icons.exit_to_app, color: Colors.red, size: 18),
+                          const SizedBox(width: 8),
+                          const Text('Rời nhóm'),
+                        ],
+                      ),
+                    ),
+                  ],
+                  child: Icon(
+                    Icons.more_vert,
+                    color: isDark ? Colors.white54 : Colors.black54,
+                    size: 20,
+                  ),
+                )
+              else if (!isCurrentUser && ref.watch(currentUserIdProvider) == adminId && !isOwner)
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'remove') {
+                      _showRemoveConfirmDialog(context, ref, groupId, memberId, name);
+                    }
+                  },
+                  itemBuilder: (BuildContext context) => [
+                    PopupMenuItem<String>(
+                      value: 'remove',
+                      child: Row(
+                        children: [
+                          Icon(Icons.person_remove, color: Colors.red, size: 18),
+                          const SizedBox(width: 8),
+                          const Text('Xóa khỏi nhóm'),
+                        ],
+                      ),
+                    ),
+                  ],
+                  child: Icon(
+                    Icons.more_vert,
+                    color: isDark ? Colors.white54 : Colors.black54,
+                    size: 20,
+                  ),
+                ),
             ],
           ),
         );
       },
+    );
+  }
+
+  static void _showLeaveConfirmDialog(BuildContext context, WidgetRef ref, String groupId, String memberName) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF2E2E2E) : Colors.white,
+        title: Text(
+          'Rời Nhóm',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Bạn có chắc muốn rời nhóm này không? Bạn sẽ không thể xem các giao dịch cũ và sẽ cần được mời lại để tham gia.',
+          style: TextStyle(
+            color: isDark ? Colors.white70 : Colors.black87,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Hủy',
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black87,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              final currentUserId = ref.read(currentUserIdProvider);
+              if (currentUserId != null) {
+                try {
+                  await ref.read(groupServiceProvider).removeMember(
+                    groupId,
+                    currentUserId,
+                    currentUserId,
+                  );
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Đã rời khỏi nhóm'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Lỗi: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+            child: const Text(
+              'Rời',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static void _showRemoveConfirmDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String groupId,
+    String memberId,
+    String memberName,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF2E2E2E) : Colors.white,
+        title: Text(
+          'Xóa Thành Viên',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          'Bạn có chắc muốn xóa $memberName khỏi nhóm không?',
+          style: TextStyle(
+            color: isDark ? Colors.white70 : Colors.black87,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Hủy',
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black87,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              final currentUserId = ref.read(currentUserIdProvider);
+              if (currentUserId != null) {
+                try {
+                  await ref.read(groupServiceProvider).removeMember(
+                    groupId,
+                    memberId,
+                    currentUserId,
+                  );
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Đã xóa $memberName khỏi nhóm'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Lỗi: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+            child: const Text(
+              'Xóa',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

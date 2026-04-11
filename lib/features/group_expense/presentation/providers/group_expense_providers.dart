@@ -119,11 +119,28 @@ final groupSettlementsStreamProvider = StreamProvider.family<List<SettlementMode
   return ref.watch(settlementRepositoryProvider).watchByGroupId(groupId);
 });
 
-// Single group stream provider
-final groupStreamProvider = StreamProvider.family<GroupModel, String>((ref, groupId) {
-  return ref.watch(groupRepositoryProvider).watchByUserId(
-    ref.watch(currentUserIdProvider) ?? ''
-  ).map((groups) => groups.firstWhere((g) => g.id == groupId));
+// Single group stream provider (only for members)
+final groupStreamProvider = StreamProvider.family<GroupModel?, String>((ref, groupId) {
+  final userId = ref.watch(currentUserIdProvider);
+  if (userId == null) return Stream.value(null);
+  
+  return ref.watch(groupRepositoryProvider).watchByUserId(userId).map((groups) {
+    try {
+      return groups.firstWhere((g) => g.id == groupId);
+    } catch (_) {
+      return null;
+    }
+  });
+});
+
+// Group provider for viewing any group (including for join invitations)
+// This fetches the group directly by ID without membership check
+final groupDetailsProvider = FutureProvider.family<GroupModel?, String>((ref, groupId) async {
+  try {
+    return await ref.watch(groupRepositoryProvider).getById(groupId);
+  } catch (e) {
+    return null;
+  }
 });
 
 // Group debts provider (calculated)

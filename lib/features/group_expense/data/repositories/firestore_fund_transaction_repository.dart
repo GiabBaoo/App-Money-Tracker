@@ -35,24 +35,26 @@ class FirestoreFundTransactionRepository {
     // Lưu fund transaction
     await _firestore.collection(_collection).doc(id).set(transaction.toJson());
     
-    // Tạo transaction trong collection 'transactions' để hiện trong thống kê
-    final transactionData = {
-      'uid': userId,
-      'type': type == TransactionType.contribute ? 'expense' : 'income',
-      'category': type == TransactionType.contribute ? 'Góp quỹ ${groupName ?? ""}' : 'Rút quỹ ${groupName ?? ""}',
-      'categoryIconCode': type == TransactionType.contribute 
-          ? Icons.account_balance_wallet.codePoint 
-          : Icons.money.codePoint,
-      'amount': amount,
-      'date': Timestamp.fromDate(now),
-      'time': '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
-      'description': notes ?? (type == TransactionType.contribute ? 'Góp quỹ nhóm' : 'Rút quỹ nhóm'),
-      'createdAt': Timestamp.fromDate(now),
-      'groupId': groupId,
-      'groupIconCode': groupIconCode,
-    };
-    
-    await _firestore.collection('transactions').add(transactionData);
+    // Tạo transaction trong collection 'transactions' để hiện trong thống kê cá nhân
+    // CHỈ tạo khi là GÓP QUỸ (trừ ví cá nhân), RÚT QUỸ không làm thay đổi ví cá nhân theo yêu cầu
+    if (type == TransactionType.contribute) {
+      final transactionData = {
+        'uid': userId,
+        'type': 'expense',
+        'category': 'Góp quỹ ${groupName ?? ""}',
+        'categoryIconCode': groupIconCode ?? Icons.account_balance_wallet.codePoint,
+        'amount': amount,
+        'date': Timestamp.fromDate(now),
+        'time': '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
+        'description': notes ?? 'Góp quỹ nhóm',
+        'createdAt': Timestamp.fromDate(now),
+        'groupId': groupId,
+        'groupIconCode': groupIconCode,
+        'source': 'fund',
+      };
+      
+      await _firestore.collection('transactions').add(transactionData);
+    }
     
     return transaction;
   }

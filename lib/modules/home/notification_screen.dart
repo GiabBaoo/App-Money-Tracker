@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/firestore_service.dart';
 import '../../models/notification_model.dart';
 import '../../features/group_expense/presentation/screens/join_group_screen.dart';
+import '../../features/group_expense/presentation/screens/group_detail_screen.dart';
 
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
@@ -152,18 +153,58 @@ class NotificationScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final dateStr = '${notification.createdAt.day.toString().padLeft(2, '0')}/${notification.createdAt.month.toString().padLeft(2, '0')}/${notification.createdAt.year}';
     
+    // Handle notification status labels
+    String? statusLabel;
+    Color? statusColor;
+    if (notification.status == 'accepted') {
+      statusLabel = 'Đã chấp nhận';
+      statusColor = Colors.green;
+    } else if (notification.status == 'rejected') {
+      statusLabel = 'Đã từ chối';
+      statusColor = Colors.red;
+    }
+
+    // Time calculations
+    final now = DateTime.now();
+    final difference = now.difference(notification.createdAt);
+    String timeAgo;
+    if (difference.inMinutes < 60) {
+      timeAgo = '${difference.inMinutes} phút trước';
+    } else if (difference.inHours < 24) {
+      timeAgo = '${difference.inHours} giờ trước';
+    } else {
+      timeAgo = dateStr;
+    }
+    
     return GestureDetector(
       onTap: () {
         if (!notification.isRead) {
           firestoreService.markNotificationAsRead(notification.id);
         }
         
-        // Handle group invite notifications
+        // Handle group invite notifications (for the person invited)
         if (notification.type == 'group_invite' && notification.groupId != null) {
+          // If already accepted or rejected, go to detail or just stay here?
+          // User asked why it doesn't work, maybe because they already accepted.
+          // Let's go to JoinGroupScreen which handles status.
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => JoinGroupScreen(groupId: notification.groupId!),
+              builder: (context) => JoinGroupScreen(
+                groupId: notification.groupId!,
+                notificationId: notification.id,
+              ),
+            ),
+          );
+        }
+        
+        // Handle group response notifications (for the admin who sent the invite)
+        else if (notification.type == 'group_response' && notification.groupId != null) {
+          // If someone accepted, admin probably wants to see the group
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => GroupDetailScreen(groupId: notification.groupId!),
             ),
           );
         }
@@ -189,12 +230,12 @@ class NotificationScreen extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: const Color(0xFF438883).withOpacity(0.1),
+                color: (statusColor ?? const Color(0xFF438883)).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
-                Icons.notifications_active_rounded,
-                color: Color(0xFF438883),
+              child: Icon(
+                notification.status == 'rejected' ? Icons.cancel_rounded : Icons.notifications_active_rounded,
+                color: statusColor ?? const Color(0xFF438883),
                 size: 24,
               ),
             ),
@@ -216,7 +257,24 @@ class NotificationScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (!notification.isRead)
+                      if (statusLabel != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: statusColor!.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: statusColor!.withOpacity(0.3)),
+                          ),
+                          child: Text(
+                            statusLabel,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: statusColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        )
+                      else if (!notification.isRead)
                         Container(
                           width: 8, height: 8,
                           decoration: const BoxDecoration(color: Color(0xFF438883), shape: BoxShape.circle),
@@ -234,7 +292,7 @@ class NotificationScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    dateStr,
+                    timeAgo,
                     style: TextStyle(
                       fontSize: 11,
                       color: isDark ? Colors.white30 : Colors.grey.shade400,
