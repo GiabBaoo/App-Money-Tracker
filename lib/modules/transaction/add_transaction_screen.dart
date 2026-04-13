@@ -177,7 +177,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     final timeFormatted = '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -207,8 +207,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                         Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
+                            color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
                             borderRadius: BorderRadius.circular(30),
+                            border: isDark ? Border.all(color: Colors.white.withOpacity(0.05)) : null,
                           ),
                           child: Row(children: [
                             _buildTab('Khoản Chi', !isIncome, () => setState(() { isIncome = false; selectedCategoryName = 'Chọn danh mục'; selectedCategoryIcon = Icons.category; })),
@@ -229,8 +230,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
-                              border: Border.all(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE5E7EB)),
+                              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                              border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFE5E7EB)),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(children: [
@@ -271,11 +272,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                         inputFormatters: [CurrencyInputFormatter()],
                         decoration: InputDecoration(
                           hintText: '0đ', hintStyle: const TextStyle(color: Color(0xFF1A7B73)),
-                          filled: true, fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFE8F5F3),
+                          fillColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFE8F5F3),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFF1A7B73)),
+                            borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.08) : const Color(0xFF1A7B73)),
                           ),
                           focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF1A7B73), width: 2)),
                           suffixIcon: IconButton(
@@ -316,11 +317,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                             fontSize: 14,
                           ),
                           filled: true,
-                          fillColor: isDark ? const Color(0xFF2E2E2E) : Colors.white,
+                          fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE5E7EB)),
+                            borderSide: BorderSide(color: isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFE5E7EB)),
                           ),
                           focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5)),
                         ),

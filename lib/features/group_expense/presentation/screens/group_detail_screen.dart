@@ -229,6 +229,7 @@ class GroupDetailScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: _buildActionButton(
+                          isDark: isDark,
                           label: 'Góp quỹ',
                           icon: Icons.add_rounded,
                           color: const Color(0xFFFF1493),
@@ -253,6 +254,7 @@ class GroupDetailScreen extends ConsumerWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildActionButton(
+                            isDark: isDark,
                             label: 'Rút quỹ',
                             icon: Icons.arrow_outward_rounded,
                             color: primaryColor,
@@ -392,21 +394,21 @@ class GroupDetailScreen extends ConsumerWidget {
   }
 
 
-  Widget _buildActionButton({required String label, required IconData icon, required Color color, required VoidCallback onPressed, bool isOutlined = false}) {
+  Widget _buildActionButton({required bool isDark, required String label, required IconData icon, required Color color, required VoidCallback onPressed, bool isOutlined = false}) {
     if (isOutlined) {
       return OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: color, width: 2),
+          side: BorderSide(color: isDark ? const Color(0xFF00BFA5) : color, width: 2),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color, size: 20),
+            Icon(icon, color: isDark ? const Color(0xFF00BFA5) : color, size: 20),
             const SizedBox(width: 8),
-            Text(label, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(label, style: TextStyle(color: isDark ? const Color(0xFF00BFA5) : color, fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
       );
@@ -471,7 +473,7 @@ class GroupDetailScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.1), width: 1.5),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : color.withOpacity(0.1), width: 1.5),
       ),
       child: Row(
         children: [
@@ -497,7 +499,9 @@ class GroupDetailScreen extends ConsumerWidget {
 
   Widget _buildTransactionItem(BuildContext context, WidgetRef ref, FundTransactionModel tx, bool isDark) {
     final isContribute = tx.type == TransactionType.contribute;
-    final color = isContribute ? Colors.green : Colors.red;
+    final color = isDark 
+        ? (isContribute ? Colors.greenAccent : Colors.redAccent) 
+        : (isContribute ? Colors.green : Colors.red);
     return GestureDetector(
       onTap: () => _detailRefactorTransactionDetail(context, ref, tx, isDark),
       child: Container(
@@ -505,7 +509,8 @@ class GroupDetailScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
+          border: isDark ? Border.all(color: Colors.white.withOpacity(0.05)) : null,
         ),
         child: Row(
           children: [
@@ -530,7 +535,7 @@ class GroupDetailScreen extends ConsumerWidget {
               children: [
                 Text('${isContribute ? '+' : '-'}${_formatMoney(tx.amount)}đ', style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 2),
-                Text('${tx.createdAt.day}/${tx.createdAt.month} • ${tx.createdAt.hour.toString().padLeft(2, '0')}:${tx.createdAt.minute.toString().padLeft(2, '0')}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                Text('${tx.createdAt.day}/${tx.createdAt.month} • ${tx.createdAt.hour.toString().padLeft(2, '0')}:${tx.createdAt.minute.toString().padLeft(2, '0')}', style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey)),
               ],
             ),
           ],

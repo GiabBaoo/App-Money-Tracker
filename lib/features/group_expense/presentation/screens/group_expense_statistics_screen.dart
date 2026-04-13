@@ -201,7 +201,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                           height: 58,
                           padding: EdgeInsets.all(innerPadding),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E2121) : const Color(0xFFF1F3F5),
+                            color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F3F5),
                             borderRadius: BorderRadius.circular(22),
                             border: Border.all(
                               color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
@@ -667,6 +667,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
+                border: isDark ? Border.all(color: Colors.white.withOpacity(0.05)) : null,
                 boxShadow: [
                   if (!isDark) BoxShadow(
                     color: Colors.black.withOpacity(0.03),
@@ -704,7 +705,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                           tx.type == TransactionType.contribute ? 'Đã góp quỹ' : 'Đã rút quỹ',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? Colors.white54 : Colors.black54,
+                            color: isDark ? Colors.white.withOpacity(0.7) : Colors.black54,
                           ),
                         ),
                       ],

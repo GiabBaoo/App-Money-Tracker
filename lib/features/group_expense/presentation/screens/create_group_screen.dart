@@ -180,12 +180,13 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
                         color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F7F9),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(22),
+                        border: isDark ? Border.all(color: Colors.white.withOpacity(0.05)) : null,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
+                            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                            blurRadius: 15,
+                            offset: const Offset(0, 6),
                           ),
                         ],
                       ),
@@ -305,7 +306,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                                       decoration: BoxDecoration(
                                         color: isSelected
                                             ? primaryColor.withOpacity(0.12)
-                                            : (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6)),
+                                            : (isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6)),
                                         borderRadius: BorderRadius.circular(14),
                                         border: Border.all(
                                           color: isSelected 

@@ -129,8 +129,9 @@ class GroupMembersScreen extends ConsumerWidget {
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
+            color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
             borderRadius: BorderRadius.circular(16),
+            border: isDark ? Border.all(color: Colors.white.withOpacity(0.05)) : null,
           ),
           child: Row(
             children: [
@@ -175,15 +176,15 @@ class GroupMembersScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF438883).withOpacity(0.2),
+                              color: isDark ? const Color(0xFF438883).withOpacity(0.15) : const Color(0xFF438883).withOpacity(0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Chủ quỹ',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF438883),
+                                color: isDark ? const Color(0xFF00E5FF) : const Color(0xFF438883),
                               ),
                             ),
                           ),

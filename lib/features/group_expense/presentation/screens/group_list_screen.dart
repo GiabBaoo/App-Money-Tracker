@@ -310,19 +310,21 @@ class GroupListScreen extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark 
-              ? [const Color(0xFF2E2E2E), const Color(0xFF252525)]
-              : gradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
+        color: isDark ? const Color(0xFF1E1E1E) : null,
+        gradient: isDark 
+            ? null 
+            : LinearGradient(
+                colors: gradient,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+        borderRadius: BorderRadius.circular(24),
+        border: isDark ? Border.all(color: Colors.white.withOpacity(0.05), width: 1.5) : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -358,8 +360,9 @@ class GroupListScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
+                        color: isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.9),
                         borderRadius: BorderRadius.circular(20),
+                        border: isDark ? Border.all(color: Colors.white.withOpacity(0.1)) : null,
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -375,7 +378,7 @@ class GroupListScreen extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
+                              color: isDark ? Colors.white.withOpacity(0.9) : Colors.grey[800],
                             ),
                           ),
                         ],

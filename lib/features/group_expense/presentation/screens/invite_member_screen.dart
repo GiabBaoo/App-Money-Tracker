@@ -261,10 +261,14 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                                 )
                               : null,
                           filled: true,
-                          fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
+                          fillColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
+                            borderSide: isDark ? BorderSide(color: Colors.white.withOpacity(0.08)) : BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: isDark ? BorderSide(color: Colors.white.withOpacity(0.08)) : BorderSide.none,
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
