@@ -9,6 +9,7 @@ import 'invite_member_screen.dart';
 import 'group_members_screen.dart';
 import 'group_all_transactions_screen.dart';
 import 'group_expense_statistics_screen.dart';
+import '../../../../modules/transaction/add_transaction_screen.dart';
 
 // Helper function để format tiền theo kiểu Việt (200000 -> 200.000đ)
 String _formatMoney(double amount) {
@@ -117,16 +118,6 @@ class GroupDetailScreen extends ConsumerWidget {
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  Container(
-                                    width: 56,
-                                    height: 56,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Icon(groupIcon, color: Colors.white, size: 28),
-                                  ),
-                                  const SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,7 +144,9 @@ class GroupDetailScreen extends ConsumerWidget {
                                             );
                                           },
                                           child: Text(
-                                            '${group.memberIds.length} thành viên • Chi tiết >',
+                                            group.groupType == 'personal'
+                                                ? 'Quỹ cá nhân'
+                                                : '${group.memberIds.length} thành viên • Chi tiết >',
                                             style: TextStyle(
                                               color: Colors.white.withOpacity(0.8),
                                               fontSize: 13,
@@ -164,34 +157,35 @@ class GroupDetailScreen extends ConsumerWidget {
                                     ),
                                   ),
                                   // Invite button
-                                  InkWell(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => InviteMemberScreen(
-                                            groupId: group.id,
-                                            groupName: group.name,
+                                  if (group.groupType != 'personal')
+                                    InkWell(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => InviteMemberScreen(
+                                              groupId: group.id,
+                                              groupName: group.name,
+                                            ),
                                           ),
+                                        );
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(12),
                                         ),
-                                      );
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.person_add_rounded, color: Colors.white, size: 16),
-                                          SizedBox(width: 6),
-                                          Text('Mời', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                                        ],
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.person_add_rounded, color: Colors.white, size: 16),
+                                            SizedBox(width: 6),
+                                            const Text('Mời', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                  ),
                                 ],
                               ),
                             ],
@@ -238,7 +232,21 @@ class GroupDetailScreen extends ConsumerWidget {
                           label: 'Góp quỹ',
                           icon: Icons.add_rounded,
                           color: const Color(0xFFFF1493),
-                          onPressed: () => _showContributeDialog(context, ref, groupId, group.name, group.iconCode),
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AddTransactionScreen(
+                                initialData: {
+                                  'isFundAction': true,
+                                  'groupId': groupId,
+                                  'fundActionType': 'contribute',
+                                  'isPersonalGroup': group.groupType == 'personal',
+                                  'type': 'expense', // Góp quỹ là chi từ ví cá nhân
+                                  'description': 'Góp quỹ ${group.name}',
+                                }
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                       if (ref.watch(currentUserIdProvider) == group.adminId) ...[
@@ -248,7 +256,21 @@ class GroupDetailScreen extends ConsumerWidget {
                             label: 'Rút quỹ',
                             icon: Icons.arrow_outward_rounded,
                             color: primaryColor,
-                            onPressed: () => _showWithdrawDialog(context, ref, groupId, group.name, group.iconCode, group.adminId),
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AddTransactionScreen(
+                                  initialData: {
+                                    'isFundAction': true,
+                                    'groupId': groupId,
+                                    'fundActionType': 'withdraw',
+                                    'isPersonalGroup': group.groupType == 'personal',
+                                    'type': 'expense', // Rút quỹ được coi là chi tiêu của quỹ
+                                    'description': 'Rút từ quỹ ${group.name}',
+                                  }
+                                ),
+                              ),
+                            ),
                             isOutlined: true,
                           ),
                         ),
@@ -302,7 +324,7 @@ class GroupDetailScreen extends ConsumerWidget {
                       child: transactions.isEmpty 
                         ? _buildEmptyActivity(isDark)
                         : Column(
-                            children: transactions.take(10).map((tx) => _buildTransactionItem(context, tx, isDark)).toList(),
+                            children: transactions.take(10).map((tx) => _buildTransactionItem(context, ref, tx, isDark)).toList(),
                           ),
                     );
                   },
@@ -473,11 +495,11 @@ class GroupDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTransactionItem(BuildContext context, FundTransactionModel tx, bool isDark) {
+  Widget _buildTransactionItem(BuildContext context, WidgetRef ref, FundTransactionModel tx, bool isDark) {
     final isContribute = tx.type == TransactionType.contribute;
     final color = isContribute ? Colors.green : Colors.red;
     return GestureDetector(
-      onTap: () => _detailRefactorTransactionDetail(context, tx, isDark),
+      onTap: () => _detailRefactorTransactionDetail(context, ref, tx, isDark),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
@@ -534,154 +556,9 @@ class GroupDetailScreen extends ConsumerWidget {
 
   // --- External Dialogs & Details (Preserved from old code) ---
 
-  static void _showContributeDialog(BuildContext context, WidgetRef ref, String groupId, String groupName, int? groupIconCode) {
-    final amountController = TextEditingController();
-    final notesController = TextEditingController();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(width: 80, height: 80, decoration: BoxDecoration(color: const Color(0xFFFF1493).withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.people, size: 40, color: Color(0xFFFF1493))),
-              const SizedBox(height: 20),
-              Text('Góp Quỹ', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-              const SizedBox(height: 8),
-              Text(groupName, style: TextStyle(fontSize: 14, color: isDark ? Colors.white60 : Colors.black54), textAlign: TextAlign.center),
-              const SizedBox(height: 24),
-              TextField(
-                controller: amountController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [CurrencyInputFormatter()],
-                autofocus: true,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFFFF1493)),
-                decoration: InputDecoration(hintText: '0', hintStyle: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: isDark ? Colors.white24 : Colors.black26), border: InputBorder.none),
-              ),
-              Divider(color: isDark ? Colors.white24 : Colors.black12),
-              const SizedBox(height: 16),
-              TextField(
-                controller: notesController,
-                style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                decoration: InputDecoration(hintText: 'Ghi chú (tùy chọn)', hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black38), filled: true, fillColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none), contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(onPressed: () => Navigator.pop(context), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('Hủy')),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        final amount = double.tryParse(amountController.text.replaceAll(RegExp(r'[^0-9]'), ''));
-                        if (amount != null && amount > 0) {
-                          final userId = ref.read(currentUserIdProvider);
-                          final userNameAsync = await ref.read(currentUserNameProvider.future);
-                          if (userId != null) {
-                            await ref.read(fundTransactionRepositoryProvider).create(
-                              groupId: groupId, userId: userId, userName: userNameAsync, amount: amount, type: TransactionType.contribute, groupName: groupName, groupIconCode: groupIconCode, notes: notesController.text.trim().isEmpty ? null : notesController.text.trim(),
-                            );
-                            if (context.mounted) Navigator.pop(context);
-                          }
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF1493), padding: const EdgeInsets.symmetric(vertical: 14)),
-                      child: const Text('Góp quỹ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // Old dialog methods removed in favor of AddTransactionScreen navigation
 
-  static void _showWithdrawDialog(BuildContext context, WidgetRef ref, String groupId, String groupName, int? groupIconCode, String adminId) {
-    final amountController = TextEditingController();
-    final notesController = TextEditingController();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(color: isDark ? const Color(0xFF2E2E2E) : Colors.white, borderRadius: BorderRadius.circular(24)),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(width: 80, height: 80, decoration: BoxDecoration(color: const Color(0xFF438883).withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.people, size: 40, color: Color(0xFF438883))),
-              const SizedBox(height: 20),
-              Text('Rút Quỹ', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-              const SizedBox(height: 8),
-              Text(groupName, style: TextStyle(fontSize: 14, color: isDark ? Colors.white60 : Colors.black54), textAlign: TextAlign.center),
-              const SizedBox(height: 24),
-              TextField(
-                controller: amountController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [CurrencyInputFormatter()],
-                autofocus: true,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF438883)),
-                decoration: InputDecoration(hintText: '0', hintStyle: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: isDark ? Colors.white24 : Colors.black26), border: InputBorder.none),
-              ),
-              Divider(color: isDark ? Colors.white24 : Colors.black12),
-              const SizedBox(height: 16),
-              TextField(
-                controller: notesController,
-                style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                decoration: InputDecoration(hintText: 'Ghi chú (tùy chọn)', hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black38), filled: true, fillColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none), contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(onPressed: () => Navigator.pop(context), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('Hủy')),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        final amount = double.tryParse(amountController.text.replaceAll(RegExp(r'[^0-9]'), ''));
-                        if (amount != null && amount > 0) {
-                          final userId = ref.read(currentUserIdProvider);
-                          final userNameAsync = await ref.read(currentUserNameProvider.future);
-                          if (userId != null) {
-                            await ref.read(fundTransactionRepositoryProvider).create(
-                              groupId: groupId, userId: userId, userName: userNameAsync, amount: amount, type: TransactionType.withdraw, groupName: groupName, groupIconCode: groupIconCode, notes: notesController.text.trim().isEmpty ? null : notesController.text.trim(),
-                            );
-                            if (context.mounted) Navigator.pop(context);
-                          }
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF438883), padding: const EdgeInsets.symmetric(vertical: 14)),
-                      child: const Text('Rút quỹ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _detailRefactorTransactionDetail(BuildContext context, FundTransactionModel transaction, bool isDark) {
+  void _detailRefactorTransactionDetail(BuildContext context, WidgetRef ref, FundTransactionModel transaction, bool isDark) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -717,7 +594,70 @@ class GroupDetailScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             Text('${transaction.createdAt.day}/${transaction.createdAt.month}/${transaction.createdAt.year} • ${transaction.createdAt.hour.toString().padLeft(2, '0')}:${transaction.createdAt.minute.toString().padLeft(2, '0')}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
             const Spacer(),
-            SizedBox(width: double.infinity, child: ElevatedButton(onPressed: () => Navigator.pop(context), style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))), child: const Text('Đóng'))),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          title: const Text('Xác nhận xóa'),
+                          content: const Text('Bạn có chắc chắn muốn xóa giao dịch này không? Hành động này sẽ cập nhật lại số dư quỹ và ví cá nhân.'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              style: TextButton.styleFrom(foregroundColor: Colors.red),
+                              child: const Text('Xóa'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirmed == true) {
+                        try {
+                          await ref.read(fundTransactionRepositoryProvider).delete(transaction);
+                          if (context.mounted) {
+                            Navigator.pop(context); // Close bottom sheet
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Đã xóa giao dịch thành công')),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Lỗi khi xóa: $e'), backgroundColor: Colors.red),
+                            );
+                          }
+                        }
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.red),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: const Text('Xóa', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isDark ? Colors.white10 : Colors.grey[200],
+                      foregroundColor: isDark ? Colors.white : Colors.black87,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: const Text('Đóng'),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

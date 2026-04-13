@@ -24,6 +24,7 @@ class FirestoreGroupRepository implements IGroupRepository {
       iconCode: dto.iconCode,
       adminId: adminId,
       memberIds: [adminId, ...dto.memberIds],
+      groupType: dto.groupType,
       createdAt: now,
       updatedAt: now,
     );

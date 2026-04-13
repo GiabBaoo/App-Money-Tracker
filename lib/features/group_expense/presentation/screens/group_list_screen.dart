@@ -294,47 +294,7 @@ class GroupListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required bool isDark,
-    bool isPrimary = false,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: isPrimary
-              ? Theme.of(context).primaryColor
-              : (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6)),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: isPrimary ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                color: isPrimary ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildGroupCard(BuildContext context, WidgetRef ref, dynamic group, bool isDark) {
     final gradients = [
@@ -344,11 +304,6 @@ class GroupListScreen extends ConsumerWidget {
       [const Color(0xFFE8F5E9), const Color(0xFFC8E6C9)], // Green
     ];
     
-    final groupIcon = group.iconCode != null
-        ? IconData(group.iconCode as int, fontFamily: 'MaterialIcons')
-        : Icons.group;
-    final groupColor = CategoryUtils.getVibrantColor(group.name);
-    final groupBgColor = CategoryUtils.getLightBgColor(group.name, isDark);
     final gradient = gradients[group.name.hashCode % gradients.length];
     final balanceAsync = ref.watch(groupBalanceProvider(group.id));
     
@@ -390,16 +345,6 @@ class GroupListScreen extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: groupBgColor,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(groupIcon, color: groupColor, size: 26),
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         group.name,
@@ -504,14 +449,7 @@ class GroupListScreen extends ConsumerWidget {
                       ),
                     ),
                     const Spacer(),
-                    IconButton(
-                      icon: Icon(
-                        Icons.image_outlined,
-                        color: isDark ? Colors.white70 : Colors.black54,
-                        size: 20,
-                      ),
-                      onPressed: () => _changeGroupImage(context, ref, group.id),
-                    ),
+
                     if (ref.watch(currentUserIdProvider) == group.adminId)
                       IconButton(
                         icon: const Icon(
@@ -577,63 +515,5 @@ class GroupListScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _changeGroupImage(BuildContext context, WidgetRef ref, String groupId) async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
-      );
-      
-      if (image == null) return;
-      
-      if (!context.mounted) return;
-      
-      // Show loading
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-      
-      // Upload to Firebase Storage
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('group_images')
-          .child('$groupId.jpg');
-      
-      await storageRef.putFile(File(image.path));
-      final imageUrl = await storageRef.getDownloadURL();
-      
-      // Update Firestore
-      await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(groupId)
-          .update({'imageUrl': imageUrl});
-      
-      if (context.mounted) {
-        Navigator.pop(context); // Close loading
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã cập nhật hình nền'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        Navigator.pop(context); // Close loading if open
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
+
 }

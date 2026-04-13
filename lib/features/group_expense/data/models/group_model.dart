@@ -8,6 +8,7 @@ class GroupModel {
   final int? iconCode;
   final String adminId;
   final List<String> memberIds;
+  final String groupType; // 'personal', 'couple', 'savings', 'group'
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isDeleted;
@@ -21,6 +22,7 @@ class GroupModel {
     this.iconCode,
     required this.adminId,
     required this.memberIds,
+    this.groupType = 'group',
     required this.createdAt,
     required this.updatedAt,
     this.isDeleted = false,
@@ -36,6 +38,7 @@ class GroupModel {
       iconCode: json['iconCode'] as int?,
       adminId: json['adminId'] as String,
       memberIds: List<String>.from(json['memberIds'] as List),
+      groupType: json['groupType'] as String? ?? 'group',
       createdAt: (json['createdAt'] as Timestamp).toDate(),
       updatedAt: (json['updatedAt'] as Timestamp).toDate(),
       isDeleted: json['isDeleted'] as bool? ?? false,
@@ -54,6 +57,7 @@ class GroupModel {
       'iconCode': iconCode,
       'adminId': adminId,
       'memberIds': memberIds,
+      'groupType': groupType,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'isDeleted': isDeleted,
@@ -69,6 +73,7 @@ class GroupModel {
     int? iconCode,
     String? adminId,
     List<String>? memberIds,
+    String? groupType,
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isDeleted,
@@ -82,6 +87,7 @@ class GroupModel {
       iconCode: iconCode ?? this.iconCode,
       adminId: adminId ?? this.adminId,
       memberIds: memberIds ?? this.memberIds,
+      groupType: groupType ?? this.groupType,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isDeleted: isDeleted ?? this.isDeleted,

@@ -174,27 +174,65 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                     
                     const SizedBox(height: 24),
                     
-                    // Tabs
+                    // Tabs - Re-designed for Premium Look
                     Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(12),
+                        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F7F9),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: TabBar(
                         controller: _tabController,
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        dividerColor: Colors.transparent,
                         indicator: BoxDecoration(
                           color: primaryColor,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: primaryColor.withOpacity(0.4),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         labelColor: Colors.white,
-                        unselectedLabelColor: isDark ? Colors.white70 : Colors.black54,
-                        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        unselectedLabelColor: isDark ? Colors.white38 : Colors.black38,
+                        labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                        unselectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
                         tabs: const [
-                          Tab(text: 'Cá nhân'),
-                          Tab(text: 'Cặp đôi'),
-                          Tab(text: 'Tích lũy'),
-                          Tab(text: 'Hội nhóm'),
+                          Tab(
+                            height: 54,
+                            icon: Icon(Icons.person_rounded, size: 20),
+                            iconMargin: EdgeInsets.only(bottom: 4),
+                            text: 'Cá nhân',
+                          ),
+                          Tab(
+                            height: 54,
+                            icon: Icon(Icons.favorite_rounded, size: 20),
+                            iconMargin: EdgeInsets.only(bottom: 4),
+                            text: 'Cặp đôi',
+                          ),
+                          Tab(
+                            height: 54,
+                            icon: Icon(Icons.savings_rounded, size: 20),
+                            iconMargin: EdgeInsets.only(bottom: 4),
+                            text: 'Tích lũy',
+                          ),
+                          Tab(
+                            height: 54,
+                            icon: Icon(Icons.groups_rounded, size: 20),
+                            iconMargin: EdgeInsets.only(bottom: 4),
+                            text: 'Nhóm',
+                          ),
                         ],
                       ),
                     ),
@@ -424,6 +462,22 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
       return;
     }
 
+    String groupType = 'group';
+    switch (_tabController.index) {
+      case 0:
+        groupType = 'personal';
+        break;
+      case 1:
+        groupType = 'couple';
+        break;
+      case 2:
+        groupType = 'savings';
+        break;
+      case 3:
+        groupType = 'group';
+        break;
+    }
+
     final dto = CreateGroupDto(
       name: _nameController.text.trim(),
       description: _descriptionController.text.trim().isEmpty
@@ -431,6 +485,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
           : _descriptionController.text.trim(),
       iconCode: _selectedIcon.codePoint,
       memberIds: [],
+      groupType: groupType,
     );
 
     try {

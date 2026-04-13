@@ -4,6 +4,7 @@ class CreateGroupDto {
   final String? iconUrl;
   final int? iconCode;
   final List<String> memberIds;
+  final String groupType;
 
   CreateGroupDto({
     required this.name,
@@ -11,6 +12,7 @@ class CreateGroupDto {
     this.iconUrl,
     this.iconCode,
     required this.memberIds,
+    required this.groupType,
   });
 
   Map<String, dynamic> toJson() {
@@ -20,6 +22,7 @@ class CreateGroupDto {
       'iconUrl': iconUrl,
       'iconCode': iconCode,
       'memberIds': memberIds,
+      'groupType': groupType,
     };
   }
 }

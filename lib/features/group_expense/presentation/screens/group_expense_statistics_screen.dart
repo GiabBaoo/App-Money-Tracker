@@ -50,13 +50,24 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).primaryColor;
+    final expenses = expensesAsync.asData?.value ?? [];
+    final transactions = fundTransactionsAsync.asData?.value ?? [];
+    
+    double totalIncome = 0;
+    double totalExpense = 0;
+    
+    for (var tx in transactions) {
+      if (tx.type == TransactionType.contribute) totalIncome += tx.amount;
+      else totalExpense += tx.amount;
+    }
+    for (var e in expenses) totalExpense += e.amount;
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // App Bar with high header design
+          // App Bar - Premium Glassmorphism Redesign
           SliverAppBar(
-            expandedHeight: 180,
+            expandedHeight: 280,
             pinned: true,
             backgroundColor: primaryColor,
             elevation: 0,
@@ -64,12 +75,25 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
               icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
               onPressed: () => Navigator.pop(context),
             ),
-            title: Text(
-              'Thống kê - ${widget.groupName}',
-              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            centerTitle: true,
             flexibleSpace: FlexibleSpaceBar(
+              centerTitle: true,
+              title: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isCollapsed = constraints.maxHeight <= kToolbarHeight + (MediaQuery.of(context).padding.top);
+                  return AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: isCollapsed ? 1.0 : 0.0,
+                    child: Text(
+                      'Thống kê - ${widget.groupName}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  );
+                }
+              ),
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -77,16 +101,76 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                     end: Alignment.bottomRight,
                     colors: [
                       primaryColor,
-                      primaryColor.withOpacity(0.9),
+                      const Color(0xFF2C5E5A),
+                      const Color(0xFF142B28),
                     ],
+                    stops: const [0.0, 0.5, 1.0],
                   ),
                 ),
-                child: Center(
-                  child: Icon(
-                    Icons.insights_rounded,
-                    size: 80,
-                    color: Colors.white.withOpacity(0.2),
-                  ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(height: MediaQuery.of(context).padding.top + 20),
+                    // TOP: Premium Summary Cards
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildHeaderSummaryItem(
+                              'Tổng thu',
+                              totalIncome,
+                              Icons.arrow_circle_down_rounded,
+                              Colors.greenAccent,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildHeaderSummaryItem(
+                              'Tổng chi',
+                              totalExpense,
+                              Icons.arrow_circle_up_rounded,
+                              Colors.redAccent,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // BOTTOM: Page Title & Group Name
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Thống kê chi tiết',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 0.5),
+                          ),
+                          child: Text(
+                            widget.groupName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 15),
+                  ],
                 ),
               ),
             ),
@@ -104,22 +188,67 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                 children: [
                   const SizedBox(height: 32),
                   
-                  // Toggle Control
+                  // Toggle Control - Re-engineered for Pixel-Perfect Alignment
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Container(
-                      height: 48,
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF5F5F7),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(
-                        children: [
-                          _buildToggleItem('Chi phí', 0, isDark),
-                          _buildToggleItem('Thu nhập', 1, isDark),
-                        ],
-                      ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final width = constraints.maxWidth;
+                        final innerPadding = 6.0;
+                        final indicatorWidth = (width - (innerPadding * 2)) / 2;
+                        
+                        return Container(
+                          height: 58,
+                          padding: EdgeInsets.all(innerPadding),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E2121) : const Color(0xFFF1F3F5),
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(
+                              color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                            ),
+                          ),
+                          child: Stack(
+                            children: [
+                              // Background Indicator with smarter positioning
+                              AnimatedPositioned(
+                                duration: const Duration(milliseconds: 450),
+                                curve: Curves.fastOutSlowIn,
+                                left: selectedTab == 0 ? 0 : indicatorWidth,
+                                top: 0,
+                                bottom: 0,
+                                width: indicatorWidth,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        primaryColor,
+                                        primaryColor.withOpacity(0.85),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: primaryColor.withOpacity(0.35),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // Foreground Items
+                              Row(
+                                children: [
+                                  _buildToggleItem('Chi phí', 0, Icons.arrow_circle_up_rounded, isDark),
+                                  _buildToggleItem('Thu nhập', 1, Icons.arrow_circle_down_rounded, isDark),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      }
                     ),
                   ),
                   
@@ -144,6 +273,53 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                   ),
                 ],
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderSummaryItem(String label, double amount, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${_formatMoney(amount)}đ',
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
             ),
           ),
         ],
@@ -235,33 +411,34 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
     );
   }
 
-  Widget _buildToggleItem(String label, int tabIndex, bool isDark) {
-    bool isSelected = selectedTab == tabIndex;
+  Widget _buildToggleItem(String label, int tabIndex, IconData icon, bool isDark) {
+    final isSelected = selectedTab == tabIndex;
     return Expanded(
-      child: GestureDetector(
+      child: InkWell(
         onTap: () => setState(() => selectedTab = tabIndex),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF438883) : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: isSelected ? [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              )
-            ] : [],
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white60,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                fontSize: 14,
+        borderRadius: BorderRadius.circular(16),
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected ? Colors.white : (isDark ? Colors.white30 : Colors.black26),
               ),
-            ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : (isDark ? Colors.white60 : Colors.black54),
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w700,
+                  fontSize: 14,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
           ),
         ),
       ),

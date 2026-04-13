@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/group_expense/presentation/providers/group_expense_providers.dart';
+import '../../features/group_expense/data/models/fund_transaction_model.dart';
 import '../../utils/page_transitions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -9,16 +12,16 @@ import '../../utils/currency_format_utils.dart';
 import '../../utils/category_utils.dart';
 import 'category_screen.dart';
 
-class AddTransactionScreen extends StatefulWidget {
+class AddTransactionScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic>? initialData;
 
   const AddTransactionScreen({super.key, this.initialData});
 
   @override
-  State<AddTransactionScreen> createState() => _AddTransactionScreenState();
+  ConsumerState<AddTransactionScreen> createState() => _AddTransactionScreenState();
 }
 
-class _AddTransactionScreenState extends State<AddTransactionScreen> {
+class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   final FirestoreService _firestoreService = FirestoreService();
   late final TextEditingController _amountController;
   late final TextEditingController _descriptionController;
@@ -36,12 +39,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   void initState() {
     super.initState();
     
-    // Khởi tạo data nếu được truyền từ Voice Input
+    // Khởi tạo data nếu được truyền từ Voice Input hoặc Fund Action
     if (widget.initialData != null) {
       isIncome = widget.initialData!['type'] == 'income';
-      selectedCategoryName = widget.initialData!['category'] ?? 'Chọn danh mục';
-      if (widget.initialData!['iconCode'] != null) {
-         selectedCategoryIcon = IconData(widget.initialData!['iconCode'], fontFamily: 'MaterialIcons');
+      
+      // Nếu là Góp quỹ, set mặc định danh mục
+      if (widget.initialData!['fundActionType'] == 'contribute') {
+        selectedCategoryName = 'Chi khác';
+        selectedCategoryIcon = Icons.receipt_long_rounded;
+      } else {
+        selectedCategoryName = widget.initialData!['category'] ?? 'Chọn danh mục';
+        if (widget.initialData!['iconCode'] != null) {
+          selectedCategoryIcon = IconData(widget.initialData!['iconCode'], fontFamily: 'MaterialIcons');
+        }
       }
       _amountController = TextEditingController(
           text: widget.initialData!['amount'] != null 
@@ -104,18 +114,42 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final transaction = TransactionModel(
-        uid: uid,
-        type: isIncome ? 'income' : 'expense',
-        category: selectedCategoryName,
-        categoryIconCode: selectedCategoryIcon.codePoint,
-        amount: amount,
-        date: _selectedDate,
-        time: '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
-        description: _descriptionController.text.trim(),
-      );
+      final isFundAction = widget.initialData?['isFundAction'] == true;
+      
+      if (isFundAction) {
+        final groupId = widget.initialData!['groupId'];
+        final fundActionType = widget.initialData!['fundActionType'] == 'withdraw' 
+            ? TransactionType.withdraw 
+            : TransactionType.contribute;
+        final isPersonalGroup = widget.initialData?['isPersonalGroup'] == true;
+        
+        final userNameAsync = await ref.read(currentUserNameProvider.future);
+        
+        await ref.read(fundTransactionRepositoryProvider).create(
+          groupId: groupId,
+          userId: uid,
+          userName: userNameAsync,
+          amount: amount,
+          type: fundActionType,
+          notes: _descriptionController.text.trim(),
+          category: selectedCategoryName,
+          categoryIconCode: selectedCategoryIcon.codePoint,
+          isPersonalGroup: isPersonalGroup,
+        );
+      } else {
+        final transaction = TransactionModel(
+          uid: uid,
+          type: isIncome ? 'income' : 'expense',
+          category: selectedCategoryName,
+          categoryIconCode: selectedCategoryIcon.codePoint,
+          amount: amount,
+          date: _selectedDate,
+          time: '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
+          description: _descriptionController.text.trim(),
+        );
 
-      await _firestoreService.addTransaction(transaction);
+        await _firestoreService.addTransaction(transaction);
+      }
 
       if (!mounted) return;
       _showSnackBar('Đã lưu giao dịch thành công!');
@@ -169,61 +203,65 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // TAB CHUYỂN ĐỔI CHI / THU
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Row(children: [
-                          _buildTab('Khoản Chi', !isIncome, () => setState(() { isIncome = false; selectedCategoryName = 'Chọn danh mục'; selectedCategoryIcon = Icons.category; })),
-                          _buildTab('Khoản Thu', isIncome, () => setState(() { isIncome = true; selectedCategoryName = 'Chọn danh mục'; selectedCategoryIcon = Icons.category; })),
-                        ]),
-                      ),
-                      const SizedBox(height: 30),
-
-                      // CHỌN DANH MỤC
-                      _buildLabel(isIncome ? 'Nguồn thu' : 'Nguồn Chi'),
-                      InkWell(
-                        onTap: () async {
-                          final result = await Navigator.push(context, PageTransitions.slideRight(CategoryScreen(isIncome: isIncome)));
-                          if (result != null) setState(() { selectedCategoryName = result['name']; selectedCategoryIcon = result['icon']; });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      if (widget.initialData?['isFundAction'] != true) ...[
+                        Container(
+                          padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
-                            border: Border.all(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE5E7EB)),
-                            borderRadius: BorderRadius.circular(12),
+                            color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
+                            borderRadius: BorderRadius.circular(30),
                           ),
                           child: Row(children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: CategoryUtils.getLightBgColor(selectedCategoryName, isDark),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                selectedCategoryIcon, 
-                                color: CategoryUtils.getVibrantColor(selectedCategoryName), 
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              selectedCategoryName,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Theme.of(context).textTheme.bodyLarge?.color,
-                              ),
-                            ),
-                            const Spacer(),
-                            Icon(Icons.keyboard_arrow_down, color: isDark ? Colors.white54 : Colors.grey),
+                            _buildTab('Khoản Chi', !isIncome, () => setState(() { isIncome = false; selectedCategoryName = 'Chọn danh mục'; selectedCategoryIcon = Icons.category; })),
+                            _buildTab('Khoản Thu', isIncome, () => setState(() { isIncome = true; selectedCategoryName = 'Chọn danh mục'; selectedCategoryIcon = Icons.category; })),
                           ]),
                         ),
-                      ),
-                      const SizedBox(height: 20),
+                        const SizedBox(height: 20),
+                      ],
+
+                      // CHỌN DANH MỤC (Ẩn khi Góp quỹ per user request)
+                      if (widget.initialData?['fundActionType'] != 'contribute') ...[
+                        _buildLabel(isIncome ? 'Nguồn thu' : 'Nguồn Chi'),
+                        InkWell(
+                          onTap: () async {
+                            final result = await Navigator.push(context, PageTransitions.slideRight(CategoryScreen(isIncome: isIncome)));
+                            if (result != null) setState(() { selectedCategoryName = result['name']; selectedCategoryIcon = result['icon']; });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
+                              border: Border.all(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE5E7EB)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: CategoryUtils.getLightBgColor(selectedCategoryName, isDark),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  selectedCategoryIcon, 
+                                  color: CategoryUtils.getVibrantColor(selectedCategoryName), 
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                selectedCategoryName,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                                ),
+                              ),
+                              const Spacer(),
+                              Icon(Icons.keyboard_arrow_down, color: isDark ? Colors.white54 : Colors.grey),
+                            ]),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
 
                       // SỐ TIỀN
                       _buildLabel('Số tiền'),
@@ -287,7 +325,38 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5)),
                         ),
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 20),
+                      
+                      // THÔNG BÁO CÁCH LY VÍ (Nếu là quỹ nhóm)
+                      if (widget.initialData?['isFundAction'] == true && 
+                          widget.initialData?['isPersonalGroup'] != true)
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.info_outline, color: Colors.blue, size: 18),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Giao dịch này sẽ không tính vào ví cá nhân',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isDark ? Colors.blue[200] : Colors.blue[800],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                      const SizedBox(height: 30),
 
                       // NÚT LƯU
                       InkWell(
