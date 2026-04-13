@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_model.dart';
 import '../../utils/category_utils.dart';
@@ -260,9 +259,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
           Container(
             width: 68, height: 68,
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.withOpacity(0.3), width: 1.5, style: BorderStyle.solid),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.3), width: 1.5, style: BorderStyle.solid),
               borderRadius: BorderRadius.circular(24),
-              color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF9FAFB),
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF9FAFB),
             ),
             child: const Icon(Icons.add_rounded, color: Colors.grey, size: 28),
           ),

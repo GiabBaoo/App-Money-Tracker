@@ -116,7 +116,7 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                       Text(
                         'Vui lòng nhập mật khẩu của bạn để xác nhận hành động xóa tài khoản.',
                         style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                           fontSize: 15,
                           height: 1.5,
                         ),
@@ -129,7 +129,7 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                         child: Text(
                           'Mật khẩu',
                           style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),

@@ -32,9 +32,13 @@ class ThemeService extends ChangeNotifier {
         final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
         if (doc.exists && doc.data()?['settings']?['themeMode'] != null) {
           final remoteMode = doc.data()?['settings']?['themeMode'];
-          if (remoteMode == 'light') _themeMode = ThemeMode.light;
-          else if (remoteMode == 'dark') _themeMode = ThemeMode.dark;
-          else _themeMode = ThemeMode.system;
+          if (remoteMode == 'light') {
+            _themeMode = ThemeMode.light;
+          } else if (remoteMode == 'dark') {
+            _themeMode = ThemeMode.dark;
+          } else {
+            _themeMode = ThemeMode.system;
+          }
           
           // Cập nhật lại local cache
           await _storage.write(key: 'themeMode', value: remoteMode);
@@ -45,9 +49,13 @@ class ThemeService extends ChangeNotifier {
 
       // Nếu chưa đăng nhập hoặc chưa có dữ liệu remote, dùng local storage
       final value = await _storage.read(key: 'themeMode');
-      if (value == 'light') _themeMode = ThemeMode.light;
-      else if (value == 'dark') _themeMode = ThemeMode.dark;
-      else _themeMode = ThemeMode.system;
+      if (value == 'light') {
+        _themeMode = ThemeMode.light;
+      } else if (value == 'dark') {
+        _themeMode = ThemeMode.dark;
+      } else {
+        _themeMode = ThemeMode.system;
+      }
     } catch (e) {
       _themeMode = ThemeMode.system;
     }
@@ -57,8 +65,11 @@ class ThemeService extends ChangeNotifier {
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
     String value = 'system';
-    if (mode == ThemeMode.light) value = 'light';
-    else if (mode == ThemeMode.dark) value = 'dark';
+    if (mode == ThemeMode.light) {
+      value = 'light';
+    } else if (mode == ThemeMode.dark) {
+      value = 'dark';
+    }
     
     try {
       await _storage.write(key: 'themeMode', value: value);

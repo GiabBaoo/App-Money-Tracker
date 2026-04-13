@@ -4,7 +4,6 @@ import '../../utils/page_transitions.dart';
 import '../../services/firestore_service.dart';
 import '../../models/transaction_model.dart';
 import '../home/notification_screen.dart';
-import '../../utils/currency_format_utils.dart';
 import '../../widgets/transaction_item.dart';
 
 class WalletScreen extends StatefulWidget {
@@ -62,9 +61,9 @@ class _WalletScreenState extends State<WalletScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF0F2625).withOpacity(0.5) : Colors.white.withOpacity(0.1),
+                  color: isDark ? const Color(0xFF0F2625).withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -186,7 +185,7 @@ class _WalletScreenState extends State<WalletScreen> {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              Container(width: 50, height: 5, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(10))),
+              Container(width: 50, height: 5, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(10))),
               const SizedBox(height: 24),
               const Text('Lọc theo thời gian', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 30),
@@ -201,7 +200,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                     decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.1),
+                      color: primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -236,7 +235,7 @@ class _WalletScreenState extends State<WalletScreen> {
                         decoration: BoxDecoration(
                           color: isSelected ? primaryColor : (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6)),
                           borderRadius: BorderRadius.circular(16),
-                          border: isSelected ? null : Border.all(color: Colors.grey.withOpacity(0.1)),
+                          border: isSelected ? null : Border.all(color: Colors.grey.withValues(alpha: 0.1)),
                         ),
                         child: Center(
                           child: Text(
@@ -287,11 +286,11 @@ class _WalletScreenState extends State<WalletScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.account_balance_wallet_outlined, size: 80, color: Colors.grey.withOpacity(0.2)),
+          Icon(Icons.account_balance_wallet_outlined, size: 80, color: Colors.grey.withValues(alpha: 0.2)),
           const SizedBox(height: 16),
           Text(
             'Không có dữ liệu T${_selectedMonth.month}/${_selectedMonth.year}',
-            style: TextStyle(color: Colors.grey.withOpacity(0.5), fontSize: 14),
+            style: TextStyle(color: Colors.grey.withValues(alpha: 0.5), fontSize: 14),
           ),
         ],
       ),

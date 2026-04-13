@@ -5,7 +5,7 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:provider/provider.dart' as provider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'firebase_options.dart';
 import 'modules/splash/splash_screen.dart';
 import 'modules/auth/login_screen.dart';
@@ -33,7 +33,7 @@ void main() async {
       appVerificationDisabledForTesting: true,
     );
   } catch (e) {
-    print('Firebase initialization error: $e');
+    debugPrint('Firebase initialization error: $e');
     // Continue anyway - app can still run without Firebase on web
   }
   
@@ -60,7 +60,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String? _initialRoute;
   String? _groupIdToJoin;
 
   @override
@@ -73,19 +72,18 @@ class _MyAppState extends State<MyApp> {
     if (kIsWeb) {
       // Trên web, kiểm tra URL hash
       try {
-        final prefs = await SharedPreferences.getInstance();
         final uri = Uri.base;
         final hash = uri.fragment; // Sử dụng fragment thay vì hash
-        print('DEBUG: Initial hash = $hash');
+        debugPrint('DEBUG: Initial hash = $hash');
         
         if (hash.isNotEmpty) {
           if (hash.startsWith('/join/')) {
             _groupIdToJoin = hash.substring(6); // Remove '/join/'
-            print('DEBUG: Found groupId to join = $_groupIdToJoin');
+            debugPrint('DEBUG: Found groupId to join = $_groupIdToJoin');
           }
         }
       } catch (e) {
-        print('DEBUG ERROR checking initial route: $e');
+        debugPrint('DEBUG ERROR checking initial route: $e');
       }
     }
   }
@@ -105,8 +103,8 @@ class _MyAppState extends State<MyApp> {
           ? JoinGroupScreen(groupId: _groupIdToJoin!)
           : const SplashScreen(),
       builder: (context, child) => LifecycleManager(
-        child: child!,
         navigatorKey: widget.navigatorKey,
+        child: child!,
       ),
       routes: {
         '/login': (context) => const LoginScreen(),

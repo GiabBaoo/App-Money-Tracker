@@ -74,7 +74,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       Text(
                         'Chào mừng bạn đến với ứng dụng của chúng tôi. Chúng tôi cam kết bảo vệ thông tin cá nhân và quyền riêng tư của bạn một cách tuyệt đối theo các tiêu chuẩn bảo mật hiện đại nhất.',
                         style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                           fontSize: 15,
                           height: 1.5,
                         ),

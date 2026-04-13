@@ -123,7 +123,7 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(colors: [Color(0xFF68AEA9), Color(0xFF3E8681)]),
                             borderRadius: BorderRadius.circular(40),
-                            boxShadow: [BoxShadow(color: const Color(0xFF3E8681).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+                            boxShadow: [BoxShadow(color: const Color(0xFF3E8681).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))],
                           ),
                           child: const Center(
                             child: Text(

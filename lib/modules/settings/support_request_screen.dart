@@ -100,7 +100,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                       Text(
                         'Vui lòng mô tả chi tiết vấn đề bạn đang gặp phải, đội ngũ CSKH sẽ phản hồi trong thời gian sớm nhất.',
                         style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                           fontSize: 15,
                           height: 1.5,
                         ),
@@ -229,7 +229,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF4A9B7F).withOpacity(0.3),
+                                color: const Color(0xFF4A9B7F).withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -268,7 +268,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
         child: Text(
           text,
           style: TextStyle(
-            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
-import '../../services/firestore_service.dart';
 
 class VoiceService {
   static final VoiceService _instance = VoiceService._internal();
@@ -14,8 +13,8 @@ class VoiceService {
   Future<bool> init() async {
     if (_isInitialized) return true;
     _isInitialized = await _speechToText.initialize(
-      onError: (e) => print('Speech Error: $e'),
-      onStatus: (s) => print('Speech Status: $s'),
+      onError: (e) => debugPrint('Speech Error: $e'),
+      onStatus: (s) => debugPrint('Speech Status: $s'),
     );
     return _isInitialized;
   }
@@ -113,8 +112,11 @@ class VoiceService {
       }
       // Handle "rưỡi" (e.g. 1 triệu rưỡi -> 1.500.000)
       if (textAfterFirstNum.contains('rưỡi')) {
-          if (textAfterFirstNum.contains('triệu')) amount += 500000;
-          else if (textAfterFirstNum.contains('ngàn') || textAfterFirstNum.contains('nghìn')) amount += 500;
+          if (textAfterFirstNum.contains('triệu')) {
+            amount += 500000;
+          } else if (textAfterFirstNum.contains('ngàn') || textAfterFirstNum.contains('nghìn')) {
+            amount += 500;
+          }
       }
     } else {
       // 2. Try to parse Vietnamese text numbers
@@ -228,9 +230,13 @@ class VoiceService {
         } else if (word == 'rưỡi') {
             if (i > 0) {
                 String prev = words[i-1];
-                if (prev == 'triệu') total += 500000;
-                else if (prev == 'nghìn' || prev == 'ngàn') total += 500;
-                else if (prev == 'trăm') total += 50;
+                if (prev == 'triệu') {
+                  total += 500000;
+                } else if (prev == 'nghìn' || prev == 'ngàn') {
+                  total += 500;
+                } else if (prev == 'trăm') {
+                  total += 50;
+                }
             }
         }
     }

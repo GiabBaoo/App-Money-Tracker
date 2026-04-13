@@ -52,7 +52,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
               height: 45,
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.15),
+                color: Colors.black.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -88,7 +88,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.pie_chart_outline, size: 80, color: Colors.grey.withOpacity(0.3)),
+                        Icon(Icons.pie_chart_outline, size: 80, color: Colors.grey.withValues(alpha: 0.3)),
                         const SizedBox(height: 16),
                         Text('Không có ${_currentType == 'income' ? 'thu nhập' : 'chi phí'} trong tháng ${now.month}', 
                           style: const TextStyle(color: Colors.grey)),
@@ -217,10 +217,10 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                             return Card(
                               elevation: 0,
                               margin: const EdgeInsets.only(bottom: 16),
-                              color: isDark ? const Color(0xFF1E2F2E).withOpacity(0.5) : Colors.white,
+                              color: isDark ? const Color(0xFF1E2F2E).withValues(alpha: 0.5) : Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
-                                side: BorderSide(color: isDark ? Colors.white.withOpacity(0.05) : Colors.transparent),
+                                side: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.transparent),
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(16),
@@ -231,7 +231,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                                         Container(
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
-                                            color: color.withOpacity(0.15),
+                                            color: color.withValues(alpha: 0.15),
                                             borderRadius: BorderRadius.circular(15),
                                           ),
                                           child: Icon(icon, color: color, size: 22),
@@ -271,7 +271,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                                       borderRadius: BorderRadius.circular(4),
                                       child: LinearProgressIndicator(
                                         value: percentage,
-                                        backgroundColor: color.withOpacity(0.1),
+                                        backgroundColor: color.withValues(alpha: 0.1),
                                         valueColor: AlwaysStoppedAnimation<Color>(color),
                                         minHeight: 6,
                                       ),
@@ -307,7 +307,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
             borderRadius: BorderRadius.circular(10),
             boxShadow: isSelected ? [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               )

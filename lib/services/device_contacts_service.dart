@@ -23,15 +23,12 @@ class DeviceContactsService {
 
   static const int _previewLimit = 15;
 
-  bool _permissionOk(PermissionStatus s) =>
-      s == PermissionStatus.granted || s == PermissionStatus.limited;
+  bool _permissionOk(bool granted) => granted;
 
   Future<bool> requestPermission() async {
     if (!deviceContactsPlatformSupported()) return false;
     try {
-      final status =
-          await FlutterContacts.permissions.request(PermissionType.read);
-      return _permissionOk(status);
+      return await FlutterContacts.requestPermission(readonly: true);
     } catch (_) {
       return false;
     }
@@ -40,19 +37,18 @@ class DeviceContactsService {
   Future<DeviceContactsSnapshot?> loadSnapshot() async {
     if (!deviceContactsPlatformSupported()) return null;
     try {
-      final status =
-          await FlutterContacts.permissions.request(PermissionType.read);
-      if (!_permissionOk(status)) return null;
+      final granted = await FlutterContacts.requestPermission(readonly: true);
+      if (!granted) return null;
 
       final list = await FlutterContacts.getAll(
-        properties: {ContactProperty.phone},
+        withProperties: true,
       );
 
       final preview = <String>[];
       for (var i = 0; i < list.length && i < _previewLimit; i++) {
         final c = list[i];
-        final name = (c.displayName?.trim().isNotEmpty ?? false)
-            ? c.displayName!.trim()
+        final name = (c.displayName.trim().isNotEmpty)
+            ? c.displayName.trim()
             : '(Chưa đặt tên)';
         final phone = c.phones.isNotEmpty
             ? c.phones.first.number.replaceAll(RegExp(r'\s+'), ' ').trim()

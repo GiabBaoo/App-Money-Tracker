@@ -69,8 +69,8 @@ class WavePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = isListening 
-          ? const Color(0xFF438883).withOpacity(0.8) 
-          : Colors.white.withOpacity(0.2)
+          ? const Color(0xFF438883).withValues(alpha: 0.8) 
+          : Colors.white.withValues(alpha: 0.2)
       ..style = PaintingStyle.fill
       ..strokeCap = StrokeCap.round;
 

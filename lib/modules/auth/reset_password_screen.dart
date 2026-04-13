@@ -272,7 +272,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                               begin: Alignment.topCenter, end: Alignment.bottomCenter,
                             ),
                             borderRadius: BorderRadius.circular(40),
-                            boxShadow: [BoxShadow(color: const Color(0xFF3E8681).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+                            boxShadow: [BoxShadow(color: const Color(0xFF3E8681).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))],
                           ),
                           child: Center(
                             child: _isLoading
@@ -311,7 +311,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       decoration: InputDecoration(
         hintText: hintText,
         errorText: errorText,
-        hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black.withOpacity(0.3), fontSize: 14),
+        hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black.withValues(alpha: 0.3), fontSize: 14),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFDDDDDD))),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5)),

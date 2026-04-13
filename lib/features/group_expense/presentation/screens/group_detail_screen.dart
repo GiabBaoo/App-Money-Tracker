@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../utils/category_utils.dart';
-import '../../../../utils/currency_format_utils.dart';
+
 import '../providers/group_expense_providers.dart';
 import '../../data/models/fund_transaction_model.dart';
-import 'create_expense_screen.dart';
 import 'invite_member_screen.dart';
 import 'group_members_screen.dart';
 import 'group_all_transactions_screen.dart';
@@ -30,7 +28,6 @@ class GroupDetailScreen extends ConsumerWidget {
     final expensesAsync = ref.watch(groupExpensesStreamProvider(groupId));
     final debtsAsync = ref.watch(groupDebtsProvider(groupId));
     final fundTransactionsAsync = ref.watch(groupFundTransactionsProvider(groupId));
-    final balanceAsync = ref.watch(groupBalanceProvider(groupId));
     
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).primaryColor;
@@ -54,10 +51,6 @@ class GroupDetailScreen extends ConsumerWidget {
               ),
             );
           }
-          final groupIcon = group.iconCode != null ? IconData(group.iconCode as int, fontFamily: 'MaterialIcons') : Icons.group;
-          final groupColor = CategoryUtils.getVibrantColor(group.name);
-          final groupBgColor = CategoryUtils.getLightBgColor(group.name, isDark);
-
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Column(
@@ -77,7 +70,7 @@ class GroupDetailScreen extends ConsumerWidget {
                           end: Alignment.bottomRight,
                           colors: [
                             primaryColor,
-                            primaryColor.withOpacity(0.9),
+                            primaryColor.withValues(alpha: 0.9),
                           ],
                         ),
                         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
@@ -148,7 +141,7 @@ class GroupDetailScreen extends ConsumerWidget {
                                                 ? 'Quỹ cá nhân'
                                                 : '${group.memberIds.length} thành viên • Chi tiết >',
                                             style: TextStyle(
-                                              color: Colors.white.withOpacity(0.8),
+                                              color: Colors.white.withValues(alpha: 0.8),
                                               fontSize: 13,
                                             ),
                                           ),
@@ -173,7 +166,7 @@ class GroupDetailScreen extends ConsumerWidget {
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.2),
+                                          color: Colors.white.withValues(alpha: 0.2),
                                           borderRadius: BorderRadius.circular(12),
                                         ),
                                         child: const Row(
@@ -204,10 +197,15 @@ class GroupDetailScreen extends ConsumerWidget {
                             double income = 0;
                             double expense = 0;
                             for (var tx in transactions) {
-                              if (tx.type == TransactionType.contribute) income += tx.amount;
-                              else expense += tx.amount;
+                              if (tx.type == TransactionType.contribute) {
+                                income += tx.amount;
+                              } else {
+                                expense += tx.amount;
+                              }
                             }
-                            for (var e in expenses) expense += e.amount;
+                            for (var e in expenses) {
+                              expense += e.amount;
+                            }
                             return _buildBalanceCard(context, ref, group, income, expense, isDark);
                           },
                           loading: () => const SizedBox(height: 150),
@@ -355,7 +353,7 @@ class GroupDetailScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -380,7 +378,7 @@ class GroupDetailScreen extends ConsumerWidget {
                   ),
                   Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(16)),
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(16)),
                     child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 28),
                   ),
                 ],
@@ -421,7 +419,7 @@ class GroupDetailScreen extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 4,
-        shadowColor: color.withOpacity(0.4),
+        shadowColor: color.withValues(alpha: 0.4),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -443,7 +441,7 @@ class GroupDetailScreen extends ConsumerWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: iconColor.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
                 child: Icon(icon, color: iconColor, size: 22),
               ),
               const SizedBox(width: 14),
@@ -473,12 +471,12 @@ class GroupDetailScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : color.withOpacity(0.1), width: 1.5),
+        border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.05) : color.withValues(alpha: 0.1), width: 1.5),
       ),
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: color.withOpacity(0.1),
+            backgroundColor: color.withValues(alpha: 0.1),
             child: Icon(isOwed ? Icons.arrow_upward : Icons.arrow_downward, color: color, size: 18),
           ),
           const SizedBox(width: 16),
@@ -510,13 +508,13 @@ class GroupDetailScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: isDark ? Border.all(color: Colors.white.withOpacity(0.05)) : null,
+          border: isDark ? Border.all(color: Colors.white.withValues(alpha: 0.05)) : null,
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
               child: Icon(isContribute ? Icons.add_rounded : Icons.arrow_downward_rounded, color: color, size: 22),
             ),
             const SizedBox(width: 16),
@@ -548,10 +546,10 @@ class GroupDetailScreen extends ConsumerWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 40),
-      decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03), borderRadius: BorderRadius.circular(20)),
       child: Column(
         children: [
-          Icon(Icons.history_toggle_off_rounded, size: 50, color: Colors.grey.withOpacity(0.5)),
+          Icon(Icons.history_toggle_off_rounded, size: 50, color: Colors.grey.withValues(alpha: 0.5)),
           const SizedBox(height: 12),
           const Text('Chưa có hoạt động nào', style: TextStyle(color: Colors.grey)),
         ],
@@ -575,11 +573,11 @@ class GroupDetailScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
+            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)))),
             const SizedBox(height: 24),
             Row(
               children: [
-                Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: (transaction.type == TransactionType.contribute ? Colors.green : Colors.red).withOpacity(0.1), shape: BoxShape.circle), child: Icon(transaction.type == TransactionType.contribute ? Icons.add_rounded : Icons.arrow_downward_rounded, color: transaction.type == TransactionType.contribute ? Colors.green : Colors.red, size: 28)),
+                Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: (transaction.type == TransactionType.contribute ? Colors.green : Colors.red).withValues(alpha: 0.1), shape: BoxShape.circle), child: Icon(transaction.type == TransactionType.contribute ? Icons.add_rounded : Icons.arrow_downward_rounded, color: transaction.type == TransactionType.contribute ? Colors.green : Colors.red, size: 28)),
                 const SizedBox(width: 16),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

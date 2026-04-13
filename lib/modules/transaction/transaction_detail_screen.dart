@@ -3,6 +3,7 @@ import '../../services/firestore_service.dart';
 import '../../models/transaction_model.dart';
 import '../../utils/page_transitions.dart';
 import 'edit_transaction_screen.dart';
+import 'transaction_photo_detail_screen.dart';
 import '../../utils/currency_format_utils.dart';
 
 class TransactionDetailScreen extends StatelessWidget {
@@ -22,13 +23,8 @@ class TransactionDetailScreen extends StatelessWidget {
     final description = transaction.description;
     final date = '${transaction.date.day.toString().padLeft(2, '0')}/${transaction.date.month.toString().padLeft(2, '0')}/${transaction.date.year}';
     final time = transaction.time;
-    final amount = '${isIncome ? "+" : "-"} ${CurrencyUtils.formatCurrency(transaction.amount)}';
-    
-    // Kiểm tra xem đây có phải là giao dịch quỹ không
-    final isGroupTransaction = transaction.groupIconCode != null && transaction.groupId != null;
-    final icon = isGroupTransaction
-        ? IconData(transaction.groupIconCode as int, fontFamily: 'MaterialIcons')
-        : transaction.icon;
+    final amount = '${isIncome ? "+" : "-"} ${CurrencyUtils.formatCurrency(transaction.amount)}'; 
+    final icon = transaction.icon;
 
     // Tự động chọn màu tùy theo trạng thái Thu / Chi
     final Color statusColor = isIncome
@@ -73,7 +69,7 @@ class TransactionDetailScreen extends StatelessWidget {
                     onSelected: (value) async {
                       if (value == 'edit') {
                         await Navigator.push(context, PageTransitions.slideRight(EditTransactionScreen(transaction: transaction)));
-                      } else if (value == 'delete') {
+} else if (value == 'delete') {
                         // Gọi logic xóa từ một helper hoặc Navigator pop với kết quả
                         final confirm = await showDialog<bool>(
                           context: context,
@@ -137,7 +133,7 @@ class TransactionDetailScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: SingleChildScrollView(
+child: SingleChildScrollView(
                   padding: const EdgeInsets.only(
                     top: 40,
                     bottom: 40,
@@ -167,7 +163,7 @@ class TransactionDetailScreen extends StatelessWidget {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.1),
+                          color: statusColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -208,13 +204,88 @@ class TransactionDetailScreen extends StatelessWidget {
                           Icon(Icons.keyboard_arrow_up, color: isDark ? Colors.white54 : Colors.grey),
                         ],
                       ),
-                      const SizedBox(height: 20),
+const SizedBox(height: 20),
 
                       // CÁC DÒNG THÔNG TIN
                       _buildDetailRow('Danh mục', category),
                       _buildDetailRow('Nội dung', description.isEmpty ? 'Không có nội dung' : description),
                       _buildDetailRow('Thời gian', time),
                       _buildDetailRow('Ngày', date),
+
+                      // ẢNH HÓA ĐƠN / CHỨNG TỪ
+                      if (transaction.hasPhoto && transaction.photoUrl.isNotEmpty) ...[
+                        const SizedBox(height: 20),
+                        Divider(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFEEEEEE), thickness: 1),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Ảnh đính kèm',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : const Color(0xFF222222),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            PageTransitions.slideRight(
+                              TransactionPhotoDetailScreen(transaction: transaction),
+                            ),
+                          ),
+                          child: Hero(
+                            tag: 'tx_photo_${transaction.id}',
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Image.network(
+                                transaction.photoUrl,
+                                width: double.infinity,
+                                height: 220,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    width: double.infinity,
+                                    height: 220,
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF5F5F5),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+color: Color(0xFF438883),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: double.infinity,
+                                    height: 220,
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF5F5F5),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.broken_image_outlined,
+                                        color: Colors.grey,
+                                        size: 40,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
 
                       const SizedBox(height: 20),
                       Divider(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFEEEEEE), thickness: 1),
@@ -261,7 +332,7 @@ class TransactionDetailScreen extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 label,

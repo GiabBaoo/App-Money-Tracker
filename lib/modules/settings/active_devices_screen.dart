@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../utils/device_utils.dart';
 import '../../utils/time_utils.dart';
 import '../../services/firestore_service.dart';
 import '../../models/device_session_model.dart';
@@ -83,7 +82,7 @@ class ActiveDevicesScreen extends StatelessWidget {
       child: Text(
         title,
         style: TextStyle(
-          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
           fontSize: 14,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,

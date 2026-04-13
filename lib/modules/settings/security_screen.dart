@@ -110,14 +110,14 @@ class SecurityScreen extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: const Color(0xFF2F7E79).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 5)),
+          BoxShadow(color: const Color(0xFF2F7E79).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5)),
         ],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.25), shape: BoxShape.circle),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.25), shape: BoxShape.circle),
             child: const Icon(Icons.security, color: Colors.white, size: 28),
           ),
           const SizedBox(width: 16),
@@ -127,7 +127,7 @@ class SecurityScreen extends StatelessWidget {
               children: [
                 const Text('Tài khoản an toàn', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
-                Text('Cập nhật mật khẩu thường xuyên để tăng tính bảo mật.', style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13, height: 1.4)),
+                Text('Cập nhật mật khẩu thường xuyên để tăng tính bảo mật.', style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13, height: 1.4)),
               ],
             ),
           ),
@@ -142,7 +142,7 @@ class SecurityScreen extends StatelessWidget {
       child: Text(
         title,
         style: TextStyle(
-          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
           fontSize: 14,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,

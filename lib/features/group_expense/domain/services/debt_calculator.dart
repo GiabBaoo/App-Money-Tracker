@@ -1,6 +1,5 @@
 import 'package:uuid/uuid.dart';
 import '../../data/models/debt_model.dart';
-import '../../data/models/expense_model.dart';
 import '../repositories/i_debt_repository.dart';
 import '../repositories/i_expense_repository.dart';
 

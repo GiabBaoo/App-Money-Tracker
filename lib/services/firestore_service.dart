@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../models/transaction_model.dart';
 import '../models/notification_model.dart';
 import '../models/user_model.dart';
@@ -21,6 +22,17 @@ class FirestoreService {
   Future<void> addTransaction(TransactionModel transaction) async {
     if (_uid == null) return;
     await _db.collection('transactions').add(transaction.toFirestore());
+  }
+
+  // Thêm giao dịch mới và trả về documentId
+  // (dùng cho luồng upload ảnh: cần id để tạo path trong Firebase Storage)
+  Future<String> addTransactionAndGetId(TransactionModel transaction) async {
+    if (_uid == null) {
+      throw StateError('User is not authenticated');
+    }
+
+    final docRef = await _db.collection('transactions').add(transaction.toFirestore());
+    return docRef.id;
   }
 
   // Stream danh sách giao dịch (realtime - sắp xếp theo ngày mới nhất)
@@ -55,9 +67,70 @@ class FirestoreService {
         .toList();
   }
 
+  // Lấy giao dịch theo khoảng thời gian (dùng cho export báo cáo)
+  Future<List<TransactionModel>> getTransactionsByDateRange({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    if (_uid == null) return [];
+
+    // Chuẩn hóa range theo ngày để truy vấn chính xác:
+    // start: 00:00:00, end: 23:59:59
+    final rangeStart = DateTime(startDate.year, startDate.month, startDate.day);
+    final rangeEnd = DateTime(
+      endDate.year,
+      endDate.month,
+      endDate.day,
+      23,
+      59,
+      59,
+      999,
+    );
+
+    // Tránh phụ thuộc composite index: chỉ query theo uid rồi lọc range ở client.
+    final snapshot = await _db
+        .collection('transactions')
+        .where('uid', isEqualTo: _uid)
+        .get();
+
+    final txs = snapshot.docs
+        .map((doc) => TransactionModel.fromFirestore(doc))
+        .where((tx) {
+          final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
+          return !txDate.isBefore(rangeStart) && !txDate.isAfter(DateTime(rangeEnd.year, rangeEnd.month, rangeEnd.day));
+        })
+        // Báo cáo chi tiêu: chỉ lấy expense
+        .where((tx) => !tx.isIncome)
+        .toList();
+
+    txs.sort((a, b) {
+      final dateCompare = a.date.compareTo(b.date);
+      if (dateCompare != 0) return dateCompare;
+      return a.createdAt.compareTo(b.createdAt);
+    });
+    return txs;
+  }
+
   // Xóa giao dịch
   Future<void> deleteTransaction(String transactionId) async {
-    await _db.collection('transactions').doc(transactionId).delete();
+    final docRef = _db.collection('transactions').doc(transactionId);
+    final snapshot = await docRef.get();
+    final data = snapshot.data() as Map<String, dynamic>?;
+
+    // Nếu có ảnh, xóa luôn object trong Firebase Storage để tránh rác.
+    final storagePath = data?['photoStoragePath'] as String?;
+    if (storagePath != null && storagePath.isNotEmpty) {
+      try {
+        await FirebaseStorage.instance.ref(storagePath).delete();
+      } catch (e) {
+        // Xóa storage có thể fail vì rule/quyền hoặc ảnh đã bị xóa trước đó.
+        // Ta vẫn xóa document để app không bị kẹt.
+        // ignore: avoid_print
+        debugPrint('Failed to delete storage object: $e');
+      }
+    }
+
+    await docRef.delete();
   }
 
   // Cập nhật giao dịch
@@ -66,6 +139,33 @@ class FirestoreService {
         .collection('transactions')
         .doc(transaction.id)
         .update(transaction.toFirestore());
+  }
+
+  // Cập nhật ảnh cho giao dịch
+  Future<void> updateTransactionPhoto({
+    required String transactionId,
+    required String photoUrl,
+    required String photoStoragePath,
+  }) async {
+    await _db.collection('transactions').doc(transactionId).update({
+      'hasPhoto': true,
+      'photoUrl': photoUrl,
+      'photoStoragePath': photoStoragePath,
+    });
+  }
+
+  // Gallery: Stream các giao dịch có ảnh (realtime)
+  Stream<List<TransactionModel>> getTransactionsWithPhotosStream() {
+    if (_uid == null) return Stream.value([]);
+
+    return _db
+        .collection('transactions')
+        .where('uid', isEqualTo: _uid)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => TransactionModel.fromFirestore(doc))
+            .where((tx) => tx.hasPhoto)
+            .toList());
   }
 
   // ======================== THỐNG KÊ (HOME) ========================
@@ -138,7 +238,7 @@ class FirestoreService {
     try {
       await _db.collection('notifications').add(notification.toFirestore());
     } catch (e) {
-      print('Error adding notification: $e');
+      debugPrint('Error adding notification: $e');
       rethrow;
     }
   }
@@ -150,7 +250,7 @@ class FirestoreService {
       notificationData['uid'] = userId;
       await _db.collection('notifications').add(notificationData);
     } catch (e) {
-      print('Error adding notification for user: $e');
+      debugPrint('Error adding notification for user: $e');
       rethrow;
     }
   }
@@ -158,11 +258,11 @@ class FirestoreService {
   // HÀM ĐẨY DỮ LIỆU THÔNG BÁO ẢO (MOCK DATA) THEO YÊU CẦU
   Future<void> pushMockNotifications() async {
     if (_uid == null) {
-      print('PUSH ERROR: UI IS NULL');
+      debugPrint('PUSH ERROR: UI IS NULL');
       return;
     }
     
-    print('STARTING PUSH MOCK DATA FOR UID: $_uid');
+    debugPrint('STARTING PUSH MOCK DATA FOR UID: $_uid');
 
     final List<NotificationModel> mockData = [
       NotificationModel(
@@ -195,9 +295,9 @@ class FirestoreService {
         batch.set(docRef, noti.toFirestore());
       }
       await batch.commit();
-      print('PUSH SUCCESS: 3 NOTIFICATIONS ADDED');
+      debugPrint('PUSH SUCCESS: 3 NOTIFICATIONS ADDED');
     } catch (e) {
-      print('PUSH FAILED: $e');
+      debugPrint('PUSH FAILED: $e');
       rethrow;
     }
   }
@@ -273,7 +373,7 @@ class FirestoreService {
         }
       } catch (e) {
         // Lỗi timeout thì vẫn dùng location cũ
-        print('Lỗi lấy vị trí IP: $e');
+        debugPrint('Lỗi lấy vị trí IP: $e');
       }
       
       await _db.collection('device_sessions').doc(docId).set({
@@ -285,7 +385,7 @@ class FirestoreService {
       }, SetOptions(merge: true)); // Ghi đè cập nhật lastActive
     } catch (e) {
       // Lỗi bỏ qua
-      print('Lỗi đăng ký session: $e');
+      debugPrint('Lỗi đăng ký session: $e');
     }
   }
 

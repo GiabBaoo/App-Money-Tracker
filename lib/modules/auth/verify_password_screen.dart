@@ -106,7 +106,7 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                       Text(
                         'Vui lòng nhập mật khẩu bạn đang sử dụng để xác minh danh tính trước khi đổi mật khẩu mới.',
                         style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                           fontSize: 14,
                           height: 1.5,
                         ),
@@ -119,7 +119,7 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                         child: Text(
                           'Mật khẩu hiện tại',
                           style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -135,7 +135,7 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                         decoration: InputDecoration(
                           hintText: 'Nhập mật khẩu hiện tại',
                           hintStyle: TextStyle(
-                            color: isDark ? Colors.white38 : Colors.black.withOpacity(0.3),
+                            color: isDark ? Colors.white38 : Colors.black.withValues(alpha: 0.3),
                             fontSize: 14,
                           ),
                           contentPadding: const EdgeInsets.symmetric(

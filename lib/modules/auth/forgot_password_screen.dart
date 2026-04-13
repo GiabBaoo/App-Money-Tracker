@@ -124,7 +124,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           hintText: 'Nhập email của bạn',
-                          hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black.withOpacity(0.3), fontSize: 14),
+                          hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black.withValues(alpha: 0.3), fontSize: 14),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -162,7 +162,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             borderRadius: BorderRadius.circular(40),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF3E8681).withOpacity(0.3),
+                                color: const Color(0xFF3E8681).withValues(alpha: 0.3),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),

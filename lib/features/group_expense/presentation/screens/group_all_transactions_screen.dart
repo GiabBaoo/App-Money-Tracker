@@ -101,7 +101,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                 margin: const EdgeInsets.only(bottom: 24),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -148,7 +148,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                             Icon(
                               Icons.receipt_long_outlined,
                               size: 60,
-                              color: (isDark ? Colors.white : Colors.grey).withOpacity(0.2),
+                              color: (isDark ? Colors.white : Colors.grey).withValues(alpha: 0.2),
                             ),
                             const SizedBox(height: 16),
                             Text(
@@ -232,7 +232,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                                     color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF8F9FA),
                                     borderRadius: BorderRadius.circular(14),
                                     border: Border.all(
-                                      color: color.withOpacity(0.1),
+                                      color: color.withValues(alpha: 0.1),
                                       width: 1.5,
                                     ),
                                   ),
@@ -241,7 +241,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                                       Container(
                                         padding: const EdgeInsets.all(10),
                                         decoration: BoxDecoration(
-                                          color: color.withOpacity(0.15),
+                                          color: color.withValues(alpha: 0.15),
                                           borderRadius: BorderRadius.circular(12),
                                         ),
                                         child: Icon(
@@ -427,7 +427,7 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.3),
+                color: Colors.grey.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -490,7 +490,7 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                     decoration: BoxDecoration(
                       color: isSelected 
                           ? const Color(0xFF438883) 
-                          : (widget.isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF5F5F5)),
+                          : (widget.isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF5F5F5)),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     alignment: Alignment.center,

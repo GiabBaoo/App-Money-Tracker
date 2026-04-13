@@ -92,7 +92,7 @@ class TransactionItem extends ConsumerWidget {
                       '${transaction.description.isNotEmpty ? transaction.description : "Không có mô tả"}${showDate ? "  •  ${CurrencyUtils.formatDate(transaction.date)}" : ""}',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.55),
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.55),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -119,7 +119,7 @@ class TransactionItem extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: iconColor.withOpacity(0.1),
+                      color: iconColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -127,7 +127,7 @@ class TransactionItem extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
-                        color: iconColor.withOpacity(0.8),
+                        color: iconColor.withValues(alpha: 0.8),
                         letterSpacing: 0.5,
                       ),
                     ),

@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../services/voice_service.dart';
 import '../services/firestore_service.dart';
-import '../models/transaction_model.dart';
 import '../utils/category_utils.dart';
 import '../utils/page_transitions.dart';
-import '../modules/transaction/category_screen.dart';
 import '../modules/transaction/add_transaction_screen.dart';
 import 'voice_waveform.dart';
 
@@ -149,7 +146,7 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> {
             padding: const EdgeInsets.all(16),
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white10),
             ),
@@ -157,7 +154,7 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> {
               _recognizedText,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
                 fontSize: 16,
                 fontStyle: _recognizedText.contains("...") ? FontStyle.italic : FontStyle.normal,
               ),
@@ -171,9 +168,9 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF438883).withOpacity(0.2),
+                color: const Color(0xFF438883).withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF438883).withOpacity(0.4)),
+                border: Border.all(color: const Color(0xFF438883).withValues(alpha: 0.4)),
               ),
               child: Row(
                 children: [

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel {
@@ -69,7 +70,7 @@ class UserModel {
             : null,
       );
     } catch (e) {
-      print('UserModel parse error: $e');
+      debugPrint('UserModel parse error: $e');
       // Trả về object tối thiểu để tránh sập app hoàn toàn
       return UserModel(
         uid: doc.id,

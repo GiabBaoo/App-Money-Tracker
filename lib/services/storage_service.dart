@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -37,7 +38,7 @@ class StorageService {
       await ref.delete();
     } catch (e) {
       // Nếu file không tồn tại thì bỏ qua
-      print('Lỗi xóa ảnh: $e');
+      debugPrint('Lỗi xóa ảnh: $e');
     }
   }
 }

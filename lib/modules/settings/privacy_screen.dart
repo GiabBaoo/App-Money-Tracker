@@ -70,7 +70,7 @@ class PrivacyScreen extends StatelessWidget {
                         child: Text(
                           'Quản lý dữ liệu',
                           style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),

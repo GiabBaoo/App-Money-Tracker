@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
@@ -154,14 +155,14 @@ class AuthService {
             .doc(credential.user!.uid)
             .set(user.toFirestore());
       } catch (firestoreError) {
-        print('Firestore loi (nhung Auth OK): $firestoreError');
+        debugPrint('Firestore loi (nhung Auth OK): $firestoreError');
       }
 
       // GUI EMAIL XAC NHAN
       try {
         await credential.user?.sendEmailVerification();
       } catch (emailError) {
-        print('Gui email xac nhan loi: $emailError');
+        debugPrint('Gui email xac nhan loi: $emailError');
       }
 
       return (success: true, message: 'Dang ky thanh cong!');

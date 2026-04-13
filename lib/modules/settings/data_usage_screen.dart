@@ -125,7 +125,7 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
       child: Text(
         title,
         style: TextStyle(
-          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
           fontSize: 14,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
@@ -185,7 +185,7 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
                 value: value,
                 onChanged: onChanged,
                 activeColor: const Color(0xFF438883),
-                activeTrackColor: const Color(0xFF438883).withOpacity(0.3),
+                activeTrackColor: const Color(0xFF438883).withValues(alpha: 0.3),
               ),
             ],
           ),

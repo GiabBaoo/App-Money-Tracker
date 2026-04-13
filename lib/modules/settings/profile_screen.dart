@@ -39,7 +39,7 @@ class ProfileScreen extends StatelessWidget {
                       onTap: () => Navigator.push(context, PageTransitions.slideRight(const NotificationScreen())),
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                         child: const Icon(Icons.notifications_none, color: Colors.white),
                       ),
                     ),
@@ -68,7 +68,7 @@ class ProfileScreen extends StatelessWidget {
                             ? NetworkImage(user.avatarUrl)
                             : null,
                           child: (user?.avatarUrl == null || user!.avatarUrl.isEmpty)
-                            ? Icon(Icons.person, size: 50, color: Theme.of(context).iconTheme.color?.withOpacity(0.5))
+                            ? Icon(Icons.person, size: 50, color: Theme.of(context).iconTheme.color?.withValues(alpha: 0.5))
                             : null,
                         ),
                       ),
@@ -131,7 +131,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                Icon(Icons.arrow_forward_ios, color: Theme.of(context).iconTheme.color?.withOpacity(0.5), size: 16),
+                Icon(Icons.arrow_forward_ios, color: Theme.of(context).iconTheme.color?.withValues(alpha: 0.5), size: 16),
               ],
             ),
           ),

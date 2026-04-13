@@ -127,9 +127,9 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withOpacity(0.65), width: 3),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.65), width: 3),
                       ),
                       child: const Icon(Icons.fingerprint, color: Colors.white, size: 50),
                     ),

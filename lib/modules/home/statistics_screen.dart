@@ -4,11 +4,8 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../services/firestore_service.dart';
 import '../../models/transaction_model.dart';
 import '../../utils/currency_format_utils.dart';
-import '../transaction/transaction_detail_screen.dart';
 import 'export_report_screen.dart';
-import '../../widgets/transaction_item.dart';
 import '../../utils/category_utils.dart';
-import 'package:intl/intl.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -90,7 +87,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             child: Container(
               height: 48,
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF3F4F6),
+                color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF3F4F6),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Row(
@@ -120,7 +117,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
                       boxShadow: [
-                         if(!isDark) BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))
+                         if(!isDark) BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))
                       ]
                     ),
                     child: Row(
@@ -261,9 +258,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
-                    if(!isDark) BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5))
+                    if(!isDark) BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 15, offset: const Offset(0, 5))
                   ],
-                  border: isDark ? Border.all(color: Colors.white.withOpacity(0.05)) : null,
+                  border: isDark ? Border.all(color: Colors.white.withValues(alpha: 0.05)) : null,
                 ),
                 child: Column(
                   children: [
@@ -313,7 +310,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           child: Container(
                             height: 6,
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(colors: [color, color.withOpacity(0.6)]),
+                              gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.6)]),
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
@@ -334,7 +331,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       child: Column(
         children: [
           const SizedBox(height: 40),
-          Icon(Icons.analytics_outlined, size: 60, color: Colors.grey.withOpacity(0.2)),
+          Icon(Icons.analytics_outlined, size: 60, color: Colors.grey.withValues(alpha: 0.2)),
           const SizedBox(height: 16),
           const Text('Chưa có dữ liệu thống kê', style: TextStyle(color: Colors.grey, fontSize: 14)),
           const SizedBox(height: 40),
@@ -361,7 +358,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            Container(width: 50, height: 5, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(10))),
+            Container(width: 50, height: 5, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(10))),
             const SizedBox(height: 24),
             Text('Chọn ${_selectedMainTab == 0 ? 'Tuần' : _selectedMainTab == 1 ? 'Tháng' : 'Năm'}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
@@ -464,7 +461,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     if (data.isEmpty) {
       return Container(
         height: 250, width: double.infinity,
-        decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(16)),
         child: const Center(child: Text('Chưa có dữ liệu', style: TextStyle(color: Color(0xFF999999)))),
       );
     }
@@ -511,7 +508,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 show: true,
                 gradient: LinearGradient(
                   begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                  colors: [const Color(0xFF438883).withOpacity(0.2), const Color(0xFF438883).withOpacity(0)],
+                  colors: [const Color(0xFF438883).withValues(alpha: 0.2), const Color(0xFF438883).withValues(alpha: 0)],
                 ),
               ),
             ),

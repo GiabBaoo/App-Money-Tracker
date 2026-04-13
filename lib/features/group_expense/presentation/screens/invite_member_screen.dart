@@ -196,7 +196,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                             Container(
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: primaryColor.withOpacity(0.15),
+                                color: primaryColor.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Icon(
@@ -264,11 +264,11 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                           fillColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: isDark ? BorderSide(color: Colors.white.withOpacity(0.08)) : BorderSide.none,
+                            borderSide: isDark ? BorderSide(color: Colors.white.withValues(alpha: 0.08)) : BorderSide.none,
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: isDark ? BorderSide(color: Colors.white.withOpacity(0.08)) : BorderSide.none,
+                            borderSide: isDark ? BorderSide(color: Colors.white.withValues(alpha: 0.08)) : BorderSide.none,
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -309,10 +309,10 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.1),
+                                  color: Colors.green.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: Colors.green.withOpacity(0.3),
+                                    color: Colors.green.withValues(alpha: 0.3),
                                     width: 1.5,
                                   ),
                                 ),
@@ -322,7 +322,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                                       width: 44,
                                       height: 44,
                                       decoration: BoxDecoration(
-                                        color: Colors.green.withOpacity(0.2),
+                                        color: Colors.green.withValues(alpha: 0.2),
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(
@@ -378,7 +378,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                               : () => _inviteByPhone(_phoneController.text.trim()),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
-                            disabledBackgroundColor: primaryColor.withOpacity(0.5),
+                            disabledBackgroundColor: primaryColor.withValues(alpha: 0.5),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -413,10 +413,10 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: primaryColor.withOpacity(0.1),
+                          color: primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: primaryColor.withOpacity(0.2),
+                            color: primaryColor.withValues(alpha: 0.2),
                             width: 1,
                           ),
                         ),

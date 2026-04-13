@@ -330,7 +330,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                       )
                                     : Text(user.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Theme.of(context).textTheme.bodyLarge?.color)),
                                 const SizedBox(height: 8),
-                                Text('ID: ${user.uid.substring(0, 8).toUpperCase()}', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6), fontSize: 14)),
+                                Text('ID: ${user.uid.substring(0, 8).toUpperCase()}', style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6), fontSize: 14)),
                               ]),
                             ),
                             const SizedBox(height: 30),
@@ -470,7 +470,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
         child: Text(
           title,
           style: TextStyle(
-            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
             fontSize: 14,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,

@@ -98,7 +98,7 @@ class DeleteConfirmationScreen extends StatelessWidget {
                       'Sau khi xóa, toàn bộ dữ liệu, giao dịch và thông tin cá nhân của bạn sẽ bị mất vĩnh viễn. Hành động này không thể hoàn tác.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                         fontSize: 15,
                         height: 1.5,
                       ),

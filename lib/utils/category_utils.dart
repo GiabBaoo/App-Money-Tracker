@@ -48,6 +48,6 @@ class CategoryUtils {
 
   static Color getLightBgColor(String name, bool isDark) {
     final color = getVibrantColor(name);
-    return isDark ? color.withOpacity(0.15) : color.withOpacity(0.1);
+    return isDark ? color.withValues(alpha: 0.15) : color.withValues(alpha: 0.1);
   }
 }

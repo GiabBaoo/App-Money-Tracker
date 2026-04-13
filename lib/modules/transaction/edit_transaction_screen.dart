@@ -125,6 +125,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         time: timeStr,
         description: _descriptionController.text.trim(),
         createdAt: widget.transaction.createdAt,
+        hasPhoto: widget.transaction.hasPhoto,
+        photoUrl: widget.transaction.photoUrl,
+        photoStoragePath: widget.transaction.photoStoragePath,
       );
 
       await _firestoreService.updateTransaction(updatedTransaction);
@@ -240,7 +243,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                      child: Container(
                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                        decoration: BoxDecoration(
-                         color: appMainColor.withOpacity(0.12),
+                         color: appMainColor.withValues(alpha: 0.12),
                          borderRadius: BorderRadius.circular(20),
                        ),
                        child: Text(
@@ -268,9 +271,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     style: const TextStyle(color: appMainColor, fontSize: 22, fontWeight: FontWeight.bold),
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: isDark ? const Color(0xFF2E2E2E) : appMainColor.withOpacity(0.05),
+                      fillColor: isDark ? const Color(0xFF2E2E2E) : appMainColor.withValues(alpha: 0.05),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: appMainColor.withOpacity(0.15))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: appMainColor.withValues(alpha: 0.15))),
                       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: appMainColor, width: 1.8)),
                       suffixIcon: const Icon(Icons.edit_note, color: appMainColor),
                     ),

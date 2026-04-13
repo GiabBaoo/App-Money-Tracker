@@ -193,7 +193,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                               colors: _isLoading ? [Colors.grey, Colors.grey.shade600] : [const Color(0xFF68AEA9), const Color(0xFF3E8681)],
                             ),
                             borderRadius: BorderRadius.circular(40),
-                            boxShadow: [BoxShadow(color: const Color(0xFF3E8681).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+                            boxShadow: [BoxShadow(color: const Color(0xFF3E8681).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))],
                           ),
                           child: Center(
                             child: _isLoading

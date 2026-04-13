@@ -95,9 +95,13 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                         ...messages.map((msg) {
                           String timeStr = 'Vừa xong';
                           final diff = DateTime.now().difference(msg.createdAt);
-                          if (diff.inDays > 0) timeStr = '${diff.inDays} ngày trước';
-                          else if (diff.inHours > 0) timeStr = '${diff.inHours} giờ trước';
-                          else if (diff.inMinutes > 0) timeStr = '${diff.inMinutes} phút trước';
+                          if (diff.inDays > 0) {
+                            timeStr = '${diff.inDays} ngày trước';
+                          } else if (diff.inHours > 0) {
+                            timeStr = '${diff.inHours} giờ trước';
+                          } else if (diff.inMinutes > 0) {
+                            timeStr = '${diff.inMinutes} phút trước';
+                          }
                           
                           return Dismissible(
                             key: Key(msg.id),

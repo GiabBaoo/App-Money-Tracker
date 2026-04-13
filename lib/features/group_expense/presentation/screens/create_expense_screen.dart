@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../utils/currency_format_utils.dart';
 import '../../data/dtos/create_expense_dto.dart';
@@ -21,7 +22,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
   final _notesController = TextEditingController();
   
   String? _selectedPayerId;
-  List<String> _selectedParticipantIds = [];
+  final List<String> _selectedParticipantIds = [];
   SplitMethod _splitMethod = SplitMethod.equal;
   String _category = 'Ăn uống';
   DateTime _selectedDate = DateTime.now();
@@ -195,7 +196,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           ),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
-                            value: _selectedPayerId,
+                            initialValue: _selectedPayerId,
                             decoration: InputDecoration(
                               labelText: 'Người trả tiền',
                               filled: true,
@@ -242,7 +243,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           }),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<SplitMethod>(
-                            value: _splitMethod,
+                            initialValue: _splitMethod,
                             decoration: InputDecoration(
                               labelText: 'Cách chia',
                               filled: true,
@@ -270,7 +271,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           ),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
-                            value: _category,
+                            initialValue: _category,
                             decoration: InputDecoration(
                               labelText: 'Danh mục',
                               filled: true,

@@ -45,8 +45,6 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
   Widget build(BuildContext context) {
     final expensesAsync = ref.watch(groupExpensesStreamProvider(widget.groupId));
     final fundTransactionsAsync = ref.watch(groupFundTransactionsProvider(widget.groupId));
-    final balanceAsync = ref.watch(groupBalanceProvider(widget.groupId));
-    final groupAsync = ref.watch(groupStreamProvider(widget.groupId));
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).primaryColor;
@@ -57,10 +55,15 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
     double totalExpense = 0;
     
     for (var tx in transactions) {
-      if (tx.type == TransactionType.contribute) totalIncome += tx.amount;
-      else totalExpense += tx.amount;
+      if (tx.type == TransactionType.contribute) {
+        totalIncome += tx.amount;
+      } else {
+        totalExpense += tx.amount;
+      }
     }
-    for (var e in expenses) totalExpense += e.amount;
+    for (var e in expenses) {
+      totalExpense += e.amount;
+    }
 
     return Scaffold(
       body: CustomScrollView(
@@ -204,7 +207,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                             color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F3F5),
                             borderRadius: BorderRadius.circular(22),
                             border: Border.all(
-                              color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
                             ),
                           ),
                           child: Stack(
@@ -224,13 +227,13 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                                       end: Alignment.bottomRight,
                                       colors: [
                                         primaryColor,
-                                        primaryColor.withOpacity(0.85),
+                                        primaryColor.withValues(alpha: 0.85),
                                       ],
                                     ),
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: primaryColor.withOpacity(0.35),
+                                        color: primaryColor.withValues(alpha: 0.35),
                                         blurRadius: 12,
                                         offset: const Offset(0, 4),
                                       ),
@@ -337,7 +340,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 15,
             offset: const Offset(0, 10),
           ),
@@ -358,7 +361,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
               ),
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
                 child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 24),
               ),
             ],
@@ -371,7 +374,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
                       child: const Icon(Icons.arrow_downward, color: Colors.white, size: 16),
                     ),
                     const SizedBox(width: 10),
@@ -390,7 +393,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
                       child: const Icon(Icons.arrow_upward, color: Colors.white, size: 16),
                     ),
                     const SizedBox(width: 10),
@@ -667,10 +670,10 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: isDark ? Border.all(color: Colors.white.withOpacity(0.05)) : null,
+                border: isDark ? Border.all(color: Colors.white.withValues(alpha: 0.05)) : null,
                 boxShadow: [
                   if (!isDark) BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withValues(alpha: 0.03),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -682,7 +685,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(icon, color: color, size: 22),
@@ -705,7 +708,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                           tx.type == TransactionType.contribute ? 'Đã góp quỹ' : 'Đã rút quỹ',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? Colors.white.withOpacity(0.7) : Colors.black54,
+                            color: isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54,
                           ),
                         ),
                       ],
@@ -746,10 +749,10 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 16),
-      color: isDark ? const Color(0xFF1E2F2E).withOpacity(0.5) : Colors.white,
+      color: isDark ? const Color(0xFF1E2F2E).withValues(alpha: 0.5) : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: isDark ? Colors.white.withOpacity(0.05) : Colors.transparent),
+        side: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.transparent),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -759,7 +762,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(15)),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(15)),
                   child: Icon(icon, color: color, size: 22),
                 ),
                 const SizedBox(width: 16),
@@ -787,7 +790,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: percentage,
-                backgroundColor: color.withOpacity(0.1),
+                backgroundColor: color.withValues(alpha: 0.1),
                 valueColor: AlwaysStoppedAnimation<Color>(color),
                 minHeight: 6,
               ),
@@ -804,7 +807,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.pie_chart_outline, size: 80, color: Colors.grey.withOpacity(0.3)),
+          Icon(Icons.pie_chart_outline, size: 80, color: Colors.grey.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
           Text('Không có $type nào', style: TextStyle(color: isDark ? Colors.white60 : Colors.grey)),
         ],

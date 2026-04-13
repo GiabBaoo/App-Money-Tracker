@@ -124,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(20), 
                       boxShadow: [
                         BoxShadow(
-                          color: isDark ? Colors.black45 : Colors.black.withOpacity(0.08), 
+                          color: isDark ? Colors.black45 : Colors.black.withValues(alpha: 0.08), 
                           blurRadius: 35, 
                           offset: const Offset(0, 22)
                         )
@@ -143,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(color: isDark ? Colors.white : Colors.black),
                           decoration: InputDecoration(
                             hintText: 'Nhập email của bạn', 
-                            hintStyle: TextStyle(color: isDark ? Colors.white24 : Colors.black.withOpacity(0.29), fontSize: 13),
+                            hintStyle: TextStyle(color: isDark ? Colors.white24 : Colors.black.withValues(alpha: 0.29), fontSize: 13),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? Colors.white12 : const Color(0xFFDDDDDD))),
                             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5)),
@@ -158,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(color: isDark ? Colors.white : Colors.black),
                           decoration: InputDecoration(
                             hintText: 'Nhập mật khẩu của bạn', 
-                            hintStyle: TextStyle(color: isDark ? Colors.white24 : Colors.black.withOpacity(0.29), fontSize: 13),
+                            hintStyle: TextStyle(color: isDark ? Colors.white24 : Colors.black.withValues(alpha: 0.29), fontSize: 13),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? Colors.white12 : const Color(0xFFDDDDDD))),
                             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5)),
@@ -186,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(colors: _isLoading ? [Colors.grey, Colors.grey.shade600] : [const Color(0xFF68AEA9), const Color(0xFF3E8681)]),
                               borderRadius: BorderRadius.circular(30),
-                              boxShadow: [BoxShadow(color: const Color(0xFF3E8681).withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 5))],
+                              boxShadow: [BoxShadow(color: const Color(0xFF3E8681).withValues(alpha: 0.4), blurRadius: 10, offset: const Offset(0, 5))],
                             ),
                             child: Center(
                               child: _isLoading

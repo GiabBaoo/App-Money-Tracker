@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -8,7 +9,7 @@ class NotificationService {
   Future<void> pushMockNotifications() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
-      print('Người dùng chưa đăng nhập!');
+      debugPrint('Người dùng chưa đăng nhập!');
       return;
     }
 
@@ -50,9 +51,9 @@ class NotificationService {
         batch.set(docRef, data);
       }
       await batch.commit();
-      print('Đã đẩy dữ liệu ảo thành công!');
+      debugPrint('Đã đẩy dữ liệu ảo thành công!');
     } catch (e) {
-      print('Lỗi khi đẩy dữ liệu: $e');
+      debugPrint('Lỗi khi đẩy dữ liệu: $e');
     }
   }
 

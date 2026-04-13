@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../utils/page_transitions.dart';
 import '../../services/firestore_service.dart';
 import '../../models/transaction_model.dart';
 import '../../utils/currency_format_utils.dart';
@@ -141,9 +140,9 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.search_off, size: 60, color: Colors.grey.withOpacity(0.3)),
+                          Icon(Icons.search_off, size: 60, color: Colors.grey.withValues(alpha: 0.3)),
                           const SizedBox(height: 16),
-                          Text('Không tìm thấy giao dịch nào', style: TextStyle(color: Colors.grey.withOpacity(0.6), fontSize: 16)),
+                          Text('Không tìm thấy giao dịch nào', style: TextStyle(color: Colors.grey.withValues(alpha: 0.6), fontSize: 16)),
                         ],
                       ),
                     );
@@ -185,7 +184,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
         label: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
         onDeleted: onDeleted,
         deleteIcon: const Icon(Icons.close, size: 14),
-        backgroundColor: const Color(0xFF438883).withOpacity(0.1),
+        backgroundColor: const Color(0xFF438883).withValues(alpha: 0.1),
         side: BorderSide.none,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
@@ -233,7 +232,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                             decoration: BoxDecoration(
                               color: isSelected ? const Color(0xFF438883) : Colors.transparent,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: isSelected ? const Color(0xFF438883) : Colors.grey.withOpacity(0.3)),
+                              border: Border.all(color: isSelected ? const Color(0xFF438883) : Colors.grey.withValues(alpha: 0.3)),
                             ),
                             child: Center(
                               child: Text(
@@ -285,7 +284,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
@@ -347,7 +346,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
         child: Text(
           date, 
           style: TextStyle(
-            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5), 
+            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.5), 
             fontSize: 14, 
             fontWeight: FontWeight.w700,
             letterSpacing: 0.5,

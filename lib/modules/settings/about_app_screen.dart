@@ -46,7 +46,7 @@ class AboutAppScreen extends StatelessWidget {
                           color: const Color(0xFF438883),
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
-                            BoxShadow(color: const Color(0xFF438883).withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10)),
+                            BoxShadow(color: const Color(0xFF438883).withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 10)),
                           ],
                         ),
                         child: const Icon(Icons.account_balance_wallet, color: Colors.white, size: 45),
@@ -93,7 +93,7 @@ class AboutAppScreen extends StatelessWidget {
         tileColor: isDark ? const Color(0xFF2E2E2E) : Colors.white,
         leading: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: const Color(0xFF438883).withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(color: const Color(0xFF438883).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
           child: Icon(icon, color: const Color(0xFF438883), size: 20),
         ),
         title: Text(title, style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 15, fontWeight: FontWeight.w500)),

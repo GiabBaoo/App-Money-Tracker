@@ -7,7 +7,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../home/home_screen.dart';
 import '../auth/fingerprint_unlock_screen.dart';
-import '../../services/biometric_service.dart';
 import '../../features/group_expense/presentation/screens/join_group_screen.dart';
 
 class SplashScreen extends StatefulWidget {

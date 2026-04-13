@@ -94,7 +94,7 @@ class AppearanceScreen extends StatelessWidget {
       child: Text(
         title,
         style: TextStyle(
-          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
           fontSize: 14,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
@@ -190,7 +190,7 @@ class AppearanceScreen extends StatelessWidget {
             border: Border.all(color: isSelected ? const Color(0xFF438883) : Colors.transparent, width: 3),
             color: label == 'Dark' ? const Color(0xFF1E1E1E) : Colors.white,
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))
+              BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))
             ]
           ),
           child: ClipRRect(

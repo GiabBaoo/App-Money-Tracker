@@ -83,7 +83,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
       child: Text(
         title,
         style: TextStyle(
-          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
           fontSize: 14,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,

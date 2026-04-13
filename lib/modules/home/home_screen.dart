@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../utils/page_transitions.dart';
-import '../../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
 import '../../services/voice_service.dart';
@@ -11,7 +10,7 @@ import 'statistics_screen.dart';
 import '../settings/profile_screen.dart';
 import 'wallet_screen.dart';
 import '../transaction/add_transaction_screen.dart';
-import '../transaction/transaction_detail_screen.dart';
+import '../transaction/transaction_gallery_screen.dart';
 import 'notification_screen.dart';
 import '../../widgets/voice_input_bottom_sheet.dart';
 import 'category_statistics_screen.dart';
@@ -196,7 +195,7 @@ class _HomeBodyState extends State<HomeBody> {
                               return Container(
                                 margin: const EdgeInsets.only(right: 12),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.15),
+                                  color: Colors.white.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: IconButton(
@@ -209,7 +208,7 @@ class _HomeBodyState extends State<HomeBody> {
                           Container(
                             margin: const EdgeInsets.only(right: 12),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
+                              color: Colors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: IconButton(
@@ -222,7 +221,7 @@ class _HomeBodyState extends State<HomeBody> {
                           ),
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
+                              color: Colors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Stack(
@@ -286,8 +285,11 @@ class _HomeBodyState extends State<HomeBody> {
                         for (var tx in snapshot.data!) {
                           // Chỉ tính cho tháng và năm hiện tại
                           if (tx.date.month == now.month && tx.date.year == now.year) {
-                            if (tx.type == 'income') totalIncome += tx.amount;
-                            else totalExpense += tx.amount;
+                            if (tx.type == 'income') {
+                              totalIncome += tx.amount;
+                            } else {
+                              totalExpense += tx.amount;
+                            }
                           }
                         }
                       }
@@ -308,9 +310,23 @@ class _HomeBodyState extends State<HomeBody> {
             children: [
               const Text('Lịch sử giao dịch',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              TextButton(
-                onPressed: () => Navigator.push(context, PageTransitions.slideRight(const AllTransactionsScreen())),
-                child: const Text('Xem tất cả', style: TextStyle(color: Color(0xFF438883))),
+              Row(
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      PageTransitions.slideRight(const AllTransactionsScreen()),
+                    ),
+                    child: const Text('Xem tất cả', style: TextStyle(color: Color(0xFF438883))),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.photo_library_outlined, color: Color(0xFF438883)),
+                    onPressed: () => Navigator.push(
+                      context,
+                      PageTransitions.slideRight(const TransactionGalleryScreen()),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -381,7 +397,7 @@ class _HomeBodyState extends State<HomeBody> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF438883).withOpacity(0.3),
+              color: const Color(0xFF438883).withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             )
@@ -430,7 +446,7 @@ class _HomeBodyState extends State<HomeBody> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: Colors.white, size: 20),

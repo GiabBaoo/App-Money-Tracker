@@ -90,8 +90,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _validatePhone(String phone) {
     if (phone.isEmpty) return 'Vui lòng nhập số điện thoại!';
     if (phone.length != 10) return 'Số điện thoại phải có đúng 10 chữ số!';
-    if (!RegExp(r'^[0-9]+$').hasMatch(phone))
+    if (!RegExp(r'^[0-9]+$').hasMatch(phone)) {
       return 'Số điện thoại chỉ chứa chữ số!';
+    }
 
     // Check nhanh đầu số hợp lệ của VN (03, 05, 07, 08, 09) và phải đủ 10 số
     if (!RegExp(r'^(03|05|07|08|09)[0-9]{8}$').hasMatch(phone)) {
@@ -531,7 +532,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             borderRadius: BorderRadius.circular(40),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF3E8681).withOpacity(0.3),
+                                color: const Color(0xFF3E8681).withValues(alpha: 0.3),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -613,7 +614,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: TextStyle(
-              color: isDark ? Colors.white54 : Colors.black.withOpacity(0.3),
+              color: isDark ? Colors.white54 : Colors.black.withValues(alpha: 0.3),
               fontSize: 14,
             ),
             contentPadding: const EdgeInsets.symmetric(

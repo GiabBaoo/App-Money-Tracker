@@ -95,13 +95,13 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                             end: Alignment.bottomRight,
                             colors: [
                               primaryColor,
-                              primaryColor.withOpacity(0.75),
+                              primaryColor.withValues(alpha: 0.75),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(28),
                           boxShadow: [
                             BoxShadow(
-                              color: primaryColor.withOpacity(0.3),
+                              color: primaryColor.withValues(alpha: 0.3),
                               blurRadius: 20,
                               offset: const Offset(0, 8),
                             ),
@@ -118,7 +118,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                                 height: 220,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Colors.white.withOpacity(0.08),
+                                  color: Colors.white.withValues(alpha: 0.08),
                                 ),
                               ),
                             ),
@@ -132,7 +132,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                                   height: 50,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: Colors.white.withOpacity(0.15),
+                                    color: Colors.white.withValues(alpha: 0.15),
                                   ),
                                   child: const Icon(
                                     Icons.auto_awesome_rounded,
@@ -181,10 +181,10 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                       decoration: BoxDecoration(
                         color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF5F7F9),
                         borderRadius: BorderRadius.circular(22),
-                        border: isDark ? Border.all(color: Colors.white.withOpacity(0.05)) : null,
+                        border: isDark ? Border.all(color: Colors.white.withValues(alpha: 0.05)) : null,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
                             blurRadius: 15,
                             offset: const Offset(0, 6),
                           ),
@@ -199,7 +199,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: primaryColor.withOpacity(0.4),
+                              color: primaryColor.withValues(alpha: 0.4),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -305,21 +305,21 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                       decoration: BoxDecoration(
                                         color: isSelected
-                                            ? primaryColor.withOpacity(0.12)
+                                            ? primaryColor.withValues(alpha: 0.12)
                                             : (isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6)),
                                         borderRadius: BorderRadius.circular(14),
                                         border: Border.all(
                                           color: isSelected 
                                               ? primaryColor 
                                               : (isDark 
-                                                  ? Colors.white.withOpacity(0.1)
-                                                  : Colors.black.withOpacity(0.08)),
+                                                  ? Colors.white.withValues(alpha: 0.1)
+                                                  : Colors.black.withValues(alpha: 0.08)),
                                           width: isSelected ? 2 : 1,
                                         ),
                                         boxShadow: isSelected
                                             ? [
                                                 BoxShadow(
-                                                  color: primaryColor.withOpacity(0.15),
+                                                  color: primaryColor.withValues(alpha: 0.15),
                                                   blurRadius: 8,
                                                   offset: const Offset(0, 2),
                                                 ),
@@ -394,13 +394,13 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                                   end: Alignment.bottomRight,
                                   colors: [
                                     primaryColor,
-                                    primaryColor.withOpacity(0.8),
+                                    primaryColor.withValues(alpha: 0.8),
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: primaryColor.withOpacity(0.3),
+                                    color: primaryColor.withValues(alpha: 0.3),
                                     blurRadius: 12,
                                     offset: const Offset(0, 4),
                                   ),

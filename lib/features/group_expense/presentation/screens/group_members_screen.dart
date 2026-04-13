@@ -131,7 +131,7 @@ class GroupMembersScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
             borderRadius: BorderRadius.circular(16),
-            border: isDark ? Border.all(color: Colors.white.withOpacity(0.05)) : null,
+            border: isDark ? Border.all(color: Colors.white.withValues(alpha: 0.05)) : null,
           ),
           child: Row(
             children: [
@@ -176,7 +176,7 @@ class GroupMembersScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF438883).withOpacity(0.15) : const Color(0xFF438883).withOpacity(0.2),
+                              color: isDark ? const Color(0xFF438883).withValues(alpha: 0.15) : const Color(0xFF438883).withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(

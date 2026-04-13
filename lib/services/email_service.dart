@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 
@@ -46,10 +47,10 @@ class EmailService {
       await send(message, smtpServer);
       return (success: true, message: 'Email da duoc gui thanh cong!');
     } on MailerException catch (e) {
-      print('Loi gui email: $e');
+      debugPrint('Loi gui email: $e');
       return (success: false, message: 'Khong gui duoc email. Vui long thu lai.');
     } catch (e) {
-      print('Loi: $e');
+      debugPrint('Loi: $e');
       return (success: false, message: 'Loi gui email: $e');
     }
   }

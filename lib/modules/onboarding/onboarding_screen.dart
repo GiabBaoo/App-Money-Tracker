@@ -84,7 +84,7 @@ class OnboardingScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(30),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF438883).withOpacity(0.3),
+                            color: const Color(0xFF438883).withValues(alpha: 0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 5),
                           ),
