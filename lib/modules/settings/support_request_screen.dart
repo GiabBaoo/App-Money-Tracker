@@ -111,7 +111,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                       // CHỌN CHỦ ĐỀ
                       _buildLabel('Chủ đề'),
                       DropdownButtonFormField<String>(
-                        value: _selectedTopic,
+                        initialValue: _selectedTopic,
                         icon: const Icon(
                           Icons.keyboard_arrow_down,
                           color: Color(0xFF438883),

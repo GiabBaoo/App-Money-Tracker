@@ -330,90 +330,6 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
     );
   }
 
-  // Thẻ số dư giống trang Detail để đồng bộ
-  Widget _buildSyncBalanceCard(BuildContext context, String groupName, double income, double expense, bool isDark) {
-    final balance = income - expense;
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: const Color(0xFF438883),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 15,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Số dư quỹ', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                  const SizedBox(height: 4),
-                  Text('${_formatMoney(balance)}đ', style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 24),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-                      child: const Icon(Icons.arrow_downward, color: Colors.white, size: 16),
-                    ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Thu nhập', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                        Text('${_formatMoney(income)}đ', style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-                      child: const Icon(Icons.arrow_upward, color: Colors.white, size: 16),
-                    ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Chi phí', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                        Text('${_formatMoney(expense)}đ', style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildToggleItem(String label, int tabIndex, IconData icon, bool isDark) {
     final isSelected = selectedTab == tabIndex;
     return Expanded(
@@ -600,7 +516,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                     sections: sections,
                     startDegreeOffset: -90,
                   ),
-                  swapAnimationDuration: const Duration(milliseconds: 600),
+                  duration: const Duration(milliseconds: 600),
                 ),
                 Column(
                   mainAxisSize: MainAxisSize.min,
@@ -738,69 +654,12 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                 ],
               ),
             );
-          }).toList(),
+          }),
           const SizedBox(height: 20),
         ],
       ),
     );
   }
-
-  Widget _buildItemCard(String title, double amount, double percentage, Color color, IconData icon, bool isDark) {
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 16),
-      color: isDark ? const Color(0xFF1E2F2E).withValues(alpha: 0.5) : Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.transparent),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(15)),
-                  child: Icon(icon, color: color, size: 22),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : Colors.black87)),
-                      Text('${(percentage * 100).toStringAsFixed(1)}%', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-                    ],
-                  ),
-                ),
-                Text(
-                  CurrencyUtils.formatCurrency(amount),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: percentage,
-                backgroundColor: color.withValues(alpha: 0.1),
-                valueColor: AlwaysStoppedAnimation<Color>(color),
-                minHeight: 6,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
 
   Widget _buildEmptyState(bool isDark, String type) {
     return Center(

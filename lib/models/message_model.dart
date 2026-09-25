@@ -11,6 +11,7 @@ class MessageModel {
   final String fullMessage;
   final bool isUnread;
   final DateTime createdAt;
+  final String syncStatus;
 
   MessageModel({
     this.id = '',
@@ -22,7 +23,10 @@ class MessageModel {
     required this.fullMessage,
     this.isUnread = true,
     DateTime? createdAt,
+    this.syncStatus = 'synced',
   }) : createdAt = createdAt ?? DateTime.now();
+
+  // ════════ FIRESTORE ════════
 
   factory MessageModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -38,6 +42,7 @@ class MessageModel {
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
+      syncStatus: 'synced',
     );
   }
 
@@ -53,4 +58,37 @@ class MessageModel {
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
+
+  // ════════ SQLITE ════════
+
+  factory MessageModel.fromSqlite(Map<String, dynamic> map) {
+    return MessageModel(
+      id: map['id'] as String,
+      uid: map['uid'] as String,
+      iconCode: map['iconCode'] as int,
+      iconBgColorValue: map['iconBgColorValue'] as int,
+      title: map['title'] as String,
+      shortMessage: map['shortMessage'] as String,
+      fullMessage: map['fullMessage'] as String,
+      isUnread: (map['isUnread'] as int? ?? 1) == 1,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int),
+      syncStatus: map['syncStatus'] as String? ?? 'synced',
+    );
+  }
+
+  Map<String, dynamic> toSqlite() {
+    return {
+      'id': id,
+      'uid': uid,
+      'iconCode': iconCode,
+      'iconBgColorValue': iconBgColorValue,
+      'title': title,
+      'shortMessage': shortMessage,
+      'fullMessage': fullMessage,
+      'isUnread': isUnread ? 1 : 0,
+      'createdAt': createdAt.millisecondsSinceEpoch,
+      'syncStatus': syncStatus,
+    };
+  }
 }
+

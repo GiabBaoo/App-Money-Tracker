@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../utils/currency_format_utils.dart';
 import '../../data/dtos/create_expense_dto.dart';
@@ -25,7 +24,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
   final List<String> _selectedParticipantIds = [];
   SplitMethod _splitMethod = SplitMethod.equal;
   String _category = 'Ăn uống';
-  DateTime _selectedDate = DateTime.now();
+  final DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
 
   @override

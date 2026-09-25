@@ -103,7 +103,7 @@ class ReportExportService {
             style: const pw.TextStyle(fontSize: 12),
           ),
           pw.SizedBox(height: 16),
-          pw.Table.fromTextArray(
+          pw.TableHelper.fromTextArray(
             border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.6),
             headerStyle: pw.TextStyle(font: boldFont, fontSize: 11, color: PdfColors.white),
             headerDecoration: const pw.BoxDecoration(color: PdfColors.teal700),

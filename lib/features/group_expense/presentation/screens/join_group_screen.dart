@@ -162,14 +162,6 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
       final groupRepository = ref.read(groupRepositoryProvider);
       final group = await groupRepository.getById(widget.groupId);
 
-      if (group == null) {
-        setState(() {
-          _errorMessage = 'Quỹ không tồn tại hoặc đã bị xóa';
-          _isJoining = false;
-        });
-        return;
-      }
-
       // Kiểm tra xem user đã là thành viên chưa
       if (group.memberIds.contains(userId)) {
         // Đã là thành viên, chuyển thẳng vào group detail

@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
-import '../../services/firestore_service.dart';
+import 'package:flutter/services.dart';
+import '../../services/auth_service.dart';
 import '../../models/transaction_model.dart';
+import '../../models/wallet_model.dart';
 import '../../utils/currency_format_utils.dart';
 import '../../widgets/transaction_item.dart';
+import '../../widgets/colored_amount_text.dart';
+import '../../widgets/staggered_list_item.dart';
+import '../../widgets/animated_scale_button.dart';
+import '../../data/repositories/transaction_repository.dart';
+import '../../data/repositories/wallet_repository.dart';
+import '../../utils/page_transitions.dart';
+import '../calendar/calendar_tracking_screen.dart';
 
 class AllTransactionsScreen extends StatefulWidget {
   const AllTransactionsScreen({super.key});
@@ -12,13 +21,20 @@ class AllTransactionsScreen extends StatefulWidget {
 }
 
 class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
-  final FirestoreService _firestoreService = FirestoreService();
+  final TransactionRepository _txRepo = TransactionRepository();
+  final WalletRepository _walletRepo = WalletRepository();
   String _selectedType = 'Tất cả';
   DateTimeRange? _selectedDateRange;
 
   @override
   void initState() {
     super.initState();
+    final uid = AuthService().currentUid;
+    if (uid != null) {
+      _txRepo.setUid(uid);
+      _walletRepo.setUid(uid);
+    }
+    _walletRepo.getWallets();
     // Mặc định lọc tháng hiện tại theo yêu cầu
     final now = DateTime.now();
     _selectedDateRange = DateTimeRange(
@@ -43,29 +59,69 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
         child: Column(
           children: [
             // HEADER & FILTER ICON
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, size: 20),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  const Text('Lịch sử giao dịch', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  IconButton(
-                    icon: Icon(
-                      Icons.filter_list,
-                      size: 26,
-                      color: (_selectedType != 'Tất cả' || _selectedDateRange != null)
-                          ? const Color(0xFF438883)
-                          : Theme.of(context).iconTheme.color,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    AnimatedScaleButton(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        Navigator.pop(context);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.arrow_back_ios_new, size: 20),
+                      ),
                     ),
-                    onPressed: () => _showFilterBottomSheet(context),
-                  ),
-                ],
+                    const Text('Lịch sử giao dịch', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Row(
+                      children: [
+                        AnimatedScaleButton(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            Navigator.push(context, PageTransitions.slideRight(const CalendarTrackingScreen()));
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.calendar_month_rounded, size: 22, color: Color(0xFF438883)),
+                          ),
+                        ),
+                        AnimatedScaleButton(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            _showFilterBottomSheet(context);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: (_selectedType != 'Tất cả' || _selectedDateRange != null)
+                                  ? const Color(0xFF438883).withValues(alpha: 0.15)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.filter_list,
+                              size: 24,
+                              color: (_selectedType != 'Tất cả' || _selectedDateRange != null)
+                                  ? const Color(0xFF438883)
+                                  : Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
 
             // CHIP HIỂN THỊ BỘ LỌC ĐANG CHỌN (NẾU CÓ)
             if (_selectedType != 'Tất cả' || _selectedDateRange != null)
@@ -96,9 +152,9 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
             // DANH SÁCH GIAO DỊCH REALTIME VỚI BỘ LỌC
             Expanded(
               child: StreamBuilder<List<TransactionModel>>(
-                stream: _firestoreService.getTransactionsStream(),
+                stream: _txRepo.getTransactionsStream(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
+                  if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
                   }
 
@@ -113,17 +169,16 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                     if (dateComp != 0) return dateComp;
                     int timeComp = b.time.compareTo(a.time);
                     if (timeComp != 0) return timeComp;
-                    if (a.createdAt != null && b.createdAt != null) {
-                      return b.createdAt!.compareTo(a.createdAt!);
-                    }
-                    return 0;
+                    return b.createdAt.compareTo(a.createdAt);
                   });
                   
                   // Lọc theo loại hình
                   if (_selectedType == 'Thu nhập') {
-                    transactions = transactions.where((tx) => tx.isIncome).toList();
+                    transactions = transactions.where((tx) => tx.isIncome && !tx.isTransfer).toList();
                   } else if (_selectedType == 'Chi tiêu') {
-                    transactions = transactions.where((tx) => !tx.isIncome).toList();
+                    transactions = transactions.where((tx) => !tx.isIncome && !tx.isTransfer).toList();
+                  } else if (_selectedType == 'Chuyển ví') {
+                    transactions = transactions.where((tx) => tx.isTransfer).toList();
                   }
                   
                   // Lọc theo thời gian
@@ -149,6 +204,11 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   }
 
                   // 2. NHÓM GIAO DỊCH THEO NGÀY
+                  final allTx = snapshot.data ?? [];
+                  final reverseBalances = CurrencyUtils.calculateReverseWalletBalances(
+                    allTransactions: allTx,
+                    wallets: _walletRepo.latestWallets,
+                  );
                   final grouped = _groupByDate(transactions);
 
                   return SingleChildScrollView(
@@ -157,11 +217,22 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ...grouped.entries.expand((entry) => [
-                          _buildDateHeader(entry.key),
-                          ...entry.value.map((tx) => TransactionItem(
-                                transaction: tx,
-                                showDate: false, // Vì đã có Header ngày rồi
-                              )),
+                          _buildDateHeader(entry.key, entry.value),
+                          ...entry.value.asMap().entries.map((txEntry) {
+                                WalletModel? txWallet;
+                                try {
+                                  txWallet = _walletRepo.latestWallets.firstWhere((w) => w.id == txEntry.value.walletId);
+                                } catch (_) {}
+                                return StaggeredListItem(
+                                  index: txEntry.key,
+                                  child: TransactionItem(
+                                    transaction: txEntry.value,
+                                    showDate: false, // Vì đã có Header ngày rồi
+                                    runningTotal: reverseBalances[txEntry.value.id],
+                                    wallet: txWallet,
+                                  ),
+                                );
+                              }),
                           const SizedBox(height: 16),
                         ]),
                         const SizedBox(height: 40),
@@ -218,15 +289,19 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   const Text('Loại giao dịch', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 12),
                   Row(
-                    children: ['Tất cả', 'Thu nhập', 'Chi tiêu'].map((tp) {
+                    children: ['Tất cả', 'Thu nhập', 'Chi tiêu', 'Chuyển ví'].map((tp) {
                       final isSelected = _selectedType == tp;
                       return Expanded(
-                        child: GestureDetector(
+                        child: AnimatedScaleButton(
+                          scaleDown: 0.95,
                           onTap: () {
+                            HapticFeedback.selectionClick();
                             setModalState(() => _selectedType = tp);
                             setState(() {}); // Cập nhật màn hình chính
                           },
-                          child: Container(
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeInOut,
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
@@ -256,20 +331,28 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   const SizedBox(height: 12),
                   InkWell(
                     onTap: () async {
+                      final now = DateTime.now();
                       final range = await showDateRangePicker(
                         context: context,
                         firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
+                        lastDate: DateTime(now.year, now.month, now.day, 23, 59, 59),
                         initialDateRange: _selectedDateRange,
                         builder: (context, child) {
                           return Theme(
                             data: Theme.of(context).copyWith(
-                              colorScheme: const ColorScheme.light(
-                                primary: Color(0xFF438883),
-                                onPrimary: Colors.white,
-                                surface: Colors.white,
-                                onSurface: Colors.black,
-                              ),
+                              colorScheme: isDark
+                                  ? const ColorScheme.dark(
+                                      primary: Color(0xFF438883),
+                                      onPrimary: Colors.white,
+                                      surface: Color(0xFF1E2827),
+                                      onSurface: Colors.white,
+                                    )
+                                  : const ColorScheme.light(
+                                      primary: Color(0xFF438883),
+                                      onPrimary: Colors.white,
+                                      surface: Colors.white,
+                                      onSurface: Colors.black,
+                                    ),
                             ),
                             child: child!,
                           );
@@ -307,15 +390,26 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   const SizedBox(height: 40),
                   
                   // NÚT HOÀN TẤT
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF438883),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF438883),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF438883).withValues(alpha: 0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
+                      alignment: Alignment.center,
                       child: const Text('Xem kết quả', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
@@ -329,30 +423,103 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   }
 
   // Nhóm giao dịch theo ngày
-  Map<String, List<TransactionModel>> _groupByDate(List<TransactionModel> transactions) {
-    final Map<String, List<TransactionModel>> grouped = {};
+  Map<DateTime, List<TransactionModel>> _groupByDate(List<TransactionModel> transactions) {
+    final Map<DateTime, List<TransactionModel>> grouped = {};
     for (var tx in transactions) {
-      final key = CurrencyUtils.formatDate(tx.date);
+      final key = DateTime(tx.date.year, tx.date.month, tx.date.day);
       grouped.putIfAbsent(key, () => []);
       grouped[key]!.add(tx);
     }
     return grouped;
   }
 
-  Widget _buildDateHeader(String date) {
+  String _formatFriendlyDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final target = DateTime(date.year, date.month, date.day);
+    final diffDays = today.difference(target).inDays;
+
+    final dateStr = '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+
+    if (diffDays == 0) {
+      return 'Hôm nay, $dateStr';
+    } else if (diffDays == 1) {
+      return 'Hôm qua, $dateStr';
+    } else {
+      const weekdays = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
+      final weekdayStr = weekdays[date.weekday - 1];
+      return '$weekdayStr, $dateStr';
+    }
+  }
+
+  Widget _buildDateHeader(DateTime date, List<TransactionModel> transactions) {
+    double dailyIncome = 0;
+    double dailyExpense = 0;
+    for (final tx in transactions) {
+      if (tx.isTransfer) continue;
+      if (tx.isIncome) {
+        dailyIncome += tx.amount;
+      } else {
+        dailyExpense += tx.amount;
+      }
+    }
+
     return Builder(
-      builder: (context) => Padding(
-        padding: const EdgeInsets.only(bottom: 12, top: 12),
-        child: Text(
-          date, 
-          style: TextStyle(
-            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.5), 
-            fontSize: 14, 
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          )
-        ),
-      ),
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10, top: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _formatFriendlyDate(date),
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.75),
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
+              if (dailyIncome > 0)
+                Container(
+                  margin: const EdgeInsets.only(left: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: ColoredAmountText.incomeColor.withValues(alpha: isDark ? 0.2 : 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '+${CurrencyUtils.formatCurrency(dailyIncome)}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: ColoredAmountText.incomeColor,
+                    ),
+                  ),
+                ),
+              if (dailyExpense > 0)
+                Container(
+                  margin: const EdgeInsets.only(left: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: ColoredAmountText.expenseColor.withValues(alpha: isDark ? 0.2 : 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '-${CurrencyUtils.formatCurrency(dailyExpense)}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: ColoredAmountText.expenseColor,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../utils/page_transitions.dart';
-import '../../services/firestore_service.dart';
 import '../../models/message_model.dart';
-import 'message_detail_screen.dart'; // Đảm bảo import trang chi tiết vừa tạo
-import 'support_request_screen.dart'; // Đảm bảo import trang Gửi yêu cầu hỗ trợ
+import '../../services/firestore_service.dart';
+import '../../utils/page_transitions.dart';
+import '../../widgets/top_toast.dart';
+import 'message_detail_screen.dart';
+import 'support_request_screen.dart';
 
 class MessageCenterScreen extends StatefulWidget {
   const MessageCenterScreen({super.key});
@@ -21,57 +22,82 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
     _messagesStream = FirestoreService().getMessagesStream();
   }
 
+  String _formatRelativeTime(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inDays > 0) return '${diff.inDays} ngày trước';
+    if (diff.inHours > 0) return '${diff.inHours} giờ trước';
+    if (diff.inMinutes > 0) return '${diff.inMinutes} phút trước';
+    return 'Vừa xong';
+  }
+
+  Map<String, dynamic> _getCategoryInfo(String title, int iconCode) {
+    final lower = title.toLowerCase();
+    if (lower.contains('hỗ trợ') || lower.contains('kỹ thuật') || lower.contains('ticket') || lower.contains('yêu cầu')) {
+      return {
+        'label': 'Hỗ trợ',
+        'color': const Color(0xFFF59E0B),
+        'icon': Icons.support_agent_rounded,
+      };
+    }
+    if (lower.contains('bảo mật') || lower.contains('đăng nhập') || lower.contains('mật khẩu') || lower.contains('cảnh báo')) {
+      return {
+        'label': 'Bảo mật',
+        'color': const Color(0xFFEF4444),
+        'icon': Icons.shield_rounded,
+      };
+    }
+    if (lower.contains('số dư') || lower.contains('ví') || lower.contains('giao dịch') || lower.contains('tiền')) {
+      return {
+        'label': 'Biến động',
+        'color': const Color(0xFF10B981),
+        'icon': Icons.account_balance_wallet_rounded,
+      };
+    }
+    return {
+      'label': 'Hệ thống',
+      'color': const Color(0xFF3B82F6),
+      'icon': Icons.notifications_active_rounded,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).brightness == Brightness.dark 
-        ? const Color(0xFF0F2625) 
-        : const Color(0xFF438883),
+      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            // 1. CUSTOM APP BAR ĐÃ ĐƯỢC CHỈNH SỬA
+            // Top App Bar
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.white,
-                      size: 20,
-                    ),
+                    icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Text(
-                    'Tin nhắn',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    'Hòm thư tin nhắn',
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
                   ),
-                  // ĐÂY LÀ NÚT DẤU CỘNG MỚI THÊM VÀO
                   IconButton(
-                    icon: const Icon(Icons.add, color: Colors.white, size: 28),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        PageTransitions.slideRight(
-                          const SupportRequestScreen(),
-                        ),
-                      );
-                    },
+                    icon: const Icon(Icons.add_comment_rounded, color: Colors.white, size: 24),
+                    tooltip: 'Gửi yêu cầu hỗ trợ',
+                    onPressed: () => Navigator.push(
+                      context,
+                      PageTransitions.slideRight(const SupportRequestScreen()),
+                    ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 12),
 
-            const SizedBox(height: 20),
-
-            // 2. KHUNG NỘI DUNG MÀU TRẮNG BO GÓC
+            // Content Area
             Expanded(
               child: Container(
                 width: double.infinity,
@@ -83,247 +109,227 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                   stream: _messagesStream,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
+                      return const Center(
+                        child: CircularProgressIndicator(color: Color(0xFF438883)),
+                      );
                     }
-                    
+
                     final messages = snapshot.data ?? [];
-                    
-                    return ListView(
-                      padding: const EdgeInsets.only(bottom: 60),
-                      children: [
-                        if (messages.isNotEmpty) _buildTimeHeader('MỚI NHẤT'),
-                        ...messages.map((msg) {
-                          String timeStr = 'Vừa xong';
-                          final diff = DateTime.now().difference(msg.createdAt);
-                          if (diff.inDays > 0) {
-                            timeStr = '${diff.inDays} ngày trước';
-                          } else if (diff.inHours > 0) {
-                            timeStr = '${diff.inHours} giờ trước';
-                          } else if (diff.inMinutes > 0) {
-                            timeStr = '${diff.inMinutes} phút trước';
-                          }
-                          
-                          return Dismissible(
-                            key: Key(msg.id),
-                            direction: DismissDirection.endToStart,
-                            background: Container(
-                              alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              color: Colors.red.shade400,
-                              child: const Icon(Icons.delete_outline, color: Colors.white, size: 30),
-                            ),
-                            onDismissed: (direction) {
-                              FirestoreService().deleteMessage(msg.id);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Đã xóa tin nhắn')),
-                              );
-                            },
-                            child: Column(
-                              children: [
-                                _buildMessageItem(
-                                  context: context,
-                                  icon: IconData(msg.iconCode, fontFamily: 'MaterialIcons'),
-                                  iconBgColor: Color(msg.iconBgColorValue),
-                                  title: msg.title,
-                                  shortMessage: msg.shortMessage,
-                                  fullMessage: msg.fullMessage,
-                                  time: timeStr,
-                                  isUnread: msg.isUnread,
+
+                    if (messages.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF438883).withValues(alpha: 0.1),
+                                  shape: BoxShape.circle,
                                 ),
-                                _buildDivider(),
+                                child: const Icon(Icons.mail_outline_rounded, size: 40, color: Color(0xFF438883)),
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                'Hòm thư đang trống',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Bạn chưa có thông báo hoặc phản hồi hỗ trợ nào. Khi có tin nhắn từ hệ thống hoặc CSKH, chúng sẽ hiển thị tại đây.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isDark ? Colors.white60 : Colors.grey.shade600,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                      itemCount: messages.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final msg = messages[index];
+                        final timeStr = _formatRelativeTime(msg.createdAt);
+                        final catInfo = _getCategoryInfo(msg.title, msg.iconCode);
+                        final Color catColor = catInfo['color'] as Color;
+                        final String catLabel = catInfo['label'] as String;
+                        final IconData itemIcon = IconData(msg.iconCode, fontFamily: 'MaterialIcons');
+
+                        return Dismissible(
+                          key: Key(msg.id),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Xóa',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                ),
                               ],
                             ),
-                          );
-                        }),
-                        
-                        // NHÓM TRƯỚC ĐÓ (Dữ liệu mẫu để màn hình không trống)
-                        _buildTimeHeader('TRƯỚC ĐÓ'),
-                        _buildMessageItem(
-                          context: context,
-                          icon: Icons.support_agent,
-                          iconBgColor: const Color(0xFFFF9800),
-                          title: 'Phản hồi yêu cầu #12940',
-                          shortMessage: 'Kỹ thuật đã xử lý xong yêu cầu của bạn.',
-                          fullMessage:
-                              'Xin chào,\n\nChúng tôi xin thông báo rằng yêu cầu hỗ trợ mã số #12940 của bạn về việc "Kiểm tra giao dịch bị treo" đã được bộ phận kỹ thuật xử lý thành công.\n\nSố tiền giao dịch đã được hoàn về ví của bạn. Vui lòng kiểm tra lại số dư.\n\nCảm ơn bạn đã kiên nhẫn chờ đợi và sử dụng dịch vụ của chúng tôi!',
-                          time: '8 giờ trước',
-                          isUnread: true,
-                        ),
-                        _buildDivider(),
-                        _buildMessageItem(
-                          context: context,
-                          icon: Icons.build_circle,
-                          iconBgColor: const Color(0xFF4CAF50),
-                          title: 'Bảo trì hệ thống định kỳ',
-                          shortMessage:
-                              'Dịch vụ nâng cấp từ 01:00 đến 03:00 sáng mai.',
-                          fullMessage:
-                              'Thông báo bảo trì hệ thống định kỳ,\n\nĐể nâng cao chất lượng dịch vụ và tối ưu hóa hệ thống bảo mật, chúng tôi sẽ tiến hành bảo trì máy chủ từ 01:00 đến 03:00 sáng ngày mai.\n\nTrong khoảng thời gian này, các tính năng chuyển tiền và thanh toán có thể bị gián đoạn. \n\nMong bạn thông cảm cho sự bất tiện này.',
-                          time: 'Hôm qua',
-                          isUnread: true,
-                        ),
-                        _buildDivider(),
-                        _buildMessageItem(
-                          context: context,
-                          icon: Icons.article_outlined,
-                          iconBgColor: const Color(0xFF009688),
-                          title: 'Thông báo chính sách mới',
-                          shortMessage:
-                              'Cập nhật điều khoản sử dụng dịch vụ mới, hiệu lực từ...',
-                          fullMessage:
-                              'Kính gửi quý khách,\n\nChúng tôi vừa cập nhật một số điều khoản mới trong Chính sách bảo mật và Điều khoản sử dụng dịch vụ.\n\nCác thay đổi này nhằm tuân thủ quy định mới của pháp luật và bảo vệ tốt hơn dữ liệu người dùng. Những thay đổi này sẽ có hiệu lực từ ngày 01/06.\n\nBạn có thể vào phần Cài đặt > Chính sách bảo mật để xem chi tiết.',
-                          time: 'Hôm qua',
-                          isUnread: false,
-                        ),
-                        _buildDivider(),
-                        _buildMessageItem(
-                          context: context,
-                          icon: Icons.security,
-                          iconBgColor: const Color(0xFF2196F3),
-                          title: 'Cảnh báo bảo mật',
-                          shortMessage:
-                              'Phát hiện đăng nhập lạ từ trình duyệt Chrome trên Windows...',
-                          fullMessage:
-                              'Cảnh báo bảo mật tài khoản!\n\nHệ thống ghi nhận một lượt đăng nhập mới vào tài khoản của bạn:\n• Thiết bị: Windows PC - Chrome\n• Vị trí: Đà Nẵng, Việt Nam\n• Thời gian: 3 ngày trước\n\nNếu đây không phải là bạn, vui lòng đổi mật khẩu ngay lập tức để bảo vệ tài khoản!',
-                          time: 'Hôm qua',
-                          isUnread: false,
-                        ),
-                      ],
+                          ),
+                          onDismissed: (_) {
+                            FirestoreService().deleteMessage(msg.id);
+                            TopToast.show(context, 'Đã xóa tin nhắn');
+                          },
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                PageTransitions.slideRight(
+                                  MessageDetailScreen(
+                                    icon: itemIcon,
+                                    iconBgColor: catColor,
+                                    title: msg.title,
+                                    time: timeStr,
+                                    fullMessage: msg.fullMessage.isNotEmpty ? msg.fullMessage : msg.shortMessage,
+                                  ),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE5E7EB),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.03),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Squircle Icon with category badge
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: catColor.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: Icon(itemIcon, color: catColor, size: 24),
+                                  ),
+                                  const SizedBox(width: 14),
+
+                                  // Details
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            // Category Badge
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: catColor.withValues(alpha: 0.12),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                catLabel,
+                                                style: TextStyle(
+                                                  fontSize: 10.5,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: catColor,
+                                                ),
+                                              ),
+                                            ),
+                                            // Timestamp & Unread Indicator
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  timeStr,
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: isDark ? Colors.white54 : Colors.grey.shade500,
+                                                  ),
+                                                ),
+                                                if (msg.isUnread) ...[
+                                                  const SizedBox(width: 6),
+                                                   Container(
+                                                     width: 8,
+                                                     height: 8,
+                                                     decoration: BoxDecoration(
+                                                       shape: BoxShape.circle,
+                                                       color: isDark ? const Color(0xFF00E5FF) : const Color(0xFF438883),
+                                                     ),
+                                                   ),
+                                                ],
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          msg.title,
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: msg.isUnread ? FontWeight.bold : FontWeight.w600,
+                                            color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          msg.shortMessage,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: isDark ? Colors.white70 : Colors.grey.shade600,
+                                            height: 1.3,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Colors.grey.shade400),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     );
-                  }
+                  },
                 ),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildTimeHeader(String title) {
-    return Builder(
-      builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF8F8F8),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(30),
-              topRight: Radius.circular(30),
-            ),
-          ),
-          child: Text(
-            title,
-            style: TextStyle(
-              color: isDark ? Colors.white54 : const Color(0xFF9E9E9E),
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-          ),
-        );
-      }
-    );
-  }
-
-  // --- HÀM TẠO TỪNG DÒNG TIN NHẮN ---
-  Widget _buildMessageItem({
-    required BuildContext context,
-    required IconData icon,
-    required Color iconBgColor,
-    required String title,
-    required String shortMessage,
-    required String fullMessage, // Chứa nội dung chi tiết
-    required String time,
-    required bool isUnread,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return InkWell(
-      onTap: () {
-        // MỞ TRANG CHI TIẾT VÀ TRUYỀN DỮ LIỆU SANG ĐÓ
-        Navigator.push(
-          context,
-          PageTransitions.slideRight(
-            MessageDetailScreen(
-              icon: icon,
-              iconBgColor: iconBgColor,
-              title: title,
-              time: time,
-              fullMessage: fullMessage, // Truyền nội dung dài sang
-            ),
-          ),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: iconBgColor,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(icon, color: Colors.white, size: 24),
-            ),
-            const SizedBox(width: 14),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: isDark ? Colors.white : const Color(0xFF212121),
-                      fontSize: 16,
-                      fontWeight: isUnread ? FontWeight.w600 : FontWeight.w400,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    shortMessage, // Hiển thị tin vắn tắt ở ngoài
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: isDark ? Colors.white70 : const Color(0xFF757575),
-                      fontSize: 14,
-                      height: 1.4,
-                      fontWeight: isUnread ? FontWeight.w500 : FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(width: 10),
-
-            Text(
-              time,
-              style: TextStyle(
-                color: isDark ? Colors.white54 : const Color(0xFFAAAAAA),
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Builder(
-      builder: (context) => Divider(
-        height: 1,
-        color: Theme.of(context).brightness == Brightness.dark 
-          ? const Color(0xFF3E3E3E) 
-          : const Color(0xFFEEEEEE),
-        indent: 84,
-        endIndent: 20,
       ),
     );
   }

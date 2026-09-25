@@ -13,14 +13,9 @@ class DataUsageScreen extends StatefulWidget {
 
 class _DataUsageScreenState extends State<DataUsageScreen> {
   final FirestoreService _firestoreService = FirestoreService();
-  
-  bool _locationLoading = false;
-  bool _contactsLoading = false;
-  bool _microphoneLoading = false;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
@@ -184,7 +179,7 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
               Switch(
                 value: value,
                 onChanged: onChanged,
-                activeColor: const Color(0xFF438883),
+                activeThumbColor: const Color(0xFF438883),
                 activeTrackColor: const Color(0xFF438883).withValues(alpha: 0.3),
               ),
             ],

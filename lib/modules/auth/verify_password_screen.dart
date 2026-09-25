@@ -32,8 +32,8 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
     final result = await _authService.verifyCurrentPassword(password: password);
     setState(() => _isLoading = false);
 
+    if (!mounted) return;
     if (result.success) {
-      if (!mounted) return;
       Navigator.push(context, PageTransitions.slideRight(const ResetPasswordScreen(isFromSecurity: true)));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message), backgroundColor: Colors.red));

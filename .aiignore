@@ -1,0 +1,8 @@
+node_modules/
+android/build/
+android/app/build/
+ios/Pods/
+.dart_tool/
+build/
+.git/
+*.log

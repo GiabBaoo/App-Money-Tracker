@@ -1,6 +1,6 @@
-/// Integration Example for Group Expense Management Feature
-/// 
-/// This file shows how to integrate the Group Expense feature into your main app.
+// Integration Example for Group Expense Management Feature
+// 
+// This file shows how to integrate the Group Expense feature into your main app.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

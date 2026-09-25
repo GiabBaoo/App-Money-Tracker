@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 
+/// Widget sóng âm thanh cao cấp với hiệu ứng sóng uốn lượn mượt mà & phản hồi theo âm lượng
 class VoiceWaveform extends StatefulWidget {
   final bool isListening;
   final double currentLevel;
@@ -23,7 +24,7 @@ class _VoiceWaveformState extends State<VoiceWaveform> with SingleTickerProvider
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1400),
     )..repeat();
   }
 
@@ -36,16 +37,16 @@ class _VoiceWaveformState extends State<VoiceWaveform> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 80,
+      height: 90,
       width: double.infinity,
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
           return CustomPaint(
-            painter: WavePainter(
+            painter: SmoothWaveformPainter(
               animationValue: _controller.value,
               isListening: widget.isListening,
-              currentLevel: widget.currentLevel,
+              soundLevel: widget.currentLevel,
             ),
           );
         },
@@ -54,58 +55,74 @@ class _VoiceWaveformState extends State<VoiceWaveform> with SingleTickerProvider
   }
 }
 
-class WavePainter extends CustomPainter {
+class SmoothWaveformPainter extends CustomPainter {
   final double animationValue;
   final bool isListening;
-  final double currentLevel;
+  final double soundLevel;
 
-  WavePainter({
+  SmoothWaveformPainter({
     required this.animationValue,
     required this.isListening,
-    required this.currentLevel,
+    required this.soundLevel,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = isListening 
-          ? const Color(0xFF438883).withValues(alpha: 0.8) 
-          : Colors.white.withValues(alpha: 0.2)
-      ..style = PaintingStyle.fill
-      ..strokeCap = StrokeCap.round;
-
-    final int barCount = 30;
-    final double spacing = 6.0;
-    final double barWidth = 4.0;
-    final double totalWidth = barCount * (barWidth + spacing);
+    const int barCount = 36;
+    const double barWidth = 4.0;
+    const double spacing = 4.5;
+    final double totalWidth = barCount * (barWidth + spacing) - spacing;
     final double startX = (size.width - totalWidth) / 2;
+    final double centerY = size.height / 2;
 
     for (int i = 0; i < barCount; i++) {
-        double height = 6.0;
-        if (isListening) {
-            // Fluid organic movement
-            double wave = sin((animationValue * 2 * pi) + (i * 0.4)) * 10;
-            double boost = currentLevel * 45;
-            height = (10 + wave + boost).clamp(6.0, size.height);
-        }
+      // Gaussian distribution for pleasant middle-heavy curve
+      final double normalizedX = (i - (barCount / 2)) / (barCount / 2.6);
+      final double envelope = exp(-0.5 * normalizedX * normalizedX);
 
-        final x = startX + i * (barWidth + spacing);
-        final y = (size.height - height) / 2;
+      double height = 6.0;
+      double alpha = 0.25;
+
+      if (isListening) {
+        // Multi-frequency sine waves
+        final double phase1 = (animationValue * 2 * pi) + (i * 0.28);
+        final double phase2 = (animationValue * 3 * pi) - (i * 0.35);
+        final double dynamicWave = (sin(phase1) * 0.6 + cos(phase2) * 0.4);
         
-        canvas.drawRRect(
-            RRect.fromRectAndRadius(
-                Rect.fromLTWH(x, y, barWidth, height),
-                const Radius.circular(2),
-            ),
-            paint,
-        );
+        final double levelBoost = (soundLevel.clamp(0.0, 10.0) * 5.0) + (soundLevel > 0 ? 12.0 : 4.0);
+        height = (8.0 + (envelope * levelBoost * (1.2 + dynamicWave))).clamp(6.0, size.height * 0.95);
+        alpha = 0.6 + (envelope * 0.4);
+      } else {
+        height = 6.0 + (envelope * 4.0);
+      }
+
+      final double x = startX + i * (barWidth + spacing);
+      final double top = centerY - (height / 2);
+
+      final rect = Rect.fromLTWH(x, top, barWidth, height);
+      final rrect = RRect.fromRectAndRadius(rect, Radius.circular(barWidth / 2));
+
+      // Gradient fill from Teal to Mint Emerald
+      final paint = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xFF5EEAD4).withValues(alpha: alpha), // Mint
+            const Color(0xFF14B8A6).withValues(alpha: alpha * 0.9), // Teal
+            const Color(0xFF0F766E).withValues(alpha: alpha * 0.8), // Dark Emerald
+          ],
+        ).createShader(rect)
+        ..style = PaintingStyle.fill;
+
+      canvas.drawRRect(rrect, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant WavePainter oldDelegate) {
-    return oldDelegate.animationValue != animationValue || 
-           oldDelegate.currentLevel != currentLevel || 
-           oldDelegate.isListening != isListening;
+  bool shouldRepaint(covariant SmoothWaveformPainter oldDelegate) {
+    return oldDelegate.animationValue != animationValue ||
+        oldDelegate.isListening != isListening ||
+        oldDelegate.soundLevel != soundLevel;
   }
 }

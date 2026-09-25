@@ -13,6 +13,7 @@ class NotificationModel {
   final String? groupId;
   final String? groupName;
   final String? status; // 'accepted', 'rejected', etc.
+  final String syncStatus;
 
   NotificationModel({
     this.id = '',
@@ -26,9 +27,12 @@ class NotificationModel {
     this.groupId,
     this.groupName,
     this.status,
+    this.syncStatus = 'synced',
   }) : createdAt = createdAt ?? DateTime.now();
 
   IconData get icon => IconData(iconCode, fontFamily: 'MaterialIcons');
+
+  // ════════ FIRESTORE ════════
 
   factory NotificationModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -46,6 +50,7 @@ class NotificationModel {
       groupId: data['groupId'] as String?,
       groupName: data['groupName'] as String?,
       status: data['status'] as String?,
+      syncStatus: 'synced',
     );
   }
 
@@ -63,4 +68,41 @@ class NotificationModel {
       if (status != null) 'status': status,
     };
   }
+
+  // ════════ SQLITE ════════
+
+  factory NotificationModel.fromSqlite(Map<String, dynamic> map) {
+    return NotificationModel(
+      id: map['id'] as String,
+      uid: map['uid'] as String,
+      iconCode: map['iconCode'] as int,
+      title: map['title'] as String,
+      description: map['description'] as String,
+      isRead: (map['isRead'] as int? ?? 0) == 1,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int),
+      type: map['type'] as String?,
+      groupId: map['groupId'] as String?,
+      groupName: map['groupName'] as String?,
+      status: map['status'] as String?,
+      syncStatus: map['syncStatus'] as String? ?? 'synced',
+    );
+  }
+
+  Map<String, dynamic> toSqlite() {
+    return {
+      'id': id,
+      'uid': uid,
+      'iconCode': iconCode,
+      'title': title,
+      'description': description,
+      'isRead': isRead ? 1 : 0,
+      'createdAt': createdAt.millisecondsSinceEpoch,
+      'type': type,
+      'groupId': groupId,
+      'groupName': groupName,
+      'status': status,
+      'syncStatus': syncStatus,
+    };
+  }
 }
+

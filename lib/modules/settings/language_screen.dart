@@ -1,23 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../services/language_service.dart';
 
-class LanguageScreen extends StatefulWidget {
+class LanguageScreen extends StatelessWidget {
   const LanguageScreen({super.key});
 
   @override
-  State<LanguageScreen> createState() => _LanguageScreenState();
-}
-
-class _LanguageScreenState extends State<LanguageScreen> {
-  String _selectedLanguage = 'Tiếng Việt';
-
-  final List<Map<String, String>> _languages = [
-    {'name': 'Tiếng Việt', 'code': 'vi', 'flag': '🇻🇳'},
-    {'name': 'English', 'code': 'en', 'flag': '🇺🇸'},
-  ];
-
-  @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final languageService = Provider.of<LanguageService>(context);
 
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
@@ -34,8 +24,14 @@ class _LanguageScreenState extends State<LanguageScreen> {
                     icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Text('Ngôn ngữ', 
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
+                  Text(
+                    context.tr('language_setting'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(width: 48),
                 ],
               ),
@@ -53,19 +49,22 @@ class _LanguageScreenState extends State<LanguageScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionTitle(context, 'CHỌN NGÔN NGỮ'),
-                      _buildInfoBox(context, _languages.asMap().entries.map((e) {
-                         final lang = e.value;
-                         final isSelected = _selectedLanguage == lang['name'];
-                         return _buildLanguageOption(
-                           context,
-                           title: lang['name']!,
-                           flag: lang['flag']!,
-                           isSelected: isSelected,
-                           onTap: () => setState(() => _selectedLanguage = lang['name']!),
-                           showDivider: e.key != _languages.length - 1,
-                         );
-                      }).toList()),
+                      _buildSectionTitle(context, context.tr('choose_language')),
+                      _buildInfoBox(
+                        context,
+                        LanguageService.supportedLanguages.asMap().entries.map((e) {
+                          final lang = e.value;
+                          final isSelected = languageService.currentLanguage == lang['code'];
+                          return _buildLanguageOption(
+                            context,
+                            title: lang['name']!,
+                            flag: lang['flag']!,
+                            isSelected: isSelected,
+                            onTap: () => languageService.setLanguage(lang['code']!),
+                            showDivider: e.key != LanguageService.supportedLanguages.length - 1,
+                          );
+                        }).toList(),
+                      ),
                     ],
                   ),
                 ),
@@ -99,6 +98,13 @@ class _LanguageScreenState extends State<LanguageScreen> {
         color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: isDark ? null : Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(children: children),
     );
@@ -113,27 +119,45 @@ class _LanguageScreenState extends State<LanguageScreen> {
     required bool showDivider,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? const Color(0xFF00E5FF) : const Color(0xFF438883);
+
     return Column(
       children: [
         InkWell(
           onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Row(
               children: [
-                Text(flag, style: const TextStyle(fontSize: 24)),
+                Text(flag, style: const TextStyle(fontSize: 26)),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87)),
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
                 ),
-                if (isSelected) 
-                  const Icon(Icons.check_circle, color: Color(0xFF438883), size: 24),
+                if (isSelected)
+                  Icon(Icons.check_circle_rounded, color: primaryColor, size: 24)
+                else
+                  Icon(Icons.radio_button_unchecked_rounded,
+                      color: isDark ? Colors.white24 : Colors.grey.shade400, size: 22),
               ],
             ),
           ),
         ),
         if (showDivider)
-          Divider(height: 1, color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFF0F0F0), indent: 64, endIndent: 16),
+          Divider(
+            height: 1,
+            color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFF0F0F0),
+            indent: 64,
+            endIndent: 16,
+          ),
       ],
     );
   }

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -9,6 +10,7 @@ class UserModel {
   final String gender;
   final DateTime? dateOfBirth;
   final String avatarUrl;
+  final String avatarLocalPath;
   final String accountType;
   final DateTime joinDate;
   final String currency;
@@ -16,6 +18,7 @@ class UserModel {
   final Map<String, dynamic> dataUsage;
   final List<dynamic> customCategories;
   final DateTime? lastPasswordUpdate;
+  final String syncStatus;
 
   UserModel({
     required this.uid,
@@ -25,6 +28,7 @@ class UserModel {
     this.gender = 'Nam',
     this.dateOfBirth,
     this.avatarUrl = '',
+    this.avatarLocalPath = '',
     this.accountType = 'FREE',
     DateTime? joinDate,
     this.currency = 'VND',
@@ -32,12 +36,15 @@ class UserModel {
     Map<String, dynamic>? dataUsage,
     this.customCategories = const [],
     this.lastPasswordUpdate,
+    this.syncStatus = 'synced',
   })  : joinDate = joinDate ?? DateTime.now(),
         dataUsage = dataUsage ??
             {
               'location': true,
               'contacts': false,
             };
+
+  // ════════ FIRESTORE ════════
 
   // Chuyển từ Firestore Document sang Object
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -68,6 +75,7 @@ class UserModel {
         lastPasswordUpdate: data['lastPasswordUpdate'] != null
             ? (data['lastPasswordUpdate'] as Timestamp).toDate()
             : null,
+        syncStatus: 'synced',
       );
     } catch (e) {
       debugPrint('UserModel parse error: $e');
@@ -103,4 +111,71 @@ class UserModel {
           : null,
     };
   }
+
+  // ════════ SQLITE ════════
+
+  factory UserModel.fromSqlite(Map<String, dynamic> map) {
+    Map<String, dynamic> dataUsage;
+    try {
+      dataUsage = map['dataUsage'] != null
+          ? Map<String, dynamic>.from(json.decode(map['dataUsage'] as String))
+          : {'location': true, 'contacts': false};
+    } catch (_) {
+      dataUsage = {'location': true, 'contacts': false};
+    }
+
+    List<dynamic> customCategories;
+    try {
+      customCategories = map['customCategories'] != null
+          ? List<dynamic>.from(json.decode(map['customCategories'] as String))
+          : [];
+    } catch (_) {
+      customCategories = [];
+    }
+
+    return UserModel(
+      uid: map['uid'] as String,
+      name: map['name'] as String,
+      email: map['email'] as String,
+      phone: map['phone'] as String? ?? '',
+      gender: map['gender'] as String? ?? 'Nam',
+      dateOfBirth: map['dateOfBirth'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['dateOfBirth'] as int)
+          : null,
+      avatarUrl: map['avatarUrl'] as String? ?? '',
+      avatarLocalPath: map['avatarLocalPath'] as String? ?? '',
+      accountType: map['accountType'] as String? ?? 'FREE',
+      joinDate: DateTime.fromMillisecondsSinceEpoch(map['joinDate'] as int),
+      currency: map['currency'] as String? ?? 'VND',
+      role: map['role'] as String? ?? 'user',
+      dataUsage: dataUsage,
+      customCategories: customCategories,
+      lastPasswordUpdate: map['lastPasswordUpdate'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['lastPasswordUpdate'] as int)
+          : null,
+      syncStatus: map['syncStatus'] as String? ?? 'synced',
+    );
+  }
+
+  Map<String, dynamic> toSqlite() {
+    return {
+      'uid': uid,
+      'name': name,
+      'email': email,
+      'phone': phone,
+      'gender': gender,
+      'dateOfBirth': dateOfBirth?.millisecondsSinceEpoch,
+      'avatarUrl': avatarUrl,
+      'avatarLocalPath': avatarLocalPath,
+      'accountType': accountType,
+      'joinDate': joinDate.millisecondsSinceEpoch,
+      'currency': currency,
+      'role': role,
+      'dataUsage': json.encode(dataUsage),
+      'customCategories': json.encode(customCategories),
+      'lastPasswordUpdate': lastPasswordUpdate?.millisecondsSinceEpoch,
+      'syncStatus': syncStatus,
+    };
+  }
 }
+

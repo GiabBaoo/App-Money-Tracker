@@ -9,12 +9,19 @@ import '../models/notification_model.dart';
 import '../models/user_model.dart';
 import '../models/message_model.dart';
 import '../models/device_session_model.dart';
+import '../models/wallet_model.dart';
+import 'auth_service.dart';
+import 'connectivity_service.dart';
+import '../data/repositories/transaction_repository.dart';
+import '../data/repositories/user_repository.dart';
+import '../data/repositories/notification_repository.dart';
+import '../utils/device_utils.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  String? get _uid => _auth.currentUser?.uid;
+  String? get _uid => _auth.currentUser?.uid ?? AuthService().offlineUid;
 
   // ======================== TRANSACTIONS ========================
 
@@ -39,6 +46,11 @@ class FirestoreService {
   Stream<List<TransactionModel>> getTransactionsStream({int? limit}) {
     if (_uid == null) return Stream.value([]);
 
+    // Nếu không có mạng hoặc đang ở phiên offline, đọc trực tiếp từ SQLite
+    if (!ConnectivityService().isOnline || AuthService().isOfflineSession) {
+      return TransactionRepository().getTransactionsStream(limit: limit);
+    }
+
     Query query = _db
         .collection('transactions')
         .where('uid', isEqualTo: _uid)
@@ -49,7 +61,11 @@ class FirestoreService {
     }
 
     return query.snapshots().map((snapshot) =>
-        snapshot.docs.map((doc) => TransactionModel.fromFirestore(doc)).toList());
+        snapshot.docs.map((doc) => TransactionModel.fromFirestore(doc)).toList())
+        .handleError((error) {
+          debugPrint('Firestore getTransactionsStream error: $error');
+          return <TransactionModel>[];
+        });
   }
 
   // Lấy tất cả giao dịch (một lần, không realtime)
@@ -115,7 +131,7 @@ class FirestoreService {
   Future<void> deleteTransaction(String transactionId) async {
     final docRef = _db.collection('transactions').doc(transactionId);
     final snapshot = await docRef.get();
-    final data = snapshot.data() as Map<String, dynamic>?;
+    final data = snapshot.data();
 
     // Nếu có ảnh, xóa luôn object trong Firebase Storage để tránh rác.
     final storagePath = data?['photoStoragePath'] as String?;
@@ -210,6 +226,11 @@ class FirestoreService {
   Stream<List<NotificationModel>> getNotificationsStream() {
     if (_uid == null) return Stream.value([]);
 
+    // Nếu không có mạng hoặc offline session, đọc từ SQLite
+    if (!ConnectivityService().isOnline || AuthService().isOfflineSession) {
+      return NotificationRepository().getNotificationsStream();
+    }
+
     return _db
         .collection('notifications')
         .where('uid', isEqualTo: _uid)
@@ -222,6 +243,9 @@ class FirestoreService {
       // Sắp xếp giảm dần theo thời gian (mới nhất lên đầu)
       list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return list;
+    }).handleError((error) {
+      debugPrint('Firestore getNotificationsStream error: $error');
+      return <NotificationModel>[];
     });
   }
 
@@ -231,6 +255,54 @@ class FirestoreService {
         .collection('notifications')
         .doc(notificationId)
         .update({'isRead': true});
+  }
+
+  // Đánh dấu tất cả thông báo đã đọc
+  Future<void> markAllNotificationsAsRead() async {
+    if (_uid == null) return;
+    try {
+      final unreadDocs = await _db
+          .collection('notifications')
+          .where('uid', isEqualTo: _uid)
+          .where('isRead', isEqualTo: false)
+          .get();
+
+      if (unreadDocs.docs.isEmpty) return;
+
+      final batch = _db.batch();
+      for (var doc in unreadDocs.docs) {
+        batch.update(doc.reference, {'isRead': true});
+      }
+      await batch.commit();
+    } catch (e) {
+      debugPrint('Error marking all notifications as read: $e');
+    }
+  }
+
+  // Tự động tạo thông báo chào mừng thật nếu tài khoản mới tinh chưa có thông báo nào
+  Future<void> autoGenerateInitialNotificationsIfNeeded() async {
+    if (_uid == null) return;
+    try {
+      final snapshot = await _db
+          .collection('notifications')
+          .where('uid', isEqualTo: _uid)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        final welcomeNoti = NotificationModel(
+          uid: _uid!,
+          iconCode: Icons.celebration_rounded.codePoint,
+          title: 'Chào mừng bạn đến với Mono!',
+          description: 'Cảm ơn bạn đã lựa chọn Mono để quản lý tài chính cá nhân. Hãy bắt đầu ghi lại khoản thu chi đầu tiên của bạn nhé!',
+          isRead: false,
+          type: 'welcome',
+        );
+        await addNotification(welcomeNoti);
+      }
+    } catch (e) {
+      debugPrint('Error auto-generating welcome notification: $e');
+    }
   }
 
   // Thêm thông báo mới cho người dùng
@@ -255,53 +327,6 @@ class FirestoreService {
     }
   }
 
-  // HÀM ĐẨY DỮ LIỆU THÔNG BÁO ẢO (MOCK DATA) THEO YÊU CẦU
-  Future<void> pushMockNotifications() async {
-    if (_uid == null) {
-      debugPrint('PUSH ERROR: UI IS NULL');
-      return;
-    }
-    
-    debugPrint('STARTING PUSH MOCK DATA FOR UID: $_uid');
-
-    final List<NotificationModel> mockData = [
-      NotificationModel(
-        uid: _uid!,
-        iconCode: Icons.notifications_active_outlined.codePoint,
-        title: 'Nhắc nhở chi tiêu',
-        description: 'Nhắc nhở: Đừng quên ghi lại đầy đủ các khoản chi tiêu hôm nay của bạn nhé!',
-        isRead: false,
-      ),
-      NotificationModel(
-        uid: _uid!,
-        iconCode: Icons.warning_rounded.codePoint,
-        title: 'Cảnh báo hạn mức',
-        description: 'Cảnh báo: Bạn đã chi vượt mức 500.000đ so với kế hoạch đặt ra.',
-        isRead: false,
-      ),
-      NotificationModel(
-        uid: _uid!,
-        iconCode: Icons.celebration_rounded.codePoint,
-        title: 'Chào mừng',
-        description: 'Chào mừng bạn đến với hệ thống Money Tracker phiên bản mới nhất!',
-        isRead: true,
-      ),
-    ];
-
-    try {
-      final batch = _db.batch();
-      for (var noti in mockData) {
-        final docRef = _db.collection('notifications').doc();
-        batch.set(docRef, noti.toFirestore());
-      }
-      await batch.commit();
-      debugPrint('PUSH SUCCESS: 3 NOTIFICATIONS ADDED');
-    } catch (e) {
-      debugPrint('PUSH FAILED: $e');
-      rethrow;
-    }
-  }
-
   // ======================== USER PROFILE ========================
 
   // Cập nhật thông tin user
@@ -313,6 +338,9 @@ class FirestoreService {
   // Stream thông tin user (realtime)
   Stream<UserModel?> getUserStream() {
     if (_uid == null) return Stream.value(null);
+    if (!ConnectivityService().isOnline || AuthService().isOfflineSession) {
+      return UserRepository().getUserStream();
+    }
     return _db.collection('users').doc(_uid).snapshots().map(
         (doc) => doc.exists ? UserModel.fromFirestore(doc) : null);
   }
@@ -342,6 +370,9 @@ class FirestoreService {
           .toList();
       messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return messages;
+    }).handleError((error) {
+      debugPrint('Firestore getMessagesStream error: $error');
+      return <MessageModel>[];
     });
   }
 
@@ -353,39 +384,43 @@ class FirestoreService {
   }) async {
     if (_uid == null) return;
     try {
-      // Dùng tên thiết bị làm Doc ID để cập nhật thay vì tạo mới mãi
       String sanitizedId = deviceName.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_').toLowerCase();
       String docId = '${_uid}_$sanitizedId';
       
-      // Mặc định là IP hiện hành
-      String realLocation = 'IP hiện hành';
+      String realLocation = 'Thiết bị hiện hành';
       
-      // Thử lấy vị trí thật qua IP (miễn phí)
       try {
-        final response = await http.get(Uri.parse('http://ip-api.com/json/')).timeout(const Duration(seconds: 3));
+        final response = await http.get(Uri.parse('https://ipapi.co/json/')).timeout(const Duration(seconds: 3));
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
-          if (data['status'] == 'success') {
-            final city = data['city'] ?? '';
-            final country = data['country'] ?? '';
-            realLocation = [city, country].where((s) => s.isNotEmpty).join(', ');
-          }
+          final city = data['city'] ?? '';
+          final country = data['country_name'] ?? '';
+          final loc = [city, country].where((s) => s.toString().isNotEmpty).join(', ');
+          if (loc.isNotEmpty) realLocation = loc;
         }
-      } catch (e) {
-        // Lỗi timeout thì vẫn dùng location cũ
-        debugPrint('Lỗi lấy vị trí IP: $e');
-      }
+      } catch (_) {}
       
       await _db.collection('device_sessions').doc(docId).set({
         'uid': _uid,
         'deviceName': deviceName,
         'deviceType': deviceType,
-        'location': realLocation, // Vị trí thật (Hanoi, Vietnam)
+        'location': realLocation,
         'lastActive': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true)); // Ghi đè cập nhật lastActive
+      }, SetOptions(merge: true));
     } catch (e) {
-      // Lỗi bỏ qua
       debugPrint('Lỗi đăng ký session: $e');
+    }
+  }
+
+  Future<void> ensureCurrentDeviceRegistered() async {
+    try {
+      final deviceInfo = await DeviceUtils.getDeviceInfo();
+      await registerDeviceSession(
+        deviceName: deviceInfo['name']!,
+        deviceType: deviceInfo['type']!,
+      );
+    } catch (e) {
+      debugPrint('ensureCurrentDeviceRegistered error: $e');
     }
   }
 
@@ -399,9 +434,11 @@ class FirestoreService {
       final sessions = snapshot.docs
           .map((doc) => DeviceSessionModel.fromFirestore(doc))
           .toList();
-      // Sắp xếp mới nhất lên đầu
       sessions.sort((a, b) => b.lastActive.compareTo(a.lastActive));
       return sessions;
+    }).handleError((err) {
+      debugPrint('FirestoreService getDeviceSessionsStream error: $err');
+      return <DeviceSessionModel>[];
     });
   }
 
@@ -415,5 +452,37 @@ class FirestoreService {
     await _db.collection('users').doc(_uid).update({
       'dataUsage.$key': value,
     });
+  }
+
+  // ======================== WALLETS ========================
+
+  Stream<List<WalletModel>> getWalletsStream() {
+    if (_uid == null) return Stream.value([]);
+    return _db
+        .collection('wallets')
+        .where('uid', isEqualTo: _uid)
+        .snapshots()
+        .map((snapshot) {
+      final list = snapshot.docs.map((doc) => WalletModel.fromFirestore(doc)).toList();
+      list.sort((a, b) {
+        if (a.isDefault) return -1;
+        if (b.isDefault) return 1;
+        return a.createdAt.compareTo(b.createdAt);
+      });
+      return list;
+    });
+  }
+
+  Future<void> addWallet(WalletModel wallet) async {
+    if (_uid == null) return;
+    await _db.collection('wallets').doc(wallet.id).set(wallet.toFirestore());
+  }
+
+  Future<void> updateWallet(WalletModel wallet) async {
+    await _db.collection('wallets').doc(wallet.id).set(wallet.toFirestore(), SetOptions(merge: true));
+  }
+
+  Future<void> deleteWallet(String walletId) async {
+    await _db.collection('wallets').doc(walletId).delete();
   }
 }

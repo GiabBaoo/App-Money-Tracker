@@ -299,7 +299,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                                   ),
                                 ),
                               );
-                            }).toList(),
+                            }),
                           ],
                         );
                       },
@@ -480,17 +480,23 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
               itemBuilder: (context, index) {
                 final month = index + 1;
                 final isSelected = month == _selectedMonth;
+                final now = DateTime.now();
+                final isFuture = (_selectedYear > now.year) || (_selectedYear == now.year && month > now.month);
                 
                 return GestureDetector(
-                  onTap: () {
-                    widget.onDateSelected(DateTime(_selectedYear, month));
-                    Navigator.pop(context);
-                  },
+                  onTap: isFuture
+                      ? null
+                      : () {
+                          widget.onDateSelected(DateTime(_selectedYear, month));
+                          Navigator.pop(context);
+                        },
                   child: Container(
                     decoration: BoxDecoration(
                       color: isSelected 
                           ? const Color(0xFF438883) 
-                          : (widget.isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF5F5F5)),
+                          : isFuture
+                              ? (widget.isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.shade100)
+                              : (widget.isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF5F5F5)),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     alignment: Alignment.center,
@@ -500,7 +506,9 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                         color: isSelected 
                             ? Colors.white 
-                            : (widget.isDark ? Colors.white70 : Colors.black87),
+                            : isFuture
+                                ? (widget.isDark ? Colors.white24 : Colors.grey.shade400)
+                                : (widget.isDark ? Colors.white70 : Colors.black87),
                       ),
                     ),
                   ),

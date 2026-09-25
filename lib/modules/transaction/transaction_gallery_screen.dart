@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 
-import '../../services/firestore_service.dart';
+import '../../services/receipt_storage_service.dart';
+import '../../data/repositories/transaction_repository.dart';
 import '../../models/transaction_model.dart';
+import '../../utils/currency_format_utils.dart';
 import '../../utils/page_transitions.dart';
+import '../../widgets/animated_scale_button.dart';
 import 'transaction_photo_detail_screen.dart';
+import 'add_transaction_screen.dart';
 
 class TransactionGalleryScreen extends StatefulWidget {
   const TransactionGalleryScreen({super.key});
@@ -13,7 +17,7 @@ class TransactionGalleryScreen extends StatefulWidget {
 }
 
 class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
-  final FirestoreService _firestoreService = FirestoreService();
+  final TransactionRepository _txRepo = TransactionRepository();
 
   @override
   Widget build(BuildContext context) {
@@ -26,23 +30,50 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, size: 20, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
+                  AnimatedScaleButton(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                    ),
                   ),
                   const Text(
-                    'Gallery',
+                    'Thư viện hóa đơn',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
                     ),
                   ),
-                  const SizedBox(width: 48),
+                  AnimatedScaleButton(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        PageTransitions.slideUp(const AddTransactionScreen()),
+                      );
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: const Icon(Icons.add_a_photo_rounded, size: 19, color: Colors.white),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -55,7 +86,7 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: StreamBuilder<List<TransactionModel>>(
-                  stream: _firestoreService.getTransactionsWithPhotosStream(),
+                  stream: _txRepo.getTransactionsWithPhotosStream(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
@@ -87,10 +118,43 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                     return CustomScrollView(
                       physics: const BouncingScrollPhysics(),
                       slivers: [
+                        // Header tóm tắt tổng số hóa đơn
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF438883).withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(Icons.photo_library_rounded, size: 16, color: Color(0xFF438883)),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '${photos.length} hóa đơn đã lưu',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? Colors.white70 : const Color(0xFF4B5563),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
                         for (final month in monthKeys) ...[
                           SliverToBoxAdapter(
                             child: Padding(
-                              padding: const EdgeInsets.fromLTRB(24, 22, 24, 10),
+                              padding: const EdgeInsets.fromLTRB(24, 16, 24, 10),
                               child: Text(
                                 _monthLabel(month),
                                 style: TextStyle(
@@ -99,7 +163,7 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                                       .bodyMedium
                                       ?.color
                                       ?.withValues(alpha: 0.55),
-                                  fontSize: 14,
+                                  fontSize: 13.5,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.3,
                                 ),
@@ -107,13 +171,13 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                             ),
                           ),
                           SliverPadding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
                             sliver: SliverGrid(
                               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 3,
-                                crossAxisSpacing: 8,
-                                mainAxisSpacing: 8,
-                                childAspectRatio: 1,
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
+                                childAspectRatio: 0.92,
                               ),
                               delegate: SliverChildBuilderDelegate(
                                 (context, index) {
@@ -135,10 +199,10 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                             ),
                           ),
                           const SliverToBoxAdapter(
-                            child: SizedBox(height: 18),
+                            child: SizedBox(height: 14),
                           ),
                         ],
-                        const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                        const SliverToBoxAdapter(child: SizedBox(height: 32)),
                       ],
                     );
                   },
@@ -162,8 +226,7 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
   }
 
   String _monthLabel(DateTime month) {
-    // Yêu cầu: "Tháng 9 2025" (không cần tên tháng đầy đủ)
-    return 'Tháng ${month.month} ${month.year}';
+    return 'Tháng ${month.month} năm ${month.year}';
   }
 }
 
@@ -172,25 +235,69 @@ class _GalleryEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.photo_library_outlined,
-            size: 80,
-            color: Colors.grey.withValues(alpha: 0.25),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Chưa có ảnh nào',
-            style: TextStyle(
-              color: Colors.grey.withValues(alpha: 0.6),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: const Color(0xFF438883).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.receipt_long_rounded,
+                size: 48,
+                color: Color(0xFF438883),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 20),
+            Text(
+              'Chưa có hóa đơn nào',
+              style: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF1E293B),
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Khi thêm khoản thu chi hoặc dùng Trợ lý Mono chụp hóa đơn, ảnh sẽ tự động lưu vào đây.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: isDark ? Colors.white60 : Colors.grey.shade600,
+                fontSize: 13.5,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF438883),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                elevation: 0,
+              ),
+              icon: const Icon(Icons.camera_alt_outlined, size: 18),
+              label: const Text(
+                'Chụp hóa đơn mới',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  PageTransitions.slideUp(const AddTransactionScreen()),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -207,44 +314,84 @@ class _PhotoGridTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = transaction.photoUrl;
     final heroTag = 'tx_photo_${transaction.id}';
+    final isIncome = transaction.isIncome;
+    final statusColor = isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444);
 
     return Hero(
       tag: heroTag,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Material(
-          color: Colors.transparent,
+          color: Colors.black12,
           child: InkWell(
             onTap: onTap,
-            child: Image.network(
-              imageUrl,
-              fit: BoxFit.cover,
-              cacheWidth: 520,
-              filterQuality: FilterQuality.low,
-              gaplessPlayback: true,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  color: Colors.grey.withValues(alpha: 0.08),
-                  child: const Center(
-                    child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2.2),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Ảnh hóa đơn
+                ReceiptStorageService.buildReceiptImage(
+                  photoLocalPath: transaction.photoLocalPath,
+                  photoUrl: transaction.photoUrl,
+                  fit: BoxFit.cover,
+                ),
+
+                // Lớp phủ gradient ở đáy
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 44,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.8),
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
                     ),
                   ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: Colors.grey.withValues(alpha: 0.08),
-                  child: const Center(
-                    child: Icon(Icons.broken_image_outlined, size: 28, color: Colors.grey),
+                ),
+
+                // Huy hiệu số tiền ở góc dưới
+                Positioned(
+                  bottom: 6,
+                  left: 6,
+                  right: 6,
+                  child: Text(
+                    '${isIncome ? '+' : '-'}${CurrencyUtils.formatCurrency(transaction.amount)}',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.2,
+                      shadows: [
+                        Shadow(color: Colors.black.withValues(alpha: 0.7), blurRadius: 4),
+                      ],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                   ),
-                );
-              },
+                ),
+
+                // Huy hiệu danh mục ở góc trên trái
+                Positioned(
+                  top: 6,
+                  left: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.55),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(transaction.icon, size: 12, color: statusColor),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -252,4 +399,3 @@ class _PhotoGridTile extends StatelessWidget {
     );
   }
 }
-

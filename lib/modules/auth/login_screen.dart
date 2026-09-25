@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
+import '../../services/biometric_service.dart';
 import '../home/home_screen.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
@@ -22,6 +25,75 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
   bool _rememberMe = false;
   bool _isLoading = false;
+  bool _canUseBiometric = false;
+  String? _lastOfflineUid;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSavedLoginAndBiometric();
+  }
+
+  Future<void> _checkSavedLoginAndBiometric() async {
+    try {
+      const secureStorage = FlutterSecureStorage();
+      // Đọc song song SharedPreferences và SecureStorage để nạp siêu tốc (< 50ms)
+      final results = await Future.wait([
+        SharedPreferences.getInstance(),
+        secureStorage.read(key: 'saved_login_password'),
+        secureStorage.read(key: 'last_offline_email'),
+        secureStorage.read(key: 'last_offline_uid'),
+        BiometricService.instance.canCheckBiometrics(),
+      ]);
+
+      final prefs = results[0] as SharedPreferences;
+      final savedPassword = results[1] as String?;
+      final lastEmail = results[2] as String?;
+      final lastUid = results[3] as String?;
+      final canBio = results[4] as bool;
+
+      final savedEmail = prefs.getString('saved_login_email');
+      final remember = prefs.getBool('saved_remember_me') ?? false;
+
+      if (remember && savedEmail != null && savedEmail.isNotEmpty) {
+        _emailController.text = savedEmail;
+        if (savedPassword != null && savedPassword.isNotEmpty) {
+          _passwordController.text = savedPassword;
+        }
+        if (mounted) setState(() => _rememberMe = true);
+      } else if (lastEmail != null && lastEmail.isNotEmpty) {
+        _emailController.text = lastEmail;
+      }
+
+      if (lastUid != null && lastUid.isNotEmpty) {
+        final isBioEnabled = await BiometricService.instance.isFingerprintEnabledForUser(lastUid);
+        if (mounted) {
+          setState(() {
+            _lastOfflineUid = lastUid;
+            _canUseBiometric = isBioEnabled && canBio;
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _handleBiometricLogin() async {
+    if (_lastOfflineUid == null) return;
+    final authenticated = await BiometricService.instance.authenticateFingerprint(
+      localizedReason: 'Quét vân tay để đăng nhập vào Mono',
+    );
+    if (authenticated && mounted) {
+      _authService.setOfflineUid(_lastOfflineUid!);
+      // Tự động re-authenticate Firebase Auth ngầm và ghi nhận vân tay (không await)
+      unawaited(_authService.silentReauthenticateIfNeeded().catchError((_) => false));
+      unawaited(BiometricService.instance.recordFingerprintLogin(uid: _lastOfflineUid!).catchError((_) {}));
+      _showSnackBar('Đăng nhập bằng vân tay thành công!');
+      Navigator.pushReplacement(
+        context,
+        PageTransitions.fade(const HomeScreen()),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -45,24 +117,33 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (result.success) {
       if (!mounted) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      const secureStorage = FlutterSecureStorage();
+      if (_rememberMe) {
+        await prefs.setString('saved_login_email', email);
+        await prefs.setBool('saved_remember_me', true);
+        await secureStorage.write(key: 'saved_login_password', value: password);
+      } else {
+        await prefs.remove('saved_login_email');
+        await prefs.setBool('saved_remember_me', false);
+        await secureStorage.delete(key: 'saved_login_password');
+      }
       
-      // Kiem tra xem email co da xac nhan khong
+      // Kiểm tra xác nhận email nếu đang có mạng trực tuyến (bỏ qua khi offline)
+      final isOffline = _authService.isOfflineSession;
       final currentUser = _authService.currentUser;
-      if (currentUser != null && !currentUser.emailVerified) {
+      if (!isOffline && currentUser != null && currentUser.email != null && !currentUser.emailVerified) {
         _showSnackBar('Vui lòng xác nhận email trước khi đăng nhập!', isError: true);
         await _authService.logout();
         return;
       }
       
       // Kiểm tra xem có pendingGroupId không (sau khi login từ invite link)
-      final prefs = await SharedPreferences.getInstance();
       final pendingGroupId = prefs.getString('pendingGroupId');
       if (pendingGroupId != null && pendingGroupId.isNotEmpty) {
-        print('DEBUG: Found pendingGroupId after login: $pendingGroupId');
-        // Xóa pendingGroupId
         await prefs.remove('pendingGroupId');
-        
-        // Chuyển đến JoinGroupScreen
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -71,7 +152,12 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         return;
       }
+
+      if (isOffline) {
+        _showSnackBar('Đang vào chế độ Ngoại tuyến. Dữ liệu sẽ tự động đồng bộ khi có mạng.');
+      }
       
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         PageTransitions.fade(const HomeScreen()),
@@ -122,6 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     decoration: BoxDecoration(
                       color: isDark ? const Color(0xFF1E1E1E) : Colors.white, 
                       borderRadius: BorderRadius.circular(20), 
+                      border: isDark ? Border.all(color: Colors.white12) : null,
                       boxShadow: [
                         BoxShadow(
                           color: isDark ? Colors.black45 : Colors.black.withValues(alpha: 0.08), 
@@ -142,6 +229,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           keyboardType: TextInputType.emailAddress,
                           style: TextStyle(color: isDark ? Colors.white : Colors.black),
                           decoration: InputDecoration(
+                            filled: true,
+                            fillColor: isDark ? const Color(0xFF262626) : const Color(0xFFFAFAFA),
                             hintText: 'Nhập email của bạn', 
                             hintStyle: TextStyle(color: isDark ? Colors.white24 : Colors.black.withValues(alpha: 0.29), fontSize: 13),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -157,6 +246,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           obscureText: !_isPasswordVisible,
                           style: TextStyle(color: isDark ? Colors.white : Colors.black),
                           decoration: InputDecoration(
+                            filled: true,
+                            fillColor: isDark ? const Color(0xFF262626) : const Color(0xFFFAFAFA),
                             hintText: 'Nhập mật khẩu của bạn', 
                             hintStyle: TextStyle(color: isDark ? Colors.white24 : Colors.black.withValues(alpha: 0.29), fontSize: 13),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -195,6 +286,27 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
+                        if (_canUseBiometric) ...[
+                          const SizedBox(height: 14),
+                          OutlinedButton.icon(
+                            onPressed: _handleBiometricLogin,
+                            icon: const Icon(Icons.fingerprint_rounded, size: 24, color: Color(0xFF438883)),
+                            label: const Text(
+                              'Đăng nhập nhanh bằng vân tay',
+                              style: TextStyle(
+                                color: Color(0xFF438883),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14.5,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(double.infinity, 50),
+                              backgroundColor: isDark ? const Color(0xFF242E2D) : Colors.transparent,
+                              side: const BorderSide(color: Color(0xFF438883), width: 1.5),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

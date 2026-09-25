@@ -174,7 +174,7 @@ class GroupDetailScreen extends ConsumerWidget {
                                           children: [
                                             Icon(Icons.person_add_rounded, color: Colors.white, size: 16),
                                             SizedBox(width: 6),
-                                            const Text('Mời', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                            Text('Mời', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                                           ],
                                         ),
                                       ),
@@ -209,10 +209,10 @@ class GroupDetailScreen extends ConsumerWidget {
                             return _buildBalanceCard(context, ref, group, income, expense, isDark);
                           },
                           loading: () => const SizedBox(height: 150),
-                          error: (_, __) => const SizedBox.shrink(),
+                          error: (error, stack) => const SizedBox.shrink(),
                         ),
                         loading: () => const SizedBox(height: 150),
-                        error: (_, __) => const SizedBox.shrink(),
+                        error: (error, stack) => const SizedBox.shrink(),
                       ),
                     ),
                   ],
@@ -299,7 +299,7 @@ class GroupDetailScreen extends ConsumerWidget {
                     );
                   },
                   loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
+                  error: (error, stack) => const SizedBox.shrink(),
                 ),
 
                 const SizedBox(height: 24),

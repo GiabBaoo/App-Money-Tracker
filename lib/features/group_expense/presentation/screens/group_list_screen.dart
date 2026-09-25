@@ -434,7 +434,7 @@ class GroupListScreen extends ConsumerWidget {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            error: (_, __) => const Text(
+                            error: (error, stack) => const Text(
                               '0đ',
                               style: TextStyle(
                                 color: Colors.white,

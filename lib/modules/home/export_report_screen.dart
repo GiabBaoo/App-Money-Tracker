@@ -6,6 +6,9 @@ import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../services/report_export_service.dart';
+import '../../services/theme_service.dart';
+import '../../widgets/animated_scale_button.dart';
+import '../../widgets/top_toast.dart';
 
 class ExportReportScreen extends StatefulWidget {
   const ExportReportScreen({super.key});
@@ -31,22 +34,30 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
   bool _isLoading = false;
 
   Future<void> _pickDateRange() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     DateTimeRange? picked = await showDateRangePicker(
       context: context,
-      firstDate: DateTime(2020), // Cho phép lùi về năm 2020
-      lastDate: DateTime.now(), // Ngày lớn nhất là hôm nay
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
       helpText: 'Chọn khoảng thời gian',
       cancelText: 'HỦY',
       confirmText: 'CHỌN',
       builder: (context, child) {
-        // Tô màu bộ lịch cho tone-sur-tone với app
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF438883), // Màu nền header
-              onPrimary: Colors.white, // Màu chữ header
-              onSurface: Color(0xFF333333), // Màu chữ ngày tháng
-            ),
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: Color(0xFF438883),
+                    onPrimary: Colors.white,
+                    surface: Color(0xFF1E2827),
+                    onSurface: Colors.white,
+                  )
+                : const ColorScheme.light(
+                    primary: Color(0xFF438883),
+                    onPrimary: Colors.white,
+                    surface: Colors.white,
+                    onSurface: Color(0xFF1E293B),
+                  ),
           ),
           child: child!,
         );
@@ -70,26 +81,22 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
 
     setState(() => _isLoading = true);
     try {
-      // 1) Xử lý khoảng thời gian
       final range = _reportExportService.resolveDateRange(
         selectedOption: _selectedDateRange,
         customDateRange: _customDateRange,
       );
 
-      // 2) Query Firestore theo range
       final transactions = await _reportExportService.fetchTransactions(range: range);
       if (transactions.isEmpty) {
         _showSnackBar('Không có dữ liệu chi tiêu trong khoảng thời gian này.');
         return;
       }
 
-      // 3) Tạo file bytes
       final isPdf = _selectedFormat == 'PDF';
       final bytes = isPdf
           ? await _reportExportService.buildPdfBytes(transactions: transactions, range: range)
           : await _reportExportService.buildExcelBytes(transactions: transactions, range: range);
 
-      // 4) Lưu file + mở/share
       final fileName = _reportExportService.buildFileName(format: _selectedFormat, range: range);
       final savedPath = await _reportExportService.saveToDeviceDownloads(
         bytes: bytes,
@@ -123,7 +130,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -132,7 +139,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
               Text(
                 'Đã tải file về máy thành công',
                 style: TextStyle(
-                  color: isDark ? Colors.white : const Color(0xFF111827),
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                 ),
@@ -141,11 +148,11 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
               Text(
                 savedPath,
                 style: TextStyle(
-                  color: isDark ? Colors.white70 : const Color(0xFF4B5563),
+                  color: isDark ? Colors.white70 : const Color(0xFF475569),
                   fontSize: 12,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: () async {
                   await SharePlus.instance.share(
@@ -158,9 +165,11 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF438883),
                   foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 icon: const Icon(Icons.share),
-                label: const Text('Chia sẻ file'),
+                label: const Text('Chia sẻ file', style: TextStyle(fontWeight: FontWeight.w600)),
               ),
               if (isPdf) ...[
                 const SizedBox(height: 10),
@@ -168,8 +177,13 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                   onPressed: () async {
                     await Printing.layoutPdf(onLayout: (_) async => bytes);
                   },
-                  icon: const Icon(Icons.picture_as_pdf_outlined),
-                  label: const Text('Mở/Xem trước PDF'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    side: const BorderSide(color: Color(0xFF438883)),
+                  ),
+                  icon: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFF438883)),
+                  label: const Text('Mở/Xem trước PDF', style: TextStyle(color: Color(0xFF438883), fontWeight: FontWeight.w600)),
                 ),
               ],
             ],
@@ -180,18 +194,20 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : const Color(0xFF438883),
-      ),
-    );
+    TopToast.show(context, message, isError: isError);
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).primaryColor;
+    final cardBg = AppThemeColors.cardBackground(context);
+    final textPrimary = AppThemeColors.textPrimary(context);
+    final textSecondary = AppThemeColors.textSecondary(context);
+    final inputBg = AppThemeColors.inputBackground(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF438883), // Nền xanh lá mạ
+      backgroundColor: primaryColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -218,25 +234,25 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(width: 48), // Tàng hình để cân bằng
+                  const SizedBox(width: 48),
                 ],
               ),
             ),
 
             const SizedBox(height: 20),
 
-            // 2. KHUNG NỘI DUNG MÀU TRẮNG BO GÓC
+            // 2. KHUNG NỘI DUNG BO GÓC
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black12,
+                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
                       blurRadius: 10,
-                      offset: Offset(0, -5),
+                      offset: const Offset(0, -5),
                     ),
                   ],
                 ),
@@ -246,19 +262,19 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Tiêu đề
-                      const Text(
+                      Text(
                         'Tùy chọn tải xuống',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
+                          color: textPrimary,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Chọn thời gian và định dạng file bạn muốn xuất để lưu trữ dữ liệu thống kê.',
                         style: TextStyle(
-                          color: Color(0xFF666666),
+                          color: textSecondary,
                           fontSize: 15,
                           height: 1.5,
                         ),
@@ -267,20 +283,26 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                       const SizedBox(height: 30),
 
                       // CHỌN THỜI GIAN (Dropdown)
-                      _buildLabel('Thời gian xuất báo cáo'),
+                      _buildLabel('Thời gian xuất báo cáo', isDark),
                       DropdownButtonFormField<String>(
                         initialValue: _selectedDateRange,
+                        dropdownColor: cardBg,
+                        style: TextStyle(
+                          color: textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
                         icon: const Icon(
                           Icons.keyboard_arrow_down,
                           color: Color(0xFF438883),
                         ),
-                        decoration: _buildInputDecoration(),
+                        decoration: _buildInputDecoration(isDark),
                         items: _dateRanges.map((String value) {
                           return DropdownMenuItem<String>(
                             value: value,
                             child: Text(
                               value,
-                              style: const TextStyle(fontSize: 16),
+                              style: TextStyle(fontSize: 16, color: textPrimary),
                             ),
                           );
                         }).toList(),
@@ -288,29 +310,29 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                           setState(() {
                             _selectedDateRange = newValue!;
                           });
-                          // ĐÃ BỔ SUNG: Mở lịch ngay khi người dùng vừa chọn "Tùy chỉnh"
                           if (newValue == 'Tùy chỉnh') {
                             _pickDateRange();
                           }
                         },
                       ),
 
-                      // ĐÃ BỔ SUNG: Hiện ô chọn ngày nếu người dùng đang ở chế độ "Tùy chỉnh"
+                      // Hiện ô chọn ngày nếu người dùng đang ở chế độ "Tùy chỉnh"
                       if (_selectedDateRange == 'Tùy chỉnh') ...[
                         const SizedBox(height: 16),
                         InkWell(
                           onTap: _pickDateRange,
+                          borderRadius: BorderRadius.circular(12),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 16,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF9FAFB),
+                              color: inputBg,
                               border: Border.all(
                                 color: const Color(0xFF438883),
                                 width: 1.2,
-                              ), // Viền xanh nổi bật
+                              ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -322,8 +344,8 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                                       : '${_customDateRange!.start.day.toString().padLeft(2, '0')}/${_customDateRange!.start.month.toString().padLeft(2, '0')}/${_customDateRange!.start.year}  -  ${_customDateRange!.end.day.toString().padLeft(2, '0')}/${_customDateRange!.end.month.toString().padLeft(2, '0')}/${_customDateRange!.end.year}',
                                   style: TextStyle(
                                     color: _customDateRange == null
-                                        ? const Color(0xFFAAAAAA)
-                                        : const Color(0xFF333333),
+                                        ? (isDark ? Colors.white38 : const Color(0xFFAAAAAA))
+                                        : textPrimary,
                                     fontSize: 15,
                                     fontWeight: _customDateRange == null
                                         ? FontWeight.normal
@@ -342,45 +364,45 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
 
                       const SizedBox(height: 30),
 
-                      // CHỌN ĐỊNH DẠNG FILE (Nút chọn PDF hoặc Excel)
-                      _buildLabel('Định dạng tệp'),
+                      // CHỌN ĐỊNH DẠNG FILE
+                      _buildLabel('Định dạng tệp', isDark),
                       Row(
                         children: [
                           _buildFormatCard(
                             title: 'PDF',
                             icon: Icons.picture_as_pdf,
-                            color: const Color(0xFFE63946), // Đỏ
+                            color: const Color(0xFFE63946),
                             isSelected: _selectedFormat == 'PDF',
-                            onTap: () =>
-                                setState(() => _selectedFormat = 'PDF'),
+                            isDark: isDark,
+                            onTap: () => setState(() => _selectedFormat = 'PDF'),
                           ),
                           const SizedBox(width: 16),
                           _buildFormatCard(
                             title: 'Excel',
                             icon: Icons.table_chart,
-                            color: const Color(0xFF2EAF7D), // Xanh lá
+                            color: const Color(0xFF2EAF7D),
                             isSelected: _selectedFormat == 'Excel',
-                            onTap: () =>
-                                setState(() => _selectedFormat = 'Excel'),
+                            isDark: isDark,
+                            onTap: () => setState(() => _selectedFormat = 'Excel'),
                           ),
                         ],
                       ),
 
-                      const SizedBox(height: 50),
+                      const SizedBox(height: 48),
 
                       // NÚT TẢI XUỐNG
-                      InkWell(
-                        onTap: _isLoading ? null : _handleDownload,
+                      AnimatedScaleButton(
+                        onTap: _isLoading ? () {} : _handleDownload,
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
                             color: _isLoading ? Colors.grey : const Color(0xFF438883),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF438883).withValues(alpha: 0.3),
-                                blurRadius: 8,
+                                color: const Color(0xFF438883).withValues(alpha: 0.35),
+                                blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
                             ],
@@ -437,25 +459,25 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     );
   }
 
-  // --- Hàm phụ: Thẻ chọn định dạng file ---
   Widget _buildFormatCard({
     required String title,
     required IconData icon,
     required Color color,
     required bool isSelected,
+    required bool isDark,
     required VoidCallback onTap,
   }) {
     return Expanded(
-      child: GestureDetector(
+      child: AnimatedScaleButton(
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 20),
           decoration: BoxDecoration(
             color: isSelected
-                ? color.withValues(alpha: 0.1)
-                : const Color(0xFFF9FAFB),
+                ? color.withValues(alpha: isDark ? 0.2 : 0.1)
+                : (isDark ? const Color(0xFF282828) : const Color(0xFFF8FAFC)),
             border: Border.all(
-              color: isSelected ? color : const Color(0xFFE5E7EB),
+              color: isSelected ? color : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
               width: isSelected ? 2 : 1,
             ),
             borderRadius: BorderRadius.circular(16),
@@ -464,14 +486,14 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
             children: [
               Icon(
                 icon,
-                color: isSelected ? color : const Color(0xFFAAAAAA),
+                color: isSelected ? color : (isDark ? Colors.white38 : const Color(0xFFAAAAAA)),
                 size: 36,
               ),
               const SizedBox(height: 12),
               Text(
                 title,
                 style: TextStyle(
-                  color: isSelected ? color : const Color(0xFF666666),
+                  color: isSelected ? color : (isDark ? Colors.white70 : const Color(0xFF475569)),
                   fontSize: 16,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 ),
@@ -483,14 +505,13 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     );
   }
 
-  // --- Hàm phụ: Label ---
-  Widget _buildLabel(String text) {
+  Widget _buildLabel(String text, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 4),
       child: Text(
         text,
-        style: const TextStyle(
-          color: Color(0xFF6B7280),
+        style: TextStyle(
+          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
@@ -498,15 +519,14 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     );
   }
 
-  // --- Hàm phụ: Khung Input ---
-  InputDecoration _buildInputDecoration() {
+  InputDecoration _buildInputDecoration(bool isDark) {
     return InputDecoration(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       filled: true,
-      fillColor: const Color(0xFFF9FAFB),
+      fillColor: isDark ? const Color(0xFF282828) : const Color(0xFFF8FAFC),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        borderSide: BorderSide(color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

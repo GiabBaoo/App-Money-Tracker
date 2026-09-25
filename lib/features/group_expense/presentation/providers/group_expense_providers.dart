@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/firestore_debt_repository.dart';
 import '../../data/repositories/firestore_expense_repository.dart';
@@ -48,7 +49,7 @@ final currentUserNameProvider = FutureProvider<String>((ref) async {
       return data?['name'] as String? ?? 'Người dùng';
     }
   } catch (e) {
-    print('Error getting user name: $e');
+    debugPrint('Error getting user name: $e');
   }
   
   return 'Người dùng';

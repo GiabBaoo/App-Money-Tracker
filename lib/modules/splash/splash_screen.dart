@@ -1,6 +1,7 @@
 // splash_screen.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/page_transitions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,22 +9,48 @@ import '../onboarding/onboarding_screen.dart';
 import '../home/home_screen.dart';
 import '../auth/fingerprint_unlock_screen.dart';
 import '../../features/group_expense/presentation/screens/join_group_screen.dart';
+import '../../services/biometric_service.dart';
+
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../services/auth_service.dart';
+import '../../services/connectivity_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  _SplashScreenState createState() => _SplashScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkAndNavigate() async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
+      User? user = FirebaseAuth.instance.currentUser;
+      String? effectiveUid = user?.uid;
+
+      if (effectiveUid != null) {
+        AuthService().setOnlineUid(effectiveUid);
+      } else {
+        // Nếu không có kết nối hoặc Firebase Auth chưa có token, kiểm tra offline session
+        String? lastUid;
+        try {
+          lastUid = await const FlutterSecureStorage().read(key: 'last_offline_uid');
+        } catch (e) {
+          debugPrint('SplashScreen: Error reading secure storage: $e');
+        }
+        if (lastUid != null && lastUid.isNotEmpty) {
+          effectiveUid = lastUid;
+          if (ConnectivityService().isOnline) {
+            AuthService().setOnlineUid(lastUid);
+          } else {
+            AuthService().setOfflineUid(lastUid);
+          }
+        }
+      }
 
       if (!mounted) return;
 
-      if (user == null) {
+      if (effectiveUid == null) {
         Navigator.pushReplacement(
           context,
           PageTransitions.fade(const OnboardingScreen()),
@@ -35,11 +62,8 @@ class _SplashScreenState extends State<SplashScreen> {
       final prefs = await SharedPreferences.getInstance();
       final pendingGroupId = prefs.getString('pendingGroupId');
       if (pendingGroupId != null && pendingGroupId.isNotEmpty) {
-        print('DEBUG: Found pendingGroupId after login: $pendingGroupId');
-        // Xóa pendingGroupId
         await prefs.remove('pendingGroupId');
         
-        // Chuyển đến JoinGroupScreen
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -51,9 +75,12 @@ class _SplashScreenState extends State<SplashScreen> {
         }
       }
 
-      // Skip biometric check on web to avoid errors
-      final fingerprintEnabled = false; // Temporarily disabled
-      // final fingerprintEnabled = await BiometricService.instance.isFingerprintEnabledForUser(user.uid);
+      bool fingerprintEnabled = false;
+      if (!kIsWeb) {
+        try {
+          fingerprintEnabled = await BiometricService.instance.isFingerprintEnabledForUser(effectiveUid);
+        } catch (_) {}
+      }
 
       if (!mounted) return;
 
@@ -73,7 +100,7 @@ class _SplashScreenState extends State<SplashScreen> {
         );
       }
     } catch (e) {
-      print('Navigation error: $e');
+      debugPrint('Navigation error: $e');
       // Fallback to onboarding if error
       if (mounted) {
         Navigator.pushReplacement(
@@ -87,7 +114,8 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(Duration(seconds: 2), () {
+    // Điều hướng ngay sau khi frame đầu tiên render xong (<300ms)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndNavigate();
     });
   }

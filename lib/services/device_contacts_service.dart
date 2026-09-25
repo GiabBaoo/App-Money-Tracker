@@ -23,8 +23,6 @@ class DeviceContactsService {
 
   static const int _previewLimit = 15;
 
-  bool _permissionOk(bool granted) => granted;
-
   Future<bool> requestPermission() async {
     if (!deviceContactsPlatformSupported()) return false;
     try {
@@ -40,7 +38,7 @@ class DeviceContactsService {
       final granted = await FlutterContacts.requestPermission(readonly: true);
       if (!granted) return null;
 
-      final list = await FlutterContacts.getAll(
+      final list = await FlutterContacts.getContacts(
         withProperties: true,
       );
 

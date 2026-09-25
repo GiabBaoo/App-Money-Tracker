@@ -224,12 +224,34 @@ class _BiometricScreenState extends State<BiometricScreen> {
         );
         return false;
       }
+
+      // Bắt buộc quét vân tay thực tế để xác nhận bật tính năng
+      final authenticated = await BiometricService.instance.authenticateFingerprint(
+        localizedReason: 'Xác nhận vân tay để bật tính năng đăng nhập vân tay',
+      );
+      if (!authenticated) {
+        if (!mounted) return false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Xác thực vân tay không thành công. Chưa kích hoạt tính năng.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return false;
+      }
     }
 
     try {
       await BiometricService.instance.setFingerprintEnabledForUser(
         uid: uid,
         enabled: enabled,
+      );
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(enabled ? 'Đã kích hoạt đăng nhập bằng vân tay.' : 'Đã tắt đăng nhập bằng vân tay.'),
+          backgroundColor: const Color(0xFF438883),
+        ),
       );
       return true;
     } catch (_) {
@@ -302,7 +324,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
                   Switch(
                     value: value,
                     onChanged: onChanged,
-                    activeColor: Colors.white,
+                    activeThumbColor: Colors.white,
                     activeTrackColor: const Color(0xFF4A9B7F),
                     inactiveThumbColor: Colors.white,
                     inactiveTrackColor: const Color(0xFFE0E0E0),

@@ -16,6 +16,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
   late TabController _tabController;
   String _selectedTemplate = '';
   IconData _selectedIcon = Icons.person_outline;
+  bool _isLoading = false;
 
   final List<Map<String, dynamic>> _templates = [
     {'name': 'Quỹ cá nhân', 'icon': Icons.person_outline, 'color': Colors.blue},
@@ -409,31 +410,40 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                               child: Material(
                                 color: Colors.transparent,
                                 child: InkWell(
-                                  onTap: _nameController.text.trim().isEmpty
+                                  onTap: (_nameController.text.trim().isEmpty || _isLoading)
                                       ? null
                                       : () => _createGroup(context),
                                   borderRadius: BorderRadius.circular(16),
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(vertical: 16),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: const [
-                                        Icon(
-                                          Icons.add_rounded,
-                                          color: Colors.white,
-                                          size: 20,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Tạo quỹ',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
+                                    child: _isLoading
+                                        ? const SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: const [
+                                              Icon(
+                                                Icons.add_rounded,
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text(
+                                                'Tạo quỹ',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ),
-                                      ],
-                                    ),
                                   ),
                                 ),
                               ),
@@ -489,19 +499,34 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
       groupType: groupType,
     );
 
+    setState(() => _isLoading = true);
     try {
       await ref.read(groupServiceProvider).createGroup(dto, userId);
       if (context.mounted) {
+        // Pop màn hình tạo quỹ
         Navigator.pop(context);
+        
+        // Hiển thị thông báo thành công
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tạo quỹ thành công!')),
+          const SnackBar(
+            content: Text('Tạo quỹ thành công!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e')),
+          SnackBar(
+            content: Text('Lỗi: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }

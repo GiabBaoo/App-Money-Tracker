@@ -1,6 +1,6 @@
 {
-    "name": "money_tracker_app",
-    "short_name": "money_tracker_app",
+    "name": "Mono",
+    "short_name": "Mono",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

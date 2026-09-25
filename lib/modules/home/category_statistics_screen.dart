@@ -31,7 +31,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
     final String title = _currentType == 'income' ? 'Thống kê Thu nhập' : 'Thống kê Chi phí';
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF000000) : const Color(0xFFF5F5F5),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
@@ -164,7 +164,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                                 sections: sections,
                                 startDegreeOffset: -90,
                               ),
-                              swapAnimationDuration: const Duration(milliseconds: 600),
+                              duration: const Duration(milliseconds: 600),
                             ),
                             Column(
                               mainAxisSize: MainAxisSize.min,

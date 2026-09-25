@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../utils/page_transitions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../services/biometric_service.dart';
+import '../../services/auth_service.dart';
 import 'login_screen.dart';
 
 class FingerprintUnlockScreen extends StatefulWidget {
@@ -46,9 +48,12 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
     if (!mounted) return;
 
     if (ok) {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid != null) {
-        await BiometricService.instance.recordFingerprintLogin(uid: uid);
+      final effectiveUid = AuthService().currentUid;
+      if (effectiveUid != null) {
+        // Ghi lại thời điểm đăng nhập chạy nền (không await để vào app tức thì < 50ms)
+        unawaited(BiometricService.instance.recordFingerprintLogin(uid: effectiveUid).catchError((_) {}));
+        // Tự động re-authenticate ngầm nếu có kết nối mạng
+        unawaited(AuthService().silentReauthenticateIfNeeded().catchError((_) => false));
       }
       _goNext();
     } else {

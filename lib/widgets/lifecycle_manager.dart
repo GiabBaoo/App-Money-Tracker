@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/biometric_service.dart';
+import '../services/midnight_sync_service.dart';
+import '../services/auth_service.dart';
 import '../modules/auth/fingerprint_unlock_screen.dart';
 import '../utils/page_transitions.dart';
 
@@ -19,13 +21,22 @@ class LifecycleManager extends StatefulWidget {
 }
 
 class _LifecycleManagerState extends State<LifecycleManager> with WidgetsBindingObserver {
-  DateTime? _backgroundTimestamp;
+  bool _wasInBackground = false;
   bool _isLocked = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    // Tự động mở khóa cờ _isLocked khi người dùng đăng xuất
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user == null && _isLocked && mounted) {
+        setState(() {
+          _isLocked = false;
+        });
+      }
+    });
   }
 
   @override
@@ -36,35 +47,44 @@ class _LifecycleManagerState extends State<LifecycleManager> with WidgetsBinding
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      _backgroundTimestamp = DateTime.now();
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      // Chỉ ghi nhận vào background nếu app KHÔNG phải đang hiển thị hộp thoại quét vân tay của hệ thống
+      // VÀ KHÔNG PHẢI đang mở camera/thư viện ảnh hệ thống bên ngoài
+      if (!BiometricService.instance.isAuthenticating &&
+          !BiometricService.instance.isPickerActive &&
+          !_isLocked) {
+        _wasInBackground = true;
+      }
     } else if (state == AppLifecycleState.resumed) {
-      _checkLockStatus();
+      // Tự động kiểm tra và bù trừ sao lưu nửa đêm nếu người dùng vừa mở lại ứng dụng
+      MidnightSyncService.instance.checkAndRunCatchUpSync();
+
+      if (_wasInBackground &&
+          !_isLocked &&
+          !BiometricService.instance.isAuthenticating &&
+          !BiometricService.instance.isPickerActive) {
+        _wasInBackground = false;
+        _checkLockStatus();
+      } else {
+        _wasInBackground = false;
+      }
     }
   }
 
   Future<void> _checkLockStatus() async {
-    if (_backgroundTimestamp == null || _isLocked) return;
+    if (_isLocked || BiometricService.instance.isAuthenticating) return;
 
-    final now = DateTime.now();
-    final difference = now.difference(_backgroundTimestamp!).inSeconds;
-
-    // Reset background timestamp after check
-    final savedTimestamp = _backgroundTimestamp;
-    _backgroundTimestamp = null;
-
-    if (difference >= 15) {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final enabled = await BiometricService.instance.isFingerprintEnabledForUser(user.uid);
-        if (enabled) {
-          _lockApp();
-        }
+    final effectiveUid = AuthService().currentUid;
+    if (effectiveUid != null) {
+      final enabled = await BiometricService.instance.isFingerprintEnabledForUser(effectiveUid);
+      if (enabled && !_isLocked && mounted) {
+        _lockApp();
       }
     }
   }
 
   void _lockApp() {
+    if (_isLocked) return;
     setState(() {
       _isLocked = true;
     });
@@ -72,7 +92,9 @@ class _LifecycleManagerState extends State<LifecycleManager> with WidgetsBinding
     // Sử dụng navigatorKey để truy cập Navigator từ bất kỳ đâu
     final nav = widget.navigatorKey.currentState;
     if (nav == null) {
-      setState(() => _isLocked = false);
+      if (mounted) {
+        setState(() => _isLocked = false);
+      }
       return;
     }
     
@@ -80,9 +102,11 @@ class _LifecycleManagerState extends State<LifecycleManager> with WidgetsBinding
       PageTransitions.fade(
         FingerprintUnlockScreen(
           onUnlock: () {
-            setState(() {
-              _isLocked = false;
-            });
+            if (mounted) {
+              setState(() {
+                _isLocked = false;
+              });
+            }
             nav.pop();
           },
         ),

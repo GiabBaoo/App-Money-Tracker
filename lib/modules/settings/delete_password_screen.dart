@@ -33,8 +33,8 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
     final result = await _authService.deleteAccount(password: password);
     setState(() => _isLoading = false);
 
+    if (!mounted) return;
     if (result.success) {
-      if (!mounted) return;
       Navigator.push(context, PageTransitions.scale(SuccessScreen(
         appBarTitle: 'Xóa tài khoản',
         successTitle: 'Xóa tài khoản thành công',
