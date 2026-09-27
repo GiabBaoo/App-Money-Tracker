@@ -55,11 +55,12 @@ class ConnectivityService {
   Future<bool> checkRealInternet() async {
     try {
       final results = await _connectivity.checkConnectivity();
-      if (results.any((r) => r != ConnectivityResult.none)) {
-        if (!_isOnline) {
-          _isOnline = true;
-          _isOnlineController.add(true);
+      if (!results.any((r) => r != ConnectivityResult.none)) {
+        if (_isOnline) {
+          _isOnline = false;
+          _isOnlineController.add(false);
         }
+        return false;
       }
     } catch (_) {}
 
@@ -88,7 +89,12 @@ class ConnectivityService {
       } catch (_) {}
     }
 
-    return _isOnline;
+    // Cả DNS và HTTP đều thất bại => Thực tế không có kết nối internet
+    if (_isOnline) {
+      _isOnline = false;
+      _isOnlineController.add(false);
+    }
+    return false;
   }
 
   void dispose() {

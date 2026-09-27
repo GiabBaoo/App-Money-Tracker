@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -8,6 +9,7 @@ import '../../services/language_service.dart';
 import '../../utils/currency_format_utils.dart';
 import '../../widgets/top_toast.dart';
 import '../../widgets/voice_input_bottom_sheet.dart';
+import '../../widgets/animated_scale_button.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({super.key});
@@ -314,24 +316,42 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
         bottom: false,
         child: Column(
           children: [
+            // === FINTECH GLASSMORPHISM HEADER ===
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-                    onPressed: () => Navigator.pop(context),
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                    ),
                   ),
                   Text(
                     context.tr('notification_title'),
-                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
+                    ),
                   ),
-                  const SizedBox(width: 48),
+                  const SizedBox(width: 42),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Expanded(
               child: Container(
                 width: double.infinity,

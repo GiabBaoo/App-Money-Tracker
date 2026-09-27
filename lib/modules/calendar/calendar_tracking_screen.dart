@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import '../../models/transaction_model.dart';
 import '../../models/wallet_model.dart';
 import '../../data/repositories/transaction_repository.dart';
@@ -26,6 +25,19 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
   DateTime _focusedMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
   DateTime _selectedDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
 
+  // Cờ chuyển trang mượt mà (tránh drop frame trong 400ms transition)
+  bool _isTransitionReady = false;
+
+  // Cache memoization để không tính toán lại lặp đi lặp lại
+  List<TransactionModel>? _cachedAllTx;
+  DateTime? _cachedMonthKey;
+  Map<int, List<TransactionModel>> _cachedDayTxMap = {};
+  double _cachedMonthIncome = 0;
+  double _cachedMonthExpense = 0;
+
+  Map<String, double> _cachedReverseBalances = {};
+  int _lastTxCountForBalance = -1;
+
   @override
   void initState() {
     super.initState();
@@ -35,9 +47,28 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
       _txRepo.setUid(uid);
     }
     _walletRepo.getWallets();
+
+    // Lắng nghe hoàn tất animation chuyển trang để giải phóng frame rate
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final route = ModalRoute.of(context);
+      if (route == null || route.animation == null) {
+        if (mounted) setState(() => _isTransitionReady = true);
+      } else if (route.animation!.isCompleted) {
+        if (mounted) setState(() => _isTransitionReady = true);
+      } else {
+        void statusListener(AnimationStatus status) {
+          if (status == AnimationStatus.completed) {
+            route.animation?.removeStatusListener(statusListener);
+            if (mounted) setState(() => _isTransitionReady = true);
+          }
+        }
+        route.animation!.addStatusListener(statusListener);
+      }
+    });
   }
 
   void _onPrevMonth() {
+    HapticFeedback.lightImpact();
     setState(() {
       _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month - 1, 1);
       _selectedDate = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
@@ -45,160 +76,320 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
   }
 
   void _onNextMonth() {
+    HapticFeedback.lightImpact();
     setState(() {
       _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1);
       _selectedDate = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
     });
   }
 
+  void _jumpToToday() {
+    HapticFeedback.mediumImpact();
+    final now = DateTime.now();
+    setState(() {
+      _focusedMonth = DateTime(now.year, now.month, 1);
+      _selectedDate = DateTime(now.year, now.month, now.day);
+    });
+  }
+
+  /// Cập nhật cache cho tháng đang chọn nếu dữ liệu hoặc tháng thay đổi
+  void _ensureMonthCalculations(List<TransactionModel> allTx) {
+    if (identical(_cachedAllTx, allTx) &&
+        _cachedMonthKey != null &&
+        _cachedMonthKey!.year == _focusedMonth.year &&
+        _cachedMonthKey!.month == _focusedMonth.month) {
+      return;
+    }
+
+    _cachedAllTx = allTx;
+    _cachedMonthKey = _focusedMonth;
+
+    final monthTx = allTx.where((tx) =>
+      tx.date.year == _focusedMonth.year &&
+      tx.date.month == _focusedMonth.month
+    ).toList();
+
+    double income = 0;
+    double expense = 0;
+    final Map<int, List<TransactionModel>> map = {};
+
+    for (final tx in monthTx) {
+      if (!tx.isTransfer) {
+        if (tx.type == 'income') {
+          income += tx.amount;
+        } else {
+          expense += tx.amount;
+        }
+      }
+      map.putIfAbsent(tx.date.day, () => []).add(tx);
+    }
+
+    _cachedMonthIncome = income;
+    _cachedMonthExpense = expense;
+    _cachedDayTxMap = map;
+  }
+
+  /// Memoize số dư chạy ngược chỉ khi allTx thay đổi
+  Map<String, double> _ensureReverseBalances(List<TransactionModel> allTx) {
+    if (allTx.length == _lastTxCountForBalance && _cachedReverseBalances.isNotEmpty) {
+      return _cachedReverseBalances;
+    }
+
+    _lastTxCountForBalance = allTx.length;
+    _cachedReverseBalances = CurrencyUtils.calculateReverseWalletBalances(
+      allTransactions: allTx,
+      wallets: _walletRepo.latestWallets,
+    );
+    return _cachedReverseBalances;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+    final primaryColor = isDark ? const Color(0xFF0F2625) : const Color(0xFF438883);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Lịch Theo Dõi Thu Chi',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        backgroundColor: isDark ? const Color(0xFF0F2625) : primaryColor,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: StreamBuilder<List<TransactionModel>>(
-        stream: _txRepo.getTransactionsStream(),
-        initialData: _txRepo.latestTransactions.isNotEmpty ? _txRepo.latestTransactions : null,
-        builder: (context, snapshot) {
-          final allTx = snapshot.data ?? [];
-
-          // Giao dịch trong tháng đang xem
-          final monthTx = allTx.where((tx) =>
-            tx.date.year == _focusedMonth.year &&
-            tx.date.month == _focusedMonth.month
-          ).toList();
-
-          double monthIncome = 0;
-          double monthExpense = 0;
-          for (var tx in monthTx) {
-            if (tx.isTransfer) continue;
-            if (tx.type == 'income') {
-              monthIncome += tx.amount;
-            } else {
-              monthExpense += tx.amount;
-            }
-          }
-
-          // Giao dịch trong ngày được chọn
-          final dayTx = monthTx.where((tx) =>
-            tx.date.year == _selectedDate.year &&
-            tx.date.month == _selectedDate.month &&
-            tx.date.day == _selectedDate.day
-          ).toList();
-
-          double dayIncome = 0;
-          double dayExpense = 0;
-          for (var tx in dayTx) {
-            if (tx.isTransfer) continue;
-            if (tx.type == 'income') {
-              dayIncome += tx.amount;
-            } else {
-              dayExpense += tx.amount;
-            }
-          }
-
-          return Column(
-            children: [
-              // Thanh điều hướng tháng & Ribbon tổng quan
-              _buildMonthHeader(isDark, primaryColor, monthIncome, monthExpense),
-
-              // Bảng lịch
-              _buildCalendarGrid(monthTx, isDark, primaryColor),
-
-              const Divider(height: 1),
-
-              // Thẻ tóm tắt ngày đang chọn
-              _buildSelectedDayHeader(isDark, primaryColor, dayIncome, dayExpense),
-
-              // Danh sách giao dịch của ngày đang chọn
-              Builder(
-                builder: (context) {
-                  final reverseBalances = CurrencyUtils.calculateReverseWalletBalances(
-                    allTransactions: allTx,
-                    wallets: _walletRepo.latestWallets,
-                  );
-                  return Expanded(
-                    child: dayTx.isEmpty
-                        ? _buildEmptyDay(isDark, primaryColor)
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            itemCount: dayTx.length,
-                            itemBuilder: (context, index) {
-                              final tx = dayTx[index];
-                              WalletModel? txWallet;
-                              try {
-                                txWallet = _walletRepo.latestWallets.firstWhere((w) => w.id == tx.walletId);
-                              } catch (_) {}
-                              return TransactionItem(
-                                transaction: tx,
-                                showDate: false,
-                                runningTotal: reverseBalances[tx.id],
-                                wallet: txWallet,
-                              );
-                            },
+      backgroundColor: primaryColor,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // 1. TOP APP BAR FINTECH GLASSMORPHISM
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                    ),
+                  ),
+                  const Text(
+                    'Lịch Theo Dõi Thu Chi',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  AnimatedScaleButton(
+                    onTap: _jumpToToday,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.today_rounded, size: 15, color: Colors.white),
+                          SizedBox(width: 4),
+                          Text(
+                            'Hôm nay',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                  );
-                },
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          );
-        },
+            ),
+
+            // 2. MAIN SHEET
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, -6),
+                    ),
+                  ],
+                ),
+                child: StreamBuilder<List<TransactionModel>>(
+                  stream: _txRepo.getTransactionsStream(),
+                  initialData: _txRepo.latestTransactions.isNotEmpty ? _txRepo.latestTransactions : null,
+                  builder: (context, snapshot) {
+                    final allTx = snapshot.data ?? [];
+
+                    // Tính toán và lưu cache tháng
+                    _ensureMonthCalculations(allTx);
+
+                    final dayTx = (_cachedDayTxMap[_selectedDate.day] ?? [])
+                        .where((tx) =>
+                            tx.date.year == _selectedDate.year &&
+                            tx.date.month == _selectedDate.month)
+                        .toList()
+                      ..sort(CurrencyUtils.compareTransactionsChronological);
+
+                    double dayIncome = 0;
+                    double dayExpense = 0;
+                    for (var tx in dayTx) {
+                      if (tx.isTransfer) continue;
+                      if (tx.type == 'income') {
+                        dayIncome += tx.amount;
+                      } else {
+                        dayExpense += tx.amount;
+                      }
+                    }
+
+                    return Column(
+                      children: [
+                        // RepaintBoundary cách ly bảng lịch và header khỏi sự kiện cuộn danh sách bên dưới
+                        RepaintBoundary(
+                          child: Column(
+                            children: [
+                              // Thanh điều hướng tháng & Ribbon tổng quan
+                              _buildMonthHeader(isDark, _cachedMonthIncome, _cachedMonthExpense),
+
+                              // Bảng lịch
+                              _buildCalendarGrid(_cachedDayTxMap, isDark),
+                            ],
+                          ),
+                        ),
+
+                        const Divider(height: 1, thickness: 1),
+
+                        // Thẻ tóm tắt ngày đang chọn
+                        _buildSelectedDayHeader(isDark, dayIncome, dayExpense),
+
+                        // Danh sách giao dịch của ngày đang chọn
+                        Expanded(
+                          child: !_isTransitionReady && dayTx.length > 5
+                              ? const Center(
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF438883)),
+                                    ),
+                                  ),
+                                )
+                              : (dayTx.isEmpty
+                                  ? _buildEmptyDay(isDark)
+                                  : Builder(
+                                      builder: (context) {
+                                        final reverseBalances = _ensureReverseBalances(allTx);
+                                        return ListView.builder(
+                                          physics: const BouncingScrollPhysics(),
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          itemCount: dayTx.length,
+                                          itemBuilder: (context, index) {
+                                            final tx = dayTx[index];
+                                            WalletModel? txWallet;
+                                            try {
+                                              txWallet = _walletRepo.latestWallets
+                                                  .firstWhere((w) => w.id == tx.walletId);
+                                            } catch (_) {}
+                                            return TransactionItem(
+                                              transaction: tx,
+                                              showDate: false,
+                                              runningTotal: reverseBalances[tx.id],
+                                              wallet: txWallet,
+                                            );
+                                          },
+                                        );
+                                      },
+                                    )),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildMonthHeader(bool isDark, Color primaryColor, double income, double expense) {
-    final monthStr = 'Tháng ${_focusedMonth.month}/${_focusedMonth.year}';
+  Widget _buildMonthHeader(bool isDark, double income, double expense) {
+    final monthStr = 'Tháng ${_focusedMonth.month}, ${_focusedMonth.year}';
     final net = income - expense;
 
     return Container(
-      color: isDark ? const Color(0xFF1B2E2B) : const Color(0xFFE8F3F1),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF162524) : const Color(0xFFF1F8F6),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      ),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              IconButton(
-                icon: Icon(Icons.chevron_left_rounded, color: primaryColor, size: 28),
-                onPressed: _onPrevMonth,
+              AnimatedScaleButton(
+                onTap: _onPrevMonth,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white10 : Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4),
+                    ],
+                  ),
+                  child: const Icon(Icons.chevron_left_rounded, size: 24, color: Color(0xFF438883)),
+                ),
               ),
               Text(
                 monthStr,
                 style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : primaryColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
                 ),
               ),
-              IconButton(
-                icon: Icon(Icons.chevron_right_rounded, color: primaryColor, size: 28),
-                onPressed: _onNextMonth,
+              AnimatedScaleButton(
+                onTap: _onNextMonth,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white10 : Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4),
+                    ],
+                  ),
+                  child: const Icon(Icons.chevron_right_rounded, size: 24, color: Color(0xFF438883)),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           // Ribbon tổng quan tháng
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildSummaryPill('Thu nhập', income, const Color(0xFF10B981), isDark),
-              _buildSummaryPill('Chi tiêu', expense, const Color(0xFFEF4444), isDark),
+              _buildSummaryPill('Tổng thu', income, const Color(0xFF10B981), isDark),
+              _buildSummaryPill('Tổng chi', expense, const Color(0xFFEF4444), isDark),
               _buildSummaryPill('Chênh lệch', net, net >= 0 ? const Color(0xFF0EA5E9) : Colors.orange, isDark),
             ],
           ),
@@ -218,8 +409,8 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
         Text(
           CurrencyUtils.formatCurrency(amount),
           style: TextStyle(
-            fontSize: 13.5,
-            fontWeight: FontWeight.bold,
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
             color: color,
           ),
         ),
@@ -227,18 +418,12 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
     );
   }
 
-  Widget _buildCalendarGrid(List<TransactionModel> monthTx, bool isDark, Color primaryColor) {
+  Widget _buildCalendarGrid(Map<int, List<TransactionModel>> dayTxMap, bool isDark) {
     final daysInMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0).day;
-    final firstWeekday = DateTime(_focusedMonth.year, _focusedMonth.month, 1).weekday; // 1 (Mon) to 7 (Sun)
-    final offset = firstWeekday - 1; // 0 for Monday
+    final firstWeekday = DateTime(_focusedMonth.year, _focusedMonth.month, 1).weekday;
+    final offset = firstWeekday - 1;
 
-    final weekDays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-
-    // Map ngày -> các giao dịch trong ngày
-    final Map<int, List<TransactionModel>> dayTxMap = {};
-    for (var tx in monthTx) {
-      dayTxMap.putIfAbsent(tx.date.day, () => []).add(tx);
-    }
+    const weekDays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
     final now = DateTime.now();
     final isCurrentMonth = now.year == _focusedMonth.year && now.month == _focusedMonth.month;
@@ -247,7 +432,7 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Column(
         children: [
-          // Hàng tiêu đề thứ
+          // Tiêu đề các thứ
           Row(
             children: weekDays.map((d) {
               final isWeekend = d == 'T7' || d == 'CN';
@@ -256,8 +441,8 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                   child: Text(
                     d,
                     style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
                       color: isWeekend ? Colors.orange : (isDark ? Colors.white60 : Colors.black54),
                     ),
                   ),
@@ -266,14 +451,14 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
             }).toList(),
           ),
           const SizedBox(height: 6),
-          // Lưới các ngày
+          // Lưới các ngày (42 ô cố định)
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: 42, // 6 tuần x 7 ngày
+            itemCount: 42,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
-              childAspectRatio: 1.15,
+              mainAxisExtent: 38,
             ),
             itemBuilder: (context, index) {
               final dayNum = index - offset + 1;
@@ -286,7 +471,7 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                   _selectedDate.day == dayNum;
               final isToday = isCurrentMonth && now.day == dayNum;
 
-              final txList = dayTxMap[dayNum] ?? [];
+              final txList = dayTxMap[dayNum] ?? const [];
               final hasIncome = txList.any((t) => t.type == 'income' && !t.isTransfer);
               final hasExpense = txList.any((t) => t.type == 'expense' && !t.isTransfer);
               final hasTransfer = txList.any((t) => t.isTransfer);
@@ -298,18 +483,18 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                     _selectedDate = DateTime(_focusedMonth.year, _focusedMonth.month, dayNum);
                   });
                 },
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
                 child: Container(
-                  margin: const EdgeInsets.all(2),
+                  margin: const EdgeInsets.all(2.5),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? primaryColor
+                        ? const Color(0xFF438883)
                         : (isToday
-                            ? primaryColor.withValues(alpha: 0.15)
+                            ? (isDark ? const Color(0xFF1E3A37) : const Color(0xFFE8F5F1))
                             : Colors.transparent),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     border: isToday && !isSelected
-                        ? Border.all(color: primaryColor, width: 1.5)
+                        ? Border.all(color: const Color(0xFF438883), width: 1.2)
                         : null,
                   ),
                   child: Column(
@@ -319,21 +504,22 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                         '$dayNum',
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight: isSelected || isToday ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isSelected || isToday ? FontWeight.w800 : FontWeight.w500,
                           color: isSelected
                               ? Colors.white
-                              : (isDark ? Colors.white : Colors.black87),
+                              : (isToday
+                                  ? const Color(0xFF438883)
+                                  : (isDark ? Colors.white70 : const Color(0xFF1E293B))),
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      // Dấu chấm xanh (thu), đỏ (chi), lam (chuyển ví)
+                      const SizedBox(height: 2),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           if (hasIncome)
                             Container(
-                              width: 5,
-                              height: 5,
+                              width: 4,
+                              height: 4,
                               margin: const EdgeInsets.symmetric(horizontal: 1),
                               decoration: BoxDecoration(
                                 color: isSelected ? Colors.white : const Color(0xFF10B981),
@@ -342,21 +528,21 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                             ),
                           if (hasExpense)
                             Container(
-                              width: 5,
-                              height: 5,
+                              width: 4,
+                              height: 4,
                               margin: const EdgeInsets.symmetric(horizontal: 1),
                               decoration: BoxDecoration(
-                                color: isSelected ? Colors.white.withValues(alpha: 0.8) : const Color(0xFFEF4444),
+                                color: isSelected ? Colors.white : const Color(0xFFEF4444),
                                 shape: BoxShape.circle,
                               ),
                             ),
                           if (hasTransfer)
                             Container(
-                              width: 5,
-                              height: 5,
+                              width: 4,
+                              height: 4,
                               margin: const EdgeInsets.symmetric(horizontal: 1),
                               decoration: BoxDecoration(
-                                color: isSelected ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF0284C7),
+                                color: isSelected ? Colors.white : const Color(0xFF0EA5E9),
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -373,117 +559,104 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
     );
   }
 
-  String _formatDayHeader(DateTime date) {
-    try {
-      final dayFormat = DateFormat('EEEE, dd/MM/yyyy', 'vi');
-      final formatted = dayFormat.format(date);
-      return formatted[0].toUpperCase() + formatted.substring(1);
-    } catch (_) {
-      const weekdays = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
-      final dayName = weekdays[date.weekday - 1];
-      final d = date.day.toString().padLeft(2, '0');
-      final m = date.month.toString().padLeft(2, '0');
-      return '$dayName, $d/$m/${date.year}';
-    }
-  }
-
-  Widget _buildSelectedDayHeader(bool isDark, Color primaryColor, double dayIncome, double dayExpense) {
-    final formattedDate = _formatDayHeader(_selectedDate);
+  Widget _buildSelectedDayHeader(bool isDark, double dayIncome, double dayExpense) {
+    final dayStr = 'Ngày ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF9FAFB),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      color: isDark ? const Color(0xFF162524).withValues(alpha: 0.6) : const Color(0xFFF8FAFC),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  formattedDate,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    if (dayIncome > 0) ...[
-                      Text(
-                        '+${CurrencyUtils.formatCurrency(dayIncome)}',
-                        style: const TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                    if (dayExpense > 0) ...[
-                      Text(
-                        '-${CurrencyUtils.formatCurrency(dayExpense)}',
-                        style: const TextStyle(color: Color(0xFFEF4444), fontSize: 12, fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
+          Row(
+            children: [
+              const Icon(Icons.event_note_rounded, size: 16, color: Color(0xFF438883)),
+              const SizedBox(width: 6),
+              Text(
+                dayStr,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+              ),
+            ],
           ),
-          // Nút thêm giao dịch cho ngày được chọn
-          AnimatedScaleButton(
-            onTap: () {
-              Navigator.push(
-                context,
-                PageTransitions.slideUp(
-                  AddTransactionScreen(initialDate: _selectedDate),
-                ),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: primaryColor,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add, color: Colors.white, size: 16),
-                  SizedBox(width: 4),
-                  Text(
-                    'Thêm giao dịch',
-                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              if (dayIncome > 0)
+                Text(
+                  '+${CurrencyUtils.formatCurrency(dayIncome)}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF10B981),
                   ),
-                ],
-              ),
-            ),
+                ),
+              if (dayIncome > 0 && dayExpense > 0) const SizedBox(width: 8),
+              if (dayExpense > 0)
+                Text(
+                  '-${CurrencyUtils.formatCurrency(dayExpense)}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFEF4444),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyDay(bool isDark, Color primaryColor) {
+  Widget _buildEmptyDay(bool isDark) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.event_note_outlined, size: 60, color: Colors.grey.withValues(alpha: 0.3)),
-          const SizedBox(height: 12),
-          Text(
-            'Không có giao dịch ngày ${_selectedDate.day}/${_selectedDate.month}',
-            style: TextStyle(fontSize: 14, color: isDark ? Colors.white60 : Colors.grey.shade600),
-          ),
-          const SizedBox(height: 8),
-          TextButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                PageTransitions.slideUp(
-                  AddTransactionScreen(initialDate: _selectedDate),
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.event_busy_rounded, size: 38, color: Colors.grey.withValues(alpha: 0.3)),
+              const SizedBox(height: 8),
+              Text(
+                'Không có giao dịch trong ngày này',
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 10),
+              AnimatedScaleButton(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.push(
+                    context,
+                    PageTransitions.slideUp(const AddTransactionScreen()),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF438883).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add_rounded, size: 16, color: Color(0xFF438883)),
+                      SizedBox(width: 4),
+                      Text(
+                        'Thêm giao dịch',
+                        style: TextStyle(
+                          color: Color(0xFF438883),
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              );
-            },
-            icon: const Icon(Icons.add_circle_outline, size: 18),
-            label: const Text('Ghi chép giao dịch ngay'),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

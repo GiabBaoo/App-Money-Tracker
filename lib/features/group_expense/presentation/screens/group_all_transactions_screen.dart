@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../widgets/animated_scale_button.dart';
 import '../providers/group_expense_providers.dart';
 import '../../data/models/fund_transaction_model.dart';
 
@@ -60,13 +62,30 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-                    onPressed: () => Navigator.pop(context),
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.15),
+                        border: Border.all(color: Colors.white24, width: 1),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
                   ),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,14 +96,15 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                             color: Colors.white,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
+                            letterSpacing: -0.3,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Text(
                           widget.groupName,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 13,
                           ),
                         ),
                       ],
@@ -95,14 +115,18 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
             ),
             
             // Month Picker Header
-            GestureDetector(
-              onTap: _showMonthPicker,
+            AnimatedScaleButton(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                _showMonthPicker();
+              },
               child: Container(
-                margin: const EdgeInsets.only(bottom: 24),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                margin: const EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: Colors.white24, width: 1),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

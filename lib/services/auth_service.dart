@@ -23,8 +23,16 @@ class AuthService {
   factory AuthService() => _instance;
   AuthService._internal();
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  FirebaseAuth? get _authNullable {
+    try {
+      return FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  FirebaseAuth get _auth => FirebaseAuth.instance;
+  FirebaseFirestore get _firestore => FirebaseFirestore.instance;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   bool _isOfflineSession = false;
@@ -32,17 +40,27 @@ class AuthService {
 
   /// Phiên offline chỉ đúng khi thực sự MẤT KẾT NỐI MẠNG hoặc đăng nhập offline không có Firebase Auth
   bool get isOfflineSession {
-    if (ConnectivityService().isOnline && _auth.currentUser != null) {
-      return false;
-    }
-    if (!ConnectivityService().isOnline) {
+    try {
+      if (ConnectivityService().isOnline && _authNullable?.currentUser != null) {
+        return false;
+      }
+      if (!ConnectivityService().isOnline) {
+        return true;
+      }
+      return _isOfflineSession;
+    } catch (_) {
       return true;
     }
-    return _isOfflineSession;
   }
 
   String? get offlineUid => _offlineUid;
-  String? get currentUid => _auth.currentUser?.uid ?? _offlineUid;
+  String? get currentUid {
+    try {
+      return _authNullable?.currentUser?.uid ?? _offlineUid;
+    } catch (_) {
+      return _offlineUid;
+    }
+  }
 
   /// Thiết lập người dùng đăng nhập trực tuyến (Online)
   void setOnlineUid(String uid) {
@@ -205,8 +223,23 @@ class AuthService {
     }
   }
 
-  User? get currentUser => _auth.currentUser;
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  User? get currentUser {
+    try {
+      return _authNullable?.currentUser;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Stream<User?> get authStateChanges {
+    try {
+      final auth = _authNullable;
+      if (auth == null) return const Stream.empty();
+      return auth.authStateChanges();
+    } catch (_) {
+      return const Stream.empty();
+    }
+  }
 
   // ==================== GUI EMAIL XAC NHAN ====================
   Future<({bool success, String message})> sendEmailVerification() async {

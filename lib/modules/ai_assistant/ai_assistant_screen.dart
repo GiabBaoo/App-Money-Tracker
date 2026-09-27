@@ -61,6 +61,9 @@ class _ChatMessage {
   final LatteFactorResult? latteFactorResult;
   final SavingsRoadmapResult? savingsRoadmapResult;
   final PersonalSpendingQueryResult? spendingQueryResult;
+  final SpendingTrendResult? spendingTrendResult;
+  final FinancialHealthScoreResult? financialHealthScoreResult;
+  final RecurringDetectionResult? recurringDetectionResult;
 
   _ChatMessage({
     required this.text,
@@ -81,6 +84,9 @@ class _ChatMessage {
     this.latteFactorResult,
     this.savingsRoadmapResult,
     this.spendingQueryResult,
+    this.spendingTrendResult,
+    this.financialHealthScoreResult,
+    this.recurringDetectionResult,
   }) : time = time ?? DateTime.now();
 }
 
@@ -117,6 +123,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
   List<WalletModel> _wallets = [];
 
   final List<String> _quickSuggestions = [
+    '📈 Xu hướng chi tiêu tuần này',
+    '🏆 Điểm sức khỏe tài chính',
+    '🔄 Chi phí cố định định kỳ',
     '📊 Mỗi ngày được tiêu bao nhiêu?',
     '🔮 Dự báo số dư cuối tháng',
     '☕ Phân tích tiêu vặt thủng ví',
@@ -276,7 +285,21 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             })
         .toList();
 
-    final result = await _aiService.parseNaturalLanguage(query, conversationHistory: history);
+    // Multi-turn context: Tìm giao dịch đang chờ hoàn thiện (needsAmount hoặc pending) từ tin nhắn AI gần nhất
+    AiTransactionItem? pendingTx;
+    for (int i = _messages.length - 1; i >= 0; i--) {
+      final m = _messages[i];
+      if (!m.isUser && m.transactions != null && m.transactions!.isNotEmpty && (m.needsAmount || m.isPendingSaving)) {
+        pendingTx = m.transactions!.first;
+        break;
+      }
+    }
+
+    final result = await _aiService.parseNaturalLanguage(
+      query,
+      conversationHistory: history,
+      pendingTransaction: pendingTx,
+    );
 
     // Xử lý các tác vụ điều khiển ứng dụng
     SpendingReportResult? reportResult;
@@ -303,8 +326,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
 
       if (result.isSuccess) {
         final hasTxs = result.transactions.isNotEmpty;
+        final displayReply = (reportResult != null && (result.aiReply.isEmpty || result.aiReply.contains('Đang tổng hợp')))
+            ? reportResult.summaryText
+            : result.aiReply;
         await _addAiMessageWithTypingEffect(
-          fullText: result.aiReply,
+          fullText: displayReply,
           transactions: hasTxs ? result.transactions : null,
           isPendingSaving: hasTxs && !result.needsAmount,
           needsAmount: result.needsAmount,
@@ -319,6 +345,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
           latteFactorResult: result.latteFactorResult,
           savingsRoadmapResult: result.savingsRoadmapResult,
           spendingQueryResult: result.spendingQueryResult,
+          spendingTrendResult: result.spendingTrendResult,
+          financialHealthScoreResult: result.financialHealthScoreResult,
+          recurringDetectionResult: result.recurringDetectionResult,
         );
 
         // Nếu người dùng nhập/nói ra khoản tiền hoàn chỉnh -> kích hoạt đếm ngược tự động lưu rảnh tay 3s!
@@ -354,6 +383,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     LatteFactorResult? latteFactorResult,
     SavingsRoadmapResult? savingsRoadmapResult,
     PersonalSpendingQueryResult? spendingQueryResult,
+    SpendingTrendResult? spendingTrendResult,
+    FinancialHealthScoreResult? financialHealthScoreResult,
+    RecurringDetectionResult? recurringDetectionResult,
   }) async {
     // Nếu tin nhắn có thẻ giao dịch, thẻ tính năng hoặc ngắn (<= 60 ký tự), hiển thị ngay không cần animation dài
     final hasRichCard = transactions != null ||
@@ -362,8 +394,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
         bankSmsResult != null ||
         splitBillResult != null ||
         safeDailyResult != null ||
+        forecastResult != null ||
         latteFactorResult != null ||
-        savingsRoadmapResult != null;
+        savingsRoadmapResult != null ||
+        spendingQueryResult != null ||
+        spendingTrendResult != null ||
+        financialHealthScoreResult != null ||
+        recurringDetectionResult != null;
 
     if (fullText.length <= 60 || hasRichCard) {
       if (mounted) {
@@ -385,6 +422,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             latteFactorResult: latteFactorResult,
             savingsRoadmapResult: savingsRoadmapResult,
             spendingQueryResult: spendingQueryResult,
+            spendingTrendResult: spendingTrendResult,
+            financialHealthScoreResult: financialHealthScoreResult,
+            recurringDetectionResult: recurringDetectionResult,
           ));
         });
         _scrollToBottom();
@@ -411,6 +451,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
       latteFactorResult: latteFactorResult,
       savingsRoadmapResult: savingsRoadmapResult,
       spendingQueryResult: spendingQueryResult,
+      spendingTrendResult: spendingTrendResult,
+      financialHealthScoreResult: financialHealthScoreResult,
+      recurringDetectionResult: recurringDetectionResult,
     ));
     if (mounted) setState(() {});
     _scrollToBottom();
@@ -433,6 +476,16 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             financialAdvice: financialAdvice,
             isSecurityRestricted: isSecurityRestricted,
             navigationTarget: navigationTarget,
+            bankSmsResult: bankSmsResult,
+            splitBillResult: splitBillResult,
+            safeDailyResult: safeDailyResult,
+            forecastResult: forecastResult,
+            latteFactorResult: latteFactorResult,
+            savingsRoadmapResult: savingsRoadmapResult,
+            spendingQueryResult: spendingQueryResult,
+            spendingTrendResult: spendingTrendResult,
+            financialHealthScoreResult: financialHealthScoreResult,
+            recurringDetectionResult: recurringDetectionResult,
           );
         });
         _scrollToBottom();
@@ -555,6 +608,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             ),
             onPressed: () {
               Navigator.pop(ctx);
+              _aiService.clearHistory();
               setState(() {
                 _messages.clear();
                 _messages.add(_ChatMessage(
@@ -995,20 +1049,43 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
           ],
         ),
         actions: [
-          IconButton(
-            tooltip: 'Xóa hội thoại',
-            icon: const Icon(Icons.delete_sweep_outlined, color: Colors.white, size: 22),
-            onPressed: _confirmClearChat,
-          ),
-          IconButton(
-            tooltip: 'Cài đặt AI & Giọng nói',
-            icon: const Icon(Icons.tune_rounded, color: Colors.white, size: 21),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AiSettingsScreen()),
+          AnimatedScaleButton(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _confirmClearChat();
+            },
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white24, width: 0.8),
+              ),
+              child: const Icon(Icons.delete_sweep_outlined, color: Colors.white, size: 20),
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
+          AnimatedScaleButton(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              Navigator.push(
+                context,
+                PageTransitions.slideRight(const AiSettingsScreen()),
+              );
+            },
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white24, width: 0.8),
+              ),
+              child: const Icon(Icons.tune_rounded, color: Colors.white, size: 19),
+            ),
+          ),
+          const SizedBox(width: 14),
         ],
       ),
       body: Stack(
@@ -1530,6 +1607,33 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
               Padding(
                 padding: const EdgeInsets.only(left: 36),
                 child: SavingsRoadmapCard(roadmap: msg.savingsRoadmapResult!),
+              ),
+            ],
+
+            // Thẻ xu hướng chi tiêu & cảnh báo bất thường
+            if (msg.spendingTrendResult != null) ...[
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.only(left: 36),
+                child: SpendingTrendCard(trendResult: msg.spendingTrendResult!),
+              ),
+            ],
+
+            // Thẻ điểm sức khỏe tài chính toàn diện
+            if (msg.financialHealthScoreResult != null) ...[
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.only(left: 36),
+                child: FinancialHealthScoreCard(result: msg.financialHealthScoreResult!),
+              ),
+            ],
+
+            // Thẻ chi phí cố định định kỳ
+            if (msg.recurringDetectionResult != null) ...[
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.only(left: 36),
+                child: RecurringTransactionsCard(result: msg.recurringDetectionResult!),
               ),
             ],
 

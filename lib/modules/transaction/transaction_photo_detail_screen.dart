@@ -5,6 +5,10 @@ import '../../models/transaction_model.dart';
 import '../../services/receipt_storage_service.dart';
 import '../../utils/currency_format_utils.dart';
 import '../../utils/category_utils.dart';
+import '../../utils/page_transitions.dart';
+import '../../widgets/animated_scale_button.dart';
+import 'transaction_detail_screen.dart';
+import 'edit_transaction_screen.dart';
 
 class TransactionPhotoDetailScreen extends StatefulWidget {
   final TransactionModel transaction;
@@ -80,7 +84,7 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
     final categoryColor = CategoryUtils.getVibrantColor(widget.transaction.category);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0F0E),
+      backgroundColor: const Color(0xFF090D0D),
       body: SafeArea(
         top: false,
         bottom: false,
@@ -92,12 +96,12 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
               slivers: [
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 80, bottom: 20),
+                    padding: const EdgeInsets.only(top: 88, bottom: 120),
                     child: Column(
                       children: [
                         // Vùng ảnh InteractiveViewer
                         SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.62,
+                          height: MediaQuery.of(context).size.height * 0.58,
                           child: GestureDetector(
                             onDoubleTap: _handleDoubleTap,
                             child: Hero(
@@ -129,11 +133,11 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: Colors.white12),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                                 ),
                                 child: const Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -141,8 +145,8 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                                     Icon(Icons.touch_app_rounded, color: Colors.white60, size: 14),
                                     SizedBox(width: 6),
                                     Text(
-                                      'Chạm 2 lần để phóng to • 2 ngón tay thu phóng',
-                                      style: TextStyle(color: Colors.white70, fontSize: 11.5),
+                                      'Chạm 2 lần để phóng to • Kéo để thu phóng',
+                                      style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
                                     ),
                                   ],
                                 ),
@@ -151,9 +155,9 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                           ),
                         ),
 
-                        // Thẻ thông tin giao dịch tóm tắt
+                        // Thẻ thông tin giao dịch tóm tắt phong cách E-Receipt FinTech
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                          padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
                           child: _TransactionInfoGlassCard(
                             transaction: widget.transaction,
                             createdAtText: _formatCreatedAt(widget.transaction.createdAt),
@@ -168,7 +172,7 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
               ],
             ),
 
-            // 2. THANH CÔNG CỤ KÍNH MỜ (FLOATING GLASSMORPHIC APP BAR)
+            // 2. THANH CÔNG CỤ NỔI KÍNH MỜ (FLOATING APP BAR)
             Positioned(
               top: 0,
               left: 0,
@@ -183,8 +187,8 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Colors.black.withValues(alpha: 0.85),
-                      Colors.black.withValues(alpha: 0.4),
+                      Colors.black.withValues(alpha: 0.9),
+                      Colors.black.withValues(alpha: 0.5),
                       Colors.transparent,
                     ],
                     begin: Alignment.topCenter,
@@ -195,16 +199,20 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Nút Back
-                    Material(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      shape: const CircleBorder(),
-                      child: InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: () => Navigator.pop(context),
-                        child: const Padding(
-                          padding: EdgeInsets.all(10),
-                          child: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                    AnimatedScaleButton(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context);
+                      },
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.14),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white24, width: 0.8),
                         ),
+                        child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
                       ),
                     ),
 
@@ -213,8 +221,8 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                       'Chi tiết hóa đơn',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
                         letterSpacing: 0.3,
                       ),
                     ),
@@ -224,35 +232,149 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Nút Xoay 90 độ
-                        Material(
-                          color: Colors.white.withValues(alpha: 0.12),
-                          shape: const CircleBorder(),
-                          child: InkWell(
-                            customBorder: const CircleBorder(),
-                            onTap: _rotateClockwise,
-                            child: const Padding(
-                              padding: EdgeInsets.all(10),
-                              child: Icon(Icons.rotate_right_rounded, color: Colors.white, size: 20),
+                        AnimatedScaleButton(
+                          onTap: _rotateClockwise,
+                          child: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.14),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white24, width: 0.8),
                             ),
+                            child: const Icon(Icons.rotate_right_rounded, color: Colors.white, size: 20),
                           ),
                         ),
                         if (_quarterTurns != 0 || _isZoomed) ...[
                           const SizedBox(width: 8),
                           // Nút Reset góc nhìn
-                          Material(
-                            color: const Color(0xFF438883).withValues(alpha: 0.25),
-                            shape: const CircleBorder(),
-                            child: InkWell(
-                              customBorder: const CircleBorder(),
-                              onTap: _resetView,
-                              child: const Padding(
-                                padding: EdgeInsets.all(10),
-                                child: Icon(Icons.restart_alt_rounded, color: Color(0xFF5EEAD4), size: 20),
+                          AnimatedScaleButton(
+                            onTap: _resetView,
+                            child: Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF438883).withValues(alpha: 0.3),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: const Color(0xFF5EEAD4), width: 0.8),
                               ),
+                              child: const Icon(Icons.restart_alt_rounded, color: Color(0xFF5EEAD4), size: 20),
                             ),
                           ),
                         ],
                       ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // 3. ERGONOMIC FLOATING BOTTOM ACTION DOCK (THUMB ZONE)
+            Positioned(
+              bottom: MediaQuery.of(context).padding.bottom + 16,
+              left: 20,
+              right: 20,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF131D1C).withValues(alpha: 0.95),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // Nút Chỉnh sửa giao dịch
+                    Expanded(
+                      child: AnimatedScaleButton(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            PageTransitions.slideUp(
+                              EditTransactionScreen(transaction: widget.transaction),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.white12),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.edit_note_rounded, color: Colors.white70, size: 20),
+                              SizedBox(width: 6),
+                              Text(
+                                'Chỉnh sửa',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+
+                    // Nút Xem chi tiết giao dịch
+                    Expanded(
+                      child: AnimatedScaleButton(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            PageTransitions.slideRight(
+                              TransactionDetailScreen(transaction: widget.transaction),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF438883), Color(0xFF2F6360)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF438883).withValues(alpha: 0.4),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.receipt_rounded, color: Colors.white, size: 18),
+                              SizedBox(width: 6),
+                              Text(
+                                'Chi tiết GD',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -291,8 +413,8 @@ class _TransactionInfoGlassCard extends StatelessWidget {
         border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
-            blurRadius: 16,
+            color: Colors.black.withValues(alpha: 0.45),
+            blurRadius: 18,
             offset: const Offset(0, 6),
           ),
         ],
@@ -311,7 +433,7 @@ class _TransactionInfoGlassCard extends StatelessWidget {
                   style: TextStyle(
                     color: statusColor,
                     fontSize: 26,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w900,
                     letterSpacing: -0.5,
                   ),
                 ),
@@ -321,6 +443,7 @@ class _TransactionInfoGlassCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   isIncome ? 'KHOẢN THU' : 'KHOẢN CHI',
@@ -342,14 +465,14 @@ class _TransactionInfoGlassCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: categoryColor.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(transaction.icon, color: categoryColor, size: 20),
+                child: Icon(transaction.icon, color: categoryColor, size: 22),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -358,11 +481,12 @@ class _TransactionInfoGlassCard extends StatelessWidget {
                       transaction.category.isEmpty ? 'Chưa có danh mục' : transaction.category,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 15,
+                        fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    if (transaction.description.isNotEmpty)
+                    if (transaction.description.isNotEmpty) ...[
+                      const SizedBox(height: 2),
                       Text(
                         transaction.description,
                         style: TextStyle(
@@ -372,6 +496,7 @@ class _TransactionInfoGlassCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
+                    ],
                   ],
                 ),
               ),
@@ -389,13 +514,13 @@ class _TransactionInfoGlassCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     'Ngày giao dịch',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12.5),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
                   ),
                 ],
               ),
               Text(
                 '${CurrencyUtils.formatDate(transaction.date)} • ${transaction.time}',
-                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w600),
               ),
             ],
           ),

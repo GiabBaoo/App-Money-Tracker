@@ -147,5 +147,55 @@ void main() {
       expect(transferIn.isTransfer, isTrue);
       expect(normalExpense.isTransfer, isFalse);
     });
+
+    test('compareTransactionsChronological sắp xếp chính xác ngày, giờ và thời điểm tạo', () {
+      // Cùng ngày, khác giờ:
+      final txMorning = TransactionModel(
+        id: 'tx_morning',
+        uid: 'user1',
+        type: 'expense',
+        category: 'Ăn sáng',
+        categoryIconCode: 0,
+        amount: 30000,
+        date: DateTime(2026, 9, 26, 8, 30), // Giờ trong date bị chuẩn hóa bỏ qua
+        time: '08:30',
+        createdAt: DateTime(2026, 9, 26, 8, 30),
+      );
+
+      final txAfternoon = TransactionModel(
+        id: 'tx_afternoon',
+        uid: 'user1',
+        type: 'expense',
+        category: 'Ăn tối',
+        categoryIconCode: 0,
+        amount: 70000,
+        date: DateTime(2026, 9, 26, 0, 0), // Tạo từ date picker (00:00:00)
+        time: '19:00',
+        createdAt: DateTime(2026, 9, 26, 19, 0),
+      );
+
+      final txYesterday = TransactionModel(
+        id: 'tx_yesterday',
+        uid: 'user1',
+        type: 'expense',
+        category: 'Mua sắm',
+        categoryIconCode: 0,
+        amount: 200000,
+        date: DateTime(2026, 9, 25),
+        time: '21:00',
+        createdAt: DateTime(2026, 9, 25, 21, 0),
+      );
+
+      final list = [txMorning, txYesterday, txAfternoon];
+      list.sort(CurrencyUtils.compareTransactionsChronological);
+
+      // Thứ tự mong đợi từ mới nhất -> cũ nhất:
+      // 1. txAfternoon (ngày 26, lúc 19:00)
+      // 2. txMorning (ngày 26, lúc 08:30)
+      // 3. txYesterday (ngày 25, lúc 21:00)
+      expect(list[0].id, equals('tx_afternoon'));
+      expect(list[1].id, equals('tx_morning'));
+      expect(list[2].id, equals('tx_yesterday'));
+    });
   });
 }

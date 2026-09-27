@@ -68,7 +68,7 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
     }
 
     final iconData = _selectedCategory == 'Tất cả'
-        ? Icons.account_balance_wallet_rounded
+        ? Icons.account_balance_wallet_outlined
         : CategoryUtils.getCategoryIcon(_selectedCategory);
 
     final budget = BudgetModel(
@@ -136,7 +136,7 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
                     value: _selectedCategory,
                     isExpanded: true,
                     items: _categories.map((c) {
-                      final icon = c == 'Tất cả' ? Icons.account_balance_wallet_rounded : CategoryUtils.getCategoryIcon(c);
+                      final icon = c == 'Tất cả' ? Icons.account_balance_wallet_outlined : CategoryUtils.getCategoryIcon(c);
                       return DropdownMenuItem(
                         value: c,
                         child: Row(

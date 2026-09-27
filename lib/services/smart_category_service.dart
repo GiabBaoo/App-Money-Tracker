@@ -42,7 +42,7 @@ class SmartCategoryService {
       'nhậu', 'lẩu', 'nướng', 'bbq', 'buffet', 'bánh tráng', 'cơm tấm'
     ],
     'Di chuyển': [
-      'grab', 'grab bike', 'grab car', 'be bike', 'be car', 'be ride', 'xanh sm', 'xanhsm',
+      'grab', 'grab bike', 'grab car', 'xe be', 'đi be', 'be bike', 'be car', 'be ride', 'be', 'xanh sm', 'xanhsm',
       'vinfast', 'gojek', 'mai linh', 'vina sun', 'vinasun', 'taxi', 'tiền xăng', 'petrolimex',
       'pvoil', 'gửi xe', 'vé xe', 'xe bus', 'xe buýt', 'vé tàu', 'vé máy bay', 'vietjet',
       'vietnam airlines', 'bamboo airways', 'phí cầu đường', 'epass', 'etc', 'vetc'
@@ -183,7 +183,13 @@ class SmartCategoryService {
       final keywords = entry.value;
 
       for (final kw in keywords) {
-        if (cleanText.contains(kw)) {
+        bool matches = false;
+        if (kw == 'be') {
+          matches = RegExp(r'\bbe\b').hasMatch(cleanText) && !cleanText.contains('bento') && !cleanText.contains('beamin');
+        } else {
+          matches = cleanText.contains(kw);
+        }
+        if (matches) {
           return SmartCategoryResult(
             category: category,
             iconCode: CategoryUtils.getCategoryIcon(category).codePoint,
@@ -209,6 +215,73 @@ class SmartCategoryService {
     }
 
     // Mặc định chi tiêu
+    return _buildResult('Ăn uống', 0.4, 'Danh mục chi tiêu phổ biến');
+  }
+
+  /// Phân loại đồng bộ siêu tốc (0ms) dựa trên từ điển thương hiệu & quy tắc có sẵn
+  SmartCategoryResult predictCategoryFast(String text, {bool isIncome = false}) {
+    final cleanText = text.trim().toLowerCase();
+    if (cleanText.isEmpty) {
+      final defaultCat = isIncome ? 'Thu khác' : 'Ăn uống';
+      return _buildResult(defaultCat, 0.3, 'Mặc định');
+    }
+
+    if (_userHistoryRules.containsKey(cleanText)) {
+      final cat = _userHistoryRules[cleanText]!;
+      return SmartCategoryResult(
+        category: cat,
+        iconCode: CategoryUtils.getCategoryIcon(cat).codePoint,
+        confidence: 0.95,
+        matchedReason: 'Dựa trên thói quen ghi chép trước đây của bạn',
+      );
+    }
+
+    for (final entry in _userHistoryRules.entries) {
+      if (entry.key.length >= 4 && cleanText.contains(entry.key)) {
+        return SmartCategoryResult(
+          category: entry.value,
+          iconCode: CategoryUtils.getCategoryIcon(entry.value).codePoint,
+          confidence: 0.88,
+          matchedReason: 'Học từ mục tương tự bạn từng lưu ("${entry.key}")',
+        );
+      }
+    }
+
+    for (final entry in _brandDictionary.entries) {
+      final category = entry.key;
+      final keywords = entry.value;
+
+      for (final kw in keywords) {
+        bool matches = false;
+        if (kw == 'be') {
+          matches = RegExp(r'\bbe\b').hasMatch(cleanText) && !cleanText.contains('bento') && !cleanText.contains('beamin');
+        } else {
+          matches = cleanText.contains(kw);
+        }
+        if (matches) {
+          return SmartCategoryResult(
+            category: category,
+            iconCode: CategoryUtils.getCategoryIcon(category).codePoint,
+            confidence: 0.90,
+            matchedReason: 'Nhận diện thương hiệu/dịch vụ "$kw"',
+          );
+        }
+      }
+    }
+
+    if (isIncome) {
+      if (cleanText.contains('lương') || cleanText.contains('salary')) {
+        return _buildResult('Tiền lương', 0.9, 'Từ khóa nhận diện thu nhập');
+      }
+      if (cleanText.contains('thưởng') || cleanText.contains('bonus')) {
+        return _buildResult('Tiền thưởng', 0.9, 'Từ khóa thưởng');
+      }
+      if (cleanText.contains('lãi') || cleanText.contains('interest')) {
+        return _buildResult('Tiền lãi', 0.85, 'Tiền lãi tiết kiệm/đầu tư');
+      }
+      return _buildResult('Thu khác', 0.5, 'Thu nhập khác');
+    }
+
     return _buildResult('Ăn uống', 0.4, 'Danh mục chi tiêu phổ biến');
   }
 

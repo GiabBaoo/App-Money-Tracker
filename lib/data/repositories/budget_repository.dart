@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 import '../local/database_helper.dart';
@@ -50,15 +51,20 @@ class BudgetRepository {
     final targetMonth = month ?? DateTime.now().month;
     final targetYear = year ?? DateTime.now().year;
 
-    final db = await _dbHelper.database;
-    final maps = await db.query(
-      'budgets',
-      where: 'uid = ? AND month = ? AND year = ?',
-      whereArgs: [uid, targetMonth, targetYear],
-      orderBy: 'createdAt DESC',
-    );
-
-    final rawBudgets = maps.map((m) => BudgetModel.fromSqlite(m)).toList();
+    List<BudgetModel> rawBudgets = [];
+    try {
+      final db = await _dbHelper.database;
+      final maps = await db.query(
+        'budgets',
+        where: 'uid = ? AND month = ? AND year = ?',
+        whereArgs: [uid, targetMonth, targetYear],
+        orderBy: 'createdAt DESC',
+      );
+      rawBudgets = maps.map((m) => BudgetModel.fromSqlite(m)).toList();
+    } catch (e) {
+      debugPrint('BudgetRepository.getBudgetsWithSpent error: $e');
+      return [];
+    }
     if (rawBudgets.isEmpty) return [];
 
     // Lấy tất cả giao dịch trong tháng để tính currentSpent cho từng budget

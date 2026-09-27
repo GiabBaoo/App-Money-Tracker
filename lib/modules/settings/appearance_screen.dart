@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../services/theme_service.dart';
 import '../../services/language_service.dart';
+import '../../widgets/animated_scale_button.dart';
 
 class AppearanceScreen extends StatelessWidget {
   const AppearanceScreen({super.key});
@@ -19,28 +21,40 @@ class AppearanceScreen extends StatelessWidget {
           children: [
             // === APP BAR ===
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-                    onPressed: () => Navigator.pop(context),
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                    ),
                   ),
                   Text(
                     context.tr('appearance_header'),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                       letterSpacing: 0.3,
                     ),
                   ),
-                  const SizedBox(width: 48),
+                  const SizedBox(width: 42),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             // === MAIN CONTENT ===
             Expanded(
@@ -333,7 +347,10 @@ class AppearanceScreen extends StatelessWidget {
             isSelected: themeService.themeMode == ThemeMode.light,
             previewColor: Colors.white,
             headerColor: const Color(0xFF438883),
-            onTap: () => themeService.setThemeMode(ThemeMode.light),
+            onTap: () {
+              HapticFeedback.selectionClick();
+              themeService.setThemeMode(ThemeMode.light);
+            },
             isDark: isDark,
           ),
         ),
@@ -347,7 +364,10 @@ class AppearanceScreen extends StatelessWidget {
             isSelected: themeService.themeMode == ThemeMode.dark,
             previewColor: const Color(0xFF1E1E1E),
             headerColor: const Color(0xFF0F2625),
-            onTap: () => themeService.setThemeMode(ThemeMode.dark),
+            onTap: () {
+              HapticFeedback.selectionClick();
+              themeService.setThemeMode(ThemeMode.dark);
+            },
             isDark: isDark,
           ),
         ),
@@ -361,7 +381,10 @@ class AppearanceScreen extends StatelessWidget {
             isSelected: themeService.themeMode == ThemeMode.system,
             previewColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
             headerColor: const Color(0xFF438883),
-            onTap: () => themeService.setThemeMode(ThemeMode.system),
+            onTap: () {
+              HapticFeedback.selectionClick();
+              themeService.setThemeMode(ThemeMode.system);
+            },
             isDark: isDark,
           ),
         ),
@@ -473,7 +496,10 @@ class AppearanceScreen extends StatelessWidget {
 
           return Expanded(
             child: GestureDetector(
-              onTap: () => themeService.setTextScaleFactor(val),
+              onTap: () {
+                HapticFeedback.selectionClick();
+                themeService.setTextScaleFactor(val);
+              },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: 10),

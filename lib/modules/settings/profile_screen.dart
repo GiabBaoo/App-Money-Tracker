@@ -330,9 +330,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       final croppedFile = await Navigator.push<File?>(
         context,
-        MaterialPageRoute(
-          builder: (_) => AvatarCropScreen(imageFile: File(picked.path)),
-        ),
+        PageTransitions.slideUp<File?>(AvatarCropScreen(imageFile: File(picked.path))),
       );
       if (croppedFile == null) return;
 
@@ -460,7 +458,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               stream: UserRepository().getUserStream(),
               builder: (context, snapshot) {
                 final user = snapshot.data ?? UserRepository().currentUser;
-                final authUser = FirebaseAuth.instance.currentUser;
+                User? authUser;
+                try {
+                  authUser = FirebaseAuth.instance.currentUser;
+                } catch (_) {}
                 final fallbackName = authUser?.displayName ??
                     (authUser?.email?.split('@').first ?? (isVi ? 'Người dùng' : 'User'));
                 final displayName = (user?.name != null && user!.name.trim().isNotEmpty)

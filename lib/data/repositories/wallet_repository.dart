@@ -10,17 +10,18 @@ import '../../services/auth_service.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/sync_service.dart';
 import 'transaction_repository.dart';
+import '../../utils/category_utils.dart';
 
 /// Repository quản lý Ví tiền (Nơi chứa tiền) — Offline-first với SQLite
 class WalletRepository {
   static final WalletRepository _instance = WalletRepository._internal();
   factory WalletRepository() => _instance;
-  WalletRepository._internal();
 
   final DatabaseHelper _dbHelper = DatabaseHelper();
   final _uuid = const Uuid();
 
   final _changeStream = StreamController<void>.broadcast();
+  final _walletsController = StreamController<List<WalletModel>>.broadcast();
 
   List<WalletModel> _cachedWallets = [];
   List<WalletModel> get latestWallets => List.unmodifiable(_cachedWallets);
@@ -28,9 +29,26 @@ class WalletRepository {
   String? _explicitUid;
   String? get _currentUid => _explicitUid ?? AuthService().currentUid;
 
+  WalletRepository._internal() {
+    _loadAndEmitWallets();
+  }
+
   void setUid(String uid) {
     _explicitUid = uid;
     _notifyChanged();
+  }
+
+  Future<List<WalletModel>> _loadAndEmitWallets() async {
+    try {
+      final list = await getWallets();
+      if (!_walletsController.isClosed) {
+        _walletsController.add(list);
+      }
+      return list;
+    } catch (e) {
+      debugPrint('WalletRepository _loadAndEmitWallets error: $e');
+      return [];
+    }
   }
 
   // ════════ CRUD VÍ TIỀN ════════
@@ -209,7 +227,7 @@ class WalletRepository {
         uid: uid,
         type: 'expense',
         category: 'Chuyển tiền',
-        categoryIconCode: Icons.swap_horiz_rounded.codePoint,
+        categoryIconCode: CategoryUtils.getCategoryIcon('Chuyển tiền').codePoint,
         amount: amount + fee,
         date: now,
         time: '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
@@ -234,7 +252,7 @@ class WalletRepository {
         uid: uid,
         type: 'income',
         category: 'Nhận chuyển tiền',
-        categoryIconCode: Icons.call_received_rounded.codePoint,
+        categoryIconCode: CategoryUtils.getCategoryIcon('Nhận chuyển tiền').codePoint,
         amount: amount,
         date: now,
         time: '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
@@ -343,6 +361,9 @@ class WalletRepository {
 
   /// Stream danh sách ví của người dùng (phát dữ liệu tức thì cho StreamBuilder)
   Stream<List<WalletModel>> getWalletsStream() async* {
+    if (_cachedWallets.isNotEmpty) {
+      yield latestWallets;
+    }
     yield await getWallets();
     await for (final _ in _changeStream.stream) {
       yield await getWallets();
@@ -351,15 +372,20 @@ class WalletRepository {
 
   /// Lấy danh sách ví một lần
   Future<List<WalletModel>> getWallets() async {
-    final db = await _dbHelper.database;
-    final uid = _currentUid;
-    final rows = uid != null
-        ? await db.query('wallets', where: 'uid = ?', whereArgs: [uid], orderBy: 'isDefault DESC, createdAt ASC')
-        : await db.query('wallets', orderBy: 'isDefault DESC, createdAt ASC');
+    try {
+      final db = await _dbHelper.database;
+      final uid = _currentUid;
+      final rows = uid != null
+          ? await db.query('wallets', where: 'uid = ?', whereArgs: [uid], orderBy: 'isDefault DESC, createdAt ASC')
+          : await db.query('wallets', orderBy: 'isDefault DESC, createdAt ASC');
 
-    final list = rows.map((r) => WalletModel.fromSqlite(r)).toList();
-    _cachedWallets = list;
-    return list;
+      final list = rows.map((r) => WalletModel.fromSqlite(r)).toList();
+      _cachedWallets = list;
+      return list;
+    } catch (e) {
+      debugPrint('WalletRepository.getWallets error: $e');
+      return _cachedWallets;
+    }
   }
 
   /// Lấy ví mặc định
@@ -380,6 +406,9 @@ class WalletRepository {
 
   /// Lấy tổng tài sản (tổng số dư tất cả các ví - phát tức thì không bị delay)
   Stream<double> getTotalBalanceStream() async* {
+    if (_cachedWallets.isNotEmpty) {
+      yield _cachedWallets.fold(0.0, (prev, w) => prev + w.balance);
+    }
     yield await getTotalBalance();
     await for (final _ in _changeStream.stream) {
       yield await getTotalBalance();
@@ -400,6 +429,7 @@ class WalletRepository {
   void notifyChanged() => _notifyChanged();
 
   void _notifyChanged() {
+    _loadAndEmitWallets();
     if (!_changeStream.isClosed) {
       _changeStream.add(null);
     }
@@ -428,5 +458,6 @@ class WalletRepository {
 
   void dispose() {
     _changeStream.close();
+    _walletsController.close();
   }
 }

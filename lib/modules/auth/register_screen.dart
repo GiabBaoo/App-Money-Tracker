@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../utils/page_transitions.dart';
 import 'package:flutter/services.dart'; // Thêm thư viện này để dùng FilteringTextInputFormatter chặn nhập chữ vào sđt
+import '../../widgets/animated_scale_button.dart';
 import '../../services/auth_service.dart';
 import 'verify_email_screen.dart';
 
@@ -268,13 +269,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.white,
-                      size: 20,
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.15),
+                        border: Border.all(color: Colors.white24, width: 1),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
                     ),
-                    onPressed: () => Navigator.pop(context),
                   ),
                   const Spacer(),
                   const Text(
@@ -515,8 +528,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       const SizedBox(height: 40),
-                      InkWell(
-                        onTap: _isLoading ? null : _handleRegister,
+                      AnimatedScaleButton(
+                        onTap: _isLoading
+                            ? null
+                            : () {
+                                HapticFeedback.mediumImpact();
+                                _handleRegister();
+                              },
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -578,9 +596,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Text(
         t,
         style: TextStyle(
-          color: error != null ? Colors.red : (isDark ? Colors.white70 : const Color(0xFF666666)),
+          color: error != null ? const Color(0xFFEF4444) : (isDark ? Colors.white70 : const Color(0xFF334155)),
           fontSize: 14,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
@@ -595,11 +613,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     Function(String)? onChanged,
     String? errorText,
     int? maxLength,
-    List<TextInputFormatter>?
-    inputFormatters, // Thêm tham số này để hỗ trợ format
+    List<TextInputFormatter>? inputFormatters,
   }) {
     bool hasError = errorText != null && errorText.isNotEmpty;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -609,30 +627,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
           keyboardType: keyboardType,
           onChanged: onChanged,
           maxLength: maxLength,
-          inputFormatters: inputFormatters, // Truyền format vào TextFormField
-          style: TextStyle(fontSize: 15, color: isDark ? Colors.white : Colors.black),
+          inputFormatters: inputFormatters,
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A)),
           decoration: InputDecoration(
+            filled: true,
+            fillColor: isDark ? const Color(0xFF1B2E2C) : const Color(0xFFF8FAFC),
             hintText: hintText,
             hintStyle: TextStyle(
-              color: isDark ? Colors.white54 : Colors.black.withValues(alpha: 0.3),
+              color: isDark ? Colors.white24 : const Color(0xFF94A3B8),
               fontSize: 14,
+              fontWeight: FontWeight.normal,
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
-              vertical: 14,
+              vertical: 16,
             ),
             isDense: true,
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(
-                color: hasError ? Colors.red : (isDark ? Colors.white24 : const Color(0xFFDDDDDD)),
+                color: hasError ? const Color(0xFFEF4444) : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+                width: 1,
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(
-                color: hasError ? Colors.red : const Color(0xFF438883),
-                width: 1.5,
+                color: hasError ? const Color(0xFFEF4444) : const Color(0xFF438883),
+                width: 1.8,
               ),
             ),
             suffixIcon: suffixIcon,
@@ -644,7 +666,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             padding: const EdgeInsets.only(top: 6, left: 12),
             child: Text(
               errorText,
-              style: const TextStyle(color: Colors.red, fontSize: 12),
+              style: const TextStyle(color: Color(0xFFEF4444), fontSize: 12.5, fontWeight: FontWeight.w500),
             ),
           ),
       ],
@@ -655,24 +677,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     bool s = _selectedGender == gender;
     return Expanded(
-      child: InkWell(
-        onTap: () => setState(() => _selectedGender = gender),
+      child: AnimatedScaleButton(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          setState(() => _selectedGender = gender);
+        },
         child: Container(
           height: 50,
           decoration: BoxDecoration(
-            color: s ? (isDark ? const Color(0xFF2E4E4C) : const Color(0xFFE8F5F0)) : Colors.transparent,
+            color: s
+                ? const Color(0xFF438883).withValues(alpha: isDark ? 0.25 : 0.12)
+                : (isDark ? const Color(0xFF1B2E2C) : const Color(0xFFF8FAFC)),
             border: Border.all(
-              color: s ? const Color(0xFF438883) : (isDark ? Colors.white24 : const Color(0xFFDDDDDD)),
+              color: s ? const Color(0xFF438883) : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+              width: s ? 1.5 : 1.0,
             ),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(16),
           ),
           child: Center(
-            child: Text(
-              gender,
-              style: TextStyle(
-                color: s ? (isDark ? const Color(0xFF68AEA9) : const Color(0xFF438883)) : (isDark ? Colors.white70 : const Color(0xFF666666)),
-                fontWeight: s ? FontWeight.w600 : FontWeight.normal,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (s) ...[
+                  const Icon(Icons.check_circle_rounded, color: Color(0xFF438883), size: 16),
+                  const SizedBox(width: 6),
+                ],
+                Text(
+                  gender,
+                  style: TextStyle(
+                    color: s
+                        ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
+                        : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                    fontWeight: s ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 14.5,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -686,17 +726,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Row(
         children: [
           Icon(
-            isValid ? Icons.check_circle : Icons.check_circle_outline,
-            color: isValid ? Colors.green : const Color(0xFF8B9098),
+            isValid ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+            color: isValid ? const Color(0xFF2ECC71) : const Color(0xFF94A3B8),
             size: 16,
           ),
           const SizedBox(width: 8),
           Text(
             text,
             style: TextStyle(
-              color: isValid ? Colors.green : const Color(0xFF8B9098),
+              color: isValid ? const Color(0xFF2ECC71) : const Color(0xFF94A3B8),
               fontSize: 13,
-              fontWeight: isValid ? FontWeight.w500 : FontWeight.normal,
+              fontWeight: isValid ? FontWeight.w600 : FontWeight.w500,
             ),
           ),
         ],

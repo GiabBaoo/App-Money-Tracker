@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/message_model.dart';
 import '../../services/firestore_service.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/top_toast.dart';
+import '../../widgets/animated_scale_button.dart';
 import 'message_detail_screen.dart';
 import 'support_request_screen.dart';
 
@@ -72,30 +74,58 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
           children: [
             // Top App Bar
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-                    onPressed: () => Navigator.pop(context),
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                    ),
                   ),
                   const Text(
                     'Hòm thư tin nhắn',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
+                    ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.add_comment_rounded, color: Colors.white, size: 24),
-                    tooltip: 'Gửi yêu cầu hỗ trợ',
-                    onPressed: () => Navigator.push(
-                      context,
-                      PageTransitions.slideRight(const SupportRequestScreen()),
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.push(
+                        context,
+                        PageTransitions.slideRight(const SupportRequestScreen()),
+                      );
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: const Icon(Icons.add_comment_rounded, color: Colors.white, size: 20),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             // Content Area
             Expanded(

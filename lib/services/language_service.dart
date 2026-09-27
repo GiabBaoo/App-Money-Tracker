@@ -106,6 +106,10 @@ class LanguageService extends ChangeNotifier {
     'see_all': {'vi': 'Xem tất cả', 'en': 'See all'},
     'gallery': {'vi': 'Thư viện ảnh', 'en': 'Gallery'},
     'no_tx_month': {'vi': 'Chưa có giao dịch trong tháng này', 'en': 'No transactions this month'},
+    'quick_transfer': {'vi': 'Chuyển tiền', 'en': 'Transfer'},
+    'quick_scan': {'vi': 'Quét hóa đơn', 'en': 'Scan AI'},
+    'quick_budget': {'vi': 'Ngân sách', 'en': 'Budget'},
+    'quick_mono': {'vi': 'Trợ lý Mono', 'en': 'Mono AI'},
 
     // Wallet Screen
     'wallets_title': {'vi': 'Ví tiền', 'en': 'Wallets'},

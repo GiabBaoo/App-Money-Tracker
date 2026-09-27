@@ -3,51 +3,51 @@ import 'package:flutter/material.dart';
 class CategoryUtils {
   static IconData getCategoryIcon(String name) {
     switch (name) {
-      // EXPENSES
-      case 'Ăn uống': return Icons.restaurant_rounded;
-      case 'Sức khỏe': return Icons.medical_services_rounded;
-      case 'Di chuyển': return Icons.directions_car_rounded;
-      case 'Học tập': return Icons.school_rounded;
-      case 'Giải trí': return Icons.movie_rounded;
-      case 'Du lịch': return Icons.flight_rounded;
-      case 'Mua sắm': return Icons.shopping_bag_rounded;
-      case 'Tiền nhà': return Icons.home_rounded;
-      case 'Tiền điện': return Icons.bolt_rounded;
-      case 'Điện thoại': return Icons.phone_android_rounded;
-      case 'Thể thao': return Icons.fitness_center_rounded;
-      case 'Tiết kiệm': return Icons.savings_rounded;
-      case 'Bảo hiểm': return Icons.shield_rounded;
-      case 'Quà tặng': return Icons.redeem_rounded;
-      case 'Làm đẹp': return Icons.spa_rounded;
-      case 'Thú cưng': return Icons.pets_rounded;
-      case 'Con cái': return Icons.child_care_rounded;
-      case 'Từ thiện': return Icons.favorite_rounded;
-      case 'Sửa chữa': return Icons.build_rounded;
-      case 'Đồ công nghệ': return Icons.devices_other_rounded;
-      case 'Trả nợ': return Icons.credit_card_rounded;
-      case 'Chi khác': return Icons.receipt_long_rounded;
+      // EXPENSES — Thống nhất dùng _outlined để khớp với CategoryScreen
+      case 'Ăn uống': return Icons.restaurant_outlined;
+      case 'Sức khỏe': return Icons.medical_services_outlined;
+      case 'Di chuyển': return Icons.directions_car_outlined;
+      case 'Học tập': return Icons.menu_book_outlined;
+      case 'Giải trí': return Icons.local_activity_outlined;
+      case 'Du lịch': return Icons.flight_outlined;
+      case 'Mua sắm': return Icons.shopping_bag_outlined;
+      case 'Tiền nhà': return Icons.home_outlined;
+      case 'Tiền điện': return Icons.water_drop_outlined;
+      case 'Điện thoại': return Icons.phone_android_outlined;
+      case 'Thể thao': return Icons.fitness_center_outlined;
+      case 'Tiết kiệm': return Icons.savings_outlined;
+      case 'Bảo hiểm': return Icons.shield_outlined;
+      case 'Quà tặng': return Icons.card_giftcard_outlined;
+      case 'Làm đẹp': return Icons.spa_outlined;
+      case 'Thú cưng': return Icons.pets_outlined;
+      case 'Con cái': return Icons.child_care_outlined;
+      case 'Từ thiện': return Icons.volunteer_activism_outlined;
+      case 'Sửa chữa': return Icons.build_outlined;
+      case 'Đồ công nghệ': return Icons.devices_other_outlined;
+      case 'Trả nợ': return Icons.credit_card_outlined;
+      case 'Chi khác': return Icons.receipt_long_outlined;
 
-      // INCOMES
+      // INCOMES — Thống nhất dùng _outlined để khớp với CategoryScreen
       case 'Tiền lương':
-      case 'Lương': return Icons.work_rounded;
-      case 'Tiền thưởng': return Icons.card_giftcard_rounded;
-      case 'Kinh doanh': return Icons.storefront_rounded;
-      case 'Đầu tư': return Icons.trending_up_rounded;
-      case 'Tiền lãi': return Icons.monetization_on_rounded;
-      case 'Được cho/Tặng': return Icons.volunteer_activism_rounded;
-      case 'Bán đồ': return Icons.sell_rounded;
-      case 'Tiền thuê nhà': return Icons.real_estate_agent_rounded;
-      case 'Thu nợ': return Icons.handshake_rounded;
-      case 'Làm thêm': return Icons.laptop_chromebook_rounded;
+      case 'Lương': return Icons.work_outline;
+      case 'Tiền thưởng': return Icons.card_giftcard_outlined;
+      case 'Kinh doanh': return Icons.storefront_outlined;
+      case 'Đầu tư': return Icons.trending_up_outlined;
+      case 'Tiền lãi': return Icons.monetization_on_outlined;
+      case 'Được cho/Tặng': return Icons.volunteer_activism_outlined;
+      case 'Bán đồ': return Icons.sell_outlined;
+      case 'Tiền thuê nhà': return Icons.real_estate_agent_outlined;
+      case 'Thu nợ': return Icons.handshake_outlined;
+      case 'Làm thêm': return Icons.laptop_chromebook_outlined;
       case 'Trợ cấp': return Icons.school_outlined;
       case 'Hoàn tiền': return Icons.replay_circle_filled_rounded;
-      case 'Thu khác': return Icons.account_balance_wallet_rounded;
+      case 'Thu khác': return Icons.account_balance_wallet_outlined;
 
       // TRANSFERS
       case 'Chuyển tiền': return Icons.swap_horiz_rounded;
       case 'Nhận chuyển tiền': return Icons.call_received_rounded;
       case 'Chuyển ví': return Icons.sync_alt_rounded;
-      default: return Icons.category_rounded;
+      default: return Icons.category_outlined;
     }
   }
 

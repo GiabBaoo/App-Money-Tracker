@@ -51,7 +51,10 @@ class SmartNotificationService {
   /// Phân tích dữ liệu chi tiêu & Tạo các thông báo thông minh thật
   /// [forceRefresh]: nếu là true (ví dụ người dùng bấm nút Phân tích ngay), bỏ qua kiểm tra ngày hôm nay
   Future<int> generateSmartFinancialNotifications({bool forceRefresh = false}) async {
-    final user = FirebaseAuth.instance.currentUser;
+    User? user;
+    try {
+      user = FirebaseAuth.instance.currentUser;
+    } catch (_) {}
     final uid = user?.uid ?? AuthService().offlineUid;
     if (uid == null) return 0;
 

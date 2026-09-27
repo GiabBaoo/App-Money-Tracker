@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../widgets/animated_scale_button.dart';
 
 class InviteMemberScreen extends StatefulWidget {
   final String groupId;
@@ -153,13 +155,30 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-                    onPressed: () => Navigator.pop(context),
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.15),
+                        border: Border.all(color: Colors.white24, width: 1),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
                   ),
+                  const SizedBox(width: 14),
                   const Expanded(
                     child: Text(
                       'Mời Thành Viên',
@@ -167,6 +186,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                         color: Colors.white,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+                        letterSpacing: -0.3,
                       ),
                     ),
                   ),
@@ -370,40 +390,52 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                       const SizedBox(height: 24),
                       
                       // Submit button
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: (_isLoading || _foundUserId == null)
-                              ? null
-                              : () => _inviteByPhone(_phoneController.text.trim()),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            disabledBackgroundColor: primaryColor.withValues(alpha: 0.5),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            elevation: 0,
+                      AnimatedScaleButton(
+                        onTap: (_isLoading || _foundUserId == null)
+                            ? null
+                            : () {
+                                HapticFeedback.mediumImpact();
+                                _inviteByPhone(_phoneController.text.trim());
+                              },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            color: (_isLoading || _foundUserId == null)
+                                ? primaryColor.withValues(alpha: 0.4)
+                                : primaryColor,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: (_isLoading || _foundUserId == null)
+                                ? null
+                                : [
+                                    BoxShadow(
+                                      color: primaryColor.withValues(alpha: 0.35),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
                           ),
-                          child: _isLoading
-                              ? SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      isDark ? Colors.black : Colors.white,
+                          child: Center(
+                            child: _isLoading
+                                ? SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        isDark ? Colors.black : Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                : const Text(
+                                    'Gửi Lời Mời',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                )
-                              : const Text(
-                                  'Gửi Lời Mời',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                          ),
                         ),
                       ),
                       

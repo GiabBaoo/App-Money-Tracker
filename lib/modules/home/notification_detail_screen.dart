@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/notification_model.dart';
 import '../../data/repositories/notification_repository.dart';
 import '../../utils/page_transitions.dart';
@@ -76,28 +77,40 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
         bottom: false,
         child: Column(
           children: [
-            // HEADER BAR
+            // FINTECH GLASSMORPHISM HEADER
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-                    onPressed: () => Navigator.pop(context),
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                    ),
                   ),
                   const Text(
                     'Chi tiết thông báo',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Xóa thông báo',
-                    icon: const Icon(Icons.delete_outline_rounded, color: Colors.white70, size: 22),
-                    onPressed: () async {
+                  AnimatedScaleButton(
+                    onTap: () async {
+                      HapticFeedback.lightImpact();
                       final confirm = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
@@ -117,11 +130,21 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
                         Navigator.pop(context, 'deleted');
                       }
                     },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 20),
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             // CONTENT CARD
             Expanded(

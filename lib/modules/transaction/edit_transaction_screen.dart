@@ -62,7 +62,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
       text: widget.transaction.description,
     );
     
-    _selectedDate = widget.transaction.date;
+    _selectedDate = DateTime(widget.transaction.date.year, widget.transaction.date.month, widget.transaction.date.day);
     
     final timeParts = widget.transaction.time.split(':');
     if (timeParts.length >= 2) {
@@ -93,24 +93,28 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   }
 
   Future<void> _loadWallets() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid ?? AuthService().currentUid;
-    if (uid != null) {
-      _walletRepo.setUid(uid);
-      final wallets = await _walletRepo.getWallets();
-      if (mounted) {
-        setState(() {
-          _wallets = wallets;
-          if (widget.transaction.walletId.isNotEmpty) {
-            _selectedWallet = wallets.cast<WalletModel?>().firstWhere(
-              (w) => w?.id == widget.transaction.walletId, 
-              orElse: () => null,
-            );
-          }
-          if (_selectedWallet == null && wallets.isNotEmpty) {
-            _selectedWallet = wallets.firstWhere((w) => w.isDefault, orElse: () => wallets.first);
-          }
-        });
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? AuthService().currentUid;
+      if (uid != null) {
+        _walletRepo.setUid(uid);
+        final wallets = await _walletRepo.getWallets();
+        if (mounted) {
+          setState(() {
+            _wallets = wallets;
+            if (widget.transaction.walletId.isNotEmpty) {
+              _selectedWallet = wallets.cast<WalletModel?>().firstWhere(
+                (w) => w?.id == widget.transaction.walletId, 
+                orElse: () => null,
+              );
+            }
+            if (_selectedWallet == null && wallets.isNotEmpty) {
+              _selectedWallet = wallets.firstWhere((w) => w.isDefault, orElse: () => wallets.first);
+            }
+          });
+        }
       }
+    } catch (e) {
+      debugPrint('EditTransactionScreen: _loadWallets error: $e');
     }
   }
 
@@ -139,7 +143,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            color: isDark ? const Color(0xFF162523) : Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
@@ -158,8 +162,8 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
               const SizedBox(height: 18),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: appMainColor,
-                  foregroundColor: Colors.white,
+                  backgroundColor: isDark ? const Color(0xFF2DD4BF) : appMainColor,
+                  foregroundColor: isDark ? const Color(0xFF0F2625) : Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -174,10 +178,11 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  side: BorderSide(color: isDark ? const Color(0xFF2DD4BF) : appMainColor),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                icon: const Icon(Icons.photo_library_outlined, color: appMainColor),
-                label: const Text('Chọn từ thư viện', style: TextStyle(fontWeight: FontWeight.w600, color: appMainColor)),
+                icon: Icon(Icons.photo_library_outlined, color: isDark ? const Color(0xFF2DD4BF) : appMainColor),
+                label: Text('Chọn từ thư viện', style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? const Color(0xFF2DD4BF) : appMainColor)),
                 onPressed: () async {
                   Navigator.pop(context);
                   await _pickTransactionPhotoFromSource(ImageSource.gallery);
@@ -235,7 +240,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1E2827) : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF162523) : Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) {
         return SafeArea(
@@ -289,7 +294,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                         'Số dư: ${CurrencyUtils.formatCurrency(w.balance)} • ${w.typeDisplayName}',
                         style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.grey.shade600),
                       ),
-                      trailing: isSel ? const Icon(Icons.check_circle_rounded, color: Color(0xFF438883)) : null,
+                      trailing: isSel ? Icon(Icons.check_circle_rounded, color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)) : null,
                       onTap: () {
                         setState(() => _selectedWallet = w);
                         Navigator.pop(ctx);
@@ -305,13 +310,28 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   }
 
   Future<void> _pickDate() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(colorScheme: const ColorScheme.light(primary: appMainColor)),
+        data: Theme.of(context).copyWith(
+          colorScheme: isDark
+              ? const ColorScheme.dark(
+                  primary: Color(0xFF2DD4BF),
+                  onPrimary: Color(0xFF0F2625),
+                  surface: Color(0xFF162523),
+                  onSurface: Colors.white,
+                )
+              : const ColorScheme.light(
+                  primary: appMainColor,
+                  onPrimary: Colors.white,
+                  surface: Colors.white,
+                  onSurface: Color(0xFF1E293B),
+                ),
+        ),
         child: child!,
       ),
     );
@@ -319,11 +339,26 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   }
 
   Future<void> _pickTime() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
       builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(colorScheme: const ColorScheme.light(primary: appMainColor)),
+        data: Theme.of(context).copyWith(
+          colorScheme: isDark
+              ? const ColorScheme.dark(
+                  primary: Color(0xFF2DD4BF),
+                  onPrimary: Color(0xFF0F2625),
+                  surface: Color(0xFF162523),
+                  onSurface: Colors.white,
+                )
+              : const ColorScheme.light(
+                  primary: appMainColor,
+                  onPrimary: Colors.white,
+                  surface: Colors.white,
+                  onSurface: Color(0xFF1E293B),
+                ),
+        ),
         child: child!,
       ),
     );
@@ -397,7 +432,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         category: _currentCategory,
         categoryIconCode: _currentIconCode,
         amount: newAmount,
-        date: _selectedDate,
+        date: DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day),
         time: timeStr,
         description: _descriptionController.text.trim(),
         createdAt: widget.transaction.createdAt,
@@ -502,7 +537,12 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
             ((_currentPhotoLocalPath.isNotEmpty && File(_currentPhotoLocalPath).existsSync()) ||
                 _currentPhotoUrl.isNotEmpty));
 
-    final typeColor = _isIncome ? const Color(0xFF24A869) : const Color(0xFFE17E5B);
+    final typeColor = _isIncome 
+        ? (isDark ? const Color(0xFF4ADE80) : const Color(0xFF24A869))
+        : (isDark ? const Color(0xFFFB923C) : const Color(0xFFE17E5B));
+
+    final headerBgColor = isDark ? const Color(0xFF0F2625) : appMainColor;
+    final activeAccentColor = isDark ? const Color(0xFF2DD4BF) : appMainColor;
 
     return PopScope(
       canPop: false,
@@ -514,167 +554,182 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: appMainColor,
+        backgroundColor: headerBgColor,
         body: SafeArea(
           bottom: false,
           child: Column(
             children: [
-              // ══════ CUSTOM HEADER TRÊN NỀN XANH ══════
+              // ══════ HEADER APPBAR CỐ ĐỊNH ══════
               Padding(
-                padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-                      onPressed: () async {
-                        final navigator = Navigator.of(context);
-                        if (await _confirmExit()) {
-                          navigator.pop();
-                        }
-                      },
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        padding: EdgeInsets.zero,
+                        onPressed: () async {
+                          final navigator = Navigator.of(context);
+                          if (await _confirmExit()) {
+                            navigator.pop();
+                          }
+                        },
+                      ),
                     ),
                     const Text(
                       'Chỉnh sửa giao dịch',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 17,
+                        fontSize: 17.5,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.3,
                       ),
                     ),
-                    const SizedBox(width: 48),
+                    const SizedBox(width: 40), // Cân bằng với nút back
                   ],
                 ),
               ),
 
-              // SỐ TIỀN LỚN TRÊN NỀN XANH
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                child: Column(
-                  children: [
-                    Text(
-                      _isIncome ? 'Khoản thu' : 'Khoản chi',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.75),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    IntrinsicWidth(
-                      child: TextFormField(
-                        controller: _amountController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [CurrencyInputFormatter()],
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
-                        ),
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.zero,
-                          isDense: true,
-                          suffixText: ' ₫',
-                          suffixStyle: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // TOGGLE THU/CHI CAPSULE
-                    Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              if (_isIncome) {
-                                setState(() {
-                                  _isIncome = false;
-                                  _currentCategory = 'Chi khác';
-                                  _currentIconCode = Icons.receipt_long_outlined.codePoint;
-                                });
-                              }
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: !_isIncome ? Colors.white : Colors.transparent,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                'Chi tiêu',
-                                style: TextStyle(
-                                  color: !_isIncome ? appMainColor : Colors.white70,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              if (!_isIncome) {
-                                setState(() {
-                                  _isIncome = true;
-                                  _currentCategory = 'Tiền lương';
-                                  _currentIconCode = Icons.work_outline.codePoint;
-                                });
-                              }
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: _isIncome ? Colors.white : Colors.transparent,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                'Thu nhập',
-                                style: TextStyle(
-                                  color: _isIncome ? appMainColor : Colors.white70,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // ══════ FORM BODY ══════
+              // ══════ LUỒNG CUỘN THỐNG NHẤT KHÔNG BỊ CẮT GÓC ══════
               Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                  ),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
                   child: Column(
                     children: [
-                      Expanded(
-                        child: ListView(
-                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                      // SỐ TIỀN & CHUYỂN ĐỔI THU/CHI
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        child: Column(
+                          children: [
+                            Text(
+                              _isIncome ? 'Khoản thu' : 'Khoản chi',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.75),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            IntrinsicWidth(
+                              child: TextFormField(
+                                controller: _amountController,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [CurrencyInputFormatter()],
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.5,
+                                ),
+                                decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                  isDense: true,
+                                  suffixText: ' ₫',
+                                  suffixStyle: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+
+                            // TOGGLE THU/CHI CAPSULE
+                            Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      if (_isIncome) {
+                                        setState(() {
+                                          _isIncome = false;
+                                          _currentCategory = 'Chi khác';
+                                          _currentIconCode = Icons.receipt_long_outlined.codePoint;
+                                        });
+                                      }
+                                    },
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: !_isIncome ? (isDark ? const Color(0xFF2DD4BF) : Colors.white) : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        'Chi tiêu',
+                                        style: TextStyle(
+                                          color: !_isIncome
+                                              ? (isDark ? const Color(0xFF0F2625) : appMainColor)
+                                              : Colors.white70,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      if (!_isIncome) {
+                                        setState(() {
+                                          _isIncome = true;
+                                          _currentCategory = 'Tiền lương';
+                                          _currentIconCode = Icons.work_outline.codePoint;
+                                        });
+                                      }
+                                    },
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: _isIncome ? (isDark ? const Color(0xFF2DD4BF) : Colors.white) : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        'Thu nhập',
+                                        style: TextStyle(
+                                          color: _isIncome
+                                              ? (isDark ? const Color(0xFF0F2625) : appMainColor)
+                                              : Colors.white70,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // ══════ FORM CONTAINER LIỀN MẠCH ══════
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                        ),
+                        padding: EdgeInsets.fromLTRB(20, 24, 20, MediaQuery.of(context).padding.bottom + 32),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             // ═══ CARD 1: THÔNG TIN GIAO DỊCH ═══
                             _buildFormCard(
@@ -692,7 +747,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                       decoration: BoxDecoration(
-                                        color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF7F8FA),
+                                        color: isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF7F8FA),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Row(
@@ -729,7 +784,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                       decoration: BoxDecoration(
-                                        color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF7F8FA),
+                                        color: isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF7F8FA),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Row(
@@ -787,7 +842,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                     Expanded(
                                       child: _buildFieldRow(
                                         icon: Icons.calendar_today_rounded,
-                                        iconColor: appMainColor,
+                                        iconColor: activeAccentColor,
                                         label: 'Ngày',
                                         isDark: isDark,
                                         child: InkWell(
@@ -796,7 +851,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                             decoration: BoxDecoration(
-                                              color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF7F8FA),
+                                              color: isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF7F8FA),
                                               borderRadius: BorderRadius.circular(12),
                                             ),
                                             child: Text(
@@ -815,7 +870,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                     Expanded(
                                       child: _buildFieldRow(
                                         icon: Icons.access_time_rounded,
-                                        iconColor: appMainColor,
+                                        iconColor: activeAccentColor,
                                         label: 'Giờ',
                                         isDark: isDark,
                                         child: InkWell(
@@ -824,7 +879,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                             decoration: BoxDecoration(
-                                              color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF7F8FA),
+                                              color: isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF7F8FA),
                                               borderRadius: BorderRadius.circular(12),
                                             ),
                                             child: Text(
@@ -873,7 +928,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                               children: [
                                 _buildFieldRow(
                                   icon: Icons.edit_note_rounded,
-                                  iconColor: appMainColor,
+                                  iconColor: activeAccentColor,
                                   label: 'Ghi chú',
                                   isDark: isDark,
                                   child: TextFormField(
@@ -887,7 +942,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                       hintText: 'Nhập ghi chú...',
                                       hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.grey.shade400, fontSize: 13.5),
                                       filled: true,
-                                      fillColor: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF7F8FA),
+                                      fillColor: isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF7F8FA),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
                                         borderSide: BorderSide.none,
@@ -902,7 +957,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                 // Ảnh hóa đơn
                                 _buildFieldRow(
                                   icon: Icons.camera_alt_rounded,
-                                  iconColor: appMainColor,
+                                  iconColor: activeAccentColor,
                                   label: 'Ảnh hóa đơn',
                                   isDark: isDark,
                                   child: hasActivePhoto
@@ -939,7 +994,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                                   children: [
                                                     TextButton.icon(
                                                       style: TextButton.styleFrom(
-                                                        foregroundColor: appMainColor,
+                                                        foregroundColor: activeAccentColor,
                                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                         visualDensity: VisualDensity.compact,
                                                       ),
@@ -949,7 +1004,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                                     ),
                                                     TextButton.icon(
                                                       style: TextButton.styleFrom(
-                                                        foregroundColor: Colors.redAccent,
+                                                        foregroundColor: isDark ? const Color(0xFFF87171) : Colors.redAccent,
                                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                         visualDensity: VisualDensity.compact,
                                                       ),
@@ -975,7 +1030,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                             decoration: BoxDecoration(
-                                              color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF7F8FA),
+                                              color: isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF7F8FA),
                                               borderRadius: BorderRadius.circular(12),
                                             ),
                                             child: Row(
@@ -999,50 +1054,56 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
 
                             const SizedBox(height: 20),
 
-                            // NÚT XÓA GIAO DỊCH
+                            // ═══ NÚT XÓA GIAO DỊCH ═══
                             Center(
                               child: TextButton.icon(
                                 style: TextButton.styleFrom(
-                                  foregroundColor: const Color(0xFFEF4444),
+                                  foregroundColor: isDark ? const Color(0xFFF87171) : const Color(0xFFEF4444),
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                 ),
                                 icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                                label: const Text('Xóa giao dịch này', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                label: const Text('Xóa giao dịch này', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
                                 onPressed: _handleDelete,
                               ),
                             ),
 
-                            const SizedBox(height: 16),
-                          ],
-                        ),
-                      ),
+                            const SizedBox(height: 12),
 
-                      // NÚT CẬP NHẬT
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: appMainColor,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              elevation: 0,
-                              shadowColor: appMainColor.withValues(alpha: 0.3),
+                            // ═══ NÚT XÁC NHẬN CẬP NHẬT ═══
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isDark ? const Color(0xFF2DD4BF) : appMainColor,
+                                  foregroundColor: isDark ? const Color(0xFF0F2625) : Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  elevation: 0,
+                                  shadowColor: isDark
+                                      ? const Color(0xFF2DD4BF).withValues(alpha: 0.3)
+                                      : appMainColor.withValues(alpha: 0.3),
+                                ),
+                                onPressed: _isLoading ? null : _handleSave,
+                                child: _isLoading
+                                    ? SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          color: isDark ? const Color(0xFF0F2625) : Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.check_rounded, size: 20),
+                                          SizedBox(width: 8),
+                                          Text('Xác nhận cập nhật', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.3)),
+                                        ],
+                                      ),
+                              ),
                             ),
-                            onPressed: _isLoading ? null : _handleSave,
-                            child: _isLoading
-                                ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                : const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.check_rounded, size: 20),
-                                      SizedBox(width: 8),
-                                      Text('Xác nhận cập nhật', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.3)),
-                                    ],
-                                  ),
-                          ),
+                          ],
                         ),
                       ),
                     ],
@@ -1062,10 +1123,10 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: isDark ? const Color(0xFF162523) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFEEF0F2),
+          color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFEEF0F2),
         ),
         boxShadow: [
           if (!isDark)
@@ -1123,14 +1184,13 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     );
   }
 
-
-
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   Widget _buildQuickTimeChip(String label, VoidCallback onTap, {bool isSelected = false}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor = isDark ? const Color(0xFF2DD4BF) : appMainColor;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: InkWell(
@@ -1140,12 +1200,12 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: isSelected 
-                ? appMainColor.withValues(alpha: 0.15) 
-                : (isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF1F5F9)),
+                ? activeColor.withValues(alpha: 0.15) 
+                : (isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF1F5F9)),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isSelected 
-                  ? appMainColor 
+                  ? activeColor 
                   : (isDark ? Colors.white12 : const Color(0xFFCBD5E1)),
             ),
           ),
@@ -1155,7 +1215,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               color: isSelected 
-                  ? appMainColor 
+                  ? activeColor 
                   : (isDark ? Colors.white70 : const Color(0xFF475569)),
             ),
           ),

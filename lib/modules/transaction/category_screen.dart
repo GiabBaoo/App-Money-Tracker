@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../services/firestore_service.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../models/user_model.dart';
@@ -7,6 +8,7 @@ import '../../features/group_expense/presentation/screens/group_list_screen.dart
 import '../../utils/page_transitions.dart';
 import '../../services/language_service.dart';
 import '../../widgets/top_toast.dart';
+import '../../widgets/animated_scale_button.dart';
 
 class CategoryScreen extends StatefulWidget {
   final bool isIncome;
@@ -139,132 +141,316 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).primaryColor;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: primaryColor,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            // TOP HEADER
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  Expanded(
-                    child: Text(
-                      _isIncomeTab ? 'Danh mục thu nhập' : 'Danh mục chi tiêu',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  // Nút tạo nhanh danh mục
-                  TextButton.icon(
-                    onPressed: () => _showAddOrEditCategoryModal(context),
-                    icon: const Icon(Icons.add_circle_outline, color: Colors.white, size: 18),
-                    label: Text(
-                      context.tr('tab_expense') == 'Chi tiêu' ? 'Tạo' : 'Add',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
-                    style: TextButton.styleFrom(
-                      backgroundColor: Colors.white.withValues(alpha: 0.2),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            // BODY CONTENT
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                  child: Column(
-                    children: [
-                      // THANH TÌM KIẾM
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                        child: Container(
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF3F4F6),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.transparent,
-                            ),
+      backgroundColor: isDark ? const Color(0xFF0A1817) : const Color(0xFFF8FAFC),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark
+                ? [const Color(0xFF0F2625), const Color(0xFF0A1817)]
+                : [const Color(0xFF438883), const Color(0xFFF8FAFC)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            stops: const [0.0, 0.35],
+          ),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              // ════════ TOP APP BAR (FINTECH GLASSMORPHISM) ════════
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: Row(
+                  children: [
+                    AnimatedScaleButton(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context);
+                      },
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.16),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.28),
+                            width: 1.0,
                           ),
-                          child: TextField(
-                            controller: _searchController,
-                            focusNode: _searchFocusNode,
-                            onChanged: (val) => setState(() => _searchQuery = val.toLowerCase().trim()),
-                            style: TextStyle(
-                              color: isDark ? Colors.white : Colors.black87,
-                              fontSize: 14,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
-                            decoration: InputDecoration(
-                              hintText: 'Tìm kiếm danh mục...',
-                              hintStyle: TextStyle(
-                                color: isDark ? Colors.white30 : Colors.grey.shade500,
-                                fontSize: 14,
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                    const Expanded(
+                      child: Text(
+                        'Danh Mục Giao Dịch',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    // Nút tạo nhanh danh mục
+                    AnimatedScaleButton(
+                      onTap: () => _showAddOrEditCategoryModal(context),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            width: 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.add_rounded, color: Colors.white, size: 18),
+                            SizedBox(width: 4),
+                            Text(
+                              'Tạo',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
                               ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              suffixIcon: _searchQuery.isNotEmpty
-                                  ? IconButton(
-                                      icon: Icon(Icons.close, color: isDark ? Colors.white54 : Colors.grey, size: 18),
-                                      onPressed: () {
-                                        _searchController.clear();
-                                        setState(() => _searchQuery = '');
-                                        _searchFocusNode.unfocus();
-                                      },
-                                    )
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ════════ LIQUID TAB SWITCHER: CHI TIÊU VS THU NHẬP ════════
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+                child: Container(
+                  height: 46,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            if (_isIncomeTab) {
+                              HapticFeedback.selectionClick();
+                              setState(() => _isIncomeTab = false);
+                            }
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeInOut,
+                            decoration: BoxDecoration(
+                              color: !_isIncomeTab ? const Color(0xFFE63946) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: !_isIncomeTab
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFFE63946).withValues(alpha: 0.35),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
                                   : null,
+                            ),
+                            child: Center(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.arrow_upward_rounded,
+                                    size: 16,
+                                    color: !_isIncomeTab ? Colors.white : Colors.white70,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Khoản Chi',
+                                    style: TextStyle(
+                                      color: !_isIncomeTab ? Colors.white : Colors.white70,
+                                      fontWeight: !_isIncomeTab ? FontWeight.w700 : FontWeight.w500,
+                                      fontSize: 13.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-
-                      // DANH SÁCH DANH MỤC
                       Expanded(
-                        child: StreamBuilder<UserModel?>(
-                          stream: _userRepo.getUserStream(),
-                          builder: (context, snapshot) {
-                            final user = snapshot.data;
-                            final customCategories = user?.customCategories ?? [];
-
+                        child: GestureDetector(
+                          onTap: () {
                             if (!_isIncomeTab) {
-                              return _buildExpenseCategoryList(customCategories, user, isDark);
-                            } else {
-                              return _buildIncomeCategoryList(customCategories, user, isDark);
+                              HapticFeedback.selectionClick();
+                              setState(() => _isIncomeTab = true);
                             }
                           },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeInOut,
+                            decoration: BoxDecoration(
+                              color: _isIncomeTab ? const Color(0xFF2ECC71) : Colors.transparent,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: _isIncomeTab
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFF2ECC71).withValues(alpha: 0.35),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Center(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.arrow_downward_rounded,
+                                    size: 16,
+                                    color: _isIncomeTab ? Colors.white : Colors.white70,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Khoản Thu',
+                                    style: TextStyle(
+                                      color: _isIncomeTab ? Colors.white : Colors.white70,
+                                      fontWeight: _isIncomeTab ? FontWeight.w700 : FontWeight.w500,
+                                      fontSize: 13.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
-          ],
+
+              const SizedBox(height: 4),
+
+              // ════════ BODY CONTENT (CURVED SQUIRCLE) ════════
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.06),
+                        blurRadius: 20,
+                        offset: const Offset(0, -6),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                    child: Column(
+                      children: [
+                        // THANH TÌM KIẾM
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+                          child: Container(
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF162423) : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            child: TextField(
+                              controller: _searchController,
+                              focusNode: _searchFocusNode,
+                              onChanged: (val) => setState(() => _searchQuery = val.toLowerCase().trim()),
+                              style: TextStyle(
+                                color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Tìm kiếm danh mục nhanh...',
+                                hintStyle: TextStyle(
+                                  color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                                  fontSize: 14,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.search_rounded,
+                                  color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                                  size: 20,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                suffixIcon: _searchQuery.isNotEmpty
+                                    ? IconButton(
+                                        icon: Icon(Icons.close_rounded, color: isDark ? Colors.white54 : Colors.grey, size: 18),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          setState(() => _searchQuery = '');
+                                          _searchFocusNode.unfocus();
+                                        },
+                                      )
+                                    : null,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // DANH SÁCH DANH MỤC
+                        Expanded(
+                          child: StreamBuilder<UserModel?>(
+                            stream: _userRepo.getUserStream(),
+                            builder: (context, snapshot) {
+                              final user = snapshot.data;
+                              final customCategories = user?.customCategories ?? [];
+
+                              if (!_isIncomeTab) {
+                                return _buildExpenseCategoryList(customCategories, user, isDark);
+                              } else {
+                                return _buildIncomeCategoryList(customCategories, user, isDark);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

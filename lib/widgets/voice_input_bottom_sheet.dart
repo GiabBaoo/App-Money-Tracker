@@ -219,7 +219,7 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
       if (aiResult.actionType != AiActionType.recordTransaction) {
         if (mounted) {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (_) => AiAssistantScreen(initialVoiceText: text)));
+          Navigator.push(context, PageTransitions.slideRight(AiAssistantScreen(initialVoiceText: text)));
           return;
         }
       }
@@ -393,8 +393,8 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                   Navigator.pop(context);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => AiAssistantScreen(initialVoiceText: _recognizedText),
+                    PageTransitions.slideRight(
+                      AiAssistantScreen(initialVoiceText: _recognizedText),
                     ),
                   );
                 },

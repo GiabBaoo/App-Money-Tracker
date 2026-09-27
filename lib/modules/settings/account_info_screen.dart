@@ -17,6 +17,7 @@ import '../../widgets/user_avatar.dart';
 import '../../widgets/top_toast.dart';
 import '../auth/login_screen.dart';
 import 'avatar_crop_screen.dart';
+import '../../widgets/animated_scale_button.dart';
 
 class AccountInfoScreen extends StatefulWidget {
   const AccountInfoScreen({super.key});
@@ -244,9 +245,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
         if (pickedFile != null && mounted) {
           final croppedFile = await Navigator.push<File?>(
             context,
-            MaterialPageRoute(
-              builder: (_) => AvatarCropScreen(imageFile: File(pickedFile.path)),
-            ),
+            PageTransitions.slideUp<File?>(AvatarCropScreen(imageFile: File(pickedFile.path))),
           );
 
           if (croppedFile != null && mounted) {
@@ -504,46 +503,92 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
           children: [
             // Top App Bar
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-                    onPressed: () => Navigator.pop(context),
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                    ),
                   ),
                   const Text(
                     'Thông tin tài khoản',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                   if (_isEditing)
-                    TextButton(
-                      onPressed: _isSaving ? null : _saveProfile,
-                      style: TextButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: 0.2),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      child: _isSaving
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Text(
-                              'Lưu',
-                              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                    AnimatedScaleButton(
+                      onTap: () {
+                        if (_isSaving) return;
+                        HapticFeedback.lightImpact();
+                        _saveProfile();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.15),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
+                          ],
+                        ),
+                        child: _isSaving
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF438883)),
+                              )
+                            : const Text(
+                                'Lưu',
+                                style: TextStyle(
+                                  color: Color(0xFF438883),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                      ),
                     )
                   else
-                    IconButton(
-                      icon: const Icon(Icons.edit_note_rounded, color: Colors.white, size: 28),
-                      onPressed: () => setState(() => _isEditing = true),
+                    AnimatedScaleButton(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        setState(() => _isEditing = true);
+                      },
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white24, width: 0.8),
+                        ),
+                        child: const Icon(Icons.edit_note_rounded, color: Colors.white, size: 24),
+                      ),
                     ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
             // Main Content Area
             Expanded(

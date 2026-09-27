@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -212,34 +212,43 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
         bottom: false,
         child: Column(
           children: [
-            // 1. CUSTOM APP BAR
+            // 1. FINTECH GLASSMORPHISM APP BAR
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.white,
-                      size: 20,
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
                     ),
-                    onPressed: () => Navigator.pop(context),
                   ),
                   const Text(
-                    'Tải báo cáo',
+                    'Tải Báo Cáo Chi Tiêu',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
                     ),
                   ),
-                  const SizedBox(width: 48),
+                  const SizedBox(width: 42),
                 ],
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
 
             // 2. KHUNG NỘI DUNG BO GÓC
             Expanded(
@@ -374,7 +383,10 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                             color: const Color(0xFFE63946),
                             isSelected: _selectedFormat == 'PDF',
                             isDark: isDark,
-                            onTap: () => setState(() => _selectedFormat = 'PDF'),
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              setState(() => _selectedFormat = 'PDF');
+                            },
                           ),
                           const SizedBox(width: 16),
                           _buildFormatCard(
@@ -383,7 +395,10 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                             color: const Color(0xFF2EAF7D),
                             isSelected: _selectedFormat == 'Excel',
                             isDark: isDark,
-                            onTap: () => setState(() => _selectedFormat = 'Excel'),
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              setState(() => _selectedFormat = 'Excel');
+                            },
                           ),
                         ],
                       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../widgets/top_toast.dart';
 import '../../widgets/staggered_list_item.dart';
 import '../../widgets/animated_scale_button.dart';
@@ -80,67 +81,90 @@ class _NotificationScreenState extends State<NotificationScreen> {
         bottom: false,
         child: Column(
           children: [
-            // === HEADER ===
+            // === FINTECH GLASSMORPHISM HEADER ===
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-                    onPressed: () => Navigator.pop(context),
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                    ),
                   ),
                   const Text(
                     'Thông báo',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                       letterSpacing: 0.3,
                     ),
                   ),
                   Row(
                     children: [
-                      IconButton(
-                        tooltip: 'Phân tích chi tiêu thông minh',
-                        icon: Container(
-                          padding: const EdgeInsets.all(6),
+                      AnimatedScaleButton(
+                        onTap: _isRefreshing ? () {} : () {
+                          HapticFeedback.lightImpact();
+                          _handleRefresh(forceAnalyze: true);
+                        },
+                        child: Container(
+                          width: 42,
+                          height: 42,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(10),
+                            color: Colors.white.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white24, width: 0.8),
                           ),
-                          child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 18),
+                          child: _isRefreshing
+                              ? const Center(
+                                  child: SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  ),
+                                )
+                              : const Icon(Icons.auto_awesome_rounded, color: Colors.amberAccent, size: 20),
                         ),
-                        onPressed: _isRefreshing ? null : () => _handleRefresh(forceAnalyze: true),
                       ),
-                      const SizedBox(width: 4),
-                      IconButton(
-                        icon: _isRefreshing
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              )
-                            : const Icon(Icons.done_all_rounded, color: Colors.white, size: 22),
-                        tooltip: 'Đánh dấu tất cả đã đọc',
-                        onPressed: () async {
+                      const SizedBox(width: 8),
+                      AnimatedScaleButton(
+                        onTap: () async {
+                          HapticFeedback.lightImpact();
                           await _firestoreService.markAllNotificationsAsRead();
-                          // Đồng bộ SQLite → badge chuông trên home tự mất
                           await _notiRepo.markAllAsRead();
                           if (context.mounted) {
                             TopToast.show(context, 'Đã đánh dấu tất cả thông báo là đã đọc!');
                           }
                         },
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white24, width: 0.8),
+                          ),
+                          child: const Icon(Icons.done_all_rounded, color: Colors.white, size: 20),
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
 
             // === DANH SÁCH THÔNG BÁO ===
             Expanded(
@@ -214,8 +238,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 if (noti.type == 'group_invite' && noti.groupId != null) {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(
-                                      builder: (context) => JoinGroupScreen(
+                                    PageTransitions.slideRight(
+                                      JoinGroupScreen(
                                         groupId: noti.groupId!,
                                         notificationId: noti.id,
                                       ),
@@ -224,8 +248,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 } else if (noti.type == 'group_response' && noti.groupId != null) {
                                   Navigator.push(
                                     context,
-                                    MaterialPageRoute(
-                                      builder: (context) => GroupDetailScreen(groupId: noti.groupId!),
+                                    PageTransitions.slideRight(
+                                      GroupDetailScreen(groupId: noti.groupId!),
                                     ),
                                   );
                                 } else {

@@ -815,3 +815,477 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
     );
   }
 }
+
+/// Thẻ phân tích xu hướng chi tiêu & cảnh báo bất thường
+class SpendingTrendCard extends StatelessWidget {
+  final SpendingTrendResult trendResult;
+
+  const SpendingTrendCard({super.key, required this.trendResult});
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = trendResult;
+    final isIncrease = tr.percentChange > 0;
+    final isDecrease = tr.percentChange < 0;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final trendColor = isIncrease
+        ? (tr.percentChange > 15 ? const Color(0xFFEF4444) : const Color(0xFFF59E0B))
+        : (isDecrease ? const Color(0xFF10B981) : const Color(0xFF3B82F6));
+
+    final trendIcon = isIncrease
+        ? Icons.trending_up_rounded
+        : (isDecrease ? Icons.trending_down_rounded : Icons.trending_flat_rounded);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E2827) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: trendColor.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: trendColor.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: trendColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(trendIcon, color: trendColor, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Xu hướng chi tiêu ${tr.periodName}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    Text(
+                      isIncrease
+                          ? 'Tăng ${tr.percentChange.toStringAsFixed(1)}% so với kỳ trước'
+                          : (isDecrease
+                              ? 'Giảm ${tr.percentChange.abs().toStringAsFixed(1)}% so với kỳ trước'
+                              : 'Chi tiêu duy trì ổn định'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: trendColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // So sánh hai kỳ
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Column(
+                  children: [
+                    Text('Kỳ này', style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : Colors.black54)),
+                    const SizedBox(height: 2),
+                    Text(
+                      CurrencyUtils.formatCurrency(tr.currentExpense),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(height: 26, width: 1, color: isDark ? Colors.white12 : Colors.grey.shade300),
+                Column(
+                  children: [
+                    Text('Kỳ trước', style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : Colors.black54)),
+                    const SizedBox(height: 2),
+                    Text(
+                      CurrencyUtils.formatCurrency(tr.previousExpense),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white60 : Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Cảnh báo bất thường nếu có
+          if (tr.anomalies.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Text(
+              '⚠️ Biến động đáng chú ý:',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFF59E0B)),
+            ),
+            const SizedBox(height: 4),
+            ...tr.anomalies.map((a) => Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('• ', style: TextStyle(color: Color(0xFFF59E0B), fontWeight: FontWeight.bold)),
+                      Expanded(
+                        child: Text(
+                          a,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.white70 : const Color(0xFF475569),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Thẻ điểm sức khỏe tài chính toàn diện (0 - 100)
+class FinancialHealthScoreCard extends StatelessWidget {
+  final FinancialHealthScoreResult result;
+
+  const FinancialHealthScoreCard({super.key, required this.result});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E2827) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: result.statusColor.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: result.statusColor.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: result.statusColor.withValues(alpha: 0.15),
+                  border: Border.all(color: result.statusColor, width: 2.5),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '${result.overallScore}',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: result.statusColor,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Sức khỏe tài chính',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: result.statusColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            result.rating,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: result.statusColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Thang điểm 100 theo chuẩn quản lý tài chính',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.white60 : Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          ...result.metrics.map((m) {
+            final ratio = (m.score / m.maxScore).clamp(0.0, 1.0);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        m.name,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white70 : Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        '${m.score}/${m.maxScore}đ',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white60 : Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: ratio,
+                      minHeight: 5,
+                      backgroundColor: isDark ? Colors.white10 : Colors.grey.shade200,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        ratio >= 0.8
+                            ? const Color(0xFF10B981)
+                            : (ratio >= 0.5 ? const Color(0xFFF59E0B) : const Color(0xFFEF4444)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    m.detail,
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      color: isDark ? Colors.white38 : Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+
+          if (result.recommendations.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            const Text(
+              '💡 Lời khuyên hành động từ Mono:',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF438883)),
+            ),
+            const SizedBox(height: 4),
+            ...result.recommendations.map((r) => Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('• ', style: TextStyle(color: Color(0xFF438883), fontWeight: FontWeight.bold)),
+                      Expanded(
+                        child: Text(
+                          r,
+                          style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white70 : const Color(0xFF475569)),
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Thẻ phát hiện giao dịch & chi phí định kỳ
+class RecurringTransactionsCard extends StatelessWidget {
+  final RecurringDetectionResult result;
+
+  const RecurringTransactionsCard({super.key, required this.result});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E2827) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.cached_rounded, color: Color(0xFF6366F1), size: 20),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Chi phí cố định định kỳ',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    Text(
+                      'Ước tính: ${CurrencyUtils.formatCurrency(result.totalMonthlyFixedCost)}/tháng',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF6366F1),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          if (result.items.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Chưa phát hiện khoản chi lặp lại định kỳ nào trong 90 ngày qua.',
+                style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.black54),
+              ),
+            )
+          else
+            ...result.items.map((item) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF438883).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        CategoryUtils.getCategoryIcon(item.category),
+                        size: 16,
+                        color: const Color(0xFF438883),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.title,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                          Text(
+                            '${item.frequency} • Lần tới: ${item.nextEstimatedDate.day}/${item.nextEstimatedDate.month}',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              color: isDark ? Colors.white38 : Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      CurrencyUtils.formatCurrency(item.amount),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFEF4444),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+}

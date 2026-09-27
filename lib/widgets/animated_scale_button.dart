@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 
 class AnimatedScaleButton extends StatefulWidget {
   final Widget child;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final double scaleDown;
   final Duration duration;
 
   const AnimatedScaleButton({
     super.key,
     required this.child,
-    required this.onTap,
+    this.onTap,
     this.scaleDown = 0.95,
     this.duration = const Duration(milliseconds: 150),
   });
@@ -38,17 +38,20 @@ class _AnimatedScaleButtonState extends State<AnimatedScaleButton> with SingleTi
   }
 
   void _onTapDown(TapDownDetails details) {
+    if (widget.onTap == null) return;
     if (mounted) _controller.forward();
   }
 
   void _onTapUp(TapUpDetails details) {
+    if (widget.onTap == null) return;
     if (mounted) {
       _controller.reverse();
     }
-    widget.onTap();
+    widget.onTap!();
   }
 
   void _onTapCancel() {
+    if (widget.onTap == null) return;
     if (mounted) _controller.reverse();
   }
 

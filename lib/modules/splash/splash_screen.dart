@@ -67,9 +67,7 @@ class _SplashScreenState extends State<SplashScreen> {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (context) => JoinGroupScreen(groupId: pendingGroupId),
-            ),
+            PageTransitions.fade(JoinGroupScreen(groupId: pendingGroupId)),
           );
           return;
         }

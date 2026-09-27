@@ -167,8 +167,19 @@ class ThemeService extends ChangeNotifier {
   static Color onSurface(BuildContext context) => Theme.of(context).colorScheme.onSurface;
   static Color accent(BuildContext context) => Theme.of(context).brightness == Brightness.dark ? const Color(0xFF00E5FF) : const Color(0xFF438883);
 
+  static const PageTransitionsTheme _pageTransitionsTheme = PageTransitionsTheme(
+    builders: {
+      TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+    },
+  );
+
   // Cấu trúc theme Sáng (Light Theme)
   ThemeData get lightTheme => ThemeData(
+        pageTransitionsTheme: _pageTransitionsTheme,
         primaryColor: const Color(0xFF438883),
         scaffoldBackgroundColor: const Color(0xFFF6F8F7),
         colorScheme: ColorScheme.fromSeed(
@@ -214,17 +225,23 @@ class ThemeService extends ChangeNotifier {
           ),
         ),
         textTheme: const TextTheme(
-          bodySmall: TextStyle(fontSize: 12.5, color: Color(0xFF64748B), height: 1.3),
-          bodyMedium: TextStyle(fontSize: 14.5, color: Color(0xFF1E293B), height: 1.35),
+          labelSmall: TextStyle(fontSize: 12.0, fontWeight: FontWeight.w600, color: Color(0xFF64748B), letterSpacing: 0.2),
+          labelMedium: TextStyle(fontSize: 13.0, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+          labelLarge: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+          bodySmall: TextStyle(fontSize: 13.0, color: Color(0xFF64748B), height: 1.35),
+          bodyMedium: TextStyle(fontSize: 15.0, color: Color(0xFF1E293B), height: 1.4),
           bodyLarge: TextStyle(fontSize: 16.5, color: Color(0xFF0F172A), fontWeight: FontWeight.w500),
-          titleSmall: TextStyle(fontSize: 15.0, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
-          titleMedium: TextStyle(fontSize: 17.0, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
-          titleLarge: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+          titleSmall: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+          titleMedium: TextStyle(fontSize: 17.5, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+          titleLarge: TextStyle(fontSize: 20.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+          headlineSmall: TextStyle(fontSize: 22.0, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+          headlineMedium: TextStyle(fontSize: 26.0, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
         ),
       );
 
   // Cấu trúc theme Tối (Dark Theme)
   ThemeData get darkTheme => ThemeData(
+        pageTransitionsTheme: _pageTransitionsTheme,
         primaryColor: const Color(0xFF0F2625), // Dark Moss Green cho Header
         scaffoldBackgroundColor: const Color(0xFF121212),
         colorScheme: ColorScheme.fromSeed(
@@ -271,12 +288,17 @@ class ThemeService extends ChangeNotifier {
           ),
         ),
         textTheme: const TextTheme(
-          bodySmall: TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8), height: 1.3),
-          bodyMedium: TextStyle(fontSize: 14.5, color: Colors.white, height: 1.35),
+          labelSmall: TextStyle(fontSize: 12.0, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8), letterSpacing: 0.2),
+          labelMedium: TextStyle(fontSize: 13.0, fontWeight: FontWeight.w600, color: Color(0xFFCBD5E1)),
+          labelLarge: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: Colors.white),
+          bodySmall: TextStyle(fontSize: 13.0, color: Color(0xFF94A3B8), height: 1.35),
+          bodyMedium: TextStyle(fontSize: 15.0, color: Colors.white, height: 1.4),
           bodyLarge: TextStyle(fontSize: 16.5, color: Colors.white, fontWeight: FontWeight.w500),
-          titleSmall: TextStyle(fontSize: 15.0, fontWeight: FontWeight.w600, color: Colors.white),
-          titleMedium: TextStyle(fontSize: 17.0, fontWeight: FontWeight.w700, color: Colors.white),
-          titleLarge: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold, color: Colors.white),
+          titleSmall: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: Colors.white),
+          titleMedium: TextStyle(fontSize: 17.5, fontWeight: FontWeight.w700, color: Colors.white),
+          titleLarge: TextStyle(fontSize: 20.5, fontWeight: FontWeight.bold, color: Colors.white),
+          headlineSmall: TextStyle(fontSize: 22.0, fontWeight: FontWeight.w800, color: Colors.white),
+          headlineMedium: TextStyle(fontSize: 26.0, fontWeight: FontWeight.w800, color: Colors.white),
         ),
       );
 }

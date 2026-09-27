@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../widgets/animated_scale_button.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import 'forgot_password_confirmation_screen.dart';
@@ -84,7 +86,26 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Row(children: [
-                IconButton(icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20), onPressed: () => Navigator.pop(context)),
+                AnimatedScaleButton(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.15),
+                      border: Border.all(color: Colors.white24, width: 1),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ),
                 const Spacer(),
                 const Text('mono', style: TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold, letterSpacing: -1.5)),
                 const Spacer(flex: 2),
@@ -139,17 +160,28 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       ),
                       const SizedBox(height: 50),
                       Center(
-                        child: InkWell(
-                          onTap: () => Navigator.pop(context),
-                          child: const Text(
-                            'Quay lại Đăng nhập',
-                            style: TextStyle(color: Color(0xFF438883), fontSize: 15, fontWeight: FontWeight.bold),
+                        child: AnimatedScaleButton(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.pop(context);
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: Text(
+                              'Quay lại Đăng nhập',
+                              style: TextStyle(color: Color(0xFF438883), fontSize: 15, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 20),
-                      InkWell(
-                        onTap: _isLoading ? null : _handleSendPasswordReset,
+                      AnimatedScaleButton(
+                        onTap: _isLoading
+                            ? null
+                            : () {
+                                HapticFeedback.mediumImpact();
+                                _handleSendPasswordReset();
+                              },
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),

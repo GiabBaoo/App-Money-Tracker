@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import '../models/transaction_model.dart';
 import '../models/wallet_model.dart';
+import '../data/repositories/wallet_repository.dart';
 
 class CurrencyInputFormatter extends TextInputFormatter {
   @override
@@ -119,6 +120,30 @@ class CurrencyUtils {
     return totals;
   }
 
+  /// So sánh hai giao dịch theo thứ tự thời gian chuẩn xác nhất (Canonical Comparator):
+  /// 1. Ngày giao dịch (chuẩn hóa yyyy-MM-dd, bỏ qua phần giờ/phút/giây ngẫu nhiên trong Date)
+  /// 2. Giờ phút giao dịch (chuỗi 'HH:mm', ví dụ '18:30' > '09:15')
+  /// 3. Thời điểm tạo giao dịch (createdAt)
+  /// 4. ID giao dịch (tie-breaker tuyệt đối)
+  static int compareTransactionsChronological(TransactionModel a, TransactionModel b) {
+    // 1. So sánh ngày (Mới nhất lên đầu)
+    final dateA = DateTime(a.date.year, a.date.month, a.date.day);
+    final dateB = DateTime(b.date.year, b.date.month, b.date.day);
+    final int dateComp = dateB.compareTo(dateA);
+    if (dateComp != 0) return dateComp;
+
+    // 2. So sánh chuỗi giờ 'HH:mm' (ví dụ: '18:00' > '09:00')
+    final int timeComp = b.time.compareTo(a.time);
+    if (timeComp != 0) return timeComp;
+
+    // 3. So sánh createdAt
+    final int createdComp = b.createdAt.compareTo(a.createdAt);
+    if (createdComp != 0) return createdComp;
+
+    // 4. Tie-breaker bằng ID để đảm bảo tính tất định (deterministic)
+    return b.id.compareTo(a.id);
+  }
+
   /// Tính số dư ví tính đến thời điểm ghi giao dịch bằng cách cộng/trừ ngược lại
   /// so với số dư ví hiện tại (chuẩn xác nhất theo nguyên lý sổ phụ ngân hàng).
   ///
@@ -128,17 +153,21 @@ class CurrencyUtils {
   ///   + Nếu giao dịch là CHI TIÊU: số dư trước đó = số dư sau đó + số tiền chi
   static Map<String, double> calculateReverseWalletBalances({
     required List<TransactionModel> allTransactions,
-    required List<WalletModel> wallets,
+    List<WalletModel>? wallets,
   }) {
     if (allTransactions.isEmpty) return {};
 
-    // 1. Tạo bản đồ tra cứu ví và số dư hiện tại
+    // 1. Nếu wallets rỗng, tự động lấy danh sách ví từ cache tươi mới của WalletRepository
+    final effectiveWallets = (wallets != null && wallets.isNotEmpty)
+        ? wallets
+        : WalletRepository().latestWallets;
+
     final Map<String, double> walletCurrentBalances = {
-      for (final w in wallets) w.id: w.balance,
+      for (final w in effectiveWallets) w.id: w.balance,
     };
 
-    final defaultWallet = wallets.isNotEmpty
-        ? wallets.firstWhere((w) => w.isDefault, orElse: () => wallets.first)
+    final defaultWallet = effectiveWallets.isNotEmpty
+        ? effectiveWallets.firstWhere((w) => w.isDefault, orElse: () => effectiveWallets.first)
         : null;
     final defaultWalletId = defaultWallet?.id ?? '';
     final defaultBalance = defaultWallet?.balance ?? 0.0;
@@ -152,20 +181,15 @@ class CurrencyUtils {
 
     final Map<String, double> balanceMap = {};
 
-    // 3. Với từng ví, sắp xếp giao dịch từ MỚI NHẤT -> CŨ NHẤT và tính lùi
+    // 3. Với từng ví, sắp xếp giao dịch từ MỚI NHẤT -> CŨ NHẤT bằng hàm so sánh chuẩn và tính lùi
     for (final entry in txsByWallet.entries) {
       final wId = entry.key;
       final txs = entry.value;
 
       final currentBalance = walletCurrentBalances[wId] ?? defaultBalance;
 
-      txs.sort((a, b) {
-        int c = b.date.compareTo(a.date);
-        if (c != 0) return c;
-        c = b.time.compareTo(a.time);
-        if (c != 0) return c;
-        return b.createdAt.compareTo(a.createdAt);
-      });
+      // Sắp xếp MỚI NHẤT -> CŨ NHẤT bằng hàm compare canonical
+      txs.sort(compareTransactionsChronological);
 
       double running = currentBalance;
       for (final tx in txs) {

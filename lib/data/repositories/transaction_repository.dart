@@ -9,6 +9,7 @@ import '../../models/transaction_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/sync_service.dart';
 import '../../services/connectivity_service.dart';
+import '../../services/ai_financial_context_service.dart';
 
 /// Repository quản lý giao dịch — đọc/ghi từ SQLite (offline-first).
 /// Mọi thay đổi đều được ghi vào sync_queue để đồng bộ lên Firestore sau.
@@ -202,6 +203,7 @@ class TransactionRepository {
     final isOnline = ConnectivityService().isOnline;
     final firestore = FirebaseFirestore.instance;
     int firestoreDeleteCount = 0;
+    final deletedOnFirestore = <String>{};
 
     if (isOnline && uid != null) {
       try {
@@ -222,6 +224,7 @@ class TransactionRepository {
 
           if (docDate != null && docDate.isBefore(cutoffDate)) {
             batch.delete(doc.reference);
+            deletedOnFirestore.add(doc.id);
             txIds.add(doc.id);
             firestoreDeleteCount++;
           }
@@ -233,6 +236,7 @@ class TransactionRepository {
         }
       } catch (e) {
         debugPrint('TransactionRepository: Lỗi batch delete Firestore: $e');
+        deletedOnFirestore.clear();
       }
     }
 
@@ -252,8 +256,9 @@ class TransactionRepository {
       whereArgs: whereArgs,
     );
 
-    // 4. Nếu có txIds nào chưa xóa trên Firestore (ví dụ offline), enqueue DELETE
-    for (final id in txIds) {
+    // 4. Nếu có txIds nào chưa xóa trên Firestore (ví dụ offline hoặc batch lỗi), enqueue DELETE
+    final remainingIdsToSync = txIds.difference(deletedOnFirestore);
+    for (final id in remainingIdsToSync) {
       await db.insert('sync_queue', {
         'tableName': 'transactions',
         'recordId': id,
@@ -262,12 +267,6 @@ class TransactionRepository {
         'createdAt': DateTime.now().millisecondsSinceEpoch,
         'retryCount': 0,
       });
-
-      if (isOnline) {
-        try {
-          unawaited(firestore.collection('transactions').doc(id).delete());
-        } catch (_) {}
-      }
     }
 
     // 5. Phát sự kiện cập nhật số dư & danh sách giao dịch
@@ -327,15 +326,20 @@ class TransactionRepository {
   Future<List<TransactionModel>> getAllTransactions({int? limit}) async {
     final uid = _currentUid;
     if (uid == null) return [];
-    final db = await _dbHelper.database;
-    final results = await db.query(
-      'transactions',
-      where: 'uid = ?',
-      whereArgs: [uid],
-      orderBy: 'date DESC',
-      limit: limit,
-    );
-    return results.map((row) => TransactionModel.fromSqlite(row)).toList();
+    try {
+      final db = await _dbHelper.database;
+      final results = await db.query(
+        'transactions',
+        where: 'uid = ?',
+        whereArgs: [uid],
+        orderBy: 'date DESC',
+        limit: limit,
+      );
+      return results.map((row) => TransactionModel.fromSqlite(row)).toList();
+    } catch (e) {
+      debugPrint('TransactionRepository.getAllTransactions error: $e');
+      return _cachedTransactions;
+    }
   }
 
   /// Lấy 1 giao dịch theo ID
@@ -356,6 +360,7 @@ class TransactionRepository {
   Future<List<TransactionModel>> getTransactionsByDateRange({
     required DateTime startDate,
     required DateTime endDate,
+    String? type,
   }) async {
     if (_currentUid == null) return [];
     final db = await _dbHelper.database;
@@ -363,15 +368,17 @@ class TransactionRepository {
     final rangeStart = DateTime(startDate.year, startDate.month, startDate.day);
     final rangeEnd = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59, 999);
 
+    final whereClause = type != null
+        ? 'uid = ? AND date >= ? AND date <= ? AND type = ?'
+        : 'uid = ? AND date >= ? AND date <= ?';
+    final whereArgs = type != null
+        ? [_currentUid, rangeStart.millisecondsSinceEpoch, rangeEnd.millisecondsSinceEpoch, type]
+        : [_currentUid, rangeStart.millisecondsSinceEpoch, rangeEnd.millisecondsSinceEpoch];
+
     final results = await db.query(
       'transactions',
-      where: 'uid = ? AND date >= ? AND date <= ? AND type = ?',
-      whereArgs: [
-        _currentUid,
-        rangeStart.millisecondsSinceEpoch,
-        rangeEnd.millisecondsSinceEpoch,
-        'expense',
-      ],
+      where: whereClause,
+      whereArgs: whereArgs,
       orderBy: 'date ASC, createdAt ASC',
     );
     return results.map((row) => TransactionModel.fromSqlite(row)).toList();
@@ -421,18 +428,26 @@ class TransactionRepository {
   // ════════ INTERNAL HELPERS ════════
 
   Future<void> _loadAndEmitTransactions({int? limit}) async {
-    await checkAndPurgeOldTransactions();
-    final list = await getAllTransactions(limit: limit);
-    _cachedTransactions = list;
-    if (!_transactionsController.isClosed) {
-      _transactionsController.add(list);
+    try {
+      await checkAndPurgeOldTransactions();
+      final list = await getAllTransactions(limit: limit);
+      _cachedTransactions = list;
+      if (!_transactionsController.isClosed) {
+        _transactionsController.add(list);
+      }
+    } catch (e) {
+      debugPrint('TransactionRepository._loadAndEmitTransactions error: $e');
     }
   }
 
   Future<void> _loadAndEmitBalance() async {
-    final balance = await _calculateBalance();
-    if (!_balanceController.isClosed) {
-      _balanceController.add(balance);
+    try {
+      final balance = await _calculateBalance();
+      if (!_balanceController.isClosed) {
+        _balanceController.add(balance);
+      }
+    } catch (e) {
+      debugPrint('TransactionRepository._loadAndEmitBalance error: $e');
     }
   }
 
@@ -467,6 +482,7 @@ class TransactionRepository {
   void _notifyTransactionsChanged() {
     _loadAndEmitTransactions();
     _loadAndEmitBalance();
+    AiFinancialContextService().invalidateCache();
   }
 
   Future<void> _enqueueSyncAction(String table, String recordId, String action, Map<String, dynamic>? data) async {

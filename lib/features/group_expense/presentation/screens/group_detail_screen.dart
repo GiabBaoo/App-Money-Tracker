@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../widgets/animated_scale_button.dart';
 import '../providers/group_expense_providers.dart';
 import '../../data/models/fund_transaction_model.dart';
 import 'invite_member_screen.dart';
@@ -8,6 +10,7 @@ import 'group_members_screen.dart';
 import 'group_all_transactions_screen.dart';
 import 'group_expense_statistics_screen.dart';
 import '../../../../modules/transaction/add_transaction_screen.dart';
+import '../../../../utils/page_transitions.dart';
 
 // Helper function để format tiền theo kiểu Việt (200000 -> 200.000đ)
 String _formatMoney(double amount) {
@@ -86,23 +89,53 @@ class GroupDetailScreen extends ConsumerWidget {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-                                    onPressed: () => Navigator.pop(context),
+                                  AnimatedScaleButton(
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      Navigator.pop(context);
+                                    },
+                                    child: Container(
+                                      width: 42,
+                                      height: 42,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.white.withValues(alpha: 0.15),
+                                        border: Border.all(color: Colors.white24, width: 1),
+                                      ),
+                                      child: const Icon(
+                                        Icons.arrow_back_ios_new_rounded,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                    ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.bar_chart_rounded, color: Colors.white, size: 28),
-                                    onPressed: () {
+                                  AnimatedScaleButton(
+                                    onTap: () {
+                                      HapticFeedback.selectionClick();
                                       Navigator.push(
                                         context,
-                                        MaterialPageRoute(
-                                          builder: (context) => GroupExpenseStatisticsScreen(
+                                        PageTransitions.slideRight(
+                                          GroupExpenseStatisticsScreen(
                                             groupId: group.id,
                                             groupName: group.name,
                                           ),
                                         ),
                                       );
                                     },
+                                    child: Container(
+                                      width: 42,
+                                      height: 42,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.white.withValues(alpha: 0.15),
+                                        border: Border.all(color: Colors.white24, width: 1),
+                                      ),
+                                      child: const Icon(
+                                        Icons.bar_chart_rounded,
+                                        color: Colors.white,
+                                        size: 22,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -128,8 +161,8 @@ class GroupDetailScreen extends ConsumerWidget {
                                           onTap: () {
                                             Navigator.push(
                                               context,
-                                              MaterialPageRoute(
-                                                builder: (context) => GroupMembersScreen(
+                                              PageTransitions.slideRight(
+                                                GroupMembersScreen(
                                                   groupId: group.id,
                                                   groupName: group.name,
                                                 ),
@@ -151,12 +184,13 @@ class GroupDetailScreen extends ConsumerWidget {
                                   ),
                                   // Invite button
                                   if (group.groupType != 'personal')
-                                    InkWell(
+                                    AnimatedScaleButton(
                                       onTap: () {
+                                        HapticFeedback.lightImpact();
                                         Navigator.push(
                                           context,
-                                          MaterialPageRoute(
-                                            builder: (context) => InviteMemberScreen(
+                                          PageTransitions.slideRight(
+                                            InviteMemberScreen(
                                               groupId: group.id,
                                               groupName: group.name,
                                             ),
@@ -233,8 +267,8 @@ class GroupDetailScreen extends ConsumerWidget {
                           color: const Color(0xFFFF1493),
                           onPressed: () => Navigator.push(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => AddTransactionScreen(
+                            PageTransitions.slideUp(
+                              AddTransactionScreen(
                                 initialData: {
                                   'isFundAction': true,
                                   'groupId': groupId,
@@ -258,8 +292,8 @@ class GroupDetailScreen extends ConsumerWidget {
                             color: primaryColor,
                             onPressed: () => Navigator.push(
                               context,
-                              MaterialPageRoute(
-                                builder: (context) => AddTransactionScreen(
+                              PageTransitions.slideUp(
+                                AddTransactionScreen(
                                   initialData: {
                                     'isFundAction': true,
                                     'groupId': groupId,
@@ -316,8 +350,8 @@ class GroupDetailScreen extends ConsumerWidget {
                       onSeeAll: transactions.length > 10 ? () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => GroupAllTransactionsScreen(groupId: groupId, groupName: group.name),
+                          PageTransitions.slideRight(
+                            GroupAllTransactionsScreen(groupId: groupId, groupName: group.name),
                           ),
                         );
                       } : null,
@@ -394,40 +428,55 @@ class GroupDetailScreen extends ConsumerWidget {
 
   Widget _buildActionButton({required bool isDark, required String label, required IconData icon, required Color color, required VoidCallback onPressed, bool isOutlined = false}) {
     if (isOutlined) {
-      return OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(color: isDark ? const Color(0xFF00BFA5) : color, width: 2),
+      return AnimatedScaleButton(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onPressed();
+        },
+        child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF00BFA5).withValues(alpha: 0.08) : color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: isDark ? const Color(0xFF00BFA5) : color, width: 1.5),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: isDark ? const Color(0xFF00BFA5) : color, size: 20),
+              const SizedBox(width: 8),
+              Text(label, style: TextStyle(color: isDark ? const Color(0xFF00BFA5) : color, fontSize: 16, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      );
+    }
+    return AnimatedScaleButton(
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        onPressed();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.35),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: isDark ? const Color(0xFF00BFA5) : color, size: 20),
+            Icon(icon, color: Colors.white, size: 20),
             const SizedBox(width: 8),
-            Text(label, style: TextStyle(color: isDark ? const Color(0xFF00BFA5) : color, fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(label, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
-      );
-    }
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 4,
-        shadowColor: color.withValues(alpha: 0.4),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: Colors.white, size: 20),
-          const SizedBox(width: 8),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-        ],
       ),
     );
   }

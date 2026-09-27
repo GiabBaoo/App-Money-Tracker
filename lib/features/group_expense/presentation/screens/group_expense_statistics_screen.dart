@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../../../widgets/animated_scale_button.dart';
 import '../providers/group_expense_providers.dart';
 import '../../data/models/expense_model.dart';
 import '../../data/models/fund_transaction_model.dart';
@@ -74,9 +76,27 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
             pinned: true,
             backgroundColor: primaryColor,
             elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-              onPressed: () => Navigator.pop(context),
+            leading: Center(
+              child: AnimatedScaleButton(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.15),
+                    border: Border.all(color: Colors.white24, width: 1),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+              ),
             ),
             flexibleSpace: FlexibleSpaceBar(
               centerTitle: true,
@@ -334,7 +354,10 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
     final isSelected = selectedTab == tabIndex;
     return Expanded(
       child: InkWell(
-        onTap: () => setState(() => selectedTab = tabIndex),
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() => selectedTab = tabIndex);
+        },
         borderRadius: BorderRadius.circular(16),
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../widgets/animated_scale_button.dart';
 import '../../utils/page_transitions.dart';
 import '../auth/login_screen.dart'; // Đảm bảo bạn đã có file này
 import '../auth/register_screen.dart'; // ĐÃ THÊM: Cần có file này để điều hướng khi bấm "Bắt đầu"
@@ -69,8 +71,9 @@ class OnboardingScreen extends StatelessWidget {
                 // NÚT BẮT ĐẦU -> ĐÃ SỬA ĐIỀU HƯỚNG TỚI TRANG ĐĂNG KÝ
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 30),
-                  child: InkWell(
+                  child: AnimatedScaleButton(
                     onTap: () {
+                      HapticFeedback.mediumImpact();
                       // LUỒNG 1: Chuyển sang màn hình ĐĂNG KÝ
                       Navigator.push(context, PageTransitions.slideRight(const RegisterScreen()));
                     },
@@ -84,8 +87,8 @@ class OnboardingScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(30),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF438883).withValues(alpha: 0.3),
-                            blurRadius: 10,
+                            color: const Color(0xFF438883).withValues(alpha: 0.35),
+                            blurRadius: 12,
                             offset: const Offset(0, 5),
                           ),
                         ],
@@ -107,30 +110,34 @@ class OnboardingScreen extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 // DÒNG "ĐÃ CÓ TÀI KHOẢN? ĐĂNG NHẬP"
-                TextButton(
-                  onPressed: () {
+                AnimatedScaleButton(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
                     // LUỒNG 2: Chuyển sang màn hình ĐĂNG NHẬP
                     Navigator.push(context, PageTransitions.slideRight(const LoginScreen()));
                   },
-                  child: Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'Đã có tài khoản? ',
-                          style: TextStyle(
-                            color: isDark ? Colors.white70 : const Color(0xFF444444),
-                            fontSize: 14,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: 'Đã có tài khoản? ',
+                            style: TextStyle(
+                              color: isDark ? Colors.white70 : const Color(0xFF444444),
+                              fontSize: 14,
+                            ),
                           ),
-                        ),
-                        TextSpan(
-                          text: 'Đăng nhập',
-                          style: const TextStyle(
-                            color: Color(0xFF438883),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                          TextSpan(
+                            text: 'Đăng nhập',
+                            style: const TextStyle(
+                              color: Color(0xFF438883),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

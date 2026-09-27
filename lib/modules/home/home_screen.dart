@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/staggered_list_item.dart';
+import '../../widgets/fade_indexed_stack.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/connectivity_service.dart';
 import '../../models/user_model.dart';
@@ -70,10 +72,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     
-    // ĐỊNH NGHĨA MÀU SẮC THEO YÊU CẦU ĐỒNG BỘ DARKMODE
-    final Color activeColor = isDark ? const Color(0xFF00E5FF) : const Color(0xFF438883);
-    final Color inactiveColor = isDark ? const Color(0xFF757575) : const Color(0xFF9E9E9E);
-    final Color bottomBarColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    // MÀU SẮC FLOATING DOCK CHUẨN FINTECH
+    final Color activeColor = isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883);
+    final Color inactiveColor = isDark ? Colors.white38 : const Color(0xFF94A3B8);
 
     return PopScope(
       canPop: false,
@@ -94,60 +95,58 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       },
       child: Scaffold(
+        extendBody: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: IndexedStack(
+        body: FadeIndexedStack(
           index: _selectedIndex,
           children: _pages,
         ),
-        floatingActionButton: AnimatedScaleButton(
-          onTap: () {
-            Navigator.push(context, PageTransitions.slideUp(const AddTransactionScreen()));
-          },
-          child: Container(
-            width: 65,
-            height: 65,
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF00BFA5) : const Color(0xFF438883),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: (isDark ? const Color(0xFF00BFA5) : const Color(0xFF438883)).withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                )
-              ],
-            ),
-            child: const Icon(Icons.add, color: Colors.white, size: 36),
-          ),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        bottomNavigationBar: BottomAppBar(
-          shape: const CircularNotchedRectangle(),
-          notchMargin: 8.0,
-          color: bottomBarColor,
-          elevation: 10,
-          child: SizedBox(
-            height: 65,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // NHÓM BÊN TRÁI
-                Row(
-                  children: [
-                    _buildNavItem(0, Icons.home_rounded, 'nav_home', activeColor, inactiveColor),
-                    _buildNavItem(1, Icons.bar_chart_rounded, 'nav_stats', activeColor, inactiveColor),
-                  ],
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: Container(
+              height: 64,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xDE1E293B)
+                    : Colors.white.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.12)
+                      : const Color(0xFFE2E8F0),
+                  width: 1.2,
                 ),
-                // KHOẢNG TRỐNG CHO FAB
-                const SizedBox(width: 40),
-                // NHÓM BÊN PHẢI
-                Row(
-                  children: [
-                    _buildNavItem(2, Icons.account_balance_wallet_rounded, 'nav_wallets', activeColor, inactiveColor),
-                    _buildNavItem(3, Icons.settings_rounded, 'nav_profile', activeColor, inactiveColor),
-                  ],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)).withValues(alpha: 0.06),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildFloatingNavItem(0, Icons.home_rounded, 'nav_home', activeColor, inactiveColor),
+                      _buildFloatingNavItem(1, Icons.bar_chart_rounded, 'nav_stats', activeColor, inactiveColor),
+                      _buildCenterFabButton(context, isDark),
+                      _buildFloatingNavItem(2, Icons.account_balance_wallet_rounded, 'nav_wallets', activeColor, inactiveColor),
+                      _buildFloatingNavItem(3, Icons.person_rounded, 'nav_profile', activeColor, inactiveColor),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -155,19 +154,81 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String labelKey, Color activeColor, Color inactiveColor) {
+  Widget _buildFloatingNavItem(int index, IconData icon, String labelKey, Color activeColor, Color inactiveColor) {
     final bool isSelected = _selectedIndex == index;
     return Tooltip(
       message: context.tr(labelKey),
-      child: MaterialButton(
-        minWidth: 70, // Tăng width một chút cho thoải mái
-        padding: EdgeInsets.zero,
-        onPressed: () => _switchTab(index),
-        child: Center(
-          child: Icon(
-            icon,
-            size: 32, // Tăng kích thước Icon lên 32 theo yêu cầu
-            color: isSelected ? activeColor : inactiveColor,
+      child: AnimatedScaleButton(
+        scaleDown: 0.88,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          _switchTab(index);
+        },
+        child: SizedBox(
+          width: 52,
+          height: 52,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: isSelected ? activeColor.withValues(alpha: 0.15) : Colors.transparent,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  size: 25,
+                  color: isSelected ? activeColor : inactiveColor,
+                ),
+              ),
+              const SizedBox(height: 2),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: isSelected ? 12 : 0,
+                height: 3,
+                decoration: BoxDecoration(
+                  color: isSelected ? activeColor : Colors.transparent,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCenterFabButton(BuildContext context, bool isDark) {
+    return Tooltip(
+      message: 'Thêm giao dịch',
+      child: AnimatedScaleButton(
+        scaleDown: 0.88,
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          Navigator.push(context, PageTransitions.slideUp(const AddTransactionScreen()));
+        },
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF438883), Color(0xFF2DD4BF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF438883).withValues(alpha: 0.45),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Center(
+            child: Icon(Icons.add_rounded, color: Colors.white, size: 28),
           ),
         ),
       ),
@@ -192,6 +253,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
   late Stream<List<TransactionModel>> _transactionStream;
 
   bool _showOfflineBanner = false;
+  bool _isBalanceVisible = true;
   Timer? _offlineBannerTimer;
 
   @override
@@ -291,12 +353,18 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                           builder: (context, userSnapshot) {
                             final user = userSnapshot.data;
                             final fallbackName = context.tr('profile_title') == 'Profile' ? 'User' : 'Người dùng';
+                            String? fbName;
+                            String? fbPhoto;
+                            try {
+                              fbName = FirebaseAuth.instance.currentUser?.displayName;
+                              fbPhoto = FirebaseAuth.instance.currentUser?.photoURL;
+                            } catch (_) {}
                             final displayName = (user?.name != null && user!.name.isNotEmpty)
                                 ? user.name
-                                : (FirebaseAuth.instance.currentUser?.displayName ?? fallbackName);
+                                : (fbName ?? fallbackName);
                             final avatarUrl = (user?.avatarUrl != null && user!.avatarUrl.isNotEmpty)
                                 ? user.avatarUrl
-                                : FirebaseAuth.instance.currentUser?.photoURL;
+                                : fbPhoto;
                             final nowHour = DateTime.now().hour;
                             final greeting = nowHour < 12
                                 ? '${context.tr('greeting_morning')},'
@@ -477,67 +545,31 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
           ],
         ),
 
-        // PHÍM TẮT TIỆN ÍCH NHANH (NGÂN SÁCH & MỤC TIÊU, TRỢ LÝ MONO) - THIẾT KẾ TINH GỌN CAPSULE
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-          child: Row(
-            children: [
-              Expanded(
-                child: _buildQuickFeatureCard(
-                  context,
-                  isDark: isDark,
-                  icon: Icons.track_changes_rounded,
-                  title: 'Ngân sách & Mục tiêu',
-                  color: const Color(0xFF438883),
-                  onTap: () => Navigator.push(
-                    context,
-                    PageTransitions.slideRight(const BudgetAndGoalsScreen()),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildQuickFeatureCard(
-                  context,
-                  isDark: isDark,
-                  icon: Icons.auto_awesome_rounded,
-                  title: 'Trợ lý Mono',
-                  color: const Color(0xFFF59E0B),
-                  onTap: () => Navigator.push(
-                    context,
-                    PageTransitions.slideRight(const AiAssistantScreen()),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        // BỘ 4 NÚT THAO TÁC NHANH (QUICK ACTIONS GRID) - CÔNG THÁI HỌC VÙNG NGÓN TAY CÁI
+        _buildQuickActionsGrid(context, isDark),
 
         // TIÊU ĐỀ LỊCH SỬ GIAO DỊCH (TINH GỌN, ĐÃ BỎ NÚT LỊCH THU CHI)
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
+          padding: const EdgeInsets.fromLTRB(24, 18, 24, 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(context.tr('tx_history'),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              Row(
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      PageTransitions.slideRight(const AllTransactionsScreen()),
-                    ),
-                    child: Text(context.tr('see_all'), style: const TextStyle(color: Color(0xFF438883))),
+              Text(
+                context.tr('tx_history'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              TextButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  PageTransitions.slideRight(const AllTransactionsScreen()),
+                ),
+                child: Text(
+                  context.tr('see_all'),
+                  style: const TextStyle(
+                    color: Color(0xFF438883),
+                    fontWeight: FontWeight.w700,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.photo_library_outlined, color: Color(0xFF438883)),
-                    onPressed: () => Navigator.push(
-                      context,
-                      PageTransitions.slideRight(const TransactionGalleryScreen()),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -549,22 +581,14 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
             stream: _transactionStream,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
               }
               
               final now = DateTime.now();
               var transactions = (snapshot.data ?? [])
                   .where((tx) => tx.date.month == now.month && tx.date.year == now.year)
                   .toList();
-              transactions.sort((a, b) {
-                DateTime dateA = DateTime(a.date.year, a.date.month, a.date.day);
-                DateTime dateB = DateTime(b.date.year, b.date.month, b.date.day);
-                int dateCompare = dateB.compareTo(dateA);
-                if (dateCompare != 0) return dateCompare;
-                int timeCompare = b.time.compareTo(a.time);
-                if (timeCompare != 0) return timeCompare;
-                return b.createdAt.compareTo(a.createdAt);
-              });
+              transactions.sort(CurrencyUtils.compareTransactionsChronological);
               final allTx = snapshot.data ?? [];
               final reverseBalances = CurrencyUtils.calculateReverseWalletBalances(
                 allTransactions: allTx,
@@ -573,15 +597,24 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
               final displayTransactions = transactions.take(10).toList();
               
               if (displayTransactions.isEmpty) {
-                return Center(child: Padding(
-                  padding: const EdgeInsets.only(top: 20),
-                  child: Text(context.tr('no_tx_month')),
-                ));
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: Text(
+                      context.tr('no_tx_month'),
+                      style: TextStyle(
+                        color: isDark ? Colors.white60 : Colors.grey.shade600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                );
               }
 
               return ListView.builder(
                 key: const PageStorageKey('home_tx_list'),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(24, 4, 24, 100),
                 itemCount: displayTransactions.length,
                 itemBuilder: (context, index) {
                   final tx = displayTransactions[index];
@@ -607,8 +640,13 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
     );
   }
 
+  // === THẺ SỐ DƯ TỔNG QUAN FINTECH GLASSMORPHISM ===
   Widget _buildBalanceCard(double totalBalance, double income, double expense) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final double totalFlow = income + expense;
+    final int incomePercent = totalFlow > 0 ? ((income / totalFlow) * 100).round() : 50;
+    final int expensePercent = totalFlow > 0 ? (100 - incomePercent) : 50;
+
     return AnimatedScaleButton(
       scaleDown: 0.98,
       onTap: () {
@@ -616,43 +654,205 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
         widget.onNavigateTab?.call(1);
       },
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF163230) : const Color(0xFF2F7E79),
-          borderRadius: BorderRadius.circular(20),
-          border: isDark ? Border.all(color: Colors.white.withValues(alpha: 0.15)) : null,
+          gradient: LinearGradient(
+            colors: isDark
+                ? [const Color(0xFF1B3835), const Color(0xFF102423)]
+                : [const Color(0xFF2F7E79), const Color(0xFF235F5B)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: isDark ? 0.16 : 0.22),
+            width: 1.2,
+          ),
           boxShadow: [
             BoxShadow(
               color: isDark
-                  ? Colors.black.withValues(alpha: 0.25)
-                  : const Color(0xFF438883).withValues(alpha: 0.3),
-              blurRadius: 20,
+                  ? Colors.black.withValues(alpha: 0.4)
+                  : const Color(0xFF438883).withValues(alpha: 0.32),
+              blurRadius: 22,
               offset: const Offset(0, 10),
-            )
+            ),
           ],
         ),
-        child: Column(
+        child: Stack(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // HỌA TIẾT HÌNH TRÒN TRANG TRÍ MỜ NGHỆ THUẬT
+            Positioned(
+              right: -24,
+              top: -24,
+              child: Container(
+                width: 110,
+                height: 110,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.05),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 40,
+              bottom: -35,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.03),
+                ),
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // HÀNG TIÊU ĐỀ SỐ DƯ & NÚT CON MẮT BẢO MẬT
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      context.tr('total_balance'),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    AnimatedScaleButton(
+                      scaleDown: 0.88,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() {
+                          _isBalanceVisible = !_isBalanceVisible;
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _isBalanceVisible
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _isBalanceVisible ? 'Hiện' : 'Ẩn',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                // CON SỐ SỐ DƯ CHÍNH
+                Text(
+                  _isBalanceVisible ? CurrencyUtils.formatCurrency(totalBalance) : '•••••••• ₫',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 2 PILL THU NHẬP & CHI PHÍ
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildBalancePill(
+                        icon: Icons.arrow_downward_rounded,
+                        label: context.tr('income'),
+                        amount: income,
+                        type: 'income',
+                        color: const Color(0xFF2DD4BF),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildBalancePill(
+                        icon: Icons.arrow_upward_rounded,
+                        label: context.tr('expense'),
+                        amount: expense,
+                        type: 'expense',
+                        color: const Color(0xFFF87171),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // DẢI TỶ LỆ DÒNG TIỀN MINI TRỰC QUAN (DUAL-TONE RATIO BAR)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(context.tr('total_balance'), style: const TextStyle(color: Colors.white, fontSize: 16)),
-                    const SizedBox(height: 8),
-                    Text(CurrencyUtils.formatCurrency(totalBalance),
-                        style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold)),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(3),
+                      child: Container(
+                        height: 5,
+                        color: Colors.white.withValues(alpha: 0.15),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: totalFlow > 0 ? incomePercent.clamp(1, 99) : 50,
+                              child: Container(
+                                color: totalFlow > 0 ? const Color(0xFF2DD4BF) : Colors.white24,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Expanded(
+                              flex: totalFlow > 0 ? expensePercent.clamp(1, 99) : 50,
+                              child: Container(
+                                color: totalFlow > 0 ? const Color(0xFFF87171) : Colors.white24,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          totalFlow > 0 ? 'Thu $incomePercent%' : 'Chưa có dòng tiền',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white.withValues(alpha: 0.75),
+                          ),
+                        ),
+                        if (totalFlow > 0)
+                          Text(
+                            'Chi $expensePercent%',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white.withValues(alpha: 0.75),
+                            ),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 30),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildBalanceInfo(Icons.arrow_downward, context.tr('income'), income, 'income'),
-                _buildBalanceInfo(Icons.arrow_upward, context.tr('expense'), expense, 'expense'),
               ],
             ),
           ],
@@ -661,95 +861,173 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
     );
   }
 
-  Widget _buildBalanceInfo(IconData icon, String label, double amount, String type) {
+  Widget _buildBalancePill({
+    required IconData icon,
+    required String label,
+    required double amount,
+    required String type,
+    required Color color,
+  }) {
     return AnimatedScaleButton(
-      scaleDown: 0.95,
+      scaleDown: 0.94,
       onTap: () {
         HapticFeedback.selectionClick();
         widget.onNavigateTab?.call(1, isExpense: type == 'expense');
       },
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: Colors.white, size: 20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.1),
+            width: 1,
           ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-              const SizedBox(height: 4),
-              Text(CurrencyUtils.formatCurrency(amount),
-                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-            ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.22),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 16),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _isBalanceVisible ? CurrencyUtils.formatCurrency(amount) : '•••••• ₫',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // === BỘ 4 NÚT THAO TÁC NHANH (QUICK ACTIONS GRID) ===
+  Widget _buildQuickActionsGrid(BuildContext context, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _buildQuickActionItem(
+            icon: Icons.swap_horiz_rounded,
+            label: context.tr('quick_transfer'),
+            color: const Color(0xFF14B8A6),
+            isDark: isDark,
+            onTap: () {
+              widget.onNavigateTab?.call(2); // Chuyển sang Tab Ví
+            },
+          ),
+          _buildQuickActionItem(
+            icon: Icons.document_scanner_rounded,
+            label: context.tr('quick_scan'),
+            color: const Color(0xFF3B82F6),
+            isDark: isDark,
+            onTap: () => Navigator.push(
+              context,
+              PageTransitions.slideRight(const TransactionGalleryScreen()),
+            ),
+          ),
+          _buildQuickActionItem(
+            icon: Icons.track_changes_rounded,
+            label: context.tr('quick_budget'),
+            color: const Color(0xFFF59E0B),
+            isDark: isDark,
+            onTap: () => Navigator.push(
+              context,
+              PageTransitions.slideRight(const BudgetAndGoalsScreen()),
+            ),
+          ),
+          _buildQuickActionItem(
+            icon: Icons.auto_awesome_rounded,
+            label: context.tr('quick_mono'),
+            color: const Color(0xFF8B5CF6),
+            isDark: isDark,
+            onTap: () => Navigator.push(
+              context,
+              PageTransitions.slideRight(const AiAssistantScreen()),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildQuickFeatureCard(
-    BuildContext context, {
-    required bool isDark,
+  Widget _buildQuickActionItem({
     required IconData icon,
-    required String title,
+    required String label,
     required Color color,
+    required bool isDark,
     required VoidCallback onTap,
   }) {
-    return AnimatedScaleButton(
-      scaleDown: 0.96,
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 62),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF202826) : Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: color.withValues(alpha: isDark ? 0.25 : 0.18),
-            width: 1.2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: isDark ? 0.15 : 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
+    return Expanded(
+      child: AnimatedScaleButton(
+        scaleDown: 0.92,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: isDark ? 0.22 : 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                  height: 1.2,
-                  color: isDark ? Colors.white : const Color(0xFF1F2937),
-                  letterSpacing: 0.1,
+                color: isDark ? color.withValues(alpha: 0.18) : color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: color.withValues(alpha: isDark ? 0.35 : 0.22),
+                  width: 1.2,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: isDark ? 0.16 : 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(height: 7),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white70 : const Color(0xFF334155),
+                letterSpacing: 0.1,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -757,3 +1035,4 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
     );
   }
 }
+

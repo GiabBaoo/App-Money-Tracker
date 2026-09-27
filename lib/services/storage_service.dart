@@ -5,8 +5,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class StorageService {
-  final FirebaseStorage _storage = FirebaseStorage.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  FirebaseStorage get _storage => FirebaseStorage.instance;
+  FirebaseAuth get _auth => FirebaseAuth.instance;
 
   String? get _uid => _auth.currentUser?.uid;
 

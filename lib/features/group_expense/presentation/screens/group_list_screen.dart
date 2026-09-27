@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../widgets/animated_scale_button.dart';
 import '../providers/group_expense_providers.dart';
 import 'create_group_screen.dart';
 import 'group_detail_screen.dart';
+import '../../../../utils/page_transitions.dart';
 
 // Helper function để format tiền theo kiểu Việt (200000 -> 200.000đ)
 String _formatMoney(double amount) {
@@ -29,19 +32,71 @@ class GroupListScreen extends ConsumerWidget {
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-                    onPressed: () => Navigator.pop(context),
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.15),
+                        border: Border.all(color: Colors.white24, width: 1),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
                   ),
-                  const Text(
-                    'Quỹ Nhóm',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Text(
+                      'Quỹ Nhóm',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ),
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      Navigator.push(
+                        context,
+                        PageTransitions.slideUp(const CreateGroupScreen()),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white24, width: 1),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.add_rounded, color: Colors.white, size: 16),
+                          SizedBox(width: 4),
+                          Text(
+                            'Tạo mới',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -53,7 +108,7 @@ class GroupListScreen extends ConsumerWidget {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF121212) : Colors.white,
+                  color: isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FA),
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: groupsAsync.when(
@@ -196,40 +251,55 @@ class GroupListScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 20),
                     
-                    // Create Fund Button
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const CreateGroupScreen(),
+                    // Buttons row
+                    Row(
+                      children: [
+                        AnimatedScaleButton(
+                          onTap: () {
+                            HapticFeedback.mediumImpact();
+                            Navigator.push(
+                              context,
+                              PageTransitions.slideUp(const CreateGroupScreen()),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.add_rounded,
+                                  color: primaryColor,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Tạo Quỹ',
+                                  style: TextStyle(
+                                    color: primaryColor,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      icon: Icon(
-                        Icons.add_rounded,
-                        color: primaryColor,
-                        size: 20,
-                      ),
-                      label: Text(
-                        'Tạo Quỹ',
-                        style: TextStyle(
-                          color: primaryColor,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
@@ -327,11 +397,10 @@ class GroupListScreen extends ConsumerWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
+            HapticFeedback.lightImpact();
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => GroupDetailScreen(groupId: group.id),
-              ),
+              PageTransitions.slideRight(GroupDetailScreen(groupId: group.id)),
             );
           },
           borderRadius: BorderRadius.circular(20),

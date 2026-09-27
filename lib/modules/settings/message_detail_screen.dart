@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../widgets/animated_scale_button.dart';
 
 class MessageDetailScreen extends StatelessWidget {
   // Các biến nhận dữ liệu từ màn hình danh sách truyền sang
@@ -26,34 +28,43 @@ class MessageDetailScreen extends StatelessWidget {
         bottom: false,
         child: Column(
           children: [
-            // 1. CUSTOM APP BAR
+            // 1. FINTECH GLASSMORPHISM APP BAR
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.white,
-                      size: 20,
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
                     ),
-                    onPressed: () => Navigator.pop(context),
                   ),
                   const Text(
                     'Chi tiết tin nhắn',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
                     ),
                   ),
-                  const SizedBox(width: 48), // Cân bằng với nút Back
+                  const SizedBox(width: 42),
                 ],
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
 
             // 2. KHUNG NỘI DUNG MÀU TRẮNG BO GÓC
             Expanded(

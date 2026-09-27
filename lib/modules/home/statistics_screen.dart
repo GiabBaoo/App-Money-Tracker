@@ -243,59 +243,95 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          // === HEADER CURVE ===
-          Stack(
-            children: [
-              Container(
-                height: 140,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
-                  borderRadius: const BorderRadius.vertical(bottom: Radius.elliptical(400, 30)),
-                ),
+          // === HEADER FINTECH GLASSMORPHISM ===
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [const Color(0xFF0F2625), const Color(0xFF0A1817)]
+                    : [const Color(0xFF438883), const Color(0xFF2DD4BF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const SizedBox(width: 40),
-                      Text(
-                        context.tr('stats_title'),
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
-                      ),
-                      AnimatedScaleButton(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          Navigator.push(context, PageTransitions.slideRight(const CalendarTrackingScreen()));
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(10),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+              boxShadow: [
+                BoxShadow(
+                  color: (isDark ? Colors.black : const Color(0xFF438883)).withValues(alpha: 0.18),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const SizedBox(width: 42),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.analytics_rounded, color: Colors.white, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          context.tr('stats_title'),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: 0.3,
                           ),
-                          child: const Icon(Icons.calendar_month_rounded, size: 22, color: Colors.white),
                         ),
+                      ],
+                    ),
+                    AnimatedScaleButton(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        Navigator.push(context, PageTransitions.slideRight(const CalendarTrackingScreen()));
+                      },
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.28),
+                            width: 1.0,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.calendar_month_rounded, size: 19, color: Colors.white),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // === MAIN TABS (TUẦN/THÁNG/NĂM) ===
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Container(
-              height: 48,
+              height: 46,
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(14),
+                color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+                ),
               ),
               child: Row(
                 children: [
@@ -307,7 +343,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // === CAPSULE FILTER (NAVIGATOR + MODAL TRIGGER) & TYPE SWITCH ===
           Padding(
@@ -413,8 +449,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 ),
                 const SizedBox(width: 8),
 
-                // NÚT CHUYỂN ĐỔI LOẠI GIAO DỊCH (CHI TIẾU / THU NHẬP)
+                // NÚT CHUYỂN ĐỔI LOẠI GIAO DỊCH (CHI TIẾU / THU NHẬP) - ĐỒNG BỘ FINTECH
                 AnimatedScaleButton(
+                  scaleDown: 0.94,
                   onTap: () {
                     HapticFeedback.selectionClick();
                     setState(() {
@@ -422,33 +459,55 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                     });
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8.5),
                     decoration: BoxDecoration(
                       color: _isExpense
-                          ? (isDark ? const Color(0xFF3D1B1B) : const Color(0xFFFEF2F2))
-                          : (isDark ? const Color(0xFF1B3D2F) : const Color(0xFFE8F5EE)),
+                          ? (isDark ? const Color(0xFF381A1A) : const Color(0xFFFEF2F2))
+                          : (isDark ? const Color(0xFF143328) : const Color(0xFFE8F5EE)),
                       borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: _isExpense
+                            ? const Color(0xFFF87171).withValues(alpha: isDark ? 0.35 : 0.25)
+                            : const Color(0xFF2DD4BF).withValues(alpha: isDark ? 0.35 : 0.25),
+                        width: 1.2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (_isExpense ? const Color(0xFFF87171) : const Color(0xFF2DD4BF)).withValues(alpha: 0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            color: (_isExpense
+                                ? const Color(0xFFF87171)
+                                : const Color(0xFF2DD4BF)).withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _isExpense ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                            color: _isExpense
+                                ? (isDark ? const Color(0xFFF87171) : const Color(0xFFE63946))
+                                : (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0D9488)),
+                            size: 14,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
                         Text(
                           _isExpense ? context.tr('expense') : context.tr('income'),
                           style: TextStyle(
                             color: _isExpense
                                 ? (isDark ? const Color(0xFFF87171) : const Color(0xFFE63946))
-                                : (isDark ? const Color(0xFF4ADE80) : const Color(0xFF24A869)),
+                                : (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0D9488)),
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
                           ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.swap_horiz,
-                          color: _isExpense
-                              ? (isDark ? const Color(0xFFF87171) : const Color(0xFFE63946))
-                              : (isDark ? const Color(0xFF4ADE80) : const Color(0xFF24A869)),
-                          size: 15,
                         ),
                       ],
                     ),
@@ -500,13 +559,14 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                         _buildChartTypeSelector(isDark),
                         const SizedBox(height: 16),
 
-                        // Biểu đồ được chọn
-                        if (_selectedChartType == 0)
-                          _buildWaveChart(chartPoints, total)
-                        else if (_selectedChartType == 1)
-                          _buildPieChart(categoryGroups, total)
-                        else
-                          _buildDoubleBarChart(actualTx, range),
+                        // Biểu đồ được chọn (Bọc RepaintBoundary để tối ưu GPU/Render Thread khi cuộn)
+                        RepaintBoundary(
+                          child: _selectedChartType == 0
+                              ? _buildWaveChart(chartPoints, total)
+                              : (_selectedChartType == 1
+                                  ? _buildPieChart(categoryGroups, total)
+                                  : _buildDoubleBarChart(actualTx, range)),
+                        ),
 
                         const SizedBox(height: 12),
 
@@ -514,7 +574,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                         _buildFinancialHealthCard(totalIncome, totalExpense, savingsRate, isDark),
 
                         _buildEnhancedTopSection(categoryGroups, total, actualTx),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 100),
                       ],
                     ),
                   ),
@@ -538,10 +598,15 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              _isExpense ? context.tr('spending_breakdown') : context.tr('income_breakdown'),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            Expanded(
+              child: Text(
+                _isExpense ? context.tr('spending_breakdown') : context.tr('income_breakdown'),
+                style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
+            const SizedBox(width: 8),
             GestureDetector(
               onTap: () {
                 HapticFeedback.selectionClick();
@@ -1378,12 +1443,19 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           curve: Curves.easeInOut,
           margin: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF438883) : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: isSelected && !isDark
+            gradient: isSelected
+                ? const LinearGradient(
+                    colors: [Color(0xFF438883), Color(0xFF2DD4BF)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: isSelected ? null : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: const Color(0xFF438883).withValues(alpha: 0.25),
+                      color: const Color(0xFF438883).withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     )
@@ -1396,9 +1468,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               style: TextStyle(
                 color: isSelected
                     ? Colors.white
-                    : (isDark ? Colors.white60 : Colors.black54),
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                fontSize: 14,
+                    : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                fontSize: 13.5,
               ),
             ),
           ),
@@ -1456,16 +1528,20 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
             children: [
               Icon(
                 icon,
-                size: 16,
+                size: 15,
                 color: isSelected ? primaryColor : (isDark ? Colors.white60 : Colors.black54),
               ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected ? (isDark ? Colors.white : primaryColor) : (isDark ? Colors.white60 : Colors.black54),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    color: isSelected ? (isDark ? Colors.white : primaryColor) : (isDark ? Colors.white60 : Colors.black54),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -1956,11 +2032,15 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     final list = map.entries.map((e) {
       final sortedTxs = List<TransactionModel>.from(e.value)..sort((a, b) => b.date.compareTo(a.date));
       final sum = sortedTxs.fold<double>(0, (prev, element) => prev + element.amount);
+      // Ưu tiên lấy icon từ giao dịch đầu tiên (đã lưu đúng icon user chọn)
+      final IconData icon = sortedTxs.isNotEmpty
+          ? sortedTxs.first.icon
+          : CategoryUtils.getCategoryIcon(e.key);
       return _CategoryGroup(
         category: e.key,
         totalAmount: sum,
         transactionCount: sortedTxs.length,
-        icon: CategoryUtils.getCategoryIcon(e.key),
+        icon: icon,
         transactions: sortedTxs,
       );
     }).toList();

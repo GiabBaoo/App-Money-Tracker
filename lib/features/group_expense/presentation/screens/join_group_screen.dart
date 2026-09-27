@@ -1,12 +1,14 @@
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../widgets/animated_scale_button.dart';
 import '../providers/group_expense_providers.dart';
 import '../../../../models/notification_model.dart';
 import 'group_detail_screen.dart';
+import '../../../../utils/page_transitions.dart';
 import '../../../../utils/category_utils.dart';
 
 class JoinGroupScreen extends ConsumerStatefulWidget {
@@ -168,8 +170,8 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (context) => GroupDetailScreen(groupId: widget.groupId),
+            PageTransitions.slideRight(
+              GroupDetailScreen(groupId: widget.groupId),
             ),
           );
         }
@@ -219,9 +221,8 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
           if (mounted) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    GroupDetailScreen(groupId: widget.groupId),
+              PageTransitions.slideRight(
+                GroupDetailScreen(groupId: widget.groupId),
               ),
             );
           }
@@ -384,30 +385,42 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                     // Header
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
+                        horizontal: 20,
+                        vertical: 12,
                       ),
                       child: Row(
                         children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.arrow_back_ios,
-                              color: Colors.white,
-                              size: 20,
+                          AnimatedScaleButton(
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              Navigator.pop(context);
+                            },
+                            child: Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white.withValues(alpha: 0.2),
+                                border: Border.all(color: Colors.white30, width: 1),
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                             ),
-                            onPressed: () => Navigator.pop(context),
                           ),
                           const Spacer(),
                           const Text(
                             'Lời mời tham gia quỹ',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 16,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           const Spacer(),
-                          const SizedBox(width: 40),
+                          const SizedBox(width: 42),
                         ],
                       ),
                     ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../widgets/animated_scale_button.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import 'reset_password_screen.dart';
@@ -52,16 +54,28 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
           children: [
             // 1. HEADER
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.white,
-                      size: 20,
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.15),
+                        border: Border.all(color: Colors.white24, width: 1),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
                     ),
-                    onPressed: () => Navigator.pop(context),
                   ),
                   const Expanded(
                     child: Text(
@@ -70,11 +84,12 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.3,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 40), // Cân bằng layout
+                  const SizedBox(width: 42), // Cân bằng layout
                 ],
               ),
             ),
@@ -174,8 +189,13 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                       const SizedBox(height: 50),
 
                       // NÚT TIẾP TỤC
-                      InkWell(
-                        onTap: _isLoading ? null : _handleVerify,
+                      AnimatedScaleButton(
+                        onTap: _isLoading
+                            ? null
+                            : () {
+                                HapticFeedback.mediumImpact();
+                                _handleVerify();
+                              },
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -184,16 +204,32 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                               colors: [Color(0xFF68AEA9), Color(0xFF3E8681)],
                             ),
                             borderRadius: BorderRadius.circular(40),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'Tiếp tục',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF3E8681).withValues(alpha: 0.35),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
                               ),
-                            ),
+                            ],
+                          ),
+                          child: Center(
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Tiếp tục',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                           ),
                         ),
                       ),

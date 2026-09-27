@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../widgets/animated_scale_button.dart';
 import '../providers/group_expense_providers.dart';
 import '../../data/dtos/create_group_dto.dart';
 
@@ -54,19 +56,37 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-                    onPressed: () => Navigator.pop(context),
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.15),
+                        border: Border.all(color: Colors.white24, width: 1),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
                   ),
+                  const SizedBox(width: 14),
                   const Text(
-                    'Quỹ',
+                    'Tạo Quỹ Mới',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: -0.3,
                     ),
                   ),
                 ],
@@ -412,7 +432,10 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                                 child: InkWell(
                                   onTap: (_nameController.text.trim().isEmpty || _isLoading)
                                       ? null
-                                      : () => _createGroup(context),
+                                      : () {
+                                          HapticFeedback.mediumImpact();
+                                          _createGroup(context);
+                                        },
                                   borderRadius: BorderRadius.circular(16),
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(vertical: 16),

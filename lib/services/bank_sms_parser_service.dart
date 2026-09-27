@@ -50,6 +50,19 @@ class BankSmsParserService {
   /// Kiểm tra xem đoạn văn bản có phải là thông báo biến động số dư / SMS ngân hàng không
   bool isBankNotification(String text) {
     final lower = text.toLowerCase();
+
+    // Loại trừ các câu nói / lệnh ghi chép tự nhiên của người dùng (chứa cụm từ ví, câu thoại)
+    if (lower.contains('vào ví') ||
+        lower.contains('từ ví') ||
+        lower.contains('bằng ví') ||
+        lower.contains('qua ví') ||
+        lower.contains('trả bằng') ||
+        lower.contains('mới được') ||
+        lower.contains('vừa được') ||
+        lower.contains('hôm nay được')) {
+      return false;
+    }
+
     final bankKeywords = [
       'vietcombank', 'vcb', 'techcombank', 'tcb', 'mbbank', 'mb bank', 'mb:',
       'vpbank', 'vpb', 'acb', 'bidv', 'tpbank', 'tpb', 'sacombank', 'stb',

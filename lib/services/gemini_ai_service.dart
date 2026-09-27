@@ -8,6 +8,7 @@ import 'connectivity_service.dart';
 import 'bank_sms_parser_service.dart';
 import 'group_bill_split_service.dart';
 import 'financial_advisor_service.dart';
+import 'smart_category_service.dart';
 import '../utils/category_utils.dart';
 
 enum AiActionType {
@@ -27,6 +28,9 @@ enum AiActionType {
   latteFactor,
   savingsRoadmap,
   spendingQuery,
+  spendingTrends,
+  financialHealthScore,
+  recurringTransactions,
 }
 
 class AiTransactionItem {
@@ -101,6 +105,9 @@ class AiParsedResult {
   final LatteFactorResult? latteFactorResult;
   final SavingsRoadmapResult? savingsRoadmapResult;
   final PersonalSpendingQueryResult? spendingQueryResult;
+  final SpendingTrendResult? spendingTrendResult;
+  final FinancialHealthScoreResult? financialHealthScoreResult;
+  final RecurringDetectionResult? recurringDetectionResult;
   final bool isSuccess;
   final String? errorMessage;
 
@@ -122,6 +129,9 @@ class AiParsedResult {
     this.latteFactorResult,
     this.savingsRoadmapResult,
     this.spendingQueryResult,
+    this.spendingTrendResult,
+    this.financialHealthScoreResult,
+    this.recurringDetectionResult,
     this.isSuccess = true,
     this.errorMessage,
   });
@@ -216,6 +226,7 @@ class GeminiAiService {
   Future<AiParsedResult> parseNaturalLanguage(
     String prompt, {
     List<Map<String, String>>? conversationHistory,
+    AiTransactionItem? pendingTransaction,
   }) async {
     final trimmed = prompt.trim();
     if (trimmed.isEmpty) {
@@ -249,8 +260,8 @@ class GeminiAiService {
     }
 
     // 3. TÍNH TOÁN & CHIA TIỀN HÓA ĐƠN NHÓM THÔNG MINH (Group Bill Split)
-    final isSplitQuery = (lowerTrimmed.contains('chia') || lowerTrimmed.contains('share') || lowerTrimmed.contains('campuchia')) &&
-        (lowerTrimmed.contains('người') || lowerTrimmed.contains('cho') || lowerTrimmed.contains('đều') || lowerTrimmed.contains('bill') || lowerTrimmed.contains('tiền'));
+    final isSplitQuery = (lowerTrimmed.contains('chia') || lowerTrimmed.contains('share') || lowerTrimmed.contains('chia campuchia')) &&
+        (lowerTrimmed.contains('người') || lowerTrimmed.contains('đều') || lowerTrimmed.contains('bill') || (lowerTrimmed.contains('chia') && lowerTrimmed.contains('cho')));
     if (isSplitQuery && lowerTrimmed != 'chi tiêu nhóm' && lowerTrimmed != 'chia tiền') {
       final splitRes = GroupBillSplitService().parseAndSplit(trimmed);
       return AiParsedResult(
@@ -354,6 +365,60 @@ class GeminiAiService {
       );
     }
 
+    // 8.1 PHÂN TÍCH XU HƯỚNG CHI TIÊU & CẢNH BÁO BẤT THƯỜNG (Spending Trends)
+    final isTrendQuery = lowerTrimmed.contains('xu hướng chi tiêu') ||
+        lowerTrimmed.contains('xu hướng tiêu') ||
+        lowerTrimmed.contains('biến động chi tiêu') ||
+        lowerTrimmed.contains('tăng hay giảm') ||
+        lowerTrimmed.contains('chi tiêu bất thường') ||
+        lowerTrimmed.contains('có tiêu quá đà') ||
+        lowerTrimmed.contains('so sánh chi tiêu');
+    if (isTrendQuery) {
+      final trendRes = await FinancialAdvisorService().analyzeSpendingTrends(
+        period: lowerTrimmed.contains('tháng') ? 'month' : 'week',
+      );
+      return AiParsedResult(
+        aiReply: trendRes.advice,
+        transactions: [],
+        actionType: AiActionType.spendingTrends,
+        spendingTrendResult: trendRes,
+      );
+    }
+
+    // 8.2 ĐIỂM SỨC KHỎE TÀI CHÍNH TOÀN DIỆN (Financial Health Score)
+    final isHealthQuery = lowerTrimmed.contains('điểm tài chính') ||
+        lowerTrimmed.contains('sức khỏe tài chính') ||
+        lowerTrimmed.contains('điểm sức khỏe') ||
+        lowerTrimmed.contains('quản lý tiền tốt không') ||
+        lowerTrimmed.contains('đánh giá tài chính') ||
+        lowerTrimmed.contains('chấm điểm tài chính');
+    if (isHealthQuery) {
+      final healthRes = await FinancialAdvisorService().calculateFinancialHealthScore();
+      return AiParsedResult(
+        aiReply: healthRes.summaryAdvice,
+        transactions: [],
+        actionType: AiActionType.financialHealthScore,
+        financialHealthScoreResult: healthRes,
+      );
+    }
+
+    // 8.3 PHÁT HIỆN GIAO DỊCH ĐỊNH KỲ (Recurring Detection)
+    final isRecurringQuery = lowerTrimmed.contains('khoản định kỳ') ||
+        lowerTrimmed.contains('chi phí cố định') ||
+        lowerTrimmed.contains('khoản chi cố định') ||
+        lowerTrimmed.contains('giao dịch lặp lại') ||
+        lowerTrimmed.contains('chi tiêu định kỳ') ||
+        lowerTrimmed.contains('tiền cố định hàng tháng');
+    if (isRecurringQuery) {
+      final recRes = await FinancialAdvisorService().detectRecurringTransactions();
+      return AiParsedResult(
+        aiReply: recRes.summary,
+        transactions: [],
+        actionType: AiActionType.recurringTransactions,
+        recurringDetectionResult: recRes,
+      );
+    }
+
     // 9. NHẬN DIỆN LỆNH CỤC BỘ NHANH (Fast Intent Fallback - 0ms lag)
     final localAction = _matchLocalIntent(trimmed);
     if (localAction != null) {
@@ -362,7 +427,7 @@ class GeminiAiService {
 
     // 10. TRÍCH XUẤT NHANH GIAO DỊCH RÕ RÀNG (0ms Instant Latency)
     // Nếu người dùng nhập câu thu/chi rõ ràng (VD: "ăn bún bò 35k", "cà phê 30k ví momo", "được cộng 36đ ví mono")
-    final fastTx = _fallbackExtractTransaction(trimmed);
+    final fastTx = _fallbackExtractTransaction(trimmed, pendingTransaction: pendingTransaction);
     if (fastTx != null && (fastTx.needsAmount || (fastTx.transactions.isNotEmpty && fastTx.transactions.first.amount > 0))) {
       return fastTx;
     }
@@ -455,7 +520,11 @@ QUY TẮC NHẬN DIỆN QUAN TRỌNG:
    - Tương tự "tài khoản ngân hàng", "ngân hàng" -> walletName = "Ngân hàng".
    - Chỉ khi người dùng nói rõ ràng mục đích xem hồ sơ cá nhân như "thông tin tài khoản", "hồ sơ của tôi", "xem profile" mới chuyển sang "accountInfo".
 3. CHI PHÍ (expense): "ăn", "mua", "uống", "chi", "trả", "đi chợ", "nạp", hoặc có dấu trừ '-'... -> type = "expense".
-4. ĐƠN VỊ TIỀN TỆ & DẤU PHÂN CÁCH HÀNG NGHÌN TIẾNG VIỆT:
+4. MÔ TẢ GIAO DỊCH CHUẨN XÁC (description):
+   - Khi câu có dạng "[+/-][số tiền] [nội dung/món đồ] [vào/từ/qua] ví [tên ví]" (Ví dụ: "-35.000đ tiền bún bò vào ví momo", "+50.000đ tiền thưởng vào ví momo"):
+     + BẮT BUỘC trích xuất chính xác tên nội dung/món đồ (Ví dụ: "Tiền bún bò", "Tiền thưởng") làm "description". TUYỆT ĐỐI KHÔNG đặt mô tả chung chung như "Chi tiêu" hay "Trừ tiền từ ví MoMo" khi người dùng có nói rõ tên món/nội dung.
+     + Chỉ khi người dùng KHÔNG nói tên món (ví dụ chỉ nói: "-35k ví momo") mới để description = "Chi tiêu" hoặc "Chi tiêu qua ví MoMo".
+5. ĐƠN VỊ TIỀN TỆ & DẤU PHÂN CÁCH HÀNG NGHÌN TIẾNG VIỆT:
    - Dấu chấm trong số tiền tiếng Việt như "9.880", "50.000", "1.500.000" là DẤU PHÂN CÁCH HÀNG NGHÌN, KHÔNG PHẢI SỐ THẬP PHÂN! "9.880đ" là 9880, KHÔNG PHẢI 9.88!
    - Ký hiệu "₫", "đ", "đồng", "vnd": giữ nguyên số (VD: "+9880₫" -> 9880, "9.880đ" -> 9880, "36đ" -> 36, "100 đồng" -> 100).
    - "k", "nghìn", "ngàn": nhân 1000 (VD: "35k" -> 35000, "100 nghìn" -> 100000).
@@ -563,7 +632,7 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
 
     // Nếu AI gặp timeout quá 2.2s, lỗi mạng, hoặc không trích xuất được giao dịch rõ ràng -> Graceful Degradation Fallback về SQLite cục bộ
     if (!result.isSuccess || (result.transactions.isEmpty && result.actionType == AiActionType.recordTransaction)) {
-      final localTx = _fallbackExtractTransaction(trimmed);
+      final localTx = _fallbackExtractTransaction(trimmed, pendingTransaction: pendingTransaction);
       if (localTx != null) {
         return localTx;
       }
@@ -834,7 +903,14 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       );
     }
     // Hỗ trợ
-    if (lower.contains('hỗ trợ') || lower.contains('trợ giúp') || lower.contains('support') || lower.contains('chăm sóc khách hàng')) {
+    if (lower.contains('trung tâm hỗ trợ') ||
+        lower.contains('gửi hỗ trợ') ||
+        lower.contains('liên hệ hỗ trợ') ||
+        lower.contains('chăm sóc khách hàng') ||
+        lower.contains('hỗ trợ khách hàng') ||
+        lower == 'support' ||
+        lower == 'hỗ trợ' ||
+        lower == 'trợ giúp') {
       return AiParsedResult(
         aiReply: 'Đang mở Trung tâm Hỗ trợ & Trợ giúp cho bạn! 💬',
         transactions: [],
@@ -926,7 +1002,7 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         .replaceAll('đ', ' ');
 
     final Map<String, int> wordDigits = {
-      'không': 0, 'một': 1, 'mốt': 1, 'hai': 2, 'ba': 3, 'bốn': 4, 'tư': 4,
+      'không': 0, 'một': 1, 'mốt': 1, 'hai': 2, 'ba': 3, 'bốn': 4,
       'năm': 5, 'lăm': 5, 'nhăm': 5, 'sáu': 6, 'bảy': 7, 'tám': 8, 'chín': 9,
     };
 
@@ -971,6 +1047,9 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
 
       if (wordDigits.containsKey(t)) {
         currentUnit = wordDigits[t]!.toDouble();
+        hasAnyNumber = true;
+      } else if (t == 'tư' && i > 0 && (tokens[i - 1] == 'mươi' || tokens[i - 1] == 'mười')) {
+        currentUnit = 4;
         hasAnyNumber = true;
       } else if (t == 'mười') {
         hasAnyNumber = true;
@@ -1024,7 +1103,10 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
   }
 
   /// Trích xuất giao dịch dự phòng cục bộ khi offline hoặc khi câu nói có định dạng quen thuộc
-  AiParsedResult? _fallbackExtractTransaction(String text) {
+  AiParsedResult? _fallbackExtractTransaction(
+    String text, {
+    AiTransactionItem? pendingTransaction,
+  }) {
     // Chuẩn hóa ký hiệu tiền tệ & biến thể STT
     final normalizedText = text
         .replaceAll('₫', 'đ')
@@ -1033,9 +1115,9 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     final lower = normalizedText.toLowerCase();
 
     // Nhận diện kiểu thu nhập hay chi phí
-    // Chú ý: Dấu cộng '+' ở đầu hoặc đi kèm số (ví dụ Google STT tự format: "+9880₫ và Ví MoMo", "+50k") là THU NHẬP
-    final bool hasPlusSign = lower.contains('+') || RegExp(r'\+\s*\d+').hasMatch(text);
-    final bool hasMinusSign = lower.contains('-') || RegExp(r'-\s*\d+').hasMatch(text);
+    // Chú ý: Dấu cộng '+' đi kèm số (ví dụ Google STT tự format: "+9880₫ và Ví MoMo", "+50k") là THU NHẬP
+    final bool hasPlusSign = RegExp(r'(?:^|\s)\+\s*\d+').hasMatch(normalizedText);
+    final bool hasMinusSign = RegExp(r'(?:^|\s)-\s*\d+').hasMatch(normalizedText);
 
     bool isIncome = hasPlusSign ||
         lower.contains('được nhận') ||
@@ -1051,7 +1133,6 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         lower.contains('cộng thêm') ||
         lower.contains('cộng vào') ||
         lower.contains('cộng tiền') ||
-        lower.contains('cộng') ||
         lower.contains('tiền về') ||
         lower.contains('lương') ||
         lower.contains('thưởng') ||
@@ -1059,7 +1140,11 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         lower.contains('được cho') ||
         lower.contains('mẹ cho') ||
         lower.contains('bố cho') ||
-        lower.contains('vào ví');
+        lower.contains('nạp vào ví') ||
+        lower.contains('cộng vào ví') ||
+        lower.contains('chuyển vào ví') ||
+        lower.contains('nhận vào ví') ||
+        lower.contains('tiền vào ví');
 
     if (hasMinusSign && !hasPlusSign) {
       isIncome = false;
@@ -1067,7 +1152,7 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
 
     // Tìm ví
     String wallet = '';
-    if (lower.contains('momo') || lower.contains('mono')) {
+    if (lower.contains('momo') || RegExp(r'\b(?:ví|qua|bằng)\s+mono\b').hasMatch(lower)) {
       wallet = 'MoMo';
     } else if (lower.contains('tiền mặt')) {
       wallet = 'Tiền mặt';
@@ -1089,7 +1174,7 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     bool hasAmount = false;
 
     // 1. Phân cách hàng nghìn kiểu Việt Nam: 9.880, 50.000, 1.500.000 (hỗ trợ cả +9.880, +50.000)
-    final thousandsSepRegex = RegExp(r'(?:\+|-)?\s*(\d{1,3}(?:\.\d{3})+)\s*(đ|đồng|vnd)?\b', caseSensitive: false);
+    final thousandsSepRegex = RegExp(r'(?:\+|-)?\s*(\d{1,3}(?:\.\d{3})+)\s*(?:đ|đồng|vnd)?(?:\s|$|\b)', caseSensitive: false);
     final thousandsMatch = thousandsSepRegex.firstMatch(normalizedText);
     if (thousandsMatch != null) {
       final cleanStr = thousandsMatch.group(1)!.replaceAll('.', '');
@@ -1160,7 +1245,7 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
 
     // 5. Số nguyên / số thông thường với đơn vị tiền tệ đ/đồng/vnd hoặc không có đơn vị (+9880đ, +9880)
     if (!hasAmount) {
-      final plainNumRegex = RegExp(r'(?:\+|-)?\s*(\d+)\s*(đ|đồng|vnd)?\b', caseSensitive: false);
+      final plainNumRegex = RegExp(r'(?:\+|-)?\s*(\d+)\s*(?:đ|đồng|vnd)?(?:\s|$|\b)', caseSensitive: false);
       final plainMatch = plainNumRegex.firstMatch(normalizedText);
       if (plainMatch != null) {
         final val = double.tryParse(plainMatch.group(1)!);
@@ -1171,57 +1256,50 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       }
     }
 
-    // Xác định danh mục thông minh
-    String category = isIncome ? 'Thu khác' : 'Ăn uống';
-    if (isIncome) {
-      if (lower.contains('hoàn tiền')) {
-        category = 'Hoàn tiền';
-      } else if (lower.contains('lương') || lower.contains('salary')) {
-        category = 'Tiền lương';
-      } else if (lower.contains('thưởng') || lower.contains('bonus')) {
-        category = 'Tiền thưởng';
-      } else if (lower.contains('lãi') || lower.contains('interest')) {
-        category = 'Tiền lãi';
-      } else if (lower.contains('bán đồ') || lower.contains('thanh lý')) {
-        category = 'Bán đồ';
-      } else if (hasPlusSign) {
-        category = 'Thu khác';
-      }
+    // 1. Phân loại danh mục thông minh qua SmartCategoryService (từ điển thương hiệu & thói quen người dùng)
+    final smartCatRes = SmartCategoryService().predictCategoryFast(text, isIncome: isIncome);
+    String category = smartCatRes.category;
+
+    // 2. Làm sạch mô tả để trích xuất chính xác nội dung thực tế người dùng đọc
+    String cleaned = text
+        .replaceAll(RegExp(r'(?:\+|-)?\s*\d{1,3}(?:\.\d{3})+\s*(?:đ|đồng|vnd)?(?:\s|$|\b)', caseSensitive: false), ' ')
+        .replaceAll(RegExp(r'(?:\+|-)?\s*\d+(?:[\.,]\d+)?\s*(?:k|nghìn|ngàn|tr|triệu|củ|đ|vnd|đồng)?(?:\s|$|\b)', caseSensitive: false), ' ')
+        .replaceAll(RegExp(r'\b(?:bằng|qua|từ|vào)?\s*(?:ví\s+)?(?:momo|tiền mặt|zalopay|ngân hàng|techcombank|vietcombank|mbbank|bidv|agribank|vpbank|tpbank|acb)\b', caseSensitive: false), ' ')
+        .replaceAll(RegExp(r'\b(?:vào ví|từ ví|qua ví|bằng ví)\b', caseSensitive: false), ' ')
+        .replaceAll(RegExp(r'\b(?:hết|giá|khoảng|tầm)\b', caseSensitive: false), ' ')
+        .replaceAll(RegExp(r'^[+\-–—]\s*'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+
+    String description = '';
+    if (cleaned.length >= 2) {
+      description = '${cleaned[0].toUpperCase()}${cleaned.substring(1)}';
     } else {
-      if (lower.contains('bún') || lower.contains('cà phê') || lower.contains('cafe') || lower.contains('ăn') ||
-          lower.contains('phở') || lower.contains('cơm') || lower.contains('trà sữa') || lower.contains('phúc long') ||
-          lower.contains('highlands') || lower.contains('kfc') || lower.contains('lotteria') || lower.contains('lẩu')) {
-        category = 'Ăn uống';
-      } else if (lower.contains('xăng') || lower.contains('xe') || lower.contains('grab') || lower.contains('xanh sm') ||
-          lower.contains('be') || lower.contains('taxi') || lower.contains('gửi xe') || lower.contains('vé xe')) {
-        category = 'Di chuyển';
-      } else if (lower.contains('mua') || lower.contains('shopee') || lower.contains('lazada') || lower.contains('tiki') ||
-          lower.contains('siêu thị') || lower.contains('winmart') || lower.contains('bách hóa xanh') || lower.contains('chợ')) {
-        category = 'Mua sắm';
-      } else if (lower.contains('thuốc') || lower.contains('khám') || lower.contains('bệnh viện') || lower.contains('pharmacity') || lower.contains('long châu')) {
-        category = 'Sức khỏe';
-      } else if (lower.contains('phim') || lower.contains('cgv') || lower.contains('netflix') || lower.contains('game') || lower.contains('karaoke')) {
-        category = 'Giải trí';
-      } else if (lower.contains('tiền phòng') || lower.contains('tiền trọ') || lower.contains('tiền nhà')) {
-        category = 'Tiền nhà';
-      } else if (lower.contains('tiền điện') || lower.contains('evn')) {
-        category = 'Tiền điện';
-      } else if (lower.contains('tiền mạng') || lower.contains('internet') || lower.contains('4g') || lower.contains('nạp điện thoại')) {
-        category = 'Điện thoại';
-      } else if (lower.contains('gym') || lower.contains('cầu lông') || lower.contains('đá bóng')) {
-        category = 'Thể thao';
-      } else if (lower.contains('cắt tóc') || lower.contains('spa') || lower.contains('mỹ phẩm')) {
-        category = 'Làm đẹp';
+      // Fallback khi người dùng không nói tên món (VD: "-35k momo", "+50k momo")
+      if (isIncome) {
+        description = wallet.isNotEmpty ? 'Cộng tiền vào ví $wallet' : 'Thu nhập';
+      } else {
+        description = wallet.isNotEmpty ? 'Chi tiêu từ ví $wallet' : 'Chi tiêu';
       }
     }
 
-    // Mô tả
-    String description = text.trim();
-    if (isIncome && (hasPlusSign || lower.contains('cộng') || lower.contains('nhận') || lower.contains('tiền về') || lower.contains('vào ví'))) {
-      description = wallet.isNotEmpty ? 'Cộng tiền vào ví $wallet' : 'Cộng tiền vào ví';
-    } else if (!isIncome && hasMinusSign) {
-      description = wallet.isNotEmpty ? 'Trừ tiền từ ví $wallet' : 'Chi tiêu';
+    // 3. Multi-turn Context: Kế thừa và hợp nhất với giao dịch đang chờ (pendingTransaction)
+    if (pendingTransaction != null) {
+      if (wallet.isEmpty && pendingTransaction.walletName.isNotEmpty) {
+        wallet = pendingTransaction.walletName;
+      }
+      if (!hasAmount && pendingTransaction.amount > 0) {
+        amount = pendingTransaction.amount;
+        hasAmount = true;
+      }
+      if (pendingTransaction.category.isNotEmpty && (smartCatRes.confidence < 0.6 || description.isEmpty || RegExp(r'^\d+$').hasMatch(description))) {
+        category = pendingTransaction.category;
+      }
+      if (pendingTransaction.description.isNotEmpty && (description.length < 3 || RegExp(r'^\d+$').hasMatch(description))) {
+        description = pendingTransaction.description;
+      }
     }
+
     if (description.length > 50) {
       description = description.substring(0, 50);
     }

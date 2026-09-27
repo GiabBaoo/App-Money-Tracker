@@ -414,11 +414,12 @@ class SyncService {
     if (uid == null) return;
 
     try {
-      // Download transactions
+      // Download transactions (với timeout 4s phòng ngừa DNS/mạng treo)
       final txSnapshot = await _firestore
           .collection('transactions')
           .where('uid', isEqualTo: uid)
-          .get();
+          .get()
+          .timeout(const Duration(seconds: 4));
       if (txSnapshot.docs.isNotEmpty) {
         final transactions = txSnapshot.docs
             .map((doc) => TransactionModel.fromFirestore(doc))
@@ -431,7 +432,8 @@ class SyncService {
       final walletSnapshot = await _firestore
           .collection('wallets')
           .where('uid', isEqualTo: uid)
-          .get();
+          .get()
+          .timeout(const Duration(seconds: 4));
       if (walletSnapshot.docs.isNotEmpty) {
         final wallets = walletSnapshot.docs
             .map((doc) => WalletModel.fromFirestore(doc))
@@ -441,7 +443,11 @@ class SyncService {
       }
 
       // Download user profile
-      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(uid)
+          .get()
+          .timeout(const Duration(seconds: 4));
       if (userDoc.exists) {
         final user = UserModel.fromFirestore(userDoc);
         await _userRepo?.upsertFromFirestore(user);
@@ -452,7 +458,8 @@ class SyncService {
       final notiSnapshot = await _firestore
           .collection('notifications')
           .where('uid', isEqualTo: uid)
-          .get();
+          .get()
+          .timeout(const Duration(seconds: 4));
       if (notiSnapshot.docs.isNotEmpty) {
         final notifications = notiSnapshot.docs
             .map((doc) => NotificationModel.fromFirestore(doc))
@@ -465,7 +472,8 @@ class SyncService {
       final msgSnapshot = await _firestore
           .collection('messages')
           .where('uid', isEqualTo: uid)
-          .get();
+          .get()
+          .timeout(const Duration(seconds: 4));
       if (msgSnapshot.docs.isNotEmpty) {
         final messages = msgSnapshot.docs
             .map((doc) => MessageModel.fromFirestore(doc))
@@ -474,7 +482,7 @@ class SyncService {
         debugPrint('SyncService: Downloaded ${messages.length} messages');
       }
     } catch (e) {
-      debugPrint('SyncService: Download error: $e');
+      debugPrint('SyncService: Download error (safe fallback to SQLite): $e');
     }
   }
 

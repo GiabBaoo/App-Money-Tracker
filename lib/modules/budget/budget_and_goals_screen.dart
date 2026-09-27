@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+
 import '../../models/budget_model.dart';
 import '../../models/goal_model.dart';
 import '../../data/repositories/budget_repository.dart';
 import '../../data/repositories/goal_repository.dart';
 import '../../utils/currency_format_utils.dart';
+import '../../widgets/animated_scale_button.dart';
 import '../../widgets/top_toast.dart';
 import 'add_budget_dialog.dart';
 import 'add_goal_dialog.dart';
@@ -34,6 +37,9 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
       vsync: this,
       initialIndex: widget.initialTabIndex,
     );
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -42,66 +48,280 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
     super.dispose();
   }
 
+  void _showAddBudgetDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => const AddBudgetDialog(),
+    );
+  }
+
+  void _showAddGoalDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => const AddGoalDialog(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+    final headerColor = isDark ? const Color(0xFF0F2625) : const Color(0xFF438883);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Ngân Sách & Mục Tiêu',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        backgroundColor: primaryColor,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          indicatorWeight: 3,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white60,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          tabs: const [
-            Tab(text: 'Ngân Sách Chi Tiêu'),
-            Tab(text: 'Mục Tiêu Tích Lũy'),
+      backgroundColor: headerColor,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // ─── 1. TOP APP BAR FINTECH GLASSMORPHISM ───
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                    ),
+                  ),
+                  const Text(
+                    'Ngân Sách & Mục Tiêu',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      if (_tabController.index == 0) {
+                        _showAddBudgetDialog();
+                      } else {
+                        _showAddGoalDialog();
+                      }
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 0.8),
+                      ),
+                      child: const Icon(Icons.add_rounded, size: 24, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ─── 2. LIQUID SEGMENTED TAB SWITCHER ───
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 14),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: AnimatedScaleButton(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          _tabController.animateTo(0);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _tabController.index == 0 ? Colors.white : Colors.transparent,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: _tabController.index == 0
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.12),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.pie_chart_rounded,
+                                size: 17,
+                                color: _tabController.index == 0 ? const Color(0xFF438883) : Colors.white70,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Ngân Sách Chi',
+                                style: TextStyle(
+                                  color: _tabController.index == 0 ? const Color(0xFF438883) : Colors.white70,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: AnimatedScaleButton(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          _tabController.animateTo(1);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _tabController.index == 1 ? Colors.white : Colors.transparent,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: _tabController.index == 1
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.12),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.savings_rounded,
+                                size: 17,
+                                color: _tabController.index == 1 ? const Color(0xFF438883) : Colors.white70,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Mục Tiêu Tích Lũy',
+                                style: TextStyle(
+                                  color: _tabController.index == 1 ? const Color(0xFF438883) : Colors.white70,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ─── 3. BODY SHEET VỚI SQUIRCLE BORDER ───
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, -6),
+                    ),
+                  ],
+                ),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildBudgetTab(isDark),
+                    _buildGoalsTab(isDark),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildBudgetTab(isDark, primaryColor),
-          _buildGoalsTab(isDark, primaryColor),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: primaryColor,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text(
-          _tabController.index == 0 ? 'Thêm Ngân Sách' : 'Tạo Mục Tiêu',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      // Floating Bottom Action Button (Thumb Zone)
+      bottomNavigationBar: Container(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+            child: AnimatedScaleButton(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                if (_tabController.index == 0) {
+                  _showAddBudgetDialog();
+                } else {
+                  _showAddGoalDialog();
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF438883), Color(0xFF2E635F)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF438883).withValues(alpha: 0.35),
+                      blurRadius: 14,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _tabController.index == 0 ? Icons.add_chart_rounded : Icons.add_circle_outline_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _tabController.index == 0 ? 'Thêm Ngân Sách Mới' : 'Tạo Mục Tiêu Mới',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
-        onPressed: () {
-          if (_tabController.index == 0) {
-            _showAddBudgetDialog();
-          } else {
-            _showAddGoalDialog();
-          }
-        },
       ),
     );
   }
 
   // ════════ TAB 1: NGÂN SÁCH CHI TIÊU ════════
-
-  Widget _buildBudgetTab(bool isDark, Color primaryColor) {
+  Widget _buildBudgetTab(bool isDark) {
     return StreamBuilder<List<BudgetModel>>(
       stream: _budgetRepo.getBudgetsStream(month: _selectedMonth, year: _selectedYear),
       builder: (context, snapshot) {
@@ -117,25 +337,26 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
         final overallRemaining = totalLimit - totalSpent;
 
         return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
           children: [
             // Thẻ tổng quan ngân sách tháng
             Container(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: isDark
-                      ? [const Color(0xFF1B3330), const Color(0xFF122422)]
+                      ? [const Color(0xFF1B3835), const Color(0xFF102523)]
                       : [const Color(0xFF438883), const Color(0xFF2E6561)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: primaryColor.withValues(alpha: 0.25),
-                    blurRadius: 12,
-                    offset: const Offset(0, 5),
+                    color: const Color(0xFF438883).withValues(alpha: isDark ? 0.3 : 0.25),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
@@ -145,54 +366,62 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Tổng ngân sách tháng $_selectedMonth/$_selectedYear',
-                        style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                      Row(
+                        children: [
+                          const Icon(Icons.calendar_month_rounded, color: Colors.white70, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Tháng $_selectedMonth, $_selectedYear',
+                            style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w600),
+                          ),
+                        ],
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
+                          color: Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           '${(overallProgress * 100).toStringAsFixed(0)}% đã dùng',
-                          style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Text(
                     CurrencyUtils.formatCurrency(totalLimit),
-                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900),
                   ),
                   const SizedBox(height: 14),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(8),
                     child: LinearProgressIndicator(
                       value: overallProgress,
-                      minHeight: 8,
+                      minHeight: 9,
                       backgroundColor: Colors.white.withValues(alpha: 0.2),
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        overallProgress >= 1.0 ? Colors.redAccent : (overallProgress >= 0.8 ? Colors.amberAccent : Colors.white),
+                        overallProgress >= 1.0
+                            ? const Color(0xFFEF4444)
+                            : (overallProgress >= 0.8 ? const Color(0xFFFBBF24) : const Color(0xFF34D399)),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         'Đã chi: ${CurrencyUtils.formatCurrency(totalSpent)}',
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        style: const TextStyle(color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.w500),
                       ),
                       Text(
                         'Còn lại: ${CurrencyUtils.formatCurrency(overallRemaining >= 0 ? overallRemaining : 0)}',
                         style: TextStyle(
-                          color: overallRemaining < 0 ? Colors.redAccent : Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                          color: overallRemaining < 0 ? const Color(0xFFFCA5A5) : Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
                         ),
                       ),
                     ],
@@ -201,45 +430,44 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
               ),
             ),
 
-            const SizedBox(height: 22),
+            const SizedBox(height: 24),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   'Hạn mức theo danh mục',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                 ),
-                TextButton.icon(
-                  onPressed: _showAddBudgetDialog,
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Thêm'),
+                Text(
+                  '${budgets.length} danh mục',
+                  style: TextStyle(fontSize: 12.5, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
 
             if (budgets.isEmpty)
               _buildEmptyBudgets(isDark)
             else
-              ...budgets.map((b) => _buildBudgetItem(b, isDark, primaryColor)),
+              ...budgets.map((b) => _buildBudgetItem(b, isDark)),
           ],
         );
       },
     );
   }
 
-  Widget _buildBudgetItem(BudgetModel budget, bool isDark, Color primaryColor) {
+  Widget _buildBudgetItem(BudgetModel budget, bool isDark) {
     final progress = budget.progressPercentage;
     final isOver = budget.isOverBudget;
     final isNear = budget.isNearLimit;
 
-    Color statusColor = const Color(0xFF10B981); // Green
+    Color statusColor = const Color(0xFF10B981);
     if (isOver) {
-      statusColor = const Color(0xFFEF4444); // Red
+      statusColor = const Color(0xFFEF4444);
     } else if (isNear) {
-      statusColor = const Color(0xFFF59E0B); // Amber
+      statusColor = const Color(0xFFF59E0B);
     }
 
     return Container(
@@ -248,8 +476,8 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
       decoration: BoxDecoration(
         color: isOver
             ? (isDark ? const Color(0xFF2D1515) : const Color(0xFFFEF2F2))
-            : (isDark ? const Color(0xFF1F1F1F) : Colors.white),
-        borderRadius: BorderRadius.circular(16),
+            : (isDark ? const Color(0xFF1E2827) : Colors.white),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isOver
               ? const Color(0xFFEF4444).withValues(alpha: 0.6)
@@ -260,7 +488,7 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
           BoxShadow(
             color: isOver
                 ? const Color(0xFFEF4444).withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.03),
+                : Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -271,10 +499,14 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: statusColor.withValues(alpha: 0.15),
-                child: Icon(budget.icon, color: statusColor, size: 20),
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(budget.icon, color: statusColor, size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -286,16 +518,16 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                         Flexible(
                           child: Text(
                             budget.category,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                           decoration: BoxDecoration(
                             color: statusColor.withValues(alpha: isDark ? 0.25 : 0.12),
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             isOver ? 'VƯỢT ${(progress * 100).toStringAsFixed(0)}%' : '${(progress * 100).toStringAsFixed(0)}%',
@@ -317,7 +549,7 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                 ),
               ),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, size: 18, color: Colors.grey),
+                icon: const Icon(Icons.more_vert_rounded, size: 20, color: Colors.grey),
                 onSelected: (val) {
                   if (val == 'edit') {
                     showDialog(
@@ -337,9 +569,9 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
             ],
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-          // Progress bar hiện đại
+          // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
@@ -364,8 +596,8 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                     ? 'Vượt ${CurrencyUtils.formatCurrency(budget.currentSpent - budget.limitAmount)}'
                     : 'Còn ${CurrencyUtils.formatCurrency(budget.remainingAmount)}',
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
                   color: isOver ? const Color(0xFFEF4444) : statusColor,
                 ),
               ),
@@ -380,25 +612,20 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? const Color(0xFF1E2827) : const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFE5E7EB)),
       ),
       child: Column(
         children: [
           Icon(Icons.pie_chart_outline_rounded, size: 56, color: Colors.grey.withValues(alpha: 0.3)),
           const SizedBox(height: 12),
-          const Text('Chưa có ngân sách nào trong tháng', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-          const SizedBox(height: 4),
+          const Text('Chưa có ngân sách nào trong tháng', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          const SizedBox(height: 6),
           Text(
-            'Hãy đặt hạn mức cho các khoản ăn uống, mua sắm để chi tiêu kỷ luật hơn.',
+            'Hãy đặt hạn mức cho các khoản ăn uống, mua sắm để chi tiêu kỷ luật và tối ưu dòng tiền hơn.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12.5, color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: _showAddBudgetDialog,
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Thiết lập ngân sách ngay'),
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade600, height: 1.4),
           ),
         ],
       ),
@@ -406,8 +633,7 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
   }
 
   // ════════ TAB 2: MỤC TIÊU TÀI CHÍNH TÍCH LŨY ════════
-
-  Widget _buildGoalsTab(bool isDark, Color primaryColor) {
+  Widget _buildGoalsTab(bool isDark) {
     return StreamBuilder<List<GoalModel>>(
       stream: _goalRepo.getGoalsStream(),
       builder: (context, snapshot) {
@@ -422,18 +648,12 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                 children: [
                   Icon(Icons.savings_outlined, size: 64, color: Colors.grey.withValues(alpha: 0.3)),
                   const SizedBox(height: 16),
-                  const Text('Chưa có mục tiêu tài chính nào', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text('Chưa có mục tiêu tài chính nào', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
                   const SizedBox(height: 6),
                   Text(
                     'Đặt mục tiêu như mua xe máy, đi du lịch hoặc quỹ khẩn cấp để có thêm động lực tiết kiệm mỗi ngày!',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton.icon(
-                    onPressed: _showAddGoalDialog,
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Tạo mục tiêu đầu tiên'),
+                    style: TextStyle(fontSize: 13.5, color: Colors.grey.shade600, height: 1.4),
                   ),
                 ],
               ),
@@ -442,7 +662,8 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
           itemCount: goals.length,
           itemBuilder: (context, index) {
             return _buildGoalCard(goals[index], isDark);
@@ -462,15 +683,15 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: isDark ? const Color(0xFF1E2827) : Colors.white,
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: isCompleted ? Colors.green.withValues(alpha: 0.5) : goalColor.withValues(alpha: 0.25),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -481,9 +702,13 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: goalColor.withValues(alpha: 0.15),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: goalColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 child: Icon(goal.icon, color: goalColor, size: 24),
               ),
               const SizedBox(width: 14),
@@ -496,16 +721,16 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                         Flexible(
                           child: Text(
                             goal.title,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: (isCompleted ? Colors.green : goalColor).withValues(alpha: isDark ? 0.25 : 0.12),
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             isCompleted ? 'HOÀN THÀNH 🎉' : '${(progress * 100).toStringAsFixed(0)}%',
@@ -527,7 +752,7 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                 ),
               ),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
+                icon: const Icon(Icons.more_vert_rounded, size: 20, color: Colors.grey),
                 onSelected: (val) {
                   if (val == 'edit') {
                     showDialog(
@@ -555,11 +780,11 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
             children: [
               Text(
                 CurrencyUtils.formatCurrency(goal.currentAmount),
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: goalColor),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: goalColor),
               ),
               Text(
                 'Mục tiêu: ${CurrencyUtils.formatCurrency(goal.targetAmount)}',
-                style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500),
+                style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -583,7 +808,7 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF9FAFB),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
@@ -601,110 +826,12 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: isDark ? Colors.white70 : Colors.black87,
+                      color: isDark ? Colors.white70 : const Color(0xFF4B5563),
                     ),
                   ),
                 ),
               ],
             ),
-          ),
-
-          const SizedBox(height: 14),
-
-          // Nút Nạp tiền / Rút tiền
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _showDepositDialog(goal, isDeposit: true),
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Nạp tiền'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: goalColor,
-                    side: BorderSide(color: goalColor),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _showDepositDialog(goal, isDeposit: false),
-                  icon: const Icon(Icons.remove, size: 16),
-                  label: const Text('Rút tiền'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.grey,
-                    side: const BorderSide(color: Colors.grey),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddBudgetDialog() {
-    showDialog(
-      context: context,
-      builder: (_) => const AddBudgetDialog(),
-    );
-  }
-
-  void _showAddGoalDialog() {
-    showDialog(
-      context: context,
-      builder: (_) => const AddGoalDialog(),
-    );
-  }
-
-  void _showDepositDialog(GoalModel goal, {required bool isDeposit}) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(isDeposit ? 'Nạp tiền vào mục tiêu' : 'Rút tiền từ mục tiêu'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Mục tiêu: ${goal.title}', style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: 'Nhập số tiền...',
-                suffixText: 'đ',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final clean = controller.text.replaceAll(RegExp(r'[^\d]'), '');
-              final amount = double.tryParse(clean) ?? 0.0;
-              if (amount <= 0) return;
-
-              if (isDeposit) {
-                await _goalRepo.depositToGoal(goal.id, amount);
-                if (mounted) TopToast.show(context, 'Đã nạp ${CurrencyUtils.formatCurrency(amount)} vào mục tiêu!');
-              } else {
-                await _goalRepo.withdrawFromGoal(goal.id, amount);
-                if (mounted) TopToast.show(context, 'Đã rút ${CurrencyUtils.formatCurrency(amount)}!');
-              }
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-            child: Text(isDeposit ? 'Nạp tiền' : 'Rút tiền'),
           ),
         ],
       ),

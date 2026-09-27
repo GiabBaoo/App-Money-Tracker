@@ -5,6 +5,7 @@ import '../../data/dtos/create_settlement_dto.dart';
 import '../../data/models/debt_model.dart';
 import '../providers/group_expense_providers.dart';
 import '../screens/settlement_confirm_screen.dart';
+import '../../../../utils/page_transitions.dart';
 
 class DebtSummaryWidget extends ConsumerWidget {
   final String groupId;
@@ -110,8 +111,8 @@ class DebtSummaryWidget extends ConsumerWidget {
         
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => SettlementConfirmScreen(settlementId: settlement.id),
+          PageTransitions.slideRight(
+            SettlementConfirmScreen(settlementId: settlement.id),
           ),
         );
       }

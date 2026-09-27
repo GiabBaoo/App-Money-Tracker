@@ -15,6 +15,7 @@ import 'services/theme_service.dart';
 import 'services/language_service.dart';
 import 'widgets/lifecycle_manager.dart';
 import 'features/group_expense/presentation/screens/join_group_screen.dart';
+import 'utils/page_transitions.dart';
 
 // ═══ SQLite + Offline-First imports ═══
 import 'data/local/database_helper.dart';
@@ -228,8 +229,8 @@ class _MyAppState extends State<MyApp> {
         // Handle /join/:groupId route
         if (settings.name?.startsWith('/join/') == true) {
           final groupId = settings.name!.substring(6); // Remove '/join/'
-          return MaterialPageRoute(
-            builder: (context) => JoinGroupScreen(groupId: groupId),
+          return PageTransitions.slideRight(
+            JoinGroupScreen(groupId: groupId),
           );
         }
         return null;
