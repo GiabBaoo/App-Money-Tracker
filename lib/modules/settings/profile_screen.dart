@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -29,7 +28,6 @@ import 'notification_settings_screen.dart';
 import 'dart:async';
 import 'avatar_crop_screen.dart';
 import 'about_app_screen.dart';
-import 'ai_settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -45,7 +43,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ════════ XỬ LÝ ĐĂNG XUẤT ════════
   Future<void> _handleLogout(BuildContext context) async {
-    final languageService = Provider.of<LanguageService>(context, listen: false);
+    final languageService = LanguageService.instance;
     final isVi = languageService.isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -133,7 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // ════════ CHỌN & ĐỔI AVATAR TRỰC TIẾP ════════
   Future<void> _showAvatarPickerSheet(BuildContext context) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isVi = Provider.of<LanguageService>(context, listen: false).isVietnamese;
+    final isVi = LanguageService.instance.isVietnamese;
 
     showModalBottomSheet(
       context: context,
@@ -247,7 +245,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _showPresetPickerSheet(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isVi = Provider.of<LanguageService>(context, listen: false).isVietnamese;
+    final isVi = LanguageService.instance.isVietnamese;
 
     showModalBottomSheet(
       context: context,
@@ -383,7 +381,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final languageService = Provider.of<LanguageService>(context);
+    final languageService = LanguageService.instance;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isVi = languageService.isVietnamese;
 
@@ -719,8 +717,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                         const SizedBox(height: 20),
 
-                        // ─── NHÓM 2: TRẢI NGHIỆM & TRỢ LÝ ───
-                        _buildSectionHeader(isVi ? 'TRẢI NGHIỆM & TRỢ LÝ' : 'PREFERENCES & AI', isDark),
+                        // ─── NHÓM 2: TRẢI NGHIỆM ───
+                        _buildSectionHeader(isVi ? 'TRẢI NGHIỆM' : 'PREFERENCES', isDark),
                         Container(
                           decoration: BoxDecoration(
                             color: cardBgColor,
@@ -736,16 +734,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           child: Column(
                             children: [
-                              _buildMenuItem(
-                                context: context,
-                                icon: Icons.auto_awesome_rounded,
-                                title: 'Trợ lý Mono (AI)',
-                                subtitle: isVi ? 'Gợi ý tài chính thông minh Gemini' : 'Smart financial AI assistant',
-                                badgeText: 'AI Gemini',
-                                badgeGradient: const [Color(0xFF7928CA), Color(0xFF2A5298)],
-                                onTap: () => Navigator.push(context, PageTransitions.slideRight(const AiSettingsScreen())),
-                                showDivider: true,
-                              ),
                               _buildMenuItem(
                                 context: context,
                                 icon: Icons.palette_outlined,

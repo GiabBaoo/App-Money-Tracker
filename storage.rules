@@ -1,0 +1,37 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*') &&
+             request.resource.size < 10 * 1024 * 1024; // Tối đa 10MB
+    }
+
+    // 1. Ảnh đại diện người dùng
+    match /avatars/{userId}.jpg {
+      allow read: if isAuthenticated(); // Đọc được để hiển thị avatar thành viên trong nhóm
+      allow write: if isOwner(userId) && isValidImage();
+      allow delete: if isOwner(userId);
+    }
+
+    // 2. Ảnh hóa đơn chứng từ giao dịch
+    match /transaction_images/{userId}/{transactionId}/{fileName} {
+      allow read, write: if isOwner(userId) && isValidImage();
+      allow delete: if isOwner(userId);
+    }
+
+    // Mặc định chặn truy cập các đường dẫn khác
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

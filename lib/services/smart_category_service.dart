@@ -45,7 +45,8 @@ class SmartCategoryService {
       'grab', 'grab bike', 'grab car', 'xe be', 'đi be', 'be bike', 'be car', 'be ride', 'be', 'xanh sm', 'xanhsm',
       'vinfast', 'gojek', 'mai linh', 'vina sun', 'vinasun', 'taxi', 'tiền xăng', 'petrolimex',
       'pvoil', 'gửi xe', 'vé xe', 'xe bus', 'xe buýt', 'vé tàu', 'vé máy bay', 'vietjet',
-      'vietnam airlines', 'bamboo airways', 'phí cầu đường', 'epass', 'etc', 'vetc'
+      'vietnam airlines', 'bamboo airways', 'phí cầu đường', 'epass', 'etc', 'vetc',
+      'phương trang', 'futa', 'thành bưởi', 'thanh buoi'
     ],
     'Mua sắm': [
       'shopee', 'lazada', 'tiki', 'tiktok shop', 'sendo', 'uniqlo', 'zara', 'h&m',
@@ -103,7 +104,9 @@ class SmartCategoryService {
       'thưởng', 'bonus', 'thưởng tết', 'thưởng quý', 'thưởng nóng'
     ],
     'Được cho/Tặng': [
-      'ba mẹ cho', 'mẹ cho', 'bố cho', 'anh cho', 'chị cho', 'quà tặng từ'
+      'ba mẹ cho', 'mẹ cho', 'bố cho', 'ba cho', 'anh cho', 'chị cho', 'em cho',
+      'bạn cho', 'phụng cho', 'sếp cho', 'khách cho', 'người yêu cho', 'crush cho',
+      'ai cho', 'được cho', 'cho tiền', 'lì xì', 'biếu', 'quà tặng từ', 'quà tặng'
     ],
     'Kinh doanh': [
       'khách hàng thanh toán', 'tiền hàng', 'bán hàng', 'doanh thu', 'tiền cọc'
@@ -211,6 +214,14 @@ class SmartCategoryService {
       if (cleanText.contains('lãi') || cleanText.contains('interest')) {
         return _buildResult('Tiền lãi', 0.85, 'Tiền lãi tiết kiệm/đầu tư');
       }
+      if (RegExp(r'(?:^|\s)(?:[a-zà-ỹA-ZÀ-Ỹ0-9_]+)\s+cho\b').hasMatch(cleanText) ||
+          cleanText.contains('cho') ||
+          cleanText.contains('tặng') ||
+          cleanText.contains('lì xì') ||
+          cleanText.contains('biếu') ||
+          cleanText.contains('quà')) {
+        return _buildResult('Được cho/Tặng', 0.95, 'Khoản tiền được cho hoặc tặng');
+      }
       return _buildResult('Thu khác', 0.5, 'Thu nhập khác');
     }
 
@@ -278,6 +289,14 @@ class SmartCategoryService {
       }
       if (cleanText.contains('lãi') || cleanText.contains('interest')) {
         return _buildResult('Tiền lãi', 0.85, 'Tiền lãi tiết kiệm/đầu tư');
+      }
+      if (RegExp(r'(?:^|\s)(?:[a-zà-ỹA-ZÀ-Ỹ0-9_]+)\s+cho\b').hasMatch(cleanText) ||
+          cleanText.contains('cho') ||
+          cleanText.contains('tặng') ||
+          cleanText.contains('lì xì') ||
+          cleanText.contains('biếu') ||
+          cleanText.contains('quà')) {
+        return _buildResult('Được cho/Tặng', 0.95, 'Khoản tiền được cho hoặc tặng');
       }
       return _buildResult('Thu khác', 0.5, 'Thu nhập khác');
     }

@@ -52,7 +52,6 @@ dependencies:
   geocoding: ^4.0.0
   http: ^1.6.0
   device_info_plus: ^12.3.0
-  provider: ^6.1.5+1
   flutter_riverpod: ^2.6.1
   image_picker: ^1.0.7
   permission_handler: ^12.0.1
@@ -77,6 +76,7 @@ dependencies:
   flutter_local_notifications: ^17.2.2
   timezone: ^0.9.4
   crypto: ^3.0.3
+  home_widget: ^0.10.0
 
 
 dev_dependencies:

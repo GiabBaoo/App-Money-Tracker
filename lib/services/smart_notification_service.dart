@@ -9,6 +9,7 @@ import '../models/notification_model.dart';
 import '../utils/currency_format_utils.dart';
 import 'local_notification_service.dart';
 import 'auth_service.dart';
+import '../data/repositories/budget_repository.dart';
 
 /// Dịch vụ phân tích tài chính thông minh & Tự động tạo thông báo thực tế
 class SmartNotificationService {
@@ -103,8 +104,8 @@ class SmartNotificationService {
         if (prevMonthExpense > 0) {
           final diffPercent = ((thisMonthExpense - prevMonthExpense) / prevMonthExpense) * 100;
 
-          if (diffPercent > 10) {
-            // Chi tiêu tăng cao
+          if (diffPercent > 15) {
+            // Chi tiêu tăng cao đáng kể (>15%) -> Cảnh báo quan trọng
             await _addNotificationAndPush(
               NotificationModel(
                 uid: uid,
@@ -114,10 +115,11 @@ class SmartNotificationService {
                 isRead: false,
                 type: 'spending_alert_high',
               ),
+              pushStatusBar: true,
             );
             count++;
-          } else if (diffPercent < -5) {
-            // Tiết kiệm tốt
+          } else if (diffPercent < -10) {
+            // Tiết kiệm tốt (>10%) -> Động viên tích cực
             await _addNotificationAndPush(
               NotificationModel(
                 uid: uid,
@@ -129,32 +131,8 @@ class SmartNotificationService {
               ),
             );
             count++;
-          } else {
-            // Chi tiêu ổn định
-            await _addNotificationAndPush(
-              NotificationModel(
-                uid: uid,
-                iconCode: Icons.balance_rounded.codePoint,
-                title: '📊 Báo cáo: Chi tiêu duy trì ổn định',
-                description: 'Chi tiêu tháng này (${CurrencyUtils.formatCurrency(thisMonthExpense)}) ở mức cân bằng so với tháng trước (${CurrencyUtils.formatCurrency(prevMonthExpense)}). Bạn đang kiểm soát tốt kế hoạch thu chi.',
-                isRead: false,
-                type: 'spending_alert_stable',
-              ),
-            );
-            count++;
           }
-        } else if (thisMonthExpense > 0) {
-          await _addNotificationAndPush(
-            NotificationModel(
-              uid: uid,
-              iconCode: Icons.insights_rounded.codePoint,
-              title: '📊 Báo cáo chi tiêu tháng này',
-              description: 'Tổng chi tiêu tháng này của bạn hiện tại là ${CurrencyUtils.formatCurrency(thisMonthExpense)}. Hãy ghi chép đều đặn để hệ thống so sánh với kỳ tiếp theo!',
-              isRead: false,
-              type: 'spending_report_first',
-            ),
-          );
-          count++;
+          // Đã loại bỏ thông báo rác "Chi tiêu duy trì ổn định" (không cần thiết gây loãng thông báo)
         }
       }
 
@@ -164,22 +142,8 @@ class SmartNotificationService {
         final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
         final daysLeft = daysInMonth - now.day + 1;
 
-        if (totalBalance > 200000) {
-          // Trích 25% dự phòng tiết kiệm, chia 75% cho các ngày còn lại
-          final safeDailyBudget = (totalBalance * 0.75) / daysLeft;
-
-          await _addNotificationAndPush(
-            NotificationModel(
-              uid: uid,
-              iconCode: Icons.lightbulb_outline_rounded.codePoint,
-              title: '💡 Gợi ý chi tiêu cho $daysLeft ngày tới',
-              description: 'Số dư khả dụng các ví là ${CurrencyUtils.formatCurrency(totalBalance)}. Bạn nên chi tối đa khoảng ${CurrencyUtils.formatCurrency(safeDailyBudget)}/ngày để vừa chi tiêu thoải mái vừa giữ được 25% quỹ tiết kiệm tích lũy!',
-              isRead: false,
-              type: 'smart_budget_suggestion',
-            ),
-          );
-          count++;
-        } else if (totalBalance <= 100000) {
+        if (totalBalance <= 100000 && totalBalance > 0) {
+          // CẢNH BÁO NGUY CẤP: Số dư ví quá thấp
           await _addNotificationAndPush(
             NotificationModel(
               uid: uid,
@@ -188,6 +152,21 @@ class SmartNotificationService {
               description: 'Tổng số dư các ví đang ở mức thấp (${CurrencyUtils.formatCurrency(totalBalance)}). Bạn nên hạn chế các khoản mua sắm chưa cấp bách trong $daysLeft ngày còn lại của tháng!',
               isRead: false,
               type: 'low_balance_alert',
+            ),
+            pushStatusBar: true,
+          );
+          count++;
+        } else if (totalBalance > 500000 && now.day <= 10) {
+          // Gợi ý ngân sách đầu tháng cho người dùng có số dư ổn định
+          final safeDailyBudget = (totalBalance * 0.75) / daysLeft;
+          await _addNotificationAndPush(
+            NotificationModel(
+              uid: uid,
+              iconCode: Icons.lightbulb_outline_rounded.codePoint,
+              title: '💡 Gợi ý chi tiêu cho $daysLeft ngày tới',
+              description: 'Số dư khả dụng các ví là ${CurrencyUtils.formatCurrency(totalBalance)}. Bạn nên chi tối đa khoảng ${CurrencyUtils.formatCurrency(safeDailyBudget)}/ngày để vừa chi tiêu thoải mái vừa giữ được quỹ dự phòng tích lũy!',
+              isRead: false,
+              type: 'smart_budget_suggestion',
             ),
           );
           count++;
@@ -201,7 +180,8 @@ class SmartNotificationService {
             t.date.month == now.month &&
             t.date.day == now.day).toList();
 
-        if (todayTx.isEmpty) {
+        // Chỉ gửi nhắc nhở nếu sau 18:00 mà hôm nay chưa ghi chép khoản nào
+        if (todayTx.isEmpty && now.hour >= 18) {
           await _addNotificationAndPush(
             NotificationModel(
               uid: uid,
@@ -215,15 +195,18 @@ class SmartNotificationService {
           count++;
         }
 
-        // Luôn duy trì lịch hẹn định kỳ 20:00 mỗi tối khi người dùng bật reminders
+        // Luôn duy trì lịch hẹn định kỳ 20:30 mỗi tối khi người dùng bật reminders
         await LocalNotificationService.instance.scheduleDailyReminder(
           id: 200,
           hour: 20,
-          minute: 0,
+          minute: 30,
           title: '📝 Nhắc nhở ghi chép chi tiêu',
           body: 'Đừng quên ghi lại các khoản phát sinh trong ngày để quản lý dòng tiền tốt nhất nhé!',
         );
       }
+
+      // ════════ PHÂN TÍCH 4: NHẮC NHỞ ĐỒNG BỘ DỮ LIỆU NGOẠI TUYẾN QUÁ HẠN ════════
+      await checkOfflineSyncReminder();
 
       // Lưu lại ngày đã phân tích
       await prefs.setString('notif_last_analysis_day_$uid', todayKey);
@@ -234,8 +217,9 @@ class SmartNotificationService {
     return count;
   }
 
-  /// Kiểm tra hạn mức chi tiêu hàng ngày - Thông báo vui vẻ, thân thiện
-  /// Được gọi ngay sau khi thêm một giao dịch chi tiêu mới
+  /// Kiểm tra hạn mức chi tiêu hàng ngày
+  /// CHỈ thông báo khi vượt hạn mức hoặc khi chạm ngưỡng nguy cơ (>=80%)
+  /// Loại bỏ hoàn toàn các thông báo khen ngợi spam khi chi tiêu nhỏ
   Future<bool> checkDailySpendingLimit({required double newExpenseAmount}) async {
     final user = FirebaseAuth.instance.currentUser;
     final uid = user?.uid ?? AuthService().offlineUid;
@@ -262,56 +246,46 @@ class SmartNotificationService {
     final totalTodayExpense = todayExpenses.fold<double>(0.0, (sum, t) => sum + t.amount);
 
     if (totalTodayExpense > dailyLimit) {
-      // VƯỢT HẠN MỨC - Thông báo vui vẻ, không quá nghiêm trọng
+      // VƯỢT HẠN MỨC - Cảnh báo quan trọng ngay lập tức
       final excess = totalTodayExpense - dailyLimit;
       final funMessages = [
-        'Ví tiền đang kêu cứu rồi nè! 😅 Hôm nay bạn đã tiêu ${CurrencyUtils.formatCurrency(totalTodayExpense)}, vượt hạn mức ${CurrencyUtils.formatCurrency(dailyLimit)} một chút (${CurrencyUtils.formatCurrency(excess)}). Không sao, mai mình tiết kiệm lại nhé! 💪',
-        'Oops! Hôm nay bạn "xài hơi tay" rồi nè 🤭 Chi tiêu ${CurrencyUtils.formatCurrency(totalTodayExpense)} vượt qua mức ${CurrencyUtils.formatCurrency(dailyLimit)}. Cố gắng kiềm chế nha, ví tiền cảm ơn bạn! 😄',
-        'Hôm nay chi tiêu hơi "phiêu" nha! 🎢 ${CurrencyUtils.formatCurrency(totalTodayExpense)} rồi đó, vượt hạn mức ${CurrencyUtils.formatCurrency(dailyLimit)}. Nhưng đôi khi cũng phải tự thưởng mình chứ nhỉ? 🎁',
+        'Hôm nay bạn đã tiêu ${CurrencyUtils.formatCurrency(totalTodayExpense)}, vượt hạn mức ${CurrencyUtils.formatCurrency(dailyLimit)} (${CurrencyUtils.formatCurrency(excess)}). Hãy cân nhắc dừng chi tiêu trong hôm nay nhé! 💪',
+        'Chi tiêu ${CurrencyUtils.formatCurrency(totalTodayExpense)} đã vượt mức quy định ${CurrencyUtils.formatCurrency(dailyLimit)}. Cố gắng kiểm soát để không làm thâm hụt ngân sách tháng! 😄',
       ];
       
       final randomMsg = funMessages[now.millisecond % funMessages.length];
 
       final noti = NotificationModel(
         uid: uid,
-        iconCode: Icons.sentiment_satisfied_alt_rounded.codePoint,
-        title: '🙈 Ối! Hôm nay chi tiêu hơi nhiều rồi nè',
+        iconCode: Icons.warning_rounded.codePoint,
+        title: '🚨 Cảnh báo: Đã vượt hạn mức chi tiêu ngày!',
         description: randomMsg,
         isRead: false,
         type: 'daily_limit_exceeded',
       );
 
-      await _addNotificationAndPush(noti);
+      await _addNotificationAndPush(noti, pushStatusBar: true);
       return true;
     } else {
-      // DƯỚI HOẶC BẰNG HẠN MỨC - Thông báo chúc mừng!
+      // DƯỚI HẠN MỨC: CHỈ cảnh báo khi đạt từ 80% trở lên (nguy cơ chạm trần)
       final remaining = dailyLimit - totalTodayExpense;
       final percentage = ((totalTodayExpense / dailyLimit) * 100).round();
       
-      String congratsMessage;
-      String congratsTitle;
-      
-      if (percentage <= 50) {
-        congratsTitle = '🌟 Tuyệt vời! Tiết kiệm siêu giỏi';
-        congratsMessage = 'Bạn mới chi ${CurrencyUtils.formatCurrency(totalTodayExpense)} ($percentage% hạn mức). Còn ${CurrencyUtils.formatCurrency(remaining)} cho ngày hôm nay. Keep going! 🚀';
-      } else if (percentage <= 80) {
-        congratsTitle = '👏 Giỏi lắm! Vẫn trong tầm kiểm soát';
-        congratsMessage = 'Chi tiêu hôm nay ${CurrencyUtils.formatCurrency(totalTodayExpense)} ($percentage% hạn mức). Vẫn còn ${CurrencyUtils.formatCurrency(remaining)} để sử dụng. Bạn đang quản lý tốt lắm! 💎';
-      } else {
-        congratsTitle = '⚡ Cẩn thận nha! Gần tới hạn mức rồi';
-        congratsMessage = 'Hôm nay đã chi ${CurrencyUtils.formatCurrency(totalTodayExpense)} ($percentage% hạn mức ${CurrencyUtils.formatCurrency(dailyLimit)}). Còn ${CurrencyUtils.formatCurrency(remaining)} thôi. Cân nhắc trước khi chi thêm nhé! 🤔';
+      if (percentage >= 80) {
+        final noti = NotificationModel(
+          uid: uid,
+          iconCode: Icons.running_with_errors_rounded.codePoint,
+          title: '⚡ Cẩn thận! Đã chi $percentage% hạn mức ngày',
+          description: 'Hôm nay bạn đã chi ${CurrencyUtils.formatCurrency(totalTodayExpense)}/${CurrencyUtils.formatCurrency(dailyLimit)}. Chỉ còn ${CurrencyUtils.formatCurrency(remaining)} cho hôm nay, hãy cân nhắc trước khi chi thêm! 🤔',
+          isRead: false,
+          type: 'daily_limit_warning',
+        );
+
+        await _addNotificationAndPush(noti, pushStatusBar: true);
+        return false;
       }
-
-      final noti = NotificationModel(
-        uid: uid,
-        iconCode: Icons.emoji_events_rounded.codePoint,
-        title: congratsTitle,
-        description: congratsMessage,
-        isRead: false,
-        type: 'daily_limit_within',
-      );
-
-      await _addNotificationAndPush(noti);
+      
+      // percentage < 80%: Không tạo thông báo để tránh làm phiền/spam người dùng!
       return false;
     }
   }
@@ -347,13 +321,13 @@ class SmartNotificationService {
       final noti = NotificationModel(
         uid: uid,
         iconCode: Icons.calendar_month_rounded.codePoint,
-        title: '📅 Hạn mức tháng đã vượt rồi nè!',
-        description: 'Tháng này bạn đã chi ${CurrencyUtils.formatCurrency(totalMonthExpense)}, vượt hạn mức ${CurrencyUtils.formatCurrency(monthlyLimit)} (thêm ${CurrencyUtils.formatCurrency(excess)}). Thử cân nhắc lại các khoản chi tiếp theo nhé! Bạn làm được mà 💪😊',
+        title: '🚨 Cảnh báo: Vượt hạn mức chi tiêu tháng!',
+        description: 'Tháng này bạn đã chi ${CurrencyUtils.formatCurrency(totalMonthExpense)}, vượt hạn mức ${CurrencyUtils.formatCurrency(monthlyLimit)} (vượt ${CurrencyUtils.formatCurrency(excess)}). Hãy tối giản các khoản chi từ giờ đến cuối tháng nhé! 💪',
         isRead: false,
         type: 'monthly_limit_exceeded',
       );
 
-      await _addNotificationAndPush(noti);
+      await _addNotificationAndPush(noti, pushStatusBar: true);
       return true;
     } else {
       final remaining = monthlyLimit - totalMonthExpense;
@@ -363,16 +337,95 @@ class SmartNotificationService {
       if (percentage >= 80) {
         final noti = NotificationModel(
           uid: uid,
-          iconCode: Icons.info_outline_rounded.codePoint,
-          title: '📊 Cập nhật hạn mức tháng',
-          description: 'Đã chi $percentage% hạn mức tháng (${CurrencyUtils.formatCurrency(totalMonthExpense)}/${CurrencyUtils.formatCurrency(monthlyLimit)}). Còn ${CurrencyUtils.formatCurrency(remaining)} cho $daysLeft ngày còn lại. Cố lên nha! 🌈',
+          iconCode: Icons.report_problem_rounded.codePoint,
+          title: '📊 Cảnh báo: Đã chi $percentage% hạn mức tháng',
+          description: 'Bạn đã sử dụng ${CurrencyUtils.formatCurrency(totalMonthExpense)}/${CurrencyUtils.formatCurrency(monthlyLimit)}. Còn lại ${CurrencyUtils.formatCurrency(remaining)} cho $daysLeft ngày tiếp theo. Cân nhắc thắt chặt chi tiêu!',
           isRead: false,
           type: 'monthly_limit_warning',
         );
-        await _addNotificationAndPush(noti);
+        await _addNotificationAndPush(noti, pushStatusBar: true);
       }
       
       return false;
+    }
+  }
+
+  /// Cảnh báo giao dịch chi tiêu lớn đột biến (Spending Spike Alert)
+  /// Kích hoạt khi giao dịch mới >= 2.000.000đ hoặc chiếm >= 30% tổng chi tháng
+  Future<bool> checkSpendingSpike({
+    required double amount,
+    required String category,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    final uid = user?.uid ?? AuthService().offlineUid;
+    if (uid == null || amount <= 0) return false;
+
+    try {
+      _txRepo.setUid(uid);
+      _notiRepo.setUid(uid);
+
+      final now = DateTime.now();
+      final allTx = await _txRepo.getAllTransactions();
+      final thisMonthExpenses = allTx.where((t) =>
+          t.type == 'expense' &&
+          t.date.year == now.year &&
+          t.date.month == now.month).toList();
+
+      final totalMonthExpense = thisMonthExpenses.fold<double>(0.0, (sum, t) => sum + t.amount);
+
+      final isHighAbsolute = amount >= 2000000; // >= 2.000.000đ
+      final isHighRatio = totalMonthExpense > 0 && (amount / totalMonthExpense) >= 0.3; // >= 30% tổng chi
+
+      if (isHighAbsolute || isHighRatio) {
+        final noti = NotificationModel(
+          uid: uid,
+          iconCode: Icons.bolt_rounded.codePoint,
+          title: '⚡ Cảnh báo: Khoản chi lớn đột biến',
+          description: 'Bạn vừa ghi nhận khoản chi ${CurrencyUtils.formatCurrency(amount)} cho danh mục "$category". Khoản chi này chiếm tỷ trọng lớn trong ngân sách, hãy lưu ý cân đối các khoản chi tiếp theo!',
+          isRead: false,
+          type: 'spending_spike_alert',
+        );
+
+        await _addNotificationAndPush(noti, pushStatusBar: true);
+        return true;
+      }
+    } catch (e) {
+      debugPrint('checkSpendingSpike error: $e');
+    }
+    return false;
+  }
+
+  /// Nhắc nhở đồng bộ dữ liệu ngoại tuyến nếu có giao dịch offline chưa sync > 2 ngày
+  Future<void> checkOfflineSyncReminder() async {
+    final user = FirebaseAuth.instance.currentUser;
+    final uid = user?.uid ?? AuthService().offlineUid;
+    if (uid == null) return;
+
+    try {
+      final db = await DatabaseHelper().database;
+      final twoDaysAgo = DateTime.now().subtract(const Duration(days: 2)).millisecondsSinceEpoch;
+
+      final unsynced = await db.query(
+        'transactions',
+        where: 'uid = ? AND syncStatus = ? AND createdAt <= ?',
+        whereArgs: [uid, 'pending', twoDaysAgo],
+        limit: 5,
+      );
+
+      if (unsynced.isNotEmpty) {
+        final noti = NotificationModel(
+          uid: uid,
+          iconCode: Icons.cloud_off_rounded.codePoint,
+          title: '☁️ Nhắc nhở sao lưu dữ liệu ngoại tuyến',
+          description: 'Bạn có ${unsynced.length} giao dịch lưu trên máy chưa được đồng bộ lên đám mây hơn 2 ngày. Hãy kết nối mạng Internet để bảo vệ dữ liệu tài chính của bạn an toàn!',
+          isRead: false,
+          type: 'offline_sync_reminder',
+        );
+
+        await _addNotificationAndPush(noti);
+      }
+    } catch (e) {
+      debugPrint('checkOfflineSyncReminder error: $e');
     }
   }
 
@@ -472,6 +525,85 @@ class SmartNotificationService {
       }
     } catch (e) {
       debugPrint('Error in scheduleAllBackgroundNotifications: $e');
+    }
+  }
+
+  /// Kiểm tra các ngân sách danh mục (và tổng ngân sách) khi có giao dịch chi tiêu mới
+  /// Tự động cảnh báo khi đạt >=80% và vượt 100% ngân sách.
+  /// Lưu cờ đã cảnh báo trong SharedPreferences theo dạng:
+  /// `budget_warned_80_${budgetId}_${year}_${month}`
+  /// `budget_warned_100_${budgetId}_${year}_${month}`
+  /// để đảm bảo mỗi ngưỡng chỉ báo 1 lần duy nhất trong kỳ ngân sách, tránh làm phiền!
+  Future<void> checkCategoryBudgetThresholds({
+    required String category,
+    required double expenseAmount,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    final uid = user?.uid ?? AuthService().offlineUid;
+    if (uid == null || expenseAmount <= 0) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final budgetAlertsEnabled = prefs.getBool('notif_budget_alerts') ?? true;
+      if (!budgetAlertsEnabled) return;
+
+      final now = DateTime.now();
+      final budgetRepo = BudgetRepository();
+      budgetRepo.setUid(uid);
+      final budgets = await budgetRepo.getBudgetsWithSpent(month: now.month, year: now.year);
+      if (budgets.isEmpty) return;
+
+      // Tìm ngân sách phù hợp: Ngân sách đúng danh mục HOẶC ngân sách 'Tất cả'
+      final relevantBudgets = budgets.where((b) =>
+          b.category.toLowerCase().trim() == category.toLowerCase().trim() ||
+          b.category == 'Tất cả' ||
+          b.category.isEmpty).toList();
+
+      for (final b in relevantBudgets) {
+        if (b.limitAmount <= 0) continue;
+
+        final key80 = 'budget_warned_80_${b.id}_${now.year}_${now.month}';
+        final key100 = 'budget_warned_100_${b.id}_${now.year}_${now.month}';
+        final alreadyWarned80 = prefs.getBool(key80) ?? false;
+        final alreadyWarned100 = prefs.getBool(key100) ?? false;
+
+        final percentage = (b.currentSpent / b.limitAmount) * 100;
+        final isCategoryAll = b.category == 'Tất cả' || b.category.isEmpty;
+        final name = isCategoryAll ? 'Tổng ngân sách' : 'Ngân sách "${b.category}"';
+
+        if (b.currentSpent > b.limitAmount) {
+          if (!alreadyWarned100) {
+            final excess = b.currentSpent - b.limitAmount;
+            final noti = NotificationModel(
+              uid: uid,
+              iconCode: Icons.warning_rounded.codePoint,
+              title: '🚨 $name đã vượt 100%!',
+              description: 'Bạn đã chi ${CurrencyUtils.formatCurrency(b.currentSpent)}/${CurrencyUtils.formatCurrency(b.limitAmount)} (vượt ${CurrencyUtils.formatCurrency(excess)}). Hãy kiểm soát chi tiêu cho danh mục này!',
+              isRead: false,
+              type: 'budget_limit_exceeded',
+            );
+            await _addNotificationAndPush(noti, pushStatusBar: true);
+            await prefs.setBool(key100, true);
+            await prefs.setBool(key80, true); // Đã vượt 100% thì tự đánh dấu đã qua 80%
+          }
+        } else if (percentage >= 80.0) {
+          if (!alreadyWarned80) {
+            final remaining = b.remainingAmount;
+            final noti = NotificationModel(
+              uid: uid,
+              iconCode: Icons.notification_important_rounded.codePoint,
+              title: '⚠️ $name đã chạm ${percentage.round()}% hạn mức!',
+              description: 'Đã chi ${CurrencyUtils.formatCurrency(b.currentSpent)}/${CurrencyUtils.formatCurrency(b.limitAmount)}. Chỉ còn lại ${CurrencyUtils.formatCurrency(remaining)} cho tháng này!',
+              isRead: false,
+              type: 'budget_limit_warning',
+            );
+            await _addNotificationAndPush(noti, pushStatusBar: true);
+            await prefs.setBool(key80, true);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('checkCategoryBudgetThresholds error: $e');
     }
   }
 }

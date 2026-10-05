@@ -96,14 +96,16 @@ class UserRepository {
   /// Lấy thông tin user một lần
   Future<UserModel?> getUser() async {
     final uid = _currentUid;
-    if (uid == null) return null;
     final db = await _dbHelper.database;
-    final results = await db.query('users', where: 'uid = ?', whereArgs: [uid]);
+    final results = (uid != null && uid.isNotEmpty)
+        ? await db.query('users', where: 'uid = ?', whereArgs: [uid])
+        : await db.query('users', limit: 1);
     if (results.isNotEmpty) {
       final user = UserModel.fromSqlite(results.first);
       _cachedUser = user;
       return user;
     }
+    if (uid == null) return null;
 
     // Tự động kéo từ Firestore nếu SQLite chưa có bản ghi (ví dụ: máy mới, sau khi đăng nhập)
     try {

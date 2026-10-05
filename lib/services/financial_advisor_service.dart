@@ -115,6 +115,13 @@ class PersonalSpendingQueryResult {
   final String? categoryFilter;
   final List<TransactionModel> relevantTransactions;
   final String answerText;
+  final String? topCategory;
+  final double? topCategoryAmount;
+  final double? topCategoryPercentage;
+  final int? topCategoryTxCount;
+  final TransactionModel? topTransaction;
+  final Map<String, double>? categoryBreakdown;
+  final int? daysCount;
 
   const PersonalSpendingQueryResult({
     required this.queryText,
@@ -124,6 +131,13 @@ class PersonalSpendingQueryResult {
     this.categoryFilter,
     required this.relevantTransactions,
     required this.answerText,
+    this.topCategory,
+    this.topCategoryAmount,
+    this.topCategoryPercentage,
+    this.topCategoryTxCount,
+    this.topTransaction,
+    this.categoryBreakdown,
+    this.daysCount,
   });
 }
 
@@ -536,8 +550,20 @@ class FinancialAdvisorService {
     DateTime startDate;
     DateTime endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
     String periodText = 'trong tháng này';
+    int? customDays;
 
-    if (lower.contains('hôm nay') || lower.contains('hom nay')) {
+    // 1. Nhận diện các khoảng thời gian tùy biến: "3 ngày qua", "5 ngày gần đây", "7 ngày trước"...
+    final daysMatch = RegExp(r'(\d+)\s+ngày\s+(?:qua|gần\s+đây|trước)', caseSensitive: false).firstMatch(lower);
+    if (daysMatch != null) {
+      customDays = int.tryParse(daysMatch.group(1)!);
+    } else if (lower.contains('vài ngày qua') || lower.contains('mấy ngày qua') || lower.contains('mấy ngày nay')) {
+      customDays = 3;
+    }
+
+    if (customDays != null && customDays > 0) {
+      startDate = DateTime(now.year, now.month, now.day).subtract(Duration(days: customDays - 1));
+      periodText = '$customDays ngày qua';
+    } else if (lower.contains('hôm nay') || lower.contains('hom nay')) {
       startDate = DateTime(now.year, now.month, now.day);
       periodText = 'hôm nay';
     } else if (lower.contains('hôm qua') || lower.contains('hom qua')) {
@@ -549,11 +575,20 @@ class FinancialAdvisorService {
       startDate = now.subtract(Duration(days: now.weekday - 1));
       startDate = DateTime(startDate.year, startDate.month, startDate.day);
       periodText = 'tuần này';
+    } else if (lower.contains('tuần trước') || lower.contains('tuan truoc')) {
+      final lastWeek = now.subtract(Duration(days: now.weekday + 6));
+      startDate = DateTime(lastWeek.year, lastWeek.month, lastWeek.day);
+      final endLastWeek = startDate.add(const Duration(days: 6));
+      endDate = DateTime(endLastWeek.year, endLastWeek.month, endLastWeek.day, 23, 59, 59);
+      periodText = 'tuần trước';
     } else if (lower.contains('tháng trước') || lower.contains('thang truoc')) {
       startDate = DateTime(now.year, now.month - 1, 1);
       final lastDayPrevMonth = DateTime(now.year, now.month, 0);
       endDate = DateTime(lastDayPrevMonth.year, lastDayPrevMonth.month, lastDayPrevMonth.day, 23, 59, 59);
       periodText = 'tháng trước';
+    } else if (lower.contains('năm nay') || lower.contains('nam nay')) {
+      startDate = DateTime(now.year, 1, 1);
+      periodText = 'năm nay';
     } else {
       // Mặc định tháng này
       startDate = DateTime(now.year, now.month, 1);
@@ -562,13 +597,13 @@ class FinancialAdvisorService {
 
     final allTx = await _txRepo.getAllTransactions();
 
-    // Lọc theo khoảng thời gian
+    // 2. Lọc theo khoảng thời gian chuẩn xác
     var filtered = allTx.where((tx) {
       return tx.date.isAfter(startDate.subtract(const Duration(seconds: 1))) &&
           tx.date.isBefore(endDate.add(const Duration(seconds: 1)));
     }).toList();
 
-    // Lọc theo danh mục nếu người dùng có hỏi danh mục cụ thể (Ăn uống, Grab, Mua sắm...)
+    // 3. Lọc theo danh mục nếu người dùng có hỏi danh mục cụ thể
     String? categoryFilter;
     if (lower.contains('ăn uống') || lower.contains('an uong') || lower.contains('cơm') || lower.contains('cafe')) {
       categoryFilter = 'Ăn uống';
@@ -587,30 +622,87 @@ class FinancialAdvisorService {
       filtered = filtered.where((tx) => tx.category == categoryFilter || tx.description.toLowerCase().contains(filter)).toList();
     }
 
-    // Nếu hỏi khoản chi lớn nhất
-    if (lower.contains('lớn nhất') || lower.contains('nhất') || lower.contains('cao nhất')) {
-      final expenseOnly = filtered.where((tx) => tx.type == 'expense').toList();
-      expenseOnly.sort((a, b) => b.amount.compareTo(a.amount));
-      if (expenseOnly.isNotEmpty) {
-        final top = expenseOnly.first;
-        final answer = '🔍 Khoản chi lớn nhất của bạn $periodText là **${CurrencyUtils.formatCurrency(top.amount)}** cho "${top.description}" ([${top.category}]) vào ngày ${top.date.day}/${top.date.month}.';
-        return PersonalSpendingQueryResult(
-          queryText: query,
-          totalAmount: top.amount,
-          transactionCount: 1,
-          periodDescription: periodText,
-          categoryFilter: categoryFilter,
-          relevantTransactions: [top],
-          answerText: answer,
-        );
-      }
+    // 4. Phân tích bóc tách các khoản chi tiêu (Expense)
+    final expenseTxs = filtered.where((tx) => tx.type == 'expense').toList();
+    final double totalAmount = expenseTxs.fold(0.0, (sum, tx) => sum + tx.amount);
+    final count = expenseTxs.length;
+
+    // Tổng hợp chi tiêu theo từng danh mục
+    final Map<String, double> catMap = {};
+    final Map<String, int> catCount = {};
+    for (var tx in expenseTxs) {
+      catMap[tx.category] = (catMap[tx.category] ?? 0.0) + tx.amount;
+      catCount[tx.category] = (catCount[tx.category] ?? 0) + 1;
     }
 
-    final totalAmount = filtered.where((tx) => tx.type == 'expense').fold(0.0, (sum, tx) => sum + tx.amount);
-    final count = filtered.length;
+    // Sắp xếp danh mục chi nhiều nhất giảm dần
+    final sortedCats = catMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
 
-    final catText = categoryFilter != null ? 'cho danh mục **$categoryFilter** ' : '';
-    final answerText = '📊 $periodText, bạn đã chi tổng cộng **${CurrencyUtils.formatCurrency(totalAmount)}** $catText(gồm **$count giao dịch**).';
+    String? topCat;
+    double topCatAmount = 0.0;
+    double topCatPct = 0.0;
+    int topCatCount = 0;
+    if (sortedCats.isNotEmpty) {
+      topCat = sortedCats.first.key;
+      topCatAmount = sortedCats.first.value;
+      topCatPct = totalAmount > 0 ? (topCatAmount / totalAmount) * 100 : 0.0;
+      topCatCount = catCount[topCat] ?? 1;
+    }
+
+    // Khoản chi đơn lẻ lớn nhất
+    expenseTxs.sort((a, b) => b.amount.compareTo(a.amount));
+    final topTx = expenseTxs.isNotEmpty ? expenseTxs.first : null;
+
+    // 5. Nếu chưa có giao dịch nào trong khoảng thời gian này
+    if (expenseTxs.isEmpty) {
+      final emptyAnswer = '🔍 Trong **$periodText**, bạn chưa có ghi chép chi tiêu nào trong sổ. Hãy ghi chép đều đặn để Mono giúp bạn kiểm soát và phân tích tài chính chính xác nhé! ✨';
+      return PersonalSpendingQueryResult(
+        queryText: query,
+        totalAmount: 0.0,
+        transactionCount: 0,
+        periodDescription: periodText,
+        categoryFilter: categoryFilter,
+        relevantTransactions: [],
+        answerText: emptyAnswer,
+        daysCount: customDays,
+      );
+    }
+
+    // 6. Xây dựng câu trả lời tự nhiên, sâu sắc và thông minh
+    final sb = StringBuffer();
+    final totalFormatted = CurrencyUtils.formatCurrency(totalAmount);
+
+    final bool isAskingTopCategory = lower.contains('nhiều nhất') ||
+        lower.contains('lớn nhất') ||
+        lower.contains('việc nào') ||
+        lower.contains('cái gì') ||
+        lower.contains('khoản nào') ||
+        lower.contains('mức chi tiêu');
+
+    if (isAskingTopCategory && topCat != null) {
+      final topCatFormatted = CurrencyUtils.formatCurrency(topCatAmount);
+      final pctStr = topCatPct.toStringAsFixed(1);
+      sb.writeln('📊 Trong **$periodText**, bạn chi tiêu nhiều nhất cho việc **$topCat** với tổng cộng **$topCatFormatted** (chiếm **$pctStr%** trên tổng chi **$totalFormatted**, gồm **$topCatCount giao dịch**).');
+      
+      if (topTx != null) {
+        sb.writeln('\n• 📌 Khoản chi lớn nhất: **${CurrencyUtils.formatCurrency(topTx.amount)}** cho "${topTx.description}" ngày ${topTx.date.day}/${topTx.date.month}.');
+      }
+
+      if (sortedCats.length > 1) {
+        sb.writeln('• 📋 Các danh mục chi tiêu tiếp theo:');
+        for (var i = 1; i < sortedCats.length && i < 4; i++) {
+          final entry = sortedCats[i];
+          final p = totalAmount > 0 ? (entry.value / totalAmount * 100).toStringAsFixed(0) : '0';
+          sb.writeln('   - ${entry.key}: **${CurrencyUtils.formatCurrency(entry.value)}** ($p%)');
+        }
+      }
+    } else {
+      final catText = categoryFilter != null ? 'cho danh mục **$categoryFilter** ' : '';
+      sb.writeln('📊 Trong **$periodText**, tổng chi tiêu của bạn là **$totalFormatted** $catText(gồm **$count giao dịch**).');
+      if (topCat != null) {
+        sb.writeln('• Danh mục chi nhiều nhất: **$topCat** (${CurrencyUtils.formatCurrency(topCatAmount)}, chiếm ${topCatPct.toStringAsFixed(0)}%).');
+      }
+    }
 
     return PersonalSpendingQueryResult(
       queryText: query,
@@ -618,8 +710,15 @@ class FinancialAdvisorService {
       transactionCount: count,
       periodDescription: periodText,
       categoryFilter: categoryFilter,
-      relevantTransactions: filtered.take(5).toList(),
-      answerText: answerText,
+      relevantTransactions: expenseTxs.take(5).toList(),
+      answerText: sb.toString().trim(),
+      topCategory: topCat,
+      topCategoryAmount: topCatAmount,
+      topCategoryPercentage: topCatPct,
+      topCategoryTxCount: topCatCount,
+      topTransaction: topTx,
+      categoryBreakdown: catMap,
+      daysCount: customDays,
     );
   }
 

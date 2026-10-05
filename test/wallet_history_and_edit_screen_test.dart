@@ -243,7 +243,7 @@ void main() {
       expect(find.text('Chỉnh sửa giao dịch'), findsOneWidget);
       expect(find.text('Khoản chi'), findsOneWidget);
       expect(find.byType(TextFormField), findsWidgets);
-      expect(find.text('Xác nhận cập nhật'), findsOneWidget);
+      expect(find.text('Cập nhật giao dịch'), findsOneWidget);
       expect(find.text('Xóa giao dịch này'), findsOneWidget);
     });
   });

@@ -50,3 +50,17 @@ app.*.map.json
 *.env
 lib/core/constants/api_keys.dart
 assets/config/api_keys.json
+
+# Temporary reports, diffs, and analysis dumps in root
+/*_diff.txt
+/*diff*.txt
+/analy*.txt
+/*_report*.txt
+/git_status*.txt
+/conflicts.txt
+/*_temp.dart
+/fs_*.dart
+/rs_*.dart
+/rs_them.txt
+/pure_test.dart
+/test_*.dart

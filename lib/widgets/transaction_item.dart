@@ -99,17 +99,18 @@ class TransactionItem extends ConsumerWidget {
       }
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: AnimatedScaleButton(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          Navigator.push(
-            context,
-            PageTransitions.slideRight(TransactionDetailScreen(transaction: transaction)),
-          );
-        },
-        child: Container(
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: AnimatedScaleButton(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            Navigator.push(
+              context,
+              PageTransitions.slideRight(TransactionDetailScreen(transaction: transaction)),
+            );
+          },
+          child: Container(
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -263,7 +264,7 @@ class TransactionItem extends ConsumerWidget {
           ),
         ),
       ),
-    );
+    ));
   }
 
   /// Chip tag ví tiền hiển thị gọn gàng, mang màu sắc & icon đặc trưng của ví

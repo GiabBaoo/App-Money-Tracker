@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../utils/page_transitions.dart';
 import '../../models/transaction_model.dart';
@@ -8,7 +7,7 @@ import '../../utils/currency_format_utils.dart';
 import '../calendar/calendar_tracking_screen.dart';
 import '../../utils/category_utils.dart';
 import '../../data/repositories/transaction_repository.dart';
-import '../../data/repositories/user_repository.dart';
+import '../../data/repositories/wallet_repository.dart';
 import '../../services/language_service.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/staggered_list_item.dart';
@@ -39,57 +38,42 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
   int _selectedYear = DateTime.now().year;
   int _selectedWeekOffset = 0; // 0 = Tuần hiện tại, 1 = Tuần trước...
 
-  DateTime? _userJoinDate;
+  late final ScrollController _scrollController;
+  final ValueNotifier<bool> _isScrolledNotifier = ValueNotifier<bool>(false);
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+    _transactionStream = TransactionRepository().getTransactionsStream();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final scrolled = _scrollController.offset > 60;
+    if (scrolled != _isScrolledNotifier.value) {
+      _isScrolledNotifier.value = scrolled;
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _isScrolledNotifier.dispose();
+    super.dispose();
+  }
+
   bool _isExpense = true;
   bool _isDescending = true;
   int _selectedChartType = 0; // 0: Đường xu hướng, 1: Tròn phân bổ, 2: Cột đôi Thu vs Chi
   int _touchedPieIndex = -1;
 
-  @override
-  void initState() {
-    super.initState();
-    _transactionStream = TransactionRepository().getTransactionsStream();
-    _loadUserJoinDate();
-  }
-
-  Future<void> _loadUserJoinDate() async {
-    try {
-      final user = await UserRepository().getUser();
-      final firebaseCreation = FirebaseAuth.instance.currentUser?.metadata.creationTime;
-      DateTime join = user?.joinDate ?? firebaseCreation ?? DateTime.now();
-
-      final now = DateTime.now();
-      if (join.isAfter(now)) {
-        join = now;
-      }
-
-      if (mounted) {
-        setState(() {
-          _userJoinDate = DateTime(join.year, join.month, 1);
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading user join date: $e');
-    }
-  }
-
-  DateTime get _effectiveJoinDate {
-    final now = DateTime.now();
-    if (_userJoinDate == null) {
-      return DateTime(now.year, now.month, 1);
-    }
-    if (_userJoinDate!.isAfter(now)) {
-      return DateTime(now.year, now.month, 1);
-    }
-    return DateTime(_userJoinDate!.year, _userJoinDate!.month, 1);
-  }
-
   // ════════ ĐIỀU HƯỚNG THỜI GIAN THEO BỘ LỌC ════════
 
   bool _canGoPrevMonth() {
-    final prev = DateTime(_selectedYear, _selectedMonth - 1, 1);
-    final minDate = DateTime(_effectiveJoinDate.year, _effectiveJoinDate.month, 1);
-    return !prev.isBefore(minDate);
+    return (_selectedYear > 2000) || (_selectedYear == 2000 && _selectedMonth > 1);
   }
 
   bool _canGoNextMonth() {
@@ -124,7 +108,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
   }
 
   bool _canGoPrevYear() {
-    return (_selectedYear - 1) >= _effectiveJoinDate.year;
+    return (_selectedYear - 1) >= 2000;
   }
 
   bool _canGoNextYear() {
@@ -146,10 +130,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
   }
 
   bool _canGoPrevWeek() {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final startOfTargetWeek = today.subtract(Duration(days: today.weekday - 1 + (_selectedWeekOffset + 1) * 7));
-    return !startOfTargetWeek.isBefore(_effectiveJoinDate);
+    return _selectedWeekOffset < 500;
   }
 
   bool _canGoNextWeek() {
@@ -206,9 +187,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     if (_selectedMainTab == 0) {
       final range = _getRangeFromFilter();
       final rangeStr = '${range.start.day.toString().padLeft(2, '0')}/${range.start.month.toString().padLeft(2, '0')} - ${range.end.day.toString().padLeft(2, '0')}/${range.end.month.toString().padLeft(2, '0')}';
-      if (_selectedWeekOffset == 0) return 'Tuần ($rangeStr)';
+      if (_selectedWeekOffset == 0) return 'Tuần này ($rangeStr)';
       if (_selectedWeekOffset == 1) return 'Tuần trước ($rangeStr)';
-      return rangeStr;
+      return '$rangeStr (${range.start.year})';
     } else if (_selectedMainTab == 1) {
       return 'Tháng $_selectedMonth/$_selectedYear';
     } else {
@@ -238,353 +219,748 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
   Widget build(BuildContext context) {
     super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final topPadding = MediaQuery.of(context).padding.top;
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final headerHeight = topPadding + 58.0;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Column(
+      body: Stack(
         children: [
-          // === HEADER FINTECH GLASSMORPHISM ===
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDark
-                    ? [const Color(0xFF0F2625), const Color(0xFF0A1817)]
-                    : [const Color(0xFF438883), const Color(0xFF2DD4BF)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
-              boxShadow: [
-                BoxShadow(
-                  color: (isDark ? Colors.black : const Color(0xFF438883)).withValues(alpha: 0.18),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const SizedBox(width: 42),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.analytics_rounded, color: Colors.white, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          context.tr('stats_title'),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ],
-                    ),
-                    AnimatedScaleButton(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        Navigator.push(context, PageTransitions.slideRight(const CalendarTrackingScreen()));
-                      },
-                      child: Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.28),
-                            width: 1.0,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
+          // 1. NỀN GRADIENT PHÍA TRÊN (CHUYỂN SẮC MỀM MẠI, ĐỒNG BỘ 100% VỚI VÍ TIỀN & TRANG CHỦ)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 330,
+            child: RepaintBoundary(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isDark
+                        ? [
+                            const Color(0xFF0F2625),
+                            const Color(0xFF0F2625),
+                            Theme.of(context).scaffoldBackgroundColor,
+                          ]
+                        : [
+                            const Color(0xFF438883),
+                            const Color(0xFF438883),
+                            Theme.of(context).scaffoldBackgroundColor,
                           ],
-                        ),
-                        child: const Icon(Icons.calendar_month_rounded, size: 19, color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
-          // === MAIN TABS (TUẦN/THÁNG/NĂM) ===
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              height: 46,
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
-                ),
-              ),
-              child: Row(
-                children: [
-                  _buildMainTab(0, context.tr('stats_filter_week')),
-                  _buildMainTab(1, context.tr('stats_filter_month')),
-                  _buildMainTab(2, context.tr('stats_filter_year')),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
-          // === CAPSULE FILTER (NAVIGATOR + MODAL TRIGGER) & TYPE SWITCH ===
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                // BỘ ĐIỀU HƯỚNG THỜI GIAN (< Tháng MM/YYYY >)
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
-                      boxShadow: [
-                        if (!isDark)
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        // NÚT LÙI THỜI GIAN (<)
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                          icon: Icon(
-                            Icons.chevron_left_rounded,
-                            size: 20,
-                            color: _canGoPrev
-                                ? (isDark ? Colors.white70 : const Color(0xFF438883))
-                                : (isDark ? Colors.white24 : Colors.grey.shade300),
-                          ),
-                          onPressed: _canGoPrev
-                              ? () {
-                                  HapticFeedback.selectionClick();
-                                  _onPrev();
-                                }
-                              : null,
-                        ),
-
-                        // NHÃN TRUNG TÂM (CHẠM ĐỂ MỞ MODAL CHỌN NHANH)
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              HapticFeedback.selectionClick();
-                              _showFilterPickerModal(context);
-                            },
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.calendar_month_rounded,
-                                  size: 14,
-                                  color: isDark ? Colors.white70 : const Color(0xFF438883),
-                                ),
-                                const SizedBox(width: 4),
-                                Flexible(
-                                  child: Text(
-                                    _getFilterLabel(),
-                                    style: TextStyle(
-                                      color: isDark ? Colors.white : const Color(0xFF333333),
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const Icon(Icons.arrow_drop_down, size: 16, color: Colors.grey),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        // NÚT TIẾN THỜI GIAN (>)
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                          icon: Icon(
-                            Icons.chevron_right_rounded,
-                            size: 20,
-                            color: _canGoNext
-                                ? (isDark ? Colors.white70 : const Color(0xFF438883))
-                                : (isDark ? Colors.white24 : Colors.grey.shade300),
-                          ),
-                          onPressed: _canGoNext
-                              ? () {
-                                  HapticFeedback.selectionClick();
-                                  _onNext();
-                                }
-                              : null,
-                        ),
-                      ],
-                    ),
+                    stops: const [0.0, 0.60, 1.0],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                   ),
                 ),
-                const SizedBox(width: 8),
+              ),
+            ),
+          ),
 
-                // NÚT CHUYỂN ĐỔI LOẠI GIAO DỊCH (CHI TIẾU / THU NHẬP) - ĐỒNG BỘ FINTECH
-                AnimatedScaleButton(
-                  scaleDown: 0.94,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      _isExpense = !_isExpense;
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8.5),
-                    decoration: BoxDecoration(
-                      color: _isExpense
-                          ? (isDark ? const Color(0xFF381A1A) : const Color(0xFFFEF2F2))
-                          : (isDark ? const Color(0xFF143328) : const Color(0xFFE8F5EE)),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: _isExpense
-                            ? const Color(0xFFF87171).withValues(alpha: isDark ? 0.35 : 0.25)
-                            : const Color(0xFF2DD4BF).withValues(alpha: isDark ? 0.35 : 0.25),
-                        width: 1.2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (_isExpense ? const Color(0xFFF87171) : const Color(0xFF2DD4BF)).withValues(alpha: 0.08),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+          // 2. NỘI DUNG CUỘN THỐNG NHẤT VỚI STREAMBUILDER
+          StreamBuilder<List<TransactionModel>>(
+            stream: _transactionStream,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
+              }
+
+              final allTx = snapshot.data ?? [];
+              final range = _getRangeFromFilter();
+
+              final filteredAll = allTx.where((tx) {
+                return !tx.date.isBefore(range.start) && !tx.date.isAfter(range.end);
+              }).toList();
+
+              // Lọc bỏ các giao dịch chuyển tiền nội bộ giữa các ví để không làm lệch số liệu
+              final actualTx = filteredAll.where((tx) => !tx.isTransfer).toList();
+
+              final filtered = actualTx.where((tx) => _isExpense ? !tx.isIncome : tx.isIncome).toList();
+              final chartPoints = _buildChartData(filtered, range);
+              final total = filtered.fold<double>(0, (sum, tx) => sum + tx.amount);
+              final categoryGroups = _getCategoryGroups(filtered);
+
+              // Tính toán các chỉ số tài chính thông minh dựa trên thu/chi thực tế
+              final totalIncome = actualTx.where((tx) => tx.isIncome).fold<double>(0, (s, tx) => s + tx.amount);
+              final totalExpense = actualTx.where((tx) => !tx.isIncome).fold<double>(0, (s, tx) => s + tx.amount);
+              final savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome * 100).clamp(-100.0, 100.0) : 0.0;
+
+              return SingleChildScrollView(
+                controller: _scrollController,
+                key: const PageStorageKey('stats_unified_scroll'),
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.only(
+                  top: headerHeight + 6,
+                  bottom: (bottomInset > 0 ? bottomInset : 12) + 74,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 2.1 THẺ HERO STATS SUMMARY CARD ĐẲNG CẤP FINTECH
+                    _buildHeroStatsCard(
+                      context,
+                      total: total,
+                      totalExpense: totalExpense,
+                      totalIncome: totalIncome,
+                      transactionCount: filtered.length,
+                      isDark: isDark,
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(3),
+
+                    const SizedBox(height: 14),
+
+                    // 2.2 BỘ CHUYỂN ĐỔI LOẠI BIỂU ĐỒ TRỰC QUAN (TABS XU HƯỚNG / PHÂN BỔ / THU-CHI)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildChartTypeSelector(isDark),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // 2.3 KHỐI CANVAS CHỨA BIỂU ĐỒ (Bọc Card đồng bộ & RepaintBoundary tối ưu GPU)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: RepaintBoundary(
+                        child: Container(
+                          padding: const EdgeInsets.all(18),
                           decoration: BoxDecoration(
-                            color: (_isExpense
-                                ? const Color(0xFFF87171)
-                                : const Color(0xFF2DD4BF)).withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
+                            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(
+                              color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0),
+                              width: 1.0,
+                            ),
+                            boxShadow: [
+                              if (!isDark)
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.035),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                            ],
                           ),
-                          child: Icon(
-                            _isExpense ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
-                            color: _isExpense
-                                ? (isDark ? const Color(0xFFF87171) : const Color(0xFFE63946))
-                                : (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0D9488)),
-                            size: 14,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          _isExpense ? context.tr('expense') : context.tr('income'),
-                          style: TextStyle(
-                            color: _isExpense
-                                ? (isDark ? const Color(0xFFF87171) : const Color(0xFFE63946))
-                                : (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0D9488)),
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          // === CONTENT ===
-          Expanded(
-            child: StreamBuilder<List<TransactionModel>>(
-              stream: _transactionStream,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
-                }
-
-                final allTx = snapshot.data ?? [];
-                final range = _getRangeFromFilter();
-
-                final filteredAll = allTx.where((tx) {
-                  return !tx.date.isBefore(range.start) && !tx.date.isAfter(range.end);
-                }).toList();
-
-                // Lọc bỏ các giao dịch chuyển tiền nội bộ giữa các ví để không làm lệch số liệu
-                final actualTx = filteredAll.where((tx) => !tx.isTransfer).toList();
-
-                final filtered = actualTx.where((tx) => _isExpense ? !tx.isIncome : tx.isIncome).toList();
-                final chartPoints = _buildChartData(filtered, range);
-                final total = filtered.fold<double>(0, (sum, tx) => sum + tx.amount);
-                final categoryGroups = _getCategoryGroups(filtered);
-
-                // Tính toán các chỉ số tài chính thông minh dựa trên thu/chi thực tế
-                final totalIncome = actualTx.where((tx) => tx.isIncome).fold<double>(0, (s, tx) => s + tx.amount);
-                final totalExpense = actualTx.where((tx) => !tx.isIncome).fold<double>(0, (s, tx) => s + tx.amount);
-                final savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome * 100).clamp(-100.0, 100.0) : 0.0;
-
-                return AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 250),
-                  child: SingleChildScrollView(
-                    key: ValueKey('stats-$_selectedMainTab-$_selectedMonth-$_selectedYear-$_selectedWeekOffset-$_isExpense-$_selectedChartType'),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                    child: Column(
-                      children: [
-                        // Bộ chuyển đổi loại biểu đồ trực quan
-                        _buildChartTypeSelector(isDark),
-                        const SizedBox(height: 16),
-
-                        // Biểu đồ được chọn (Bọc RepaintBoundary để tối ưu GPU/Render Thread khi cuộn)
-                        RepaintBoundary(
                           child: _selectedChartType == 0
                               ? _buildWaveChart(chartPoints, total)
                               : (_selectedChartType == 1
                                   ? _buildPieChart(categoryGroups, total)
                                   : _buildDoubleBarChart(actualTx, range)),
                         ),
-
-                        const SizedBox(height: 12),
-
-                        // Khối đánh giá Sức khỏe tài chính & Tỷ lệ tiết kiệm
-                        _buildFinancialHealthCard(totalIncome, totalExpense, savingsRate, isDark),
-
-                        _buildEnhancedTopSection(categoryGroups, total, actualTx),
-                        const SizedBox(height: 100),
-                      ],
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
+
+                    const SizedBox(height: 14),
+
+                    // 2.4 ĐÁNH GIÁ SỨC KHỎE TÀI CHÍNH & TỶ LỆ TIẾT KIỆM
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildFinancialHealthCard(totalIncome, totalExpense, savingsRate, isDark),
+                    ),
+
+                    // 2.5 PHÂN BỔ THEO HẠNG MỤC
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildEnhancedTopSection(categoryGroups, total, actualTx),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
+          // 3. TOP APP BAR ĐỒNG BỘ VỚI VÍ TIỀN & TRANG CHỦ
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _buildStickyHeader(context, isDark, topPadding),
           ),
         ],
       ),
     );
+  }
+
+  // === STICKY TOP APP BAR (FROSTED GLASSMORPHISM) ===
+  Widget _buildStickyHeader(BuildContext context, bool isDark, double topPadding) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: _isScrolledNotifier,
+      builder: (context, isScrolled, _) {
+        return RepaintBoundary(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: EdgeInsets.only(
+              top: topPadding + 6,
+              bottom: 10,
+              left: 20,
+              right: 20,
+            ),
+            decoration: BoxDecoration(
+              color: isScrolled
+                  ? (isDark ? const Color(0xF50F2625) : const Color(0xF5438883))
+                  : Colors.transparent,
+              border: Border(
+                bottom: BorderSide(
+                  color: isScrolled ? Colors.white.withValues(alpha: 0.15) : Colors.transparent,
+                  width: 1,
+                ),
+              ),
+              boxShadow: isScrolled
+                  ? [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.12),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                  : [],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Trái: Tiêu đề "Thống kê" với Icon thương hiệu
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.analytics_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      context.tr('stats_title'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Phải: Nút Lịch thu chi
+                AnimatedScaleButton(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    Navigator.push(context, PageTransitions.slideRight(const CalendarTrackingScreen()));
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.28),
+                        width: 1.0,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.calendar_month_rounded, size: 19, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // === THẺ HERO STATS SUMMARY CARD ĐẲNG CẤP FINTECH ===
+  Widget _buildHeroStatsCard(
+    BuildContext context, {
+    required double total,
+    required double totalExpense,
+    required double totalIncome,
+    required int transactionCount,
+    required bool isDark,
+  }) {
+    return RepaintBoundary(
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: LinearGradient(
+            colors: isDark
+                ? [
+                    const Color(0xFF132F2C),
+                    const Color(0xFF0F2624),
+                    const Color(0xFF0A1B19),
+                  ]
+                : [
+                    const Color(0xFF2A6C67),
+                    const Color(0xFF438883),
+                    const Color(0xFF35706B),
+                  ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.22),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
+                  .withValues(alpha: isDark ? 0.22 : 0.28),
+              blurRadius: 22,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(23),
+          child: Stack(
+            children: [
+              // Họa tiết watermark chìm góc phải
+              Positioned(
+                right: -20,
+                top: -20,
+                child: Transform.rotate(
+                  angle: -0.2,
+                  child: Icon(
+                    Icons.insights_rounded,
+                    size: 150,
+                    color: Colors.white.withValues(alpha: 0.05),
+                  ),
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 1. TABS CHỌN KỲ THỐNG KÊ (TUẦN / THÁNG / NĂM) - RỘNG RÃI, CÂN ĐỐI 100%
+                    Container(
+                      height: 38,
+                      padding: const EdgeInsets.all(3.5),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.14),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          _buildHeroPeriodTab(0, context.tr('stats_filter_week'), isDark),
+                          _buildHeroPeriodTab(1, context.tr('stats_filter_month'), isDark),
+                          _buildHeroPeriodTab(2, context.tr('stats_filter_year'), isDark),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // 2. BỘ ĐIỀU HƯỚNG THỜI GIAN RIÊNG BIỆT (< Kỳ hiển thị >) - KHÔNG BAO GIỜ BỊ TRÀN CHỮ
+                    Container(
+                      height: 36,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.22),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          // Nút lùi (<)
+                          SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: IconButton(
+                              padding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
+                              icon: Icon(
+                                Icons.chevron_left_rounded,
+                                size: 20,
+                                color: _canGoPrev ? Colors.white : Colors.white30,
+                              ),
+                              onPressed: _canGoPrev
+                                  ? () {
+                                      HapticFeedback.selectionClick();
+                                      _onPrev();
+                                    }
+                                  : null,
+                            ),
+                          ),
+
+                          // Nhãn thời gian (chạm để mở sheet chọn nhanh)
+                          Expanded(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                _showFilterPickerModal(context);
+                              },
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.calendar_month_rounded,
+                                    size: 14,
+                                    color: Colors.white70,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        _getFilterLabel(),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                    Icons.arrow_drop_down_rounded,
+                                    size: 18,
+                                    color: Colors.white70,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          // Nút tiến (>)
+                          SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: IconButton(
+                              padding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
+                              icon: Icon(
+                                Icons.chevron_right_rounded,
+                                size: 20,
+                                color: _canGoNext ? Colors.white : Colors.white30,
+                              ),
+                              onPressed: _canGoNext
+                                  ? () {
+                                      HapticFeedback.selectionClick();
+                                      _onNext();
+                                    }
+                                  : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    // 2. KHỐI TỔNG TIỀN HIỂN THỊ CHÍNH (TYPOGRAPHY LỚN CHUẨN FINTECH)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: BoxDecoration(
+                                      color: _isExpense ? const Color(0xFFF87171) : const Color(0xFF2DD4BF),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _isExpense ? context.tr('expense') : context.tr('income'),
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.8),
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.2,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' (${_getPeriodSummaryLabel()})',
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.6),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  CurrencyUtils.formatCurrency(total),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Badge số lượng giao dịch
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.receipt_long_rounded, size: 13, color: Colors.white70),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$transactionCount gd',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    // 3. THANH DUAL SEGMENT TOGGLE (CHI TIÊU VS THU NHẬP) - CHUYỂN TAB 1 CHẠM
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          _buildDualFlowPill(
+                            isExpensePill: true,
+                            isSelected: _isExpense,
+                            amount: totalExpense,
+                            isDark: isDark,
+                          ),
+                          const SizedBox(width: 4),
+                          _buildDualFlowPill(
+                            isExpensePill: false,
+                            isSelected: !_isExpense,
+                            amount: totalIncome,
+                            isDark: isDark,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroPeriodTab(int index, String label, bool isDark) {
+    final isSelected = _selectedMainTab == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() {
+            _selectedMainTab = index;
+            if (index == 0) {
+              _selectedWeekOffset = 0;
+            } else if (index == 1) {
+              _selectedMonth = DateTime.now().month;
+              _selectedYear = DateTime.now().year;
+            } else if (index == 2) {
+              _selectedYear = DateTime.now().year;
+            }
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 6.5),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: isSelected
+                      ? (isDark ? const Color(0xFF0F2625) : const Color(0xFF2A6C67))
+                      : Colors.white.withValues(alpha: 0.8),
+                  fontSize: 12.5,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDualFlowPill({
+    required bool isExpensePill,
+    required bool isSelected,
+    required double amount,
+    required bool isDark,
+  }) {
+    final activeTextColor = isExpensePill
+        ? const Color(0xFFE63946)
+        : const Color(0xFF0D9488);
+    final activeIconColor = isExpensePill
+        ? const Color(0xFFE63946)
+        : const Color(0xFF0D9488);
+
+    return Expanded(
+      child: AnimatedScaleButton(
+        scaleDown: 0.96,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          if (_isExpense != isExpensePill) {
+            setState(() {
+              _isExpense = isExpensePill;
+            });
+          }
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(13),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(3.5),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? (isExpensePill
+                          ? const Color(0xFFFEF2F2)
+                          : const Color(0xFFE8F5EE))
+                      : Colors.white.withValues(alpha: 0.18),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isExpensePill ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                  color: isSelected ? activeIconColor : Colors.white,
+                  size: 13,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        isExpensePill ? context.tr('expense') : context.tr('income'),
+                        style: TextStyle(
+                          color: isSelected ? activeTextColor : Colors.white.withValues(alpha: 0.8),
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                      ),
+                    ),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        CurrencyUtils.formatCurrency(amount),
+                        style: TextStyle(
+                          color: isSelected ? activeTextColor : Colors.white,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        maxLines: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getPeriodSummaryLabel() {
+    if (_selectedMainTab == 0) {
+      if (_selectedWeekOffset == 0) return 'Tuần này';
+      if (_selectedWeekOffset == 1) return 'Tuần trước';
+      return 'Theo tuần';
+    } else if (_selectedMainTab == 1) {
+      return 'Tháng $_selectedMonth';
+    } else {
+      return 'Năm $_selectedYear';
+    }
   }
 
   // ════════ DANH SÁCH THỐNG KÊ THEO HẠNG MỤC (NHẤN VÀO ĐỂ XEM CHI TIẾT) ════════
@@ -776,7 +1152,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
       backgroundColor: Colors.transparent,
       builder: (modalContext) {
         return StreamBuilder<List<TransactionModel>>(
-          stream: _transactionStream,
+          stream: TransactionRepository().getTransactionsStream(),
           initialData: initialAll.isNotEmpty ? initialAll : null,
           builder: (context, snapshot) {
             final allTx = (snapshot.hasData && snapshot.data != null && snapshot.data!.isNotEmpty)
@@ -962,9 +1338,12 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                         // Hiển thị danh sách mới nhất lên đầu
                         final displayList = List<TransactionModel>.from(currentCategoryTx)
                           ..sort((a, b) => b.date.compareTo(a.date));
+                        final walletMap = {for (final w in WalletRepository().latestWallets) w.id: w};
 
                         return Flexible(
                           child: ListView.separated(
+                            physics: const BouncingScrollPhysics(),
+                            cacheExtent: 400,
                             padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
                             shrinkWrap: true,
                             itemCount: displayList.length,
@@ -977,6 +1356,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                 showDate: true,
                                 runningTotal: runningTotals[key],
                                 runningTotalLabel: 'Tổng',
+                                wallet: walletMap[tx.walletId],
                               );
                             },
                           ),
@@ -993,14 +1373,37 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
   }
 
   Widget _buildEmptyState() {
-    return Center(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+      alignment: Alignment.center,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 40),
-          Icon(Icons.analytics_outlined, size: 60, color: Colors.grey.withValues(alpha: 0.2)),
-          const SizedBox(height: 16),
-          const Text('Chưa có dữ liệu thống kê trong kỳ này', style: TextStyle(color: Colors.grey, fontSize: 14)),
-          const SizedBox(height: 40),
+          Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              color: (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
+                  .withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.receipt_long_rounded,
+              size: 28,
+              color: (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
+                  .withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Chưa có dữ liệu thống kê trong kỳ này',
+            style: TextStyle(
+              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -1031,7 +1434,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
       isScrollControlled: true,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) {
-          final canPrevYear = (tempYear - 1) >= _effectiveJoinDate.year;
+          final canPrevYear = (tempYear - 1) >= 2000;
           final canNextYear = (tempYear + 1) <= now.year;
 
           return Container(
@@ -1129,10 +1532,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                   itemCount: 12,
                   itemBuilder: (context, idx) {
                     final month = idx + 1;
-                    final isBeforeAccount = tempYear == _effectiveJoinDate.year &&
-                        month < _effectiveJoinDate.month;
                     final isFutureMonth = tempYear == now.year && month > now.month;
-                    final isDisabled = isBeforeAccount || isFutureMonth;
+                    final isDisabled = (tempYear > now.year) || isFutureMonth;
                     final isSelected =
                         (month == _selectedMonth && tempYear == _selectedYear);
 
@@ -1189,7 +1590,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                             if (isDisabled) ...[
                               const SizedBox(height: 2),
                               Text(
-                                isBeforeAccount ? 'Chưa tạo' : 'Chưa tới',
+                                'Chưa tới',
                                 style: TextStyle(
                                   fontSize: 9,
                                   color: isDark ? Colors.white24 : Colors.grey.shade400,
@@ -1217,7 +1618,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     final primaryColor = Theme.of(context).primaryColor;
     final now = DateTime.now();
 
-    final minYear = _effectiveJoinDate.year;
+    const minYear = 2020;
     final maxYear = now.year;
     final years = <int>[];
     for (int y = maxYear; y >= minYear; y--) {
@@ -1226,81 +1627,90 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 50,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(10),
+      builder: (ctx) => SafeArea(
+        top: false,
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.65,
+          ),
+          decoration: BoxDecoration(
+            color: Theme.of(ctx).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 50,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Chọn năm thống kê',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+              const SizedBox(height: 20),
+              Text(
+                'Chọn năm thống kê',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: years.length,
-              itemBuilder: (context, index) {
-                final year = years[index];
-                final isSelected = year == _selectedYear;
+              const SizedBox(height: 16),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: years.length,
+                  itemBuilder: (context, index) {
+                    final year = years[index];
+                    final isSelected = year == _selectedYear;
 
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedYear = year;
-                    });
-                    Navigator.pop(context);
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? primaryColor
-                          : (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6)),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Năm $year',
-                          style: TextStyle(
-                            color: isSelected
-                                ? Colors.white
-                                : (isDark ? Colors.white : Colors.black87),
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                            fontSize: 15,
-                          ),
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedYear = year;
+                        });
+                        Navigator.pop(context);
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? primaryColor
+                              : (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6)),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        if (isSelected)
-                          const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-          ],
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Năm $year',
+                              style: TextStyle(
+                                color: isSelected
+                                    ? Colors.white
+                                    : (isDark ? Colors.white : Colors.black87),
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                            if (isSelected)
+                              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
       ),
     );
@@ -1318,10 +1728,6 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
       final startOfWeek = today.subtract(Duration(days: today.weekday - 1 + offset * 7));
       final endOfWeek = startOfWeek.add(const Duration(days: 6));
 
-      if (endOfWeek.isBefore(_effectiveJoinDate) && offset > 0) {
-        break;
-      }
-
       String label;
       if (offset == 0) {
         label = 'Tuần (${startOfWeek.day}/${startOfWeek.month} - ${endOfWeek.day}/${endOfWeek.month})';
@@ -1335,149 +1741,95 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.6,
-        ),
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 50,
-              height: 5,
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Chọn tuần thống kê',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF1A1A1A),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Flexible(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: weeks.length,
-                itemBuilder: (context, index) {
-                  final item = weeks[index];
-                  final isSelected = item.offset == _selectedWeekOffset;
-
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedWeekOffset = item.offset;
-                      });
-                      Navigator.pop(context);
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? primaryColor
-                            : (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6)),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            item.label,
-                            style: TextStyle(
-                              color: isSelected
-                                  ? Colors.white
-                                  : (isDark ? Colors.white : Colors.black87),
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          if (isSelected)
-                            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMainTab(int index, String label) {
-    bool isSelected = _selectedMainTab == index;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Expanded(
-      child: AnimatedScaleButton(
-        scaleDown: 0.95,
-        onTap: () {
-          HapticFeedback.selectionClick();
-          setState(() {
-            _selectedMainTab = index;
-            if (index == 0) {
-              _selectedWeekOffset = 0;
-            } else if (index == 1) {
-              _selectedMonth = DateTime.now().month;
-              _selectedYear = DateTime.now().year;
-            } else if (index == 2) {
-              _selectedYear = DateTime.now().year;
-            }
-          });
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          margin: const EdgeInsets.all(4),
+      builder: (ctx) => SafeArea(
+        top: false,
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.65,
+          ),
           decoration: BoxDecoration(
-            gradient: isSelected
-                ? const LinearGradient(
-                    colors: [Color(0xFF438883), Color(0xFF2DD4BF)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: isSelected ? null : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF438883).withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    )
-                  ]
-                : null,
+            color: Theme.of(ctx).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
           ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: isSelected
-                    ? Colors.white
-                    : (isDark ? Colors.white60 : const Color(0xFF64748B)),
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                fontSize: 13.5,
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 50,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-            ),
+              const SizedBox(height: 20),
+              Text(
+                'Chọn tuần thống kê',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: weeks.length,
+                  itemBuilder: (context, index) {
+                    final item = weeks[index];
+                    final isSelected = item.offset == _selectedWeekOffset;
+
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedWeekOffset = item.offset;
+                        });
+                        Navigator.pop(context);
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? primaryColor
+                              : (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6)),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              item.label,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? Colors.white
+                                    : (isDark ? Colors.white : Colors.black87),
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            if (isSelected)
+                              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
           ),
         ),
       ),
     );
   }
+
 
   // ════════ BIỂU ĐỒ LƯỢN SÓNG (CHART) ════════
 
@@ -1485,14 +1837,18 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF242424) : const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(14),
+        color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+          width: 1.0,
+        ),
       ),
       child: Row(
         children: [
           _buildChartTypeTab(0, Icons.show_chart_rounded, 'Xu hướng', isDark),
           _buildChartTypeTab(1, Icons.pie_chart_rounded, 'Phân bổ', isDark),
-          _buildChartTypeTab(2, Icons.bar_chart_rounded, 'So sánh Thu/Chi', isDark),
+          _buildChartTypeTab(2, Icons.bar_chart_rounded, 'Thu / Chi', isDark),
         ],
       ),
     );
@@ -1508,18 +1864,20 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           setState(() => _selectedChartType = index);
         },
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 8.5, horizontal: 4),
           decoration: BoxDecoration(
-            color: isSelected ? (isDark ? const Color(0xFF333333) : Colors.white) : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+            color: isSelected
+                ? (isDark ? const Color(0xFF263238) : Colors.white)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
-                      blurRadius: 4,
+                      color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
+                      blurRadius: 6,
                       offset: const Offset(0, 2),
-                    )
+                    ),
                   ]
                 : null,
           ),
@@ -1529,19 +1887,25 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               Icon(
                 icon,
                 size: 15,
-                color: isSelected ? primaryColor : (isDark ? Colors.white60 : Colors.black54),
+                color: isSelected
+                    ? (isDark ? const Color(0xFF2DD4BF) : primaryColor)
+                    : (isDark ? Colors.white54 : const Color(0xFF64748B)),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 5),
               Flexible(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    color: isSelected ? (isDark ? Colors.white : primaryColor) : (isDark ? Colors.white60 : Colors.black54),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      color: isSelected
+                          ? (isDark ? Colors.white : primaryColor)
+                          : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                    ),
+                    maxLines: 1,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -1815,18 +2179,22 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: healthColor.withValues(alpha: 0.25), width: 1.2),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: healthColor.withValues(alpha: isDark ? 0.35 : 0.25),
+          width: 1.2,
+        ),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.035),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
         ],
       ),
       child: Column(

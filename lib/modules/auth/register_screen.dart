@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/page_transitions.dart';
+import '../../widgets/app_logo.dart';
 import 'package:flutter/services.dart'; // Thêm thư viện này để dùng FilteringTextInputFormatter chặn nhập chữ vào sđt
 import '../../widgets/animated_scale_button.dart';
 import '../../services/auth_service.dart';
@@ -290,14 +291,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   const Spacer(),
-                  const Text(
-                    'mono',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -1.5,
-                    ),
+                  const AppLogo.wordmark(
+                    height: 32,
+                    color: Colors.white,
                   ),
                   const Spacer(flex: 2),
                 ],

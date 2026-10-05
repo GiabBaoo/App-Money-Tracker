@@ -2,6 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:money_tracker_app/services/gemini_ai_service.dart';
 import 'package:money_tracker_app/services/ai_action_handler.dart';
 import 'package:money_tracker_app/services/voice_service.dart';
+import 'package:money_tracker_app/services/local_qwen_service.dart';
+import 'package:money_tracker_app/services/ai_config_service.dart';
+import 'package:money_tracker_app/services/financial_advisor_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -367,6 +370,333 @@ void main() {
 
       aiService.clearHistory();
       expect(aiService.conversationHistory.isEmpty, isTrue);
+    });
+
+    test('FIX LỖI: Nhận diện chính xác "phụng cho 15.000đ vào ví tiền mặt" là KHOẢN THU (income) danh mục Được cho/Tặng', () async {
+      // 1. Kiểm tra qua GeminiAiService NL parser
+      final aiRes = await aiService.parseNaturalLanguage('phụng cho 15.000đ vào ví tiền mặt');
+      expect(aiRes.isSuccess, isTrue);
+      expect(aiRes.transactions.isNotEmpty, isTrue);
+      final tx = aiRes.transactions.first;
+      expect(tx.type, equals('income'), reason: '"phụng cho" phải là khoản thu (income), không được hiểu sai thành expense');
+      expect(tx.category, equals('Được cho/Tặng'));
+      expect(tx.amount, equals(15000.0));
+      expect(tx.description.toLowerCase(), contains('phụng cho'));
+      expect(tx.walletName, equals('Tiền mặt'));
+
+      // 2. Kiểm tra qua VoiceService voice command parser
+      final voiceRes = voiceService.parseVoiceCommand('phụng cho 15.000đ vào ví tiền mặt');
+      expect(voiceRes, isNotNull);
+      expect(voiceRes!['type'], equals('income'));
+      expect(voiceRes['category'], equals('Được cho/Tặng'));
+      expect(voiceRes['amount'], equals(15000.0));
+      expect(voiceRes['description'].toString().toLowerCase(), contains('phụng cho'));
+      expect(voiceRes['walletName'], equals('Tiền mặt'));
+    });
+
+    test('Trợ lý Mono thông minh nhận diện các biến thể người khác cho tiền: "mẹ cho 50k vào ví momo", "bạn cho 100k tiền mặt"', () async {
+      // Mẹ cho 50k vào ví MoMo
+      final meChoRes = await aiService.parseNaturalLanguage('mẹ cho 50k vào ví momo');
+      expect(meChoRes.transactions.isNotEmpty, isTrue);
+      expect(meChoRes.transactions.first.type, equals('income'));
+      expect(meChoRes.transactions.first.category, equals('Được cho/Tặng'));
+      expect(meChoRes.transactions.first.amount, equals(50000.0));
+      expect(meChoRes.transactions.first.walletName, equals('MoMo'));
+
+      // Bạn cho 100k tiền mặt
+      final banChoRes = await aiService.parseNaturalLanguage('bạn cho 100k tiền mặt');
+      expect(banChoRes.transactions.isNotEmpty, isTrue);
+      expect(banChoRes.transactions.first.type, equals('income'));
+      expect(banChoRes.transactions.first.category, equals('Được cho/Tặng'));
+      expect(banChoRes.transactions.first.amount, equals(100000.0));
+      expect(banChoRes.transactions.first.walletName, equals('Tiền mặt'));
+    });
+
+    test('Phân biệt rõ ràng người khác cho tiền (income) với đem tiền cho/mượn/chi (expense)', () async {
+      // Cho bạn mượn -> Khoản chi
+      final muonResume = await aiService.parseNaturalLanguage('cho bạn mượn 50k');
+      expect(muonResume.transactions.isNotEmpty, isTrue);
+      expect(muonResume.transactions.first.type, equals('expense'));
+
+      // Chi cho ăn uống -> Khoản chi
+      final chiRes = await aiService.parseNaturalLanguage('chi 50k cho ăn uống');
+      expect(chiRes.transactions.isNotEmpty, isTrue);
+      expect(chiRes.transactions.first.type, equals('expense'));
+
+      // Bỏ 50k vào ví -> Vẫn giữ nguyên expense theo BUG-07
+      final boViRes = await aiService.parseNaturalLanguage('bỏ 50k vào ví');
+      expect(boViRes.transactions.isNotEmpty, isTrue);
+      expect(boViRes.transactions.first.type, equals('expense'));
+    });
+
+    test('Bóc tách thời gian & ngày tháng tiếng Việt chính xác: "hôm qua uống trà sữa 35k lúc 8h30 sáng"', () {
+      final dt = voiceService.parseVietnameseDateTime('hôm qua uống trà sữa 35k lúc 8h30 sáng');
+      final now = DateTime.now();
+      final yesterday = now.subtract(const Duration(days: 1));
+
+      expect(dt['day'], equals(yesterday.day));
+      expect(dt['month'], equals(yesterday.month));
+      expect(dt['year'], equals(yesterday.year));
+      expect(dt['hour'], equals(8));
+      expect(dt['minute'], equals(30));
+      expect(dt['time'], equals('08:30'));
+    });
+
+    test('Bóc tách buổi trong ngày: "tối qua ăn lẩu 150k" & "trưa nay ăn cơm 40k"', () {
+      final now = DateTime.now();
+      final yesterday = now.subtract(const Duration(days: 1));
+
+      final toiQua = voiceService.parseVietnameseDateTime('tối qua ăn lẩu 150k');
+      expect(toiQua['day'], equals(yesterday.day));
+      expect(toiQua['hour'], equals(19));
+      expect(toiQua['minute'], equals(30));
+
+      final truaNay = voiceService.parseVietnameseDateTime('trưa nay ăn cơm 40k');
+      expect(truaNay['day'], equals(now.day));
+      expect(truaNay['hour'], equals(12));
+      expect(truaNay['minute'], equals(0));
+    });
+
+    test('VoiceService.parseVoiceCommand nhận diện ngày hôm qua và giờ chính xác', () {
+      final now = DateTime.now();
+      final yesterday = now.subtract(const Duration(days: 1));
+
+      final res = voiceService.parseVoiceCommand('hôm qua ăn phở 45k lúc 7 rưỡi');
+      expect(res, isNotNull);
+      expect(res!['type'], equals('expense'));
+      expect(res['amount'], equals(45000.0));
+      expect(res['hour'], equals(7));
+      expect(res['minute'], equals(30));
+      expect(res['time'], equals('07:30'));
+
+      final parsedDate = res['date'] as DateTime;
+      expect(parsedDate.day, equals(yesterday.day));
+      expect(parsedDate.month, equals(yesterday.month));
+      expect(parsedDate.year, equals(yesterday.year));
+      expect(parsedDate.hour, equals(7));
+      expect(parsedDate.minute, equals(30));
+    });
+
+    test('Trợ lý Mono parseNaturalLanguage xử lý chính xác ngày quá khứ "hôm qua mua sách 80k lúc 14h"', () async {
+      final res = await aiService.parseNaturalLanguage('hôm qua mua sách 80k lúc 14h');
+      expect(res.isSuccess, isTrue);
+      expect(res.transactions.isNotEmpty, isTrue);
+      final tx = res.transactions.first;
+
+      final now = DateTime.now();
+      final yesterday = now.subtract(const Duration(days: 1));
+
+      expect(tx.date.day, equals(yesterday.day));
+      expect(tx.date.month, equals(yesterday.month));
+      expect(tx.date.year, equals(yesterday.year));
+      expect(tx.date.hour, equals(14));
+      expect(tx.date.minute, equals(0));
+    });
+
+    test('Local AI Qwen 2.5: Cấu hình mặc định kích hoạt Local Engine và Qwen 2.5 1.5B', () {
+      final config = AiConfigService();
+      expect(config.engineMode, equals('local_qwen'));
+      expect(config.isLocalAi, isTrue);
+      expect(config.localModelName, equals('qwen2.5:1.5b'));
+      expect(config.isReady, isTrue);
+    });
+
+    test('Local AI Qwen 2.5: LocalQwenService bóc tách giao dịch thu chi ngoại tuyến tức thì', () async {
+      final localQwen = LocalQwenService();
+      final res = await localQwen.parseNaturalLanguage('hôm nay ăn phở 45k ví MoMo');
+      expect(res.isSuccess, isTrue);
+      expect(res.transactions.isNotEmpty, isTrue);
+      final tx = res.transactions.first;
+      expect(tx.type, equals('expense'));
+      expect(tx.amount, equals(45000.0));
+      expect(tx.walletName, equals('MoMo'));
+      expect(tx.category, equals('Ăn uống'));
+    });
+
+    test('Local AI Qwen 2.5: LocalQwenService nhận diện đổi giao diện & báo cáo chi tiêu', () async {
+      final localQwen = LocalQwenService();
+
+      // Đổi dark mode
+      final themeRes = await localQwen.parseNaturalLanguage('chuyển sang giao diện tối');
+      expect(themeRes.actionType, equals(AiActionType.changeTheme));
+      expect(themeRes.themeMode, equals('dark'));
+
+      // Báo cáo chi tiêu
+      final reportRes = await localQwen.parseNaturalLanguage('báo cáo chi tiêu hôm nay');
+      expect(reportRes.actionType, equals(AiActionType.spendingReport));
+      expect(reportRes.reportPeriod, equals('today'));
+    });
+
+    test('Test câu nói thực tế của người dùng: "tôi mới mua bánh mì chả cá 20.000đ"', () async {
+      final voiceParsed = VoiceService().parseVoiceCommand('tôi mới mua bánh mì chả cá 20.000đ');
+      expect(voiceParsed, isNotNull);
+      expect(voiceParsed!['type'], equals('expense'));
+      expect(voiceParsed['amount'], equals(20000.0));
+      expect(voiceParsed['description'], equals('Bánh mì chả cá'));
+
+      final res = await aiService.parseNaturalLanguage('tôi mới mua bánh mì chả cá 20.000đ');
+      expect(res.transactions.isNotEmpty, isTrue);
+      expect(res.transactions.first.amount, equals(20000.0));
+      expect(res.transactions.first.type, equals('expense'));
+      expect(res.transactions.first.description, equals('Bánh mì chả cá'));
+    });
+
+    test('Trợ lý Mono: Tra cứu chi tiêu tùy biến thời gian "mức chi tiêu của tôi 3 ngày qua là cho việc nào nhiều nhất"', () async {
+      final res = await aiService.parseNaturalLanguage('mức chi tiêu của tôi 3 ngày qua là cho việc nào nhiều nhất');
+      expect(res.isSuccess, isTrue);
+      expect(res.actionType, equals(AiActionType.spendingQuery));
+      expect(res.spendingQueryResult, isNotNull);
+      expect(res.spendingQueryResult!.daysCount, equals(3));
+      expect(res.spendingQueryResult!.periodDescription, equals('3 ngày qua'));
+      expect(res.spendingQueryResult!.answerText.isNotEmpty, isTrue);
+    });
+
+    test('Trợ lý Mono: Tư vấn phân bổ tiền lương 50/30/20 "tôi mới nhận lương thì nên chia tiền như thế nào cho hợp lý"', () async {
+      final res = await aiService.parseNaturalLanguage('tôi mới nhận lương thì nên chia tiền như thế nào cho hợp lý');
+      expect(res.isSuccess, isTrue);
+      // Không bị hiểu nhầm thành chia hóa đơn ăn uống nhóm (Group Bill Split)
+      expect(res.actionType, isNot(equals(AiActionType.splitBill)));
+      expect(res.actionType, equals(AiActionType.financialAdvice));
+      expect(res.financialAdvice, isNotNull);
+      final advice = res.financialAdvice!;
+      expect(advice.title.toLowerCase().contains('lương') || advice.title.contains('50/30/20'), isTrue);
+      expect(advice.needs50, greaterThan(0));
+      expect(advice.wants30, greaterThan(0));
+      expect(advice.savings20, greaterThan(0));
+      expect(advice.summaryText.contains('50% Thiết yếu'), isTrue);
+      expect(advice.summaryText.contains('30% Linh hoạt'), isTrue);
+      expect(advice.summaryText.contains('20% Tiết kiệm'), isTrue);
+    });
+
+    test('Trợ lý Mono: Tư vấn phân bổ tiền lương có số tiền cụ thể "tôi mới nhận lương 15tr thì nên chia tiền như thế nào cho hợp lý"', () async {
+      final advice = await actionHandler.generateFinancialAdvice(
+        specificQuery: 'tôi mới nhận lương 15tr thì nên chia tiền như thế nào cho hợp lý',
+      );
+      expect(advice.totalBalance, equals(15000000.0));
+      expect(advice.needs50, equals(7500000.0));
+      expect(advice.wants30, equals(4500000.0));
+      expect(advice.savings20, equals(3000000.0));
+      expect(advice.summaryText.contains('15.000.000'), isTrue);
+      expect(advice.summaryText.contains('7.500.000'), isTrue);
+      expect(advice.summaryText.contains('4.500.000'), isTrue);
+      expect(advice.summaryText.contains('3.000.000'), isTrue);
+    });
+
+    test('FinancialAdvisorService.queryPersonalSpending nhận diện đúng chu kỳ ngày linh hoạt', () async {
+      final advisor = FinancialAdvisorService();
+      
+      final res3Days = await advisor.queryPersonalSpending('chi tiêu 3 ngày qua việc nào nhiều nhất');
+      expect(res3Days.daysCount, equals(3));
+      expect(res3Days.periodDescription, equals('3 ngày qua'));
+
+      final res5Days = await advisor.queryPersonalSpending('mức tiêu 5 ngày gần đây');
+      expect(res5Days.daysCount, equals(5));
+      expect(res5Days.periodDescription, equals('5 ngày qua'));
+
+      final res7Days = await advisor.queryPersonalSpending('đã chi những gì trong 7 ngày trước');
+      expect(res7Days.daysCount, equals(7));
+      expect(res7Days.periodDescription, equals('7 ngày qua'));
+    });
+
+    test('Nhận diện chính xác câu nói mua vé xe Phương Trang và thanh toán bằng ví', () async {
+      const cmd = 'tôi mới mua vé xe Phương Trang hết 360.000 thanh toán bằng ví';
+
+      // 1. VoiceService
+      final voiceRes = voiceService.parseVoiceCommand(cmd);
+      expect(voiceRes, isNotNull);
+      expect(voiceRes!['amount'], equals(360000.0));
+      expect(voiceRes['category'], equals('Di chuyển'));
+      expect(voiceRes['type'], equals('expense'));
+      expect(voiceRes['description'].toString().toLowerCase(), contains('vé xe phương trang'));
+      expect(voiceRes['description'].toString().toLowerCase().contains('thanh toán bằng ví'), isFalse);
+      expect(voiceRes['wallet'], isNotEmpty);
+
+      // 2. GeminiAiService
+      final aiRes = await aiService.parseNaturalLanguage(cmd);
+      expect(aiRes.isSuccess, isTrue);
+      expect(aiRes.transactions.isNotEmpty, isTrue);
+      final tx = aiRes.transactions.first;
+      expect(tx.amount, equals(360000.0));
+      expect(tx.category, equals('Di chuyển'));
+      expect(tx.type, equals('expense'));
+      expect(tx.description.toLowerCase(), contains('vé xe phương trang'));
+      expect(tx.description.toLowerCase().contains('thanh toán bằng ví'), isFalse);
+    });
+
+    test('Trợ lý Mono: Phân tích JSON có intent TRANSFER_MONEY và bóc tách TransferMoneyData chính xác', () {
+      const jsonOutput = '''
+      {
+        "intent": "TRANSFER_MONEY",
+        "actionType": "transferMoney",
+        "reply": "✨ Mono đã ghi nhận yêu cầu chuyển tiền từ MoMo sang Techcombank.",
+        "transfer": {
+          "amount": 500000.0,
+          "source_wallet": "MoMo",
+          "target_wallet": "Techcombank",
+          "fee": 1100.0,
+          "note": "Chuyển tiền trả tiền trọ"
+        },
+        "transactions": []
+      }
+      ''';
+
+      final res = aiService.parseJsonFromAiTextForTesting(jsonOutput);
+      expect(res.isSuccess, isTrue);
+      expect(res.actionType, equals(AiActionType.transferMoney));
+      expect(res.transferData, isNotNull);
+      expect(res.transferData!.amount, equals(500000.0));
+      expect(res.transferData!.sourceWalletName, equals('MoMo'));
+      expect(res.transferData!.targetWalletName, equals('Techcombank'));
+      expect(res.transferData!.fee, equals(1100.0));
+      expect(res.transferData!.note, equals('Chuyển tiền trả tiền trọ'));
+      expect(res.transactions.isEmpty, isTrue);
+    });
+
+    test('Trợ lý Mono: Nhận diện lệnh rút tiền từ ATM về tiền mặt', () async {
+      final res = await aiService.parseNaturalLanguage('Rút 2 triệu từ ATM về tiền mặt');
+      expect(res.isSuccess, isTrue);
+      expect(res.actionType, equals(AiActionType.transferMoney));
+      expect(res.transferData, isNotNull);
+      expect(res.transferData!.amount, equals(2000000.0));
+      expect(res.transferData!.sourceWalletName.toLowerCase(), anyOf(contains('ngân hàng'), contains('atm')));
+      expect(res.transferData!.targetWalletName.toLowerCase(), contains('tiền mặt'));
+    });
+
+    test('Trợ lý Mono: Lưu trữ sliding window hội thoại đa vòng (multi-turn conversation)', () {
+      aiService.clearHistory();
+      expect(aiService.conversationHistory.isEmpty, isTrue);
+
+      for (int i = 1; i <= 25; i++) {
+        aiService.addToHistory('user', 'Tin nhắn thứ $i');
+      }
+
+      // Giới hạn buffer tối đa 20 tin
+      expect(aiService.conversationHistory.length, equals(20));
+      expect(aiService.conversationHistory.first['text'], equals('Tin nhắn thứ 6'));
+      expect(aiService.conversationHistory.last['text'], equals('Tin nhắn thứ 25'));
+    });
+
+    test('Trợ lý Mono: Nhận diện chính xác câu nói cộng tiền lãi vào ví: "cộng 11đ tiền lãi vào ví momo"', () async {
+      final res = await aiService.parseNaturalLanguage('cộng 11đ tiền lãi vào ví momo');
+      expect(res.isSuccess, isTrue);
+      expect(res.transactions.isNotEmpty, isTrue);
+
+      final tx = res.transactions.first;
+      expect(tx.type, equals('income'));
+      expect(tx.amount, equals(11.0));
+      expect(tx.category, equals('Tiền lãi'));
+      expect(tx.description.toLowerCase(), contains('tiền lãi'));
+      expect(tx.walletName.toLowerCase(), contains('momo'));
+    });
+
+    test('VoiceService: Nhận diện lệnh giọng nói "cộng 11đ tiền lãi vào ví momo"', () {
+      final voiceRes = VoiceService().parseVoiceCommand('cộng 11đ tiền lãi vào ví momo');
+      expect(voiceRes, isNotNull);
+      expect(voiceRes!['type'], equals('income'));
+      expect(voiceRes['amount'], equals(11.0));
+      expect(voiceRes['category'], equals('Tiền lãi'));
+      expect(voiceRes['description'].toString().toLowerCase(), contains('tiền lãi'));
+      expect(voiceRes['wallet'].toString().toLowerCase(), contains('momo'));
     });
   });
 }

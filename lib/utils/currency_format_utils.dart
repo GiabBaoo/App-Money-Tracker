@@ -84,6 +84,48 @@ class CurrencyUtils {
     return double.tryParse(cleanText) ?? 0;
   }
 
+  /// Phân tích số tiền từ văn bản tự nhiên có hỗ trợ các hậu tố tiếng Việt như:
+  /// "2 triệu", "2.5tr", "2 củ", "50k", "50 ngàn", "50 nghìn", "2.000.000đ"
+  static double parseNaturalAmount(String text) {
+    final clean = text.toLowerCase().trim();
+    if (clean.isEmpty) return 0.0;
+
+    // 1. Kiểm tra mẫu có hậu tố đơn vị: số + (k|nghìn|ngàn|tr|triệu|củ)
+    final unitMatch = RegExp(r'^(\d+(?:[.,]\d+)?)\s*(k|nghìn|ngàn|tr|triệu|củ)(?:\s*(?:đ|đồng|vnd))?$', caseSensitive: false).firstMatch(clean);
+    if (unitMatch != null) {
+      final numPart = double.tryParse(unitMatch.group(1)!.replaceAll(',', '.')) ?? 0.0;
+      final unit = unitMatch.group(2)?.toLowerCase();
+      if (unit == 'tr' || unit == 'triệu' || unit == 'củ') {
+        return numPart * 1000000;
+      }
+      if (unit == 'k' || unit == 'nghìn' || unit == 'ngàn') {
+        return numPart * 1000;
+      }
+      return numPart;
+    }
+
+    // 2. Chứa từ khóa triệu/củ/tr trong cụm
+    if (clean.contains('triệu') || clean.contains('củ') || clean.contains('tr')) {
+      final numMatch = RegExp(r'(\d+(?:[.,]\d+)?)').firstMatch(clean);
+      if (numMatch != null) {
+        final val = double.tryParse(numMatch.group(1)!.replaceAll(',', '.')) ?? 0.0;
+        return val * 1000000;
+      }
+    }
+
+    // 3. Chứa từ khóa nghìn/ngàn/k trong cụm
+    if (clean.contains('nghìn') || clean.contains('ngàn') || clean.contains('k')) {
+      final numMatch = RegExp(r'(\d+(?:[.,]\d+)?)').firstMatch(clean);
+      if (numMatch != null) {
+        final val = double.tryParse(numMatch.group(1)!.replaceAll(',', '.')) ?? 0.0;
+        return val * 1000;
+      }
+    }
+
+    // 4. Mặc định dùng parseCurrency thông thường (cho "2.000.000", "50000đ", v.v.)
+    return parseCurrency(text);
+  }
+
   static String formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }

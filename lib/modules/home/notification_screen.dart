@@ -349,18 +349,33 @@ class _NotificationScreenState extends State<NotificationScreen> {
     Color iconColor = const Color(0xFF438883);
     IconData iconData = Icons.notifications_active_rounded;
 
-    if (notification.type == 'spending_alert_high') {
+    if (notification.type == 'spending_spike_alert') {
+      iconColor = Colors.deepOrange.shade700;
+      iconData = Icons.bolt_rounded;
+    } else if (notification.type == 'daily_limit_exceeded' || notification.type == 'monthly_limit_exceeded') {
+      iconColor = Colors.redAccent;
+      iconData = Icons.warning_rounded;
+    } else if (notification.type == 'daily_limit_warning' || notification.type == 'monthly_limit_warning') {
+      iconColor = Colors.amber.shade800;
+      iconData = Icons.running_with_errors_rounded;
+    } else if (notification.type == 'spending_alert_high') {
       iconColor = Colors.deepOrange;
+      iconData = Icons.trending_up_rounded;
     } else if (notification.type == 'spending_alert_saved') {
       iconColor = Colors.green;
-    } else if (notification.type == 'spending_alert_stable') {
-      iconColor = Colors.teal;
+      iconData = Icons.savings_rounded;
     } else if (notification.type == 'smart_budget_suggestion') {
       iconColor = Colors.amber.shade700;
+      iconData = Icons.lightbulb_outline_rounded;
     } else if (notification.type == 'low_balance_alert') {
       iconColor = Colors.redAccent;
+      iconData = Icons.warning_amber_rounded;
+    } else if (notification.type == 'offline_sync_reminder') {
+      iconColor = Colors.blueGrey;
+      iconData = Icons.cloud_off_rounded;
     } else if (notification.type == 'daily_reminder') {
       iconColor = const Color(0xFF438883);
+      iconData = Icons.edit_note_rounded;
     } else if (notification.type == 'group_invite' || notification.type == 'group_response') {
       iconColor = Colors.indigo;
       iconData = Icons.group_rounded;

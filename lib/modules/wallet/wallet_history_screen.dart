@@ -257,6 +257,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                               final effectiveWallets = _cachedWallets.isNotEmpty
                                   ? _cachedWallets
                                   : _walletRepo.latestWallets;
+                              final walletMap = {for (final w in effectiveWallets) w.id: w};
 
                               final reverseBalances = CurrencyUtils.calculateReverseWalletBalances(
                                 allTransactions: allTx,
@@ -265,9 +266,26 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
 
                               final grouped = _groupByDate(filteredTx);
 
+                              // Làm phẳng danh sách (Flattened list) để SliverList ảo hóa 100% từng dòng giao dịch và header
+                              final List<_WalletHistoryRow> flatRows = [];
+                              int globalTxCounter = 0;
+
+                              for (final entry in grouped.entries) {
+                                flatRows.add(_WalletHistoryRow.header(date: entry.key, txs: entry.value));
+                                for (final tx in entry.value) {
+                                  flatRows.add(_WalletHistoryRow.transaction(
+                                    tx: tx,
+                                    wallet: walletMap[tx.walletId],
+                                    runningTotal: reverseBalances[tx.id],
+                                    globalIndex: globalTxCounter++,
+                                  ));
+                                }
+                              }
+
                               return CustomScrollView(
                                 key: const PageStorageKey('wallet_history_scroll'),
                                 physics: const BouncingScrollPhysics(),
+                                cacheExtent: 600,
                                 slivers: [
                                   // Tóm tắt dòng tiền Thu/Chi/Ròng
                                   SliverToBoxAdapter(
@@ -292,32 +310,26 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                                       sliver: SliverList(
                                         delegate: SliverChildBuilderDelegate(
                                           (context, index) {
-                                            final date = grouped.keys.elementAt(index);
-                                            final txs = grouped[date]!;
-                                            return Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                _buildDateHeader(date, txs, isDark),
-                                                ...txs.asMap().entries.map((e) {
-                                                  final tx = e.value;
-                                                  WalletModel? txWallet;
-                                                  try {
-                                                    txWallet = effectiveWallets.firstWhere((w) => w.id == tx.walletId);
-                                                  } catch (_) {}
-                                                  return StaggeredListItem(
-                                                    index: e.key,
-                                                    child: TransactionItem(
-                                                      transaction: tx,
-                                                      showDate: false,
-                                                      runningTotal: reverseBalances[tx.id],
-                                                      wallet: txWallet,
-                                                    ),
-                                                  );
-                                                }),
-                                              ],
+                                            final row = flatRows[index];
+                                            if (row.isHeader) {
+                                              return _buildDateHeader(row.date, row.txs!, isDark);
+                                            }
+                                            final txWidget = TransactionItem(
+                                              transaction: row.tx!,
+                                              showDate: false,
+                                              runningTotal: row.runningTotal,
+                                              wallet: row.wallet,
                                             );
+                                            // Chỉ kích hoạt animation cho 5 giao dịch đầu tiên trên viewport, các mục sau tức thì để tránh khựng giật
+                                            if (row.globalIndex < 5) {
+                                              return StaggeredListItem(
+                                                index: row.globalIndex,
+                                                child: txWidget,
+                                              );
+                                            }
+                                            return txWidget;
                                           },
-                                          childCount: grouped.keys.length,
+                                          childCount: flatRows.length,
                                         ),
                                       ),
                                     ),
@@ -396,6 +408,10 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
       timeLabel = '30 ngày qua';
     } else if (_timeFilterMode == 'last_month') {
       timeLabel = 'Tháng trước';
+    } else if (_timeFilterMode == 'this_year') {
+      timeLabel = 'Năm ${DateTime.now().year}';
+    } else if (_timeFilterMode == 'year_2020') {
+      timeLabel = 'Năm 2020';
     } else if (_timeFilterMode == 'month') {
       timeLabel = 'Tháng ${DateFormat('MM/yy').format(_selectedMonth)}';
     } else if (_timeFilterMode == 'week') {
@@ -1112,11 +1128,15 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                                     ? '30 ngày qua'
                                     : _timeFilterMode == 'last_month'
                                         ? 'Tháng trước'
-                                        : _timeFilterMode == 'week'
-                                            ? 'Tuần này'
-                                            : _timeFilterMode == 'custom' && _customDateRange != null
-                                                ? '${DateFormat('dd/MM').format(_customDateRange!.start)} - ${DateFormat('dd/MM').format(_customDateRange!.end)}'
-                                                : 'Tất cả thời gian',
+                                        : _timeFilterMode == 'this_year'
+                                            ? 'Năm ${DateTime.now().year}'
+                                            : _timeFilterMode == 'year_2020'
+                                                ? 'Năm 2020'
+                                                : _timeFilterMode == 'week'
+                                                    ? 'Tuần này'
+                                                    : _timeFilterMode == 'custom' && _customDateRange != null
+                                                        ? '${DateFormat('dd/MM').format(_customDateRange!.start)} - ${DateFormat('dd/MM').format(_customDateRange!.end)}'
+                                                        : 'Tất cả thời gian',
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)),
                   ),
                   const SizedBox(width: 3),
@@ -1168,10 +1188,10 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.search_rounded, size: 12, color: Color(0xFFE07A5F)),
+                  const Icon(Icons.history_rounded, size: 12, color: Color(0xFFE07A5F)),
                   const SizedBox(width: 4),
                   Text(
-                    '"$_searchQuery"',
+                    'Toàn bộ lịch sử: "$_searchQuery"',
                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFE07A5F)),
                   ),
                   const SizedBox(width: 3),
@@ -1481,77 +1501,91 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
         }
       }
 
-      // 4. Lọc theo Tìm kiếm từ khóa
+      // 4. Lọc theo Tìm kiếm từ khóa (Tìm kiếm trên toàn bộ lịch sử giao dịch của ví)
       if (_searchQuery.isNotEmpty) {
         final desc = tx.description.toLowerCase();
         final cat = tx.category.toLowerCase();
         final amountStr = tx.amount.toString();
+        final formattedAmt = CurrencyUtils.formatCurrency(tx.amount).toLowerCase();
+        final dateFormatted = CurrencyUtils.formatDate(tx.date).toLowerCase();
+        final yearStr = tx.date.year.toString();
         if (!desc.contains(_searchQuery) &&
             !cat.contains(_searchQuery) &&
-            !amountStr.contains(_searchQuery)) {
+            !amountStr.contains(_searchQuery) &&
+            !formattedAmt.contains(_searchQuery) &&
+            !dateFormatted.contains(_searchQuery) &&
+            !yearStr.contains(_searchQuery)) {
           return false;
         }
       }
 
-      // 5. Lọc theo Thời gian
-      final date = tx.date;
-      switch (_timeFilterMode) {
-        case 'month_to_date':
-          final now = DateTime.now();
-          final start = DateTime(now.year, now.month, 1);
-          final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
-          if (date.isBefore(start) || date.isAfter(end)) return false;
-          break;
-        case 'today':
-          final now = DateTime.now();
-          if (date.year != now.year || date.month != now.month || date.day != now.day) {
-            return false;
-          }
-          break;
-        case 'last_7_days':
-          final now = DateTime.now();
-          final start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
-          final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
-          if (date.isBefore(start) || date.isAfter(end)) return false;
-          break;
-        case 'last_30_days':
-          final now = DateTime.now();
-          final start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 29));
-          final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
-          if (date.isBefore(start) || date.isAfter(end)) return false;
-          break;
-        case 'last_month':
-          final now = DateTime.now();
-          final start = DateTime(now.year, now.month - 1, 1);
-          final end = DateTime(now.year, now.month, 0, 23, 59, 59);
-          if (date.isBefore(start) || date.isAfter(end)) return false;
-          break;
-        case 'week':
-          final now = DateTime.now();
-          final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-          final startDay = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
-          final endDay = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day + 7, 23, 59, 59);
-          if (date.isBefore(startDay) || date.isAfter(endDay)) {
-            return false;
-          }
-          break;
-        case 'custom':
-          if (_customDateRange != null) {
-            final start = DateTime(_customDateRange!.start.year, _customDateRange!.start.month, _customDateRange!.start.day);
-            final end = DateTime(_customDateRange!.end.year, _customDateRange!.end.month, _customDateRange!.end.day, 23, 59, 59);
-            if (date.isBefore(start) || date.isAfter(end)) {
+      // 5. Lọc theo Thời gian (Tự động bỏ qua khi đang có từ khóa tìm kiếm để tìm toàn bộ lịch sử ví)
+      if (_searchQuery.isEmpty) {
+        final date = tx.date;
+        switch (_timeFilterMode) {
+          case 'month_to_date':
+            final now = DateTime.now();
+            final start = DateTime(now.year, now.month, 1);
+            final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
+            if (date.isBefore(start) || date.isAfter(end)) return false;
+            break;
+          case 'today':
+            final now = DateTime.now();
+            if (date.year != now.year || date.month != now.month || date.day != now.day) {
               return false;
             }
-          }
-          break;
-        case 'all_time':
-          break;
-        case 'month':
-        default:
-          if (date.year != _selectedMonth.year || date.month != _selectedMonth.month) {
-            return false;
-          }
-          break;
+            break;
+          case 'last_7_days':
+            final now = DateTime.now();
+            final start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
+            final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
+            if (date.isBefore(start) || date.isAfter(end)) return false;
+            break;
+          case 'last_30_days':
+            final now = DateTime.now();
+            final start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 29));
+            final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
+            if (date.isBefore(start) || date.isAfter(end)) return false;
+            break;
+          case 'last_month':
+            final now = DateTime.now();
+            final start = DateTime(now.year, now.month - 1, 1);
+            final end = DateTime(now.year, now.month, 0, 23, 59, 59);
+            if (date.isBefore(start) || date.isAfter(end)) return false;
+            break;
+          case 'week':
+            final now = DateTime.now();
+            final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+            final startDay = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+            final endDay = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day + 7, 23, 59, 59);
+            if (date.isBefore(startDay) || date.isAfter(endDay)) {
+              return false;
+            }
+            break;
+          case 'custom':
+            if (_customDateRange != null) {
+              final start = DateTime(_customDateRange!.start.year, _customDateRange!.start.month, _customDateRange!.start.day);
+              final end = DateTime(_customDateRange!.end.year, _customDateRange!.end.month, _customDateRange!.end.day, 23, 59, 59);
+              if (date.isBefore(start) || date.isAfter(end)) {
+                return false;
+              }
+            }
+            break;
+          case 'this_year':
+            if (date.year != DateTime.now().year) return false;
+            break;
+          case 'year_2020':
+            if (date.year != 2020) return false;
+            break;
+          case 'all_time':
+            break;
+          case 'month':
+          default:
+            if (date.year != _selectedMonth.year || date.month != _selectedMonth.month) {
+              return false;
+            }
+            break;
+        }
       }
 
       return true;
@@ -1622,41 +1656,109 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
   }
 
   Widget _buildDateHeader(DateTime date, List<TransactionModel> txs, bool isDark) {
-    double dayNet = 0.0;
+    double dailyIncome = 0;
+    double dailyExpense = 0;
     for (final tx in txs) {
+      if (tx.isTransfer) continue;
       if (tx.type == 'income') {
-        dayNet += tx.amount;
+        dailyIncome += tx.amount;
       } else if (tx.type == 'expense') {
-        dayNet -= tx.amount;
+        dailyExpense += tx.amount;
       }
     }
 
+    final dateLabel = _formatFriendlyDate(date);
+    final isToday = dateLabel.startsWith('Hôm nay');
+
     return Padding(
-      padding: const EdgeInsets.only(top: 14, bottom: 6),
+      padding: const EdgeInsets.only(top: 16, bottom: 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            _formatFriendlyDate(date),
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white70 : const Color(0xFF666666),
-              letterSpacing: 0.2,
+          Container(
+            width: 26,
+            height: 26,
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: isToday
+                  ? const Color(0xFF438883).withValues(alpha: 0.16)
+                  : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              isToday ? Icons.today_rounded : Icons.calendar_today_rounded,
+              size: 13,
+              color: isToday ? const Color(0xFF438883) : (isDark ? Colors.white70 : Colors.black54),
             ),
           ),
-          Text(
-            (dayNet > 0 ? '+' : '') + CurrencyUtils.formatCurrency(dayNet),
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: dayNet > 0
-                  ? (isDark ? const Color(0xFF4ADE80) : const Color(0xFF2E7D32))
-                  : dayNet < 0
-                      ? (isDark ? const Color(0xFFF87171) : const Color(0xFFD32F2F))
-                      : (isDark ? Colors.white38 : Colors.grey),
+          Expanded(
+            child: Text(
+              dateLabel,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF1E293B),
+                letterSpacing: 0.1,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
+          if (dailyIncome > 0)
+            Container(
+              margin: const EdgeInsets.only(left: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2ECC71).withValues(alpha: isDark ? 0.2 : 0.1),
+                borderRadius: BorderRadius.circular(7),
+                border: Border.all(
+                  color: const Color(0xFF2ECC71).withValues(alpha: 0.25),
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.arrow_downward_rounded, size: 10, color: Color(0xFF2ECC71)),
+                  const SizedBox(width: 2),
+                  Text(
+                    '+${CurrencyUtils.formatCurrency(dailyIncome)}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF2ECC71),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (dailyExpense > 0)
+            Container(
+              margin: const EdgeInsets.only(left: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE63946).withValues(alpha: isDark ? 0.2 : 0.1),
+                borderRadius: BorderRadius.circular(7),
+                border: Border.all(
+                  color: const Color(0xFFE63946).withValues(alpha: 0.25),
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.arrow_upward_rounded, size: 10, color: Color(0xFFE63946)),
+                  const SizedBox(width: 2),
+                  Text(
+                    '-${CurrencyUtils.formatCurrency(dailyExpense)}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFE63946),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -1900,11 +2002,13 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                   Navigator.pop(ctx);
                 }),
                 _buildTimeFilterOption('Tháng trước', 'last_month', Icons.history_rounded, isDark, ctx),
+                _buildTimeFilterOption('Năm nay (${DateTime.now().year})', 'this_year', Icons.calendar_today_rounded, isDark, ctx),
+                _buildTimeFilterOption('Năm 2020 (Lịch sử cũ)', 'year_2020', Icons.history_toggle_off_rounded, isDark, ctx),
                 _buildTimeFilterOption('Khoảng ngày tùy chọn...', 'custom', Icons.edit_calendar_rounded, isDark, ctx, onTap: () async {
                   Navigator.pop(ctx);
                   final picked = await showDateRangePicker(
                     context: context,
-                    firstDate: DateTime(2020),
+                    firstDate: DateTime(2000),
                     lastDate: DateTime.now(),
                     initialDateRange: _customDateRange ??
                         DateTimeRange(
@@ -1984,4 +2088,33 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
           },
     );
   }
+}
+
+/// Helper model ảo hóa phẳng (Flattened Virtual List Row) cho danh sách lịch sử ví
+class _WalletHistoryRow {
+  final bool isHeader;
+  final DateTime date;
+  final List<TransactionModel>? txs;
+  final TransactionModel? tx;
+  final WalletModel? wallet;
+  final double? runningTotal;
+  final int globalIndex;
+
+  _WalletHistoryRow.header({
+    required this.date,
+    required this.txs,
+  })  : isHeader = true,
+        tx = null,
+        wallet = null,
+        runningTotal = null,
+        globalIndex = 0;
+
+  _WalletHistoryRow.transaction({
+    required this.tx,
+    required this.wallet,
+    required this.runningTotal,
+    required this.globalIndex,
+  })  : isHeader = false,
+        date = DateTime.fromMillisecondsSinceEpoch(0),
+        txs = null;
 }

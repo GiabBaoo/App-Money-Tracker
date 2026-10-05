@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/providers/app_providers.dart';
 import '../../services/theme_service.dart';
 import '../../services/language_service.dart';
 import '../../widgets/animated_scale_button.dart';
 
-class AppearanceScreen extends StatelessWidget {
+class AppearanceScreen extends ConsumerWidget {
   const AppearanceScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final themeService = Provider.of<ThemeService>(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeService = ref.watch(themeServiceProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../utils/page_transitions.dart';
@@ -10,7 +9,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/connectivity_service.dart';
 import '../../models/user_model.dart';
 import '../../models/transaction_model.dart';
-import '../../models/wallet_model.dart';
 import '../../models/notification_model.dart';
 import 'statistics_screen.dart';
 import '../settings/profile_screen.dart';
@@ -103,48 +101,44 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         bottomNavigationBar: SafeArea(
           top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-            child: Container(
-              height: 64,
-              decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xDE1E293B)
-                    : Colors.white.withValues(alpha: 0.92),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(
+          child: RepaintBoundary(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: Container(
+                height: 64,
+                decoration: BoxDecoration(
                   color: isDark
-                      ? Colors.white.withValues(alpha: 0.12)
-                      : const Color(0xFFE2E8F0),
-                  width: 1.2,
+                      ? const Color(0xF5182221)
+                      : const Color(0xF8FFFFFF),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.12)
+                        : const Color(0xFFE2E8F0),
+                    width: 1.2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                    BoxShadow(
+                      color: (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)).withValues(alpha: 0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                  BoxShadow(
-                    color: (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)).withValues(alpha: 0.06),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(28),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildFloatingNavItem(0, Icons.home_rounded, 'nav_home', activeColor, inactiveColor),
-                      _buildFloatingNavItem(1, Icons.bar_chart_rounded, 'nav_stats', activeColor, inactiveColor),
-                      _buildCenterFabButton(context, isDark),
-                      _buildFloatingNavItem(2, Icons.account_balance_wallet_rounded, 'nav_wallets', activeColor, inactiveColor),
-                      _buildFloatingNavItem(3, Icons.person_rounded, 'nav_profile', activeColor, inactiveColor),
-                    ],
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildFloatingNavItem(0, Icons.home_rounded, 'nav_home', activeColor, inactiveColor),
+                    _buildFloatingNavItem(1, Icons.bar_chart_rounded, 'nav_stats', activeColor, inactiveColor),
+                    _buildCenterFabButton(context, isDark),
+                    _buildFloatingNavItem(2, Icons.account_balance_wallet_rounded, 'nav_wallets', activeColor, inactiveColor),
+                    _buildFloatingNavItem(3, Icons.person_rounded, 'nav_profile', activeColor, inactiveColor),
+                  ],
                 ),
               ),
             ),
@@ -250,7 +244,6 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
   bool get wantKeepAlive => true;
   final WalletRepository _walletRepo = WalletRepository();
   final NotificationRepository _notiRepo = NotificationRepository();
-  late Stream<List<TransactionModel>> _transactionStream;
 
   bool _showOfflineBanner = false;
   bool _isBalanceVisible = true;
@@ -261,10 +254,14 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
     super.initState();
     final uid = AuthService().currentUid;
     if (uid != null) {
+      _walletRepo.setUid(uid);
+      TransactionRepository().setUid(uid);
+      UserRepository().setUid(uid);
       _notiRepo.setUid(uid);
     }
-    _walletRepo.getWallets();
-    _transactionStream = TransactionRepository().getTransactionsStream();
+    _walletRepo.getWallets().then((_) {
+      if (mounted) setState(() {});
+    });
     // Yêu cầu quyền thông báo hệ thống (bắt buộc cho Android 13+)
     LocalNotificationService.instance.requestPermission();
     // Tự động phân tích chi tiêu và tạo thông báo thông minh trong background
@@ -301,21 +298,21 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
               ? Container(
                   key: const ValueKey('offline_banner'),
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+                  height: 22,
                   color: const Color(0xFFEA580C),
-                  child: SafeArea(
-                    bottom: false,
+                  child: Center(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 15),
-                        const SizedBox(width: 8),
+                        const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 12),
+                        const SizedBox(width: 6),
                         Text(
                           context.tr('offline_mode'),
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.2,
                           ),
                         ),
                       ],
@@ -512,25 +509,28 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                   const SizedBox(height: 30),
                   // TỔNG SỐ DƯ CARD - ĐỒNG BỘ CHÍNH XÁC VỚI VÍ TIỀN
                   StreamBuilder<double>(
+                    initialData: _walletRepo.latestWallets.fold<double>(0.0, (double prev, w) => prev + w.balance),
                     stream: _walletRepo.getTotalBalanceStream(),
                     builder: (context, walletSnapshot) {
-                      final totalBalance = walletSnapshot.data ?? 0.0;
+                      final double totalBalance = walletSnapshot.data ?? _walletRepo.latestWallets.fold<double>(0.0, (double prev, w) => prev + w.balance);
                       return StreamBuilder<List<TransactionModel>>(
-                        stream: _transactionStream,
+                        initialData: TransactionRepository().latestTransactions,
+                        stream: TransactionRepository().getTransactionsStream(),
                         builder: (context, snapshot) {
                           double totalIncome = 0;
                           double totalExpense = 0;
-                          if (snapshot.hasData) {
-                            final now = DateTime.now();
-                            for (var tx in snapshot.data!) {
-                              // Chỉ tính cho tháng và năm hiện tại & loại trừ chuyển tiền nội bộ
-                              if (tx.date.month == now.month && tx.date.year == now.year) {
-                                if (tx.isTransfer) continue;
-                                if (tx.type == 'income') {
-                                  totalIncome += tx.amount;
-                                } else {
-                                  totalExpense += tx.amount;
-                                }
+                          final txList = (snapshot.data != null && snapshot.data!.isNotEmpty)
+                              ? snapshot.data!
+                              : TransactionRepository().latestTransactions;
+                          final now = DateTime.now();
+                          for (var tx in txList) {
+                            // Chỉ tính cho tháng và năm hiện tại & loại trừ chuyển tiền nội bộ
+                            if (tx.date.month == now.month && tx.date.year == now.year) {
+                              if (tx.isTransfer) continue;
+                              if (tx.type == 'income') {
+                                totalIncome += tx.amount;
+                              } else {
+                                totalExpense += tx.amount;
                               }
                             }
                           }
@@ -578,23 +578,24 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
         // PHẦN CUỘN ĐỘC LẬP: DANH SÁCH GIAO DỊCH
         Expanded(
           child: StreamBuilder<List<TransactionModel>>(
-            stream: _transactionStream,
+            initialData: TransactionRepository().latestTransactions,
+            stream: TransactionRepository().getTransactionsStream(),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
+              final allTx = List<TransactionModel>.from(
+                (snapshot.data != null && snapshot.data!.isNotEmpty)
+                    ? snapshot.data!
+                    : TransactionRepository().latestTransactions,
+              );
+
+              if (snapshot.connectionState == ConnectionState.waiting && allTx.isEmpty) {
                 return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
               }
               
-              final now = DateTime.now();
-              var transactions = (snapshot.data ?? [])
-                  .where((tx) => tx.date.month == now.month && tx.date.year == now.year)
-                  .toList();
-              transactions.sort(CurrencyUtils.compareTransactionsChronological);
-              final allTx = snapshot.data ?? [];
-              final reverseBalances = CurrencyUtils.calculateReverseWalletBalances(
-                allTransactions: allTx,
-                wallets: _walletRepo.latestWallets,
-              );
-              final displayTransactions = transactions.take(10).toList();
+              allTx.sort(CurrencyUtils.compareTransactionsChronological);
+              
+              // Hiển thị danh sách các giao dịch gần đây nhất (tối đa 10 giao dịch)
+              // Giúp giao diện luôn hiển thị đầy đủ dòng tiền mới nhất, không bị giới hạn chỉ 1 giao dịch khi vừa sang tháng
+              final displayTransactions = allTx.take(10).toList();
               
               if (displayTransactions.isEmpty) {
                 return Center(
@@ -611,24 +612,28 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                 );
               }
 
+              final effectiveWallets = _walletRepo.latestWallets;
+              final walletMap = {for (final w in effectiveWallets) w.id: w};
+              final reverseBalances = CurrencyUtils.calculateReverseWalletBalances(
+                allTransactions: allTx,
+                wallets: effectiveWallets,
+              );
+
               return ListView.builder(
                 key: const PageStorageKey('home_tx_list'),
                 physics: const BouncingScrollPhysics(),
+                cacheExtent: 400,
                 padding: const EdgeInsets.fromLTRB(24, 4, 24, 100),
                 itemCount: displayTransactions.length,
                 itemBuilder: (context, index) {
                   final tx = displayTransactions[index];
-                  WalletModel? txWallet;
-                  try {
-                    txWallet = _walletRepo.latestWallets.firstWhere((w) => w.id == tx.walletId);
-                  } catch (_) {}
                   return StaggeredListItem(
                     index: index,
                     child: TransactionItem(
                       transaction: tx,
                       showDate: true,
                       runningTotal: reverseBalances[tx.id],
-                      wallet: txWallet,
+                      wallet: walletMap[tx.walletId],
                     ),
                   );
                 },

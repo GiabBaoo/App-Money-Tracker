@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../widgets/animated_scale_button.dart';
+import '../../widgets/app_logo.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import 'forgot_password_confirmation_screen.dart';
@@ -107,7 +108,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   ),
                 ),
                 const Spacer(),
-                const Text('mono', style: TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold, letterSpacing: -1.5)),
+                const AppLogo.wordmark(height: 32, color: Colors.white),
                 const Spacer(flex: 2),
               ]),
             ),

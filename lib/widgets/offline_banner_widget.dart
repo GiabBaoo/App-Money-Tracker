@@ -15,20 +15,20 @@ class OfflineBanner extends StatelessWidget {
         final isOnline = snapshot.data ?? true;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          height: isOnline ? 0 : 32,
+          height: isOnline ? 0 : 22,
           width: double.infinity,
-          color: Colors.orange.shade800,
+          color: const Color(0xFFEA580C),
           child: isOnline
               ? const SizedBox.shrink()
               : const Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.wifi_off_rounded, color: Colors.white, size: 16),
-                      SizedBox(width: 8),
+                      Icon(Icons.wifi_off_rounded, color: Colors.white, size: 12),
+                      SizedBox(width: 6),
                       Text(
                         'Đang offline — Dữ liệu sẽ đồng bộ khi có mạng',
-                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: -0.2),
                       ),
                     ],
                   ),

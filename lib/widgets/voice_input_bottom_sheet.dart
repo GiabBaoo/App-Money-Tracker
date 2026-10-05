@@ -145,7 +145,8 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
       _errorMessage = null;
     });
 
-    final silenceMs = AiConfigService().voiceSilenceDurationMs;
+    final rawSilenceMs = AiConfigService().voiceSilenceDurationMs;
+    final silenceMs = rawSilenceMs < 2500 ? 2500 : rawSilenceMs;
     _silenceTimer?.cancel();
     await _voiceService.startListening(
       pauseFor: Duration(milliseconds: silenceMs),
@@ -233,6 +234,9 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
             'iconCode': tx.categoryIconCode,
             'type': tx.type,
             'description': tx.description,
+            'date': tx.date,
+            'hour': tx.date.hour,
+            'minute': tx.date.minute,
             'time': '${tx.date.hour.toString().padLeft(2, '0')}:${tx.date.minute.toString().padLeft(2, '0')}',
             'walletName': tx.walletName,
             'isFromGemini': true,

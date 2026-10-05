@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/transaction_model.dart';
-import '../../models/wallet_model.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../data/repositories/wallet_repository.dart';
 import '../../services/auth_service.dart';
@@ -294,22 +293,19 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                                   : Builder(
                                       builder: (context) {
                                         final reverseBalances = _ensureReverseBalances(allTx);
+                                        final walletMap = {for (final w in _walletRepo.latestWallets) w.id: w};
                                         return ListView.builder(
                                           physics: const BouncingScrollPhysics(),
+                                          cacheExtent: 500,
                                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                           itemCount: dayTx.length,
                                           itemBuilder: (context, index) {
                                             final tx = dayTx[index];
-                                            WalletModel? txWallet;
-                                            try {
-                                              txWallet = _walletRepo.latestWallets
-                                                  .firstWhere((w) => w.id == tx.walletId);
-                                            } catch (_) {}
                                             return TransactionItem(
                                               transaction: tx,
                                               showDate: false,
                                               runningTotal: reverseBalances[tx.id],
-                                              wallet: txWallet,
+                                              wallet: walletMap[tx.walletId],
                                             );
                                           },
                                         );
@@ -560,43 +556,102 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
   }
 
   Widget _buildSelectedDayHeader(bool isDark, double dayIncome, double dayExpense) {
-    final dayStr = 'Ngày ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
+    final now = DateTime.now();
+    final isToday = _selectedDate.year == now.year && _selectedDate.month == now.month && _selectedDate.day == now.day;
+    final dayStr = isToday
+        ? 'Hôm nay, ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}'
+        : 'Ngày ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       color: isDark ? const Color(0xFF162524).withValues(alpha: 0.6) : const Color(0xFFF8FAFC),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              const Icon(Icons.event_note_rounded, size: 16, color: Color(0xFF438883)),
-              const SizedBox(width: 6),
+              Container(
+                width: 24,
+                height: 24,
+                margin: const EdgeInsets.only(right: 7),
+                decoration: BoxDecoration(
+                  color: isToday
+                      ? const Color(0xFF438883).withValues(alpha: 0.16)
+                      : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  isToday ? Icons.today_rounded : Icons.calendar_today_rounded,
+                  size: 13,
+                  color: isToday ? const Color(0xFF438883) : (isDark ? Colors.white70 : Colors.black54),
+                ),
+              ),
               Text(
                 dayStr,
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  color: isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF1E293B),
+                ),
               ),
             ],
           ),
           Row(
             children: [
               if (dayIncome > 0)
-                Text(
-                  '+${CurrencyUtils.formatCurrency(dayIncome)}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF10B981),
+                Container(
+                  margin: const EdgeInsets.only(left: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2ECC71).withValues(alpha: isDark ? 0.2 : 0.1),
+                    borderRadius: BorderRadius.circular(7),
+                    border: Border.all(
+                      color: const Color(0xFF2ECC71).withValues(alpha: 0.25),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.arrow_downward_rounded, size: 10, color: Color(0xFF2ECC71)),
+                      const SizedBox(width: 2),
+                      Text(
+                        '+${CurrencyUtils.formatCurrency(dayIncome)}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF2ECC71),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              if (dayIncome > 0 && dayExpense > 0) const SizedBox(width: 8),
               if (dayExpense > 0)
-                Text(
-                  '-${CurrencyUtils.formatCurrency(dayExpense)}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFFEF4444),
+                Container(
+                  margin: const EdgeInsets.only(left: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE63946).withValues(alpha: isDark ? 0.2 : 0.1),
+                    borderRadius: BorderRadius.circular(7),
+                    border: Border.all(
+                      color: const Color(0xFFE63946).withValues(alpha: 0.25),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.arrow_upward_rounded, size: 10, color: Color(0xFFE63946)),
+                      const SizedBox(width: 2),
+                      Text(
+                        '-${CurrencyUtils.formatCurrency(dayExpense)}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFE63946),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
             ],

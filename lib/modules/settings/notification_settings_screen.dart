@@ -22,6 +22,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
   bool _remindersEnabled = true;
   bool _spendingReportEnabled = true;
   bool _smartAdviceEnabled = true;
+  bool _budgetAlertsEnabled = true;
   bool _dailyLimitEnabled = false;
   double _dailySpendingLimit = 0.0;
   bool _isAnalyzing = false;
@@ -39,6 +40,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       _remindersEnabled = prefs.getBool('notif_reminders') ?? true;
       _spendingReportEnabled = prefs.getBool('notif_spending_report') ?? true;
       _smartAdviceEnabled = prefs.getBool('notif_smart_advice') ?? true;
+      _budgetAlertsEnabled = prefs.getBool('notif_budget_alerts') ?? true;
       _dailyLimitEnabled = prefs.getBool('daily_limit_enabled') ?? false;
       _dailySpendingLimit = prefs.getDouble('daily_spending_limit') ?? 0.0;
     });
@@ -57,6 +59,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
               'reminders': _remindersEnabled,
               'spendingReport': _spendingReportEnabled,
               'smartAdvice': _smartAdviceEnabled,
+              'budgetAlerts': _budgetAlertsEnabled,
               'dailyLimitEnabled': _dailyLimitEnabled,
             }
           }
@@ -452,6 +455,18 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                       // ════════ THÔNG BÁO TÀI CHÍNH THÔNG MINH ════════
                       _buildSectionTitle(context, 'THÔNG BÁO TÀI CHÍNH THÔNG MINH'),
                       _buildInfoBox(context, [
+                        _buildToggleRow(
+                          context,
+                          icon: Icons.pie_chart_rounded,
+                          title: 'Cảnh báo ngân sách (80% & 100%)',
+                          subtitle: 'Nhận thông báo khi danh mục chi tiêu chạm 80% hoặc vượt hạn mức ngân sách',
+                          value: _budgetAlertsEnabled,
+                          onChanged: (val) {
+                            setState(() => _budgetAlertsEnabled = val);
+                            _updateSetting('notif_budget_alerts', val);
+                          },
+                          showDivider: true,
+                        ),
                         _buildToggleRow(
                           context,
                           icon: Icons.trending_up_rounded,

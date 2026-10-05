@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/page_transitions.dart';
+import '../../widgets/app_logo.dart';
 import '../../services/auth_service.dart';
 import '../settings/success_screen.dart';
 import 'login_screen.dart';
@@ -193,7 +194,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   const Spacer(),
                   widget.isFromSecurity
                       ? const Text('Đổi mật khẩu', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600))
-                      : const Text('mono', style: TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold, letterSpacing: -1.5)),
+                      : const AppLogo.wordmark(height: 32, color: Colors.white),
                   const Spacer(flex: 2),
                 ],
               ),

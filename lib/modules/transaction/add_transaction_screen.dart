@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
@@ -62,7 +61,15 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   @override
   void initState() {
     super.initState();
-    final initial = widget.initialDate ?? DateTime.now();
+    DateTime initial = widget.initialDate ?? DateTime.now();
+    if (widget.initialData != null) {
+      if (widget.initialData!['date'] is DateTime) {
+        initial = widget.initialData!['date'] as DateTime;
+      } else if (widget.initialData!['date'] is String) {
+        final parsed = DateTime.tryParse(widget.initialData!['date']);
+        if (parsed != null) initial = parsed;
+      }
+    }
     _selectedDate = DateTime(initial.year, initial.month, initial.day);
     _loadWallets();
 
@@ -89,6 +96,18 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
       if (widget.initialData!['hour'] != null && widget.initialData!['minute'] != null) {
         _selectedTime = TimeOfDay(hour: widget.initialData!['hour'], minute: widget.initialData!['minute']);
+      } else if (widget.initialData!['time'] != null && widget.initialData!['time'].toString().contains(':')) {
+        final parts = widget.initialData!['time'].toString().split(':');
+        if (parts.length >= 2) {
+          final h = int.tryParse(parts[0]);
+          final m = int.tryParse(parts[1]);
+          if (h != null && m != null) {
+            _selectedTime = TimeOfDay(hour: h, minute: m);
+          }
+        }
+      } else if (widget.initialData!['date'] is DateTime) {
+        final dt = widget.initialData!['date'] as DateTime;
+        _selectedTime = TimeOfDay(hour: dt.hour, minute: dt.minute);
       }
 
       if (widget.initialData!['photoPath'] != null &&
@@ -468,14 +487,17 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         // 5. Cập nhật trạng thái nhắc nhở hàng ngày (không bắn thông báo ra ngoài màn hình)
         SmartNotificationService.instance.syncDailyReminderState();
 
-        // 6. Kiểm tra hạn mức chi tiêu
+        // 6. Kiểm tra hạn mức chi tiêu & cảnh báo thông minh
         if (!isIncome) {
-          final prefs = await SharedPreferences.getInstance();
-          final limitEnabled = prefs.getBool('daily_limit_enabled') ?? false;
-          final limitAmount = prefs.getDouble('daily_spending_limit') ?? 0.0;
-          if (limitEnabled && limitAmount > 0) {
-            SmartNotificationService.instance.checkDailySpendingLimit(newExpenseAmount: amount);
-          }
+          // Kiểm tra hạn mức ngày
+          SmartNotificationService.instance.checkDailySpendingLimit(newExpenseAmount: amount);
+          // Kiểm tra hạn mức tháng
+          SmartNotificationService.instance.checkMonthlySpendingLimit(newExpenseAmount: amount);
+          // Cảnh báo chi tiêu lớn đột biến nếu có
+          SmartNotificationService.instance.checkSpendingSpike(
+            amount: amount,
+            category: selectedCategoryName,
+          );
         }
       }
 
@@ -487,7 +509,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             ? 'Đã lưu & đồng bộ lên Firebase thành công ☁️'
             : 'Đã lưu vào máy (sẽ tự động đồng bộ khi có mạng) 💾',
       );
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } catch (e) {
       TopToast.show(context, 'Lỗi: $e', isError: true);
     } finally {
@@ -1622,12 +1644,16 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       color: isDark ? Colors.white54 : const Color(0xFF94A3B8),
                     ),
                   ),
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                      ),
                     ),
                   ),
                 ],

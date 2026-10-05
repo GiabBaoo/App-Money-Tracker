@@ -112,6 +112,7 @@ class _BankSmsTransactionCardState extends State<BankSmsTransactionCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final res = widget.parseResult;
     final isIncome = res.type == 'income';
     final primaryColor = isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444);
@@ -120,12 +121,12 @@ class _BankSmsTransactionCardState extends State<BankSmsTransactionCard> {
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF162524) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: primaryColor.withValues(alpha: 0.3), width: 1.5),
+        border: Border.all(color: primaryColor.withValues(alpha: isDark ? 0.45 : 0.3), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: primaryColor.withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -141,17 +142,17 @@ class _BankSmsTransactionCardState extends State<BankSmsTransactionCard> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF438883).withValues(alpha: 0.12),
+                  color: const Color(0xFF438883).withValues(alpha: isDark ? 0.25 : 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.account_balance_rounded, size: 14, color: Color(0xFF438883)),
+                    Icon(Icons.account_balance_rounded, size: 14, color: isDark ? const Color(0xFF5EEAD4) : const Color(0xFF438883)),
                     const SizedBox(width: 5),
                     Text(
                       res.bankName,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF438883)),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: isDark ? const Color(0xFF5EEAD4) : const Color(0xFF438883)),
                     ),
                   ],
                 ),
@@ -186,17 +187,17 @@ class _BankSmsTransactionCardState extends State<BankSmsTransactionCard> {
           // Description & Category
           Text(
             res.description,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1E293B)),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: isDark ? Colors.white : const Color(0xFF1E293B)),
           ),
           const SizedBox(height: 8),
 
           Row(
             children: [
-              Icon(CategoryUtils.getCategoryIcon(res.category), size: 16, color: const Color(0xFF64748B)),
+              Icon(CategoryUtils.getCategoryIcon(res.category), size: 16, color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF64748B)),
               const SizedBox(width: 6),
               Text(
                 'Danh mục: ${res.category}',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                style: TextStyle(fontSize: 12, color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF64748B)),
               ),
               if (res.newBalance != null) ...[
                 const Spacer(),
@@ -255,16 +256,17 @@ class GroupSplitBillCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF162524) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3), width: 1.5),
+        border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: isDark ? 0.45 : 0.3), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1).withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -291,11 +293,11 @@ class GroupSplitBillCard extends StatelessWidget {
                   children: [
                     Text(
                       splitResult.title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : const Color(0xFF1E293B)),
                     ),
                     Text(
                       'Người trả: ${splitResult.payerName}',
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      style: TextStyle(fontSize: 12, color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF64748B)),
                     ),
                   ],
                 ),
@@ -306,25 +308,26 @@ class GroupSplitBillCard extends StatelessWidget {
               ),
             ],
           ),
-          const Divider(height: 24, thickness: 1, color: Color(0xFFF1F5F9)),
+          Divider(height: 24, thickness: 1, color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF1F5F9)),
 
           // Highlight per person
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(12),
+              border: isDark ? Border.all(color: Colors.white.withValues(alpha: 0.08)) : null,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'Mỗi người (${splitResult.memberCount} người):',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF475569)),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569)),
                 ),
                 Text(
                   CurrencyUtils.formatCurrency(splitResult.perPersonAmount),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF0F172A)),
                 ),
               ],
             ),
@@ -346,14 +349,14 @@ class GroupSplitBillCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(m.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  Text(m.name, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A))),
                   const Spacer(),
                   Text(
                     m.isPayer ? 'Đã thanh toán' : CurrencyUtils.formatCurrency(m.amount),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: m.isPayer ? const Color(0xFF10B981) : const Color(0xFF475569),
+                      color: m.isPayer ? const Color(0xFF10B981) : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569)),
                     ),
                   ),
                 ],
@@ -408,16 +411,18 @@ class SafeDailySpendCard extends StatelessWidget {
         statusIcon = Icons.check_circle_outline_rounded;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF162524) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: cardColor.withValues(alpha: 0.3), width: 1.5),
+        border: Border.all(color: cardColor.withValues(alpha: isDark ? 0.45 : 0.3), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: cardColor.withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -431,16 +436,16 @@ class SafeDailySpendCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: cardColor.withValues(alpha: 0.12),
+                  color: cardColor.withValues(alpha: isDark ? 0.2 : 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(statusIcon, color: cardColor, size: 20),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Hạn mức an toàn mỗi ngày',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : const Color(0xFF1E293B)),
                 ),
               ),
               Container(
@@ -463,9 +468,9 @@ class SafeDailySpendCard extends StatelessWidget {
             CurrencyUtils.formatCurrency(result.safeDailyAmount),
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: cardColor, letterSpacing: -0.5),
           ),
-          const Text(
+          Text(
             'Số tiền bạn có thể tiêu hôm nay để không lo thâm hụt ví',
-            style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+            style: TextStyle(fontSize: 12, color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF64748B)),
           ),
           const SizedBox(height: 12),
 
@@ -473,15 +478,16 @@ class SafeDailySpendCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(12),
+              border: isDark ? Border.all(color: Colors.white.withValues(alpha: 0.08)) : null,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatItem('Đã tiêu hôm nay', CurrencyUtils.formatCurrency(result.todaySpent)),
-                _buildStatItem('Đã tiêu tháng này', CurrencyUtils.formatCurrency(result.totalSpentThisMonth)),
-                _buildStatItem('Ngân sách còn', CurrencyUtils.formatCurrency(result.remainingBudget)),
+                _buildStatItem('Đã tiêu hôm nay', CurrencyUtils.formatCurrency(result.todaySpent), isDark),
+                _buildStatItem('Đã tiêu tháng này', CurrencyUtils.formatCurrency(result.totalSpentThisMonth), isDark),
+                _buildStatItem('Ngân sách còn', CurrencyUtils.formatCurrency(result.remainingBudget), isDark),
               ],
             ),
           ),
@@ -490,19 +496,19 @@ class SafeDailySpendCard extends StatelessWidget {
           // Advice
           Text(
             result.advice,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.4),
+            style: TextStyle(fontSize: 13, color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155), height: 1.4),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
+  Widget _buildStatItem(String label, String value, bool isDark) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+        Text(label, style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
         const SizedBox(height: 2),
-        Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+        Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF1E293B))),
       ],
     );
   }
@@ -516,16 +522,18 @@ class LatteFactorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF162524) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF97316).withValues(alpha: 0.3), width: 1.5),
+        border: Border.all(color: const Color(0xFFF97316).withValues(alpha: isDark ? 0.45 : 0.3), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFF97316).withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -539,23 +547,23 @@ class LatteFactorCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF97316).withValues(alpha: 0.12),
+                  color: const Color(0xFFF97316).withValues(alpha: isDark ? 0.2 : 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.coffee_rounded, color: Color(0xFFF97316), size: 20),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Phân tích "Thủng ví" (Latte Factor)',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : const Color(0xFF1E293B)),
                     ),
                     Text(
                       'Các khoản tiêu vặt < 70k tưởng nhỏ mà không nhỏ',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF64748B)),
                     ),
                   ],
                 ),
@@ -570,7 +578,7 @@ class LatteFactorCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Tổng tiêu vặt tháng này:', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  Text('Tổng tiêu vặt tháng này:', style: TextStyle(fontSize: 12, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
                   Text(
                     CurrencyUtils.formatCurrency(result.totalSmallExpenses),
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFFF97316)),
@@ -581,8 +589,9 @@ class LatteFactorCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF7ED),
+                  color: isDark ? const Color(0xFF2A1E14) : const Color(0xFFFFF7ED),
                   borderRadius: BorderRadius.circular(10),
+                  border: isDark ? Border.all(color: const Color(0xFFF97316).withValues(alpha: 0.3)) : null,
                 ),
                 child: Text(
                   '${result.transactionCount} lần quẹt ví',
@@ -597,10 +606,13 @@ class LatteFactorCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFFF7ED), Color(0xFFFEF3C7)],
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [const Color(0xFF281C10), const Color(0xFF33200E)]
+                    : [const Color(0xFFFFF7ED), const Color(0xFFFEF3C7)],
               ),
               borderRadius: BorderRadius.circular(14),
+              border: isDark ? Border.all(color: const Color(0xFFF97316).withValues(alpha: 0.3)) : null,
             ),
             child: Row(
               children: [
@@ -610,17 +622,17 @@ class LatteFactorCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Nếu tiết kiệm khoản này 1 năm:',
-                        style: TextStyle(fontSize: 11, color: Color(0xFF92400E)),
+                        style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFFFDBA74) : const Color(0xFF92400E)),
                       ),
                       Text(
                         CurrencyUtils.formatCurrency(result.projectedYearlySavings),
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: isDark ? const Color(0xFFFED7AA) : const Color(0xFFB45309)),
                       ),
                       Text(
                         '≈ ${result.comparisonItem}',
-                        style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Color(0xFF78350F)),
+                        style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: isDark ? const Color(0xFFFDBA74) : const Color(0xFF78350F)),
                       ),
                     ],
                   ),
@@ -632,7 +644,7 @@ class LatteFactorCard extends StatelessWidget {
 
           Text(
             result.advice,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF334155), height: 1.4),
+            style: TextStyle(fontSize: 13, color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155), height: 1.4),
           ),
         ],
       ),
@@ -687,16 +699,21 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
   @override
   Widget build(BuildContext context) {
     final rm = widget.roadmap;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF162524) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF438883).withValues(alpha: 0.3), width: 1.5),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2DD4BF).withValues(alpha: 0.35) : const Color(0xFF438883).withValues(alpha: 0.3),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF438883).withValues(alpha: 0.08),
+            color: (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)).withValues(alpha: isDark ? 0.12 : 0.08),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -711,10 +728,10 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF438883).withValues(alpha: 0.12),
+                  color: isDark ? const Color(0xFF2DD4BF).withValues(alpha: 0.18) : const Color(0xFF438883).withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.flag_rounded, color: Color(0xFF438883), size: 20),
+                child: Icon(Icons.flag_rounded, color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883), size: 20),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -723,18 +740,29 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
                   children: [
                     Text(
                       rm.goal.title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                      ),
                     ),
                     Text(
                       'Thời hạn: ${rm.monthsNeeded} tháng',
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      ),
                     ),
                   ],
                 ),
               ),
               Text(
                 CurrencyUtils.formatCurrency(rm.goal.targetAmount),
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF438883)),
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883),
+                ),
               ),
             ],
           ),
@@ -744,30 +772,51 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
+              color: isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF0FDF4),
               borderRadius: BorderRadius.circular(14),
+              border: isDark ? Border.all(color: const Color(0xFF2DD4BF).withValues(alpha: 0.2)) : null,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 Column(
                   children: [
-                    const Text('Mỗi tháng cần', style: TextStyle(fontSize: 11, color: Color(0xFF166534))),
+                    Text(
+                      'Mỗi tháng cần',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? const Color(0xFF86EFAC) : const Color(0xFF166534),
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       CurrencyUtils.formatCurrency(rm.monthlyTarget),
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF15803D),
+                      ),
                     ),
                   ],
                 ),
-                Container(height: 28, width: 1, color: const Color(0xFFBBF7D0)),
+                Container(height: 28, width: 1, color: isDark ? Colors.white24 : const Color(0xFFBBF7D0)),
                 Column(
                   children: [
-                    const Text('Tương đương mỗi ngày', style: TextStyle(fontSize: 11, color: Color(0xFF166534))),
+                    Text(
+                      'Tương đương mỗi ngày',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? const Color(0xFF86EFAC) : const Color(0xFF166534),
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       CurrencyUtils.formatCurrency(rm.dailyTarget),
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF15803D),
+                      ),
                     ),
                   ],
                 ),
@@ -777,15 +826,36 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
           const SizedBox(height: 12),
 
           // Suggestions
-          const Text('Gợi ý hành động từ Mono:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+          Text(
+            'Gợi ý hành động từ Mono:',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF334155),
+            ),
+          ),
           const SizedBox(height: 4),
           ...rm.cutbackSuggestions.map((s) => Padding(
             padding: const EdgeInsets.symmetric(vertical: 2),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('• ', style: TextStyle(color: Color(0xFF438883), fontWeight: FontWeight.bold)),
-                Expanded(child: Text(s, style: const TextStyle(fontSize: 12, color: Color(0xFF475569)))),
+                Text(
+                  '• ',
+                  style: TextStyle(
+                    color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    s,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                    ),
+                  ),
+                ),
               ],
             ),
           )),
@@ -798,8 +868,12 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
             child: ElevatedButton.icon(
               onPressed: _isSaved ? null : _saveGoal,
               style: ElevatedButton.styleFrom(
-                backgroundColor: _isSaved ? const Color(0xFFE2E8F0) : const Color(0xFF438883),
-                foregroundColor: _isSaved ? const Color(0xFF64748B) : Colors.white,
+                backgroundColor: _isSaved
+                    ? (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))
+                    : const Color(0xFF438883),
+                foregroundColor: _isSaved
+                    ? (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))
+                    : Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -1289,3 +1363,519 @@ class RecurringTransactionsCard extends StatelessWidget {
     );
   }
 }
+
+/// Thẻ tra cứu chi tiêu cá nhân thông minh & phân tích việc nào chi nhiều nhất
+class PersonalSpendingQueryCard extends StatelessWidget {
+  final PersonalSpendingQueryResult result;
+
+  const PersonalSpendingQueryCard({super.key, required this.result});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const cardColor = Color(0xFF10B981); // Emerald Teal
+    final totalFormatted = CurrencyUtils.formatCurrency(result.totalAmount);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF152623) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: cardColor.withValues(alpha: isDark ? 0.45 : 0.25),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header: Tiêu đề & Tổng chi
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: cardColor.withValues(alpha: isDark ? 0.22 : 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.insights_rounded, color: cardColor, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Thống kê chi tiêu (${result.periodDescription})',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14.5,
+                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                      ),
+                    ),
+                    Text(
+                      'Tổng chi: $totalFormatted • ${result.transactionCount} giao dịch',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: cardColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // Banner Danh mục chi tiêu nhiều nhất (Top Category Highlight)
+          if (result.topCategory != null) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [const Color(0xFF1E3A34), const Color(0xFF172D28)]
+                      : [const Color(0xFFE8F5E9), const Color(0xFFF1F8E9)],
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: cardColor.withValues(alpha: 0.35),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                      color: cardColor.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      CategoryUtils.getCategoryIcon(result.topCategory!),
+                      color: cardColor,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              '👑 Chi nhiều nhất: ',
+                              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              result.topCategory!,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '${CurrencyUtils.formatCurrency(result.topCategoryAmount ?? 0)} (${result.topCategoryPercentage?.toStringAsFixed(1)}% tổng chi)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: cardColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          // Thanh phân bổ danh mục (Category Breakdown Bars)
+          if (result.categoryBreakdown != null && result.categoryBreakdown!.isNotEmpty && result.totalAmount > 0) ...[
+            const SizedBox(height: 14),
+            Text(
+              'Cơ cấu danh mục chi tiêu:',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white70 : Colors.grey.shade700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...result.categoryBreakdown!.entries.take(4).map((entry) {
+              final pct = (entry.value / result.totalAmount) * 100;
+              final isTop = entry.key == result.topCategory;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              CategoryUtils.getCategoryIcon(entry.key),
+                              size: 14,
+                              color: isTop ? cardColor : (isDark ? Colors.white60 : Colors.grey.shade600),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              entry.key,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: isTop ? FontWeight.bold : FontWeight.w500,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          '${CurrencyUtils.formatCurrency(entry.value)} (${pct.toStringAsFixed(0)}%)',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: isTop ? cardColor : (isDark ? Colors.white70 : Colors.grey.shade700),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: (pct / 100).clamp(0.0, 1.0),
+                        minHeight: 5,
+                        backgroundColor: isDark ? Colors.white10 : Colors.grey.shade200,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          isTop ? cardColor : const Color(0xFF3B82F6),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+
+          // Khoản chi lớn nhất đơn lẻ (Top Transaction Item)
+          if (result.topTransaction != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.push_pin_rounded, size: 15, color: Color(0xFFF59E0B)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Giao dịch lớn nhất: "${result.topTransaction!.description}"',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white70 : Colors.grey.shade800,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    CurrencyUtils.formatCurrency(result.topTransaction!.amount),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFEF4444),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Thẻ xác nhận chuyển tiền giữa các ví (Transfer / Withdraw)
+class TransferConfirmCard extends StatefulWidget {
+  final WalletModel fromWallet;
+  final WalletModel toWallet;
+  final double amount;
+  final double fee;
+  final String note;
+  final VoidCallback? onCompleted;
+
+  const TransferConfirmCard({
+    super.key,
+    required this.fromWallet,
+    required this.toWallet,
+    required this.amount,
+    this.fee = 0.0,
+    this.note = '',
+    this.onCompleted,
+  });
+
+  @override
+  State<TransferConfirmCard> createState() => _TransferConfirmCardState();
+}
+
+class _TransferConfirmCardState extends State<TransferConfirmCard> {
+  bool _isProcessing = false;
+  bool _isSuccess = false;
+
+  Future<void> _handleConfirmTransfer() async {
+    if (_isProcessing || _isSuccess) return;
+    setState(() => _isProcessing = true);
+
+    try {
+      final success = await WalletRepository().transferMoney(
+        fromWalletId: widget.fromWallet.id,
+        toWalletId: widget.toWallet.id,
+        amount: widget.amount,
+        fee: widget.fee,
+        note: widget.note.isNotEmpty ? widget.note : 'Chuyển tiền qua Trợ lý Mono',
+      );
+
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+          _isSuccess = success;
+        });
+
+        if (success) {
+          widget.onCompleted?.call();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '✅ Đã chuyển ${CurrencyUtils.formatCurrency(widget.amount)} từ [${widget.fromWallet.name}] sang [${widget.toWallet.name}] thành công!',
+              ),
+              backgroundColor: const Color(0xFF438883),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('⚠️ Không thể hoàn tất chuyển tiền. Vui lòng kiểm tra lại số dư!'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi chuyển tiền: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: _isSuccess
+              ? const Color(0xFF10B981)
+              : const Color(0xFF438883).withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _isSuccess
+                      ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                      : const Color(0xFF438883).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _isSuccess ? Icons.check_circle_rounded : Icons.swap_horiz_rounded,
+                  color: _isSuccess ? const Color(0xFF10B981) : const Color(0xFF438883),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _isSuccess ? 'Chuyển tiền thành công' : 'Xác nhận chuyển tiền giữa các ví',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: _isSuccess ? const Color(0xFF10B981) : null,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.black26 : const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Ví nguồn (Chuyển đi)',
+                        style: TextStyle(fontSize: 11, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.fromWallet.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'Số dư: ${CurrencyUtils.formatCurrency(widget.fromWallet.balance)}',
+                        style: TextStyle(fontSize: 11, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF438883).withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.arrow_forward_rounded, color: Color(0xFF438883), size: 18),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Ví đích (Nhận vào)',
+                        style: TextStyle(fontSize: 11, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.toWallet.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'Số dư: ${CurrencyUtils.formatCurrency(widget.toWallet.balance)}',
+                        style: TextStyle(fontSize: 11, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Số tiền chuyển:',
+                style: TextStyle(fontSize: 13, color: isDark ? Colors.grey.shade300 : Colors.grey.shade700),
+              ),
+              Text(
+                CurrencyUtils.formatCurrency(widget.amount),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Color(0xFF438883),
+                ),
+              ),
+            ],
+          ),
+          if (widget.fee > 0) ...[
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Phí giao dịch:', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                Text(CurrencyUtils.formatCurrency(widget.fee), style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+              ],
+            ),
+          ],
+          if (widget.note.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Ghi chú: ${widget.note}',
+              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey.shade500),
+            ),
+          ],
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: ElevatedButton(
+              onPressed: _isSuccess || _isProcessing ? null : _handleConfirmTransfer,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _isSuccess ? const Color(0xFF10B981) : const Color(0xFF438883),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+              child: _isProcessing
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                  : Text(
+                      _isSuccess ? '✓ Đã hoàn tất chuyển tiền' : 'Xác nhận chuyển tiền ngay',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

@@ -28,6 +28,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   final List<IconData> _expenseIcons = [
     Icons.restaurant_outlined, Icons.medical_services_outlined, Icons.directions_car_outlined,
+    Icons.local_parking_outlined, Icons.two_wheeler_outlined,
     Icons.menu_book_outlined, Icons.shopping_bag_outlined, Icons.home_outlined,
     Icons.pets_outlined, Icons.receipt_long_outlined, Icons.local_activity_outlined,
     Icons.flight_outlined, Icons.favorite_outline, Icons.card_giftcard_outlined,

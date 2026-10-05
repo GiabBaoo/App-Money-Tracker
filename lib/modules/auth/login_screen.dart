@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../widgets/animated_scale_button.dart';
+import '../../widgets/app_logo.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import '../../services/biometric_service.dart';
@@ -234,42 +235,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 10),
 
                     // 1. BRAND HERO: Biểu tượng & Logo FinTech mono
-                    Container(
-                      width: 68,
-                      height: 68,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF438883), Color(0xFF2DD4BF)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: primaryColor.withValues(alpha: 0.4),
-                            blurRadius: 22,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.account_balance_wallet_rounded,
-                          color: Colors.white,
-                          size: 34,
-                        ),
-                      ),
+                    const AppLogo.badge(
+                      size: 74,
+                      borderRadius: BorderRadius.all(Radius.circular(37)),
                     ),
                     const SizedBox(height: 14),
-                    Text(
-                      'mono',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 38,
-                        fontWeight: FontWeight.w800,
-                        color: isDark ? Colors.white : const Color(0xFF0F2625),
-                        letterSpacing: -1.5,
-                      ),
+                    AppLogo.wordmark(
+                      height: 32,
+                      color: isDark ? Colors.white : const Color(0xFF0F2625),
                     ),
                     const SizedBox(height: 4),
                     Text(

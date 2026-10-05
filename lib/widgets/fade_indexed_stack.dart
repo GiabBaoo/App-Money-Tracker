@@ -12,7 +12,7 @@ class FadeIndexedStack extends StatefulWidget {
     super.key,
     required this.index,
     required this.children,
-    this.duration = const Duration(milliseconds: 220),
+    this.duration = const Duration(milliseconds: 120),
   });
 
   @override
@@ -33,7 +33,7 @@ class _FadeIndexedStackState extends State<FadeIndexedStack>
     );
     _animation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOutCubic,
+      curve: Curves.easeOutQuad,
     );
     _controller.value = 1.0;
   }
@@ -42,7 +42,7 @@ class _FadeIndexedStackState extends State<FadeIndexedStack>
   void didUpdateWidget(FadeIndexedStack oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.index != oldWidget.index) {
-      _controller.forward(from: 0.15);
+      _controller.forward(from: 0.65);
     }
   }
 
@@ -54,11 +54,13 @@ class _FadeIndexedStackState extends State<FadeIndexedStack>
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _animation,
-      child: IndexedStack(
-        index: widget.index,
-        children: widget.children,
+    return RepaintBoundary(
+      child: FadeTransition(
+        opacity: _animation,
+        child: IndexedStack(
+          index: widget.index,
+          children: widget.children,
+        ),
       ),
     );
   }

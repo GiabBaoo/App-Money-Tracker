@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/top_toast.dart';
+import '../../widgets/app_logo.dart';
 import 'privacy_policy_screen.dart';
 import 'support_request_screen.dart';
 
@@ -171,26 +172,10 @@ class AboutAppScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       // App Identity Hero Box
-                      Center(
-                        child: Container(
-                          width: 88,
-                          height: 88,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF5AB4AC), Color(0xFF387A75)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF438883).withValues(alpha: 0.35),
-                                blurRadius: 18,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 46),
+                      const Center(
+                        child: AppLogo.badge(
+                          size: 88,
+                          borderRadius: BorderRadius.all(Radius.circular(24)),
                         ),
                       ),
                       const SizedBox(height: 16),

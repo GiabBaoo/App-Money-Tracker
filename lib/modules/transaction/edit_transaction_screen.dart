@@ -12,6 +12,7 @@ import '../../services/biometric_service.dart';
 import '../../data/repositories/wallet_repository.dart';
 import '../../services/transaction_balance_service.dart';
 import '../../widgets/top_toast.dart';
+import '../../widgets/animated_scale_button.dart';
 import '../../utils/currency_format_utils.dart';
 import '../../utils/page_transitions.dart';
 import 'category_screen.dart';
@@ -461,12 +462,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
       }
       
       if (!mounted) return;
-      TopToast.show(
-        context,
-        isOnline
-            ? 'Đã cập nhật & đồng bộ lên Firebase thành công ☁️'
-            : 'Đã cập nhật trên máy (sẽ tự động đẩy lên Firebase khi có mạng) 💾',
-      );
+      // Đã bỏ thông báo thành công theo yêu cầu của người dùng
       Navigator.pop(context, true); 
     } catch (e) {
       TopToast.show(context, 'Lỗi cập nhật: $e', isError: true);
@@ -591,7 +587,28 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                         letterSpacing: 0.3,
                       ),
                     ),
-                    const SizedBox(width: 40), // Cân bằng với nút back
+                    AnimatedScaleButton(
+                      scaleDown: 0.9,
+                      onTap: _isLoading ? null : _handleSave,
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.0),
+                        ),
+                        child: _isLoading
+                            ? const Center(
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                ),
+                              )
+                            : const Icon(Icons.check_rounded, color: Colors.white, size: 21),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -723,11 +740,14 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                       // ══════ FORM CONTAINER LIỀN MẠCH ══════
                       Container(
                         width: double.infinity,
+                        constraints: BoxConstraints(
+                          minHeight: MediaQuery.of(context).size.height,
+                        ),
                         decoration: BoxDecoration(
                           color: Theme.of(context).scaffoldBackgroundColor,
                           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
                         ),
-                        padding: EdgeInsets.fromLTRB(20, 24, 20, MediaQuery.of(context).padding.bottom + 32),
+                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
@@ -840,58 +860,24 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: _buildFieldRow(
+                                      child: _buildDateTimeTile(
                                         icon: Icons.calendar_today_rounded,
                                         iconColor: activeAccentColor,
                                         label: 'Ngày',
+                                        value: dateStr,
                                         isDark: isDark,
-                                        child: InkWell(
-                                          onTap: _pickDate,
-                                          borderRadius: BorderRadius.circular(12),
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                            decoration: BoxDecoration(
-                                              color: isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF7F8FA),
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            child: Text(
-                                              dateStr,
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600,
-                                                color: isDark ? Colors.white : const Color(0xFF1A1A1A),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
+                                        onTap: _pickDate,
                                       ),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
-                                      child: _buildFieldRow(
+                                      child: _buildDateTimeTile(
                                         icon: Icons.access_time_rounded,
                                         iconColor: activeAccentColor,
                                         label: 'Giờ',
+                                        value: timeStr,
                                         isDark: isDark,
-                                        child: InkWell(
-                                          onTap: _pickTime,
-                                          borderRadius: BorderRadius.circular(12),
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                            decoration: BoxDecoration(
-                                              color: isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF7F8FA),
-                                              borderRadius: BorderRadius.circular(12),
-                                            ),
-                                            child: Text(
-                                              timeStr,
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600,
-                                                color: isDark ? Colors.white : const Color(0xFF1A1A1A),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
+                                        onTap: _pickTime,
                                       ),
                                     ),
                                   ],
@@ -1067,42 +1053,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                               ),
                             ),
 
-                            const SizedBox(height: 12),
 
-                            // ═══ NÚT XÁC NHẬN CẬP NHẬT ═══
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: isDark ? const Color(0xFF2DD4BF) : appMainColor,
-                                  foregroundColor: isDark ? const Color(0xFF0F2625) : Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  elevation: 0,
-                                  shadowColor: isDark
-                                      ? const Color(0xFF2DD4BF).withValues(alpha: 0.3)
-                                      : appMainColor.withValues(alpha: 0.3),
-                                ),
-                                onPressed: _isLoading ? null : _handleSave,
-                                child: _isLoading
-                                    ? SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CircularProgressIndicator(
-                                          color: isDark ? const Color(0xFF0F2625) : Colors.white,
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : const Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.check_rounded, size: 20),
-                                          SizedBox(width: 8),
-                                          Text('Xác nhận cập nhật', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.3)),
-                                        ],
-                                      ),
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -1111,6 +1062,66 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                 ),
               ),
             ],
+          ),
+        ),
+        bottomNavigationBar: Container(
+          padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.of(context).padding.bottom + 10),
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.06),
+                blurRadius: 16,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: AnimatedScaleButton(
+            onTap: _isLoading ? null : _handleSave,
+            child: Container(
+              height: 50,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [const Color(0xFF2DD4BF), const Color(0xFF14B8A6)]
+                      : [const Color(0xFF438883), const Color(0xFF2DD4BF)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF438883).withValues(alpha: 0.35),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Cập nhật giao dịch',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
           ),
         ),
       ),
@@ -1171,6 +1182,78 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         const SizedBox(height: 8),
         child,
       ],
+    );
+  }
+
+  Widget _buildDateTimeTile({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String value,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF7F8FA),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: isDark ? 0.2 : 0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, size: 15, color: iconColor),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.unfold_more_rounded,
+              size: 16,
+              color: isDark ? Colors.white30 : Colors.grey.shade400,
+            ),
+          ],
+        ),
+      ),
     );
   }
 

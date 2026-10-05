@@ -28,6 +28,8 @@ import '../settings/ai_settings_screen.dart';
 import '../settings/security_screen.dart';
 import '../home/statistics_screen.dart';
 import '../transaction/add_transaction_screen.dart';
+import '../transaction/transaction_detail_screen.dart';
+import '../transaction/all_transactions_screen.dart';
 import 'widgets/mono_assistant_cards.dart';
 import '../../services/bank_sms_parser_service.dart';
 import '../../services/group_bill_split_service.dart';
@@ -64,6 +66,9 @@ class _ChatMessage {
   final SpendingTrendResult? spendingTrendResult;
   final FinancialHealthScoreResult? financialHealthScoreResult;
   final RecurringDetectionResult? recurringDetectionResult;
+  final List<TransactionModel>? savedTransactions;
+  final TransferCardData? transferCardData;
+  final bool isError;
 
   _ChatMessage({
     required this.text,
@@ -87,8 +92,28 @@ class _ChatMessage {
     this.spendingTrendResult,
     this.financialHealthScoreResult,
     this.recurringDetectionResult,
+    this.savedTransactions,
+    this.transferCardData,
+    this.isError = false,
   }) : time = time ?? DateTime.now();
 }
+
+class TransferCardData {
+  final WalletModel fromWallet;
+  final WalletModel toWallet;
+  final double amount;
+  final double fee;
+  final String note;
+
+  TransferCardData({
+    required this.fromWallet,
+    required this.toWallet,
+    required this.amount,
+    this.fee = 0.0,
+    this.note = '',
+  });
+}
+
 
 class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProviderStateMixin {
   final GeminiAiService _aiService = GeminiAiService();
@@ -155,7 +180,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
       }
     });
     _messages.add(_ChatMessage(
-      text: 'Xin chào! Tôi là Trợ lý Mono 🤖\nBạn có thể:\n• Nhập/nói tự nhiên (VD: "Ăn bún bò 35k ví MoMo", "Hôm nay được cộng thêm 36đ")\n• Điều khiển app: "Bật chế độ tối", "Báo cáo chi tiêu tháng này"\n• Chụp hóa đơn/biên lai để quét tự động!',
+      text: 'Xin chào! Tôi là Trợ lý Mono 🤖.\nToàn bộ dữ liệu thu chi & số dư của bạn được bảo mật tuyệt đối 100% trên thiết bị!\n\nBạn có thể:\n• Nhập/nói tự nhiên (VD: "Ăn bún bò 35k ví MoMo", "Hôm nay được cộng thêm 36đ")\n• Điều khiển app & báo cáo: "Bật chế độ tối", "Báo cáo chi tiêu tháng này"\n• Chụp hóa đơn/biên lai để bóc tách tự động!',
       isUser: false,
     ));
 
@@ -258,7 +283,92 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     }
   }
 
+  WalletModel? _fuzzyMatchWallet(String query, List<WalletModel> wallets) {
+    if (query.trim().isEmpty || wallets.isEmpty) return null;
+    final lowerRaw = query.toLowerCase().trim();
+    final cleanQuery = lowerRaw.replaceAll(RegExp(r'\b(ví|tài khoản|tk|ngân hàng|sổ)\b'), '').trim();
+
+    // 1. So khớp chính xác tên hoặc tên ngân hàng
+    for (final w in wallets) {
+      if (w.name.toLowerCase() == cleanQuery ||
+          w.bankName.toLowerCase() == cleanQuery ||
+          w.name.toLowerCase() == lowerRaw ||
+          w.bankName.toLowerCase() == lowerRaw) {
+        return w;
+      }
+    }
+
+    // 2. So khớp chứa chuỗi (contains)
+    for (final w in wallets) {
+      final wName = w.name.toLowerCase();
+      final bName = w.bankName.toLowerCase();
+      if ((cleanQuery.isNotEmpty && (wName.contains(cleanQuery) || cleanQuery.contains(wName))) ||
+          (bName.isNotEmpty && (cleanQuery.isNotEmpty && bName.contains(cleanQuery)))) {
+        return w;
+      }
+    }
+
+    // 3. Phân biệt rõ ràng ATM / Ngân hàng vs Tiền mặt:
+    // "atm", "ngân hàng", "bank" -> ưu tiên ví loại Bank hoặc ví có tên ngân hàng
+    if (cleanQuery.contains('atm') || cleanQuery.contains('bank') || lowerRaw.contains('ngân hàng')) {
+      for (final w in wallets) {
+        if (w.type == WalletType.bank || w.name.toLowerCase().contains('ngân hàng') || w.name.toLowerCase().contains('bank')) {
+          return w;
+        }
+      }
+    }
+
+    // "tiền mặt", "cash", "mặt" -> ưu tiên ví loại Cash
+    if (cleanQuery.contains('tiền mặt') || cleanQuery == 'mặt' || cleanQuery.contains('cash')) {
+      for (final w in wallets) {
+        if (w.type == WalletType.cash || w.name.toLowerCase().contains('tiền mặt') || w.name.toLowerCase().contains('cash')) {
+          return w;
+        }
+      }
+    }
+
+    // 4. Các ví điện tử & ngân hàng phổ biến tại Việt Nam
+    if (cleanQuery.contains('momo') || cleanQuery.contains('mono')) {
+      for (final w in wallets) {
+        if (w.name.toLowerCase().contains('momo') || w.name.toLowerCase().contains('mono')) return w;
+      }
+    }
+    if (cleanQuery.contains('zalo')) {
+      for (final w in wallets) {
+        if (w.name.toLowerCase().contains('zalo')) return w;
+      }
+    }
+    if (cleanQuery.contains('tech') || cleanQuery.contains('tcb')) {
+      for (final w in wallets) {
+        if (w.name.toLowerCase().contains('tech') || w.bankName.toLowerCase().contains('tech')) return w;
+      }
+    }
+    if (cleanQuery.contains('vcb') || cleanQuery.contains('vietcom')) {
+      for (final w in wallets) {
+        if (w.name.toLowerCase().contains('vietcom') || w.bankName.toLowerCase().contains('vietcom')) return w;
+      }
+    }
+    if (cleanQuery.contains('mb') || cleanQuery.contains('mbbank')) {
+      for (final w in wallets) {
+        if (w.name.toLowerCase().contains('mb') || w.bankName.toLowerCase().contains('mb')) return w;
+      }
+    }
+    if (cleanQuery.contains('bidv')) {
+      for (final w in wallets) {
+        if (w.name.toLowerCase().contains('bidv') || w.bankName.toLowerCase().contains('bidv')) return w;
+      }
+    }
+    if (cleanQuery.contains('acb')) {
+      for (final w in wallets) {
+        if (w.name.toLowerCase().contains('acb') || w.bankName.toLowerCase().contains('acb')) return w;
+      }
+    }
+
+    return null;
+  }
+
   Future<void> _handleSendMessage(String text) async {
+    _cancelAutoSave();
     final query = text.trim();
     if (query.isEmpty || _isLoading) return;
 
@@ -277,8 +387,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     });
     _scrollToBottom();
 
-    final history = _messages
+    final textMessages = _messages
         .where((m) => m.text.isNotEmpty && m.imagePath == null)
+        .toList();
+    final slidingWindow = textMessages.length > 10
+        ? textMessages.sublist(textMessages.length - 10)
+        : textMessages;
+
+    final history = slidingWindow
         .map((m) => {
               'role': m.isUser ? 'user' : 'model',
               'text': m.text,
@@ -319,6 +435,54 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
       }
     }
 
+    PersonalSpendingQueryResult? spendingQueryResult = result.spendingQueryResult;
+    if (result.actionType == AiActionType.spendingQuery) {
+      spendingQueryResult ??= await FinancialAdvisorService().queryPersonalSpending(query);
+    }
+
+    // Xử lý hành động Chuyển / Rút tiền giữa các ví (Transfer / Withdraw)
+    TransferCardData? transferCardData;
+    if (result.actionType == AiActionType.transferMoney || result.transferData != null) {
+      final tData = result.transferData;
+      if (tData != null && tData.amount > 0) {
+        final walletsList = _wallets.isNotEmpty ? _wallets : WalletRepository().latestWallets;
+        WalletModel? fromW = _fuzzyMatchWallet(tData.sourceWalletName, walletsList);
+        WalletModel? toW = _fuzzyMatchWallet(tData.targetWalletName, walletsList);
+
+        if (fromW == null && walletsList.isNotEmpty) {
+          try {
+            fromW = walletsList.firstWhere((w) => w.isDefault);
+          } catch (_) {
+            fromW = walletsList.first;
+          }
+        }
+        if (toW == null && walletsList.length > 1) {
+          try {
+            toW = walletsList.firstWhere((w) => w.id != fromW?.id);
+          } catch (_) {
+            toW = walletsList.last;
+          }
+        }
+
+        // Đảm bảo không trùng ví nếu người dùng có ít nhất 2 ví
+        if (fromW != null && toW != null && fromW.id == toW.id && walletsList.length > 1) {
+          try {
+            toW = walletsList.firstWhere((w) => w.id != fromW?.id);
+          } catch (_) {}
+        }
+
+        if (fromW != null && toW != null && fromW.id != toW.id) {
+          transferCardData = TransferCardData(
+            fromWallet: fromW,
+            toWallet: toW,
+            amount: tData.amount,
+            fee: tData.fee,
+            note: tData.note,
+          );
+        }
+      }
+    }
+
     if (mounted) {
       setState(() {
         _isLoading = false;
@@ -328,7 +492,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
         final hasTxs = result.transactions.isNotEmpty;
         final displayReply = (reportResult != null && (result.aiReply.isEmpty || result.aiReply.contains('Đang tổng hợp')))
             ? reportResult.summaryText
-            : result.aiReply;
+            : (spendingQueryResult != null && (result.aiReply.isEmpty || result.aiReply.contains('Đang tra cứu') || result.aiReply.contains('Đang hoạt động Ngoại tuyến')))
+                ? spendingQueryResult.answerText
+                : (adviceResult != null && (result.aiReply.isEmpty || result.aiReply.contains('Đang hoạt động Ngoại tuyến')))
+                    ? adviceResult.summaryText
+                    : result.aiReply;
         await _addAiMessageWithTypingEffect(
           fullText: displayReply,
           transactions: hasTxs ? result.transactions : null,
@@ -344,10 +512,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
           forecastResult: result.forecastResult,
           latteFactorResult: result.latteFactorResult,
           savingsRoadmapResult: result.savingsRoadmapResult,
-          spendingQueryResult: result.spendingQueryResult,
+          spendingQueryResult: spendingQueryResult ?? result.spendingQueryResult,
           spendingTrendResult: result.spendingTrendResult,
           financialHealthScoreResult: result.financialHealthScoreResult,
           recurringDetectionResult: result.recurringDetectionResult,
+          transferCardData: transferCardData,
         );
 
         // Nếu người dùng nhập/nói ra khoản tiền hoàn chỉnh -> kích hoạt đếm ngược tự động lưu rảnh tay 3s!
@@ -357,11 +526,22 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
       } else {
         setState(() {
           _messages.add(_ChatMessage(
-            text: result.errorMessage ?? 'Không thể xử lý yêu cầu. Vui lòng thử lại.',
+            text: result.errorMessage ?? 'Trợ lý Mono hiện chưa thể xử lý yêu cầu lúc này. Bạn vui lòng thử lại nhé! ✨',
             isUser: false,
+            isError: true,
           ));
         });
         _scrollToBottom();
+      }
+    }
+  }
+
+  /// Gửi lại yêu cầu gần nhất của người dùng khi gặp lỗi
+  void _retryLastUserMessage() {
+    for (int i = _messages.length - 1; i >= 0; i--) {
+      if (_messages[i].isUser && _messages[i].text.trim().isNotEmpty) {
+        _handleSendMessage(_messages[i].text);
+        return;
       }
     }
   }
@@ -386,9 +566,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     SpendingTrendResult? spendingTrendResult,
     FinancialHealthScoreResult? financialHealthScoreResult,
     RecurringDetectionResult? recurringDetectionResult,
+    TransferCardData? transferCardData,
   }) async {
     // Nếu tin nhắn có thẻ giao dịch, thẻ tính năng hoặc ngắn (<= 60 ký tự), hiển thị ngay không cần animation dài
     final hasRichCard = transactions != null ||
+        transferCardData != null ||
         spendingReport != null ||
         financialAdvice != null ||
         bankSmsResult != null ||
@@ -425,6 +607,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             spendingTrendResult: spendingTrendResult,
             financialHealthScoreResult: financialHealthScoreResult,
             recurringDetectionResult: recurringDetectionResult,
+            transferCardData: transferCardData,
           ));
         });
         _scrollToBottom();
@@ -433,6 +616,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     }
 
     // Với các phản hồi văn bản dài: Hiệu ứng gõ chữ mượt mà 60fps
+    final sanitizedFull = fullText
+        .replaceAll(RegExp(r'```[a-zA-Z]*\n?'), '')
+        .replaceAll('```', '')
+        .trim();
+
     final msgIndex = _messages.length;
     _messages.add(_ChatMessage(
       text: '',
@@ -454,16 +642,24 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
       spendingTrendResult: spendingTrendResult,
       financialHealthScoreResult: financialHealthScoreResult,
       recurringDetectionResult: recurringDetectionResult,
+      transferCardData: transferCardData,
     ));
     if (mounted) setState(() {});
     _scrollToBottom();
 
-    const chunkSize = 4;
-    for (int i = 0; i < fullText.length; i += chunkSize) {
+    int i = 0;
+    while (i < sanitizedFull.length) {
       if (!mounted) return;
-      await Future.delayed(const Duration(milliseconds: 16));
-      final end = (i + chunkSize < fullText.length) ? i + chunkSize : fullText.length;
-      final currentPart = fullText.substring(0, end);
+      await Future.delayed(const Duration(milliseconds: 18));
+      int next = (i + 4 < sanitizedFull.length) ? i + 4 : sanitizedFull.length;
+      // Tránh ngắt giữa chừng cặp dấu sao **
+      if (next < sanitizedFull.length && (sanitizedFull[next] == '*' || sanitizedFull[next - 1] == '*')) {
+        while (next < sanitizedFull.length && sanitizedFull[next] == '*') {
+          next++;
+        }
+      }
+      i = next;
+      final currentPart = sanitizedFull.substring(0, i);
       if (mounted && msgIndex < _messages.length) {
         setState(() {
           _messages[msgIndex] = _ChatMessage(
@@ -486,6 +682,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             spendingTrendResult: spendingTrendResult,
             financialHealthScoreResult: financialHealthScoreResult,
             recurringDetectionResult: recurringDetectionResult,
+            transferCardData: transferCardData,
           );
         });
         _scrollToBottom();
@@ -502,7 +699,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
       final XFile? file = await BiometricService.instance.runWithPickerSuspended(() async {
         return await _picker.pickImage(
           source: source,
-          imageQuality: 80,
+          imageQuality: 75,
           maxWidth: 1024,
           maxHeight: 1024,
         );
@@ -521,23 +718,48 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
       });
       _scrollToBottom();
 
-      final result = await _aiService.parseReceiptImage(bytes);
+      String mimeType = 'image/jpeg';
+      final lowerPath = file.path.toLowerCase();
+      if (lowerPath.endsWith('.png')) {
+        mimeType = 'image/png';
+      } else if (lowerPath.endsWith('.webp')) {
+        mimeType = 'image/webp';
+      } else if (lowerPath.endsWith('.heic')) {
+        mimeType = 'image/heic';
+      }
+
+      final result = await _aiService.parseReceiptImage(bytes, mimeType: mimeType);
 
       if (mounted) {
         setState(() {
           _isLoading = false;
           if (result.isSuccess) {
-            // Tự động gắn photoPath của hóa đơn vừa chụp vào các giao dịch trích xuất
+            final defaultWalletName = _wallets.isNotEmpty ? _wallets.first.name : 'Tiền mặt';
+            // Tự động gắn photoPath của hóa đơn vừa chụp và gán ví ban đầu nếu rỗng
             final txWithPhotos = result.transactions
-                .map((tx) => tx.copyWith(photoPath: file.path))
+                .map((tx) => tx.copyWith(
+                      photoPath: file.path,
+                      walletName: tx.walletName.isNotEmpty ? tx.walletName : defaultWalletName,
+                    ))
                 .toList();
 
+            final firstTx = txWithPhotos.isNotEmpty ? txWithPhotos.first : null;
+            String promptText = result.aiReply;
+            if (firstTx != null) {
+              final store = firstTx.description.isNotEmpty ? firstTx.description : 'hóa đơn';
+              final amt = CurrencyUtils.formatCurrency(firstTx.amount);
+              promptText = 'Đã quét hóa đơn từ $store: $amt.\nBạn vui lòng xác nhận ví thanh toán và ngày ghi nhận bên dưới nhé!';
+            }
+
             _messages.add(_ChatMessage(
-              text: result.aiReply,
+              text: promptText,
               isUser: false,
               transactions: txWithPhotos,
               isPendingSaving: txWithPhotos.isNotEmpty,
             ));
+
+            // KHÔNG kích hoạt đếm ngược tự động lưu rảnh tay đối với hóa đơn ảnh
+            // để người dùng chủ động chọn ví và xác nhận ngày trước khi lưu!
           } else {
             _messages.add(_ChatMessage(
               text: result.errorMessage ?? 'Không thể đọc được hóa đơn này. Bạn có thể chụp lại rõ hơn không?',
@@ -546,6 +768,16 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
           }
         });
         _scrollToBottom();
+
+        // Tự động mở giao diện hỏi ý kiến người dùng về Ngày ghi nhận và Ví thanh toán
+        if (result.isSuccess && _messages.isNotEmpty && _messages.last.transactions != null && _messages.last.transactions!.isNotEmpty) {
+          final pendingMsg = _messages.last;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _showConfirmSaveReceiptSheet(pendingMsg);
+            }
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -612,7 +844,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
               setState(() {
                 _messages.clear();
                 _messages.add(_ChatMessage(
-                  text: 'Xin chào! Tôi là Trợ lý Mono 🤖\nBạn có thể:\n• Nhập/nói tự nhiên (VD: "Ăn bún bò 35k ví MoMo", "Hôm nay được cộng thêm 36đ")\n• Điều khiển app: "Bật chế độ tối", "Báo cáo chi tiêu tháng này"\n• Chụp hóa đơn/biên lai để quét tự động!',
+                  text: 'Xin chào! Tôi là Trợ lý Mono 🤖.\nToàn bộ dữ liệu thu chi & số dư của bạn được bảo mật tuyệt đối 100% trên thiết bị!\n\nBạn có thể:\n• Nhập/nói tự nhiên (VD: "Ăn bún bò 35k ví MoMo", "Hôm nay được cộng thêm 36đ")\n• Điều khiển app & báo cáo: "Bật chế độ tối", "Báo cáo chi tiêu tháng này"\n• Chụp hóa đơn/biên lai để bóc tách tự động!',
                   isUser: false,
                 ));
               });
@@ -816,10 +1048,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
   }
 
   Future<void> _toggleVoiceInput() async {
-    if (!_isOnline && !_voiceService.supportsVietnamese) {
-      TopToast.show(context, 'Giọng nói AI đám mây cần kết nối Internet!', isError: true);
-      return;
-    }
+    _cancelAutoSave();
     if (_isListening) {
       _finishVoiceRecordingAndSend();
       return;
@@ -839,7 +1068,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     HapticFeedback.mediumImpact();
 
     final rawSilenceMs = _aiConfigService.voiceSilenceDurationMs;
-    final silenceMs = rawSilenceMs < 1500 ? 2000 : rawSilenceMs;
+    final silenceMs = rawSilenceMs < 2500 ? 2500 : rawSilenceMs;
     _lastVoiceActivity = DateTime.now();
 
     // Khởi động bộ đếm thời gian im lặng liên tục theo đúng tốc độ phản hồi đã set
@@ -883,9 +1112,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
   }
 
   Future<void> _saveAllTransactions(List<AiTransactionItem> items) async {
+    _cancelAutoSave();
     final uid = FirebaseAuth.instance.currentUser?.uid ?? AuthService().currentUid ?? '';
     final defaultWalletId = _wallets.isNotEmpty ? _wallets.first.id : '';
 
+    final List<TransactionModel> savedTxs = [];
     int count = 0;
     for (var item in items) {
       String targetWalletId = defaultWalletId;
@@ -945,6 +1176,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
 
       // Lưu giao dịch và cân đối số dư ví trong 1 transaction nguyên tử
       await TransactionBalanceService().addTransactionAtomic(tx);
+      savedTxs.add(tx);
       count++;
     }
 
@@ -954,20 +1186,561 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     if (mounted) {
       HapticFeedback.heavyImpact();
       TopToast.show(context, '🎉 Đã lưu thành công $count giao dịch vào sổ thu chi!');
+
+      final usedWalletId = savedTxs.isNotEmpty ? savedTxs.first.walletId : '';
+      final usedWalletMatches = _wallets.where((w) => w.id == usedWalletId);
+      final usedWalletName = usedWalletMatches.isNotEmpty
+          ? usedWalletMatches.first.name
+          : (_wallets.isNotEmpty ? _wallets.first.name : 'Tiền mặt');
+      final dateRecorded = savedTxs.isNotEmpty ? CurrencyUtils.formatDate(savedTxs.first.date) : '';
+
       setState(() {
+        // Tắt trạng thái pending trên các bong bóng chat chứa giao dịch vừa lưu
+        for (int i = 0; i < _messages.length; i++) {
+          final m = _messages[i];
+          if (m.isPendingSaving && m.transactions != null) {
+            final hasMatch = m.transactions!.any((t) => items.contains(t));
+            if (hasMatch) {
+              _messages[i] = _ChatMessage(
+                text: m.text,
+                isUser: m.isUser,
+                time: m.time,
+                imagePath: m.imagePath,
+                transactions: m.transactions,
+                isPendingSaving: false,
+                needsAmount: m.needsAmount,
+              );
+            }
+          }
+        }
+
         _messages.add(_ChatMessage(
-          text: '✅ Đã lưu thành công $count giao dịch vào sổ thu chi của bạn.',
+          text: '✅ Đã lưu thành công $count giao dịch vào sổ thu chi của bạn.\n• Ví trừ tiền: $usedWalletName\n• Ngày ghi nhận: $dateRecorded',
           isUser: false,
+          savedTransactions: savedTxs,
         ));
       });
       _scrollToBottom();
     }
   }
 
-  void _openPrefilledAddTransaction(AiTransactionItem tx) {
-    Navigator.push(
+  void _updateTransactionWallet(_ChatMessage msg, AiTransactionItem tx, String newWalletName) {
+    _cancelAutoSave();
+    setState(() {
+      final list = msg.transactions;
+      if (list != null) {
+        final idx = list.indexOf(tx);
+        if (idx != -1) {
+          list[idx] = tx.copyWith(walletName: newWalletName);
+        }
+      }
+    });
+    HapticFeedback.selectionClick();
+  }
+
+  void _updateTransactionDate(_ChatMessage msg, AiTransactionItem tx, DateTime newDate) {
+    _cancelAutoSave();
+    setState(() {
+      final list = msg.transactions;
+      if (list != null) {
+        final idx = list.indexOf(tx);
+        if (idx != -1) {
+          list[idx] = tx.copyWith(date: newDate);
+        }
+      }
+    });
+    HapticFeedback.selectionClick();
+  }
+
+  Future<void> _pickCustomDate(_ChatMessage msg, AiTransactionItem tx) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: tx.date,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      _updateTransactionDate(
+        msg,
+        tx,
+        DateTime(picked.year, picked.month, picked.day, tx.date.hour, tx.date.minute),
+      );
+    }
+  }
+
+  Future<void> _pickCustomTime(_ChatMessage msg, AiTransactionItem tx) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: tx.date.hour, minute: tx.date.minute),
+    );
+    if (picked != null) {
+      _updateTransactionDate(
+        msg,
+        tx,
+        DateTime(tx.date.year, tx.date.month, tx.date.day, picked.hour, picked.minute),
+      );
+    }
+  }
+
+  void _showWalletPickerSheet(_ChatMessage msg, AiTransactionItem tx) {
+    _cancelAutoSave();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E2928) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Text(
+              tx.type == 'income' ? 'Chọn ví nhận tiền' : 'Chọn ví trừ tiền',
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            ..._wallets.map((w) {
+              final isSelected = tx.walletName.toLowerCase() == w.name.toLowerCase();
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Color(w.colorValue).withValues(alpha: 0.15),
+                  child: Icon(IconData(w.iconCode, fontFamily: 'MaterialIcons'), color: Color(w.colorValue)),
+                ),
+                title: Text(w.name, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                subtitle: Text('Số dư: ${CurrencyUtils.formatCurrency(w.balance)}'),
+                trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: Color(0xFF438883)) : null,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _updateTransactionWallet(msg, tx, w.name);
+                },
+              );
+            }),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // === BOTTOM SHEET HỎI Ý NGƯỜI DÙNG VỀ NGÀY GHI NHẬN & VÍ TRỪ TIỀN (HÓA ĐƠN ẢNH) ===
+  void _showConfirmSaveReceiptSheet(_ChatMessage msg) {
+    if (msg.transactions == null || msg.transactions!.isEmpty) return;
+    _cancelAutoSave();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final firstTx = msg.transactions!.first;
+    DateTime selectedDate = firstTx.date;
+    final now = DateTime.now();
+    final originalReceiptDate = firstTx.date;
+    String selectedWalletName = firstTx.walletName.isNotEmpty
+        ? firstTx.walletName
+        : (_wallets.isNotEmpty ? _wallets.first.name : 'Tiền mặt');
+
+    // Chế độ chọn ngày: 'today', 'receipt', 'custom'
+    String dateChoice = (selectedDate.year == now.year && selectedDate.month == now.month && selectedDate.day == now.day)
+        ? 'today'
+        : 'receipt';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E2827) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.18),
+                    blurRadius: 20,
+                    offset: const Offset(0, -6),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 38,
+                        height: 4.5,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white24 : Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF438883).withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.receipt_long_rounded, color: Color(0xFF438883), size: 20),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Xác nhận ghi nhận hóa đơn',
+                                style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
+                              ),
+                              Text(
+                                '${firstTx.description.isNotEmpty ? firstTx.description : firstTx.category} • ${CurrencyUtils.formatCurrency(firstTx.amount)}',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(height: 1),
+                    const SizedBox(height: 14),
+
+                    // 1. CHỌN NGÀY GHI NHẬN (BẮT BUỘC HỎI Ý BẠN)
+                    Row(
+                      children: [
+                        const Icon(Icons.event_available_rounded, size: 16, color: Color(0xFF438883)),
+                        const SizedBox(width: 6),
+                        Text(
+                          '1. Bạn muốn ghi nhận vào ngày nào?',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Option A: Hôm nay (Khuyên dùng)
+                    InkWell(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setSheetState(() {
+                          dateChoice = 'today';
+                          selectedDate = DateTime.now();
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        margin: const EdgeInsets.only(bottom: 6),
+                        decoration: BoxDecoration(
+                          color: dateChoice == 'today'
+                              ? const Color(0xFF438883).withValues(alpha: 0.12)
+                              : (isDark ? Colors.white10 : const Color(0xFFF8FAFC)),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: dateChoice == 'today' ? const Color(0xFF438883) : Colors.transparent,
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              dateChoice == 'today' ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
+                              color: dateChoice == 'today' ? const Color(0xFF438883) : Colors.grey,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Text('⚡ Hôm nay', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: const Text('Khuyên dùng', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    CurrencyUtils.formatDate(now),
+                                    style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white60 : Colors.grey.shade600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Option B: Ngày in trên hóa đơn
+                    InkWell(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setSheetState(() {
+                          dateChoice = 'receipt';
+                          selectedDate = originalReceiptDate;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        margin: const EdgeInsets.only(bottom: 6),
+                        decoration: BoxDecoration(
+                          color: dateChoice == 'receipt'
+                              ? const Color(0xFF438883).withValues(alpha: 0.12)
+                              : (isDark ? Colors.white10 : const Color(0xFFF8FAFC)),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: dateChoice == 'receipt' ? const Color(0xFF438883) : Colors.transparent,
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              dateChoice == 'receipt' ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
+                              color: dateChoice == 'receipt' ? const Color(0xFF438883) : Colors.grey,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('🧾 Ngày in trên hóa đơn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Text(
+                                    CurrencyUtils.formatDate(originalReceiptDate),
+                                    style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white60 : Colors.grey.shade600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Option C: Chọn ngày khác trên lịch
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDate,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime.now(),
+                        );
+                        if (picked != null) {
+                          setSheetState(() {
+                            dateChoice = 'custom';
+                            selectedDate = picked;
+                          });
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: dateChoice == 'custom'
+                              ? const Color(0xFF438883).withValues(alpha: 0.12)
+                              : (isDark ? Colors.white10 : const Color(0xFFF8FAFC)),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: dateChoice == 'custom' ? const Color(0xFF438883) : Colors.transparent,
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              dateChoice == 'custom' ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
+                              color: dateChoice == 'custom' ? const Color(0xFF438883) : Colors.grey,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('🗓️ Chọn ngày khác trên lịch...', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  if (dateChoice == 'custom')
+                                    Text(
+                                      'Đã chọn: ${CurrencyUtils.formatDate(selectedDate)}',
+                                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF438883), fontWeight: FontWeight.bold),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // 2. CHỌN VÍ THANH TOÁN
+                    Row(
+                      children: [
+                        const Icon(Icons.account_balance_wallet_rounded, size: 16, color: Color(0xFF438883)),
+                        const SizedBox(width: 6),
+                        Text(
+                          '2. Trừ vào ví nào?',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _wallets.map((w) {
+                        final isSel = selectedWalletName.toLowerCase() == w.name.toLowerCase();
+                        return InkWell(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setSheetState(() => selectedWalletName = w.name);
+                          },
+                          borderRadius: BorderRadius.circular(14),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: isSel
+                                  ? const Color(0xFF438883)
+                                  : (isDark ? const Color(0xFF243332) : const Color(0xFFF1F5F9)),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: isSel ? const Color(0xFF438883) : Colors.transparent,
+                                width: 1.2,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isSel ? Icons.check_circle_rounded : Icons.account_balance_wallet_outlined,
+                                  size: 14,
+                                  color: isSel ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  w.name,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                                    color: isSel ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // NÚT XÁC NHẬN LƯU VÀO SỔ
+                    AnimatedScaleButton(
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        setState(() {
+                          final updated = msg.transactions!.map((t) => t.copyWith(
+                            date: selectedDate,
+                            walletName: selectedWalletName,
+                          )).toList();
+                          msg.transactions!.clear();
+                          msg.transactions!.addAll(updated);
+                        });
+                        _saveAllTransactions(msg.transactions!);
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF438883), Color(0xFF2DD4BF)],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF438883).withValues(alpha: 0.35),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        alignment: Alignment.center,
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Xác nhận lưu vào sổ thu chi',
+                              style: TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _openPrefilledAddTransaction(AiTransactionItem tx, { _ChatMessage? parentMsg }) async {
+    // 1. Hủy ngay lập tức đếm ngược tự động lưu rảnh tay để không bị lưu ngầm khi người dùng bấm Sửa
+    _cancelAutoSave();
+
+    final result = await Navigator.push<bool>(
       context,
       PageTransitions.slideUp(AddTransactionScreen(
+        initialDate: tx.date,
         initialData: {
           'type': tx.type,
           'category': tx.category,
@@ -976,9 +1749,29 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
           'amount': tx.amount > 0 ? tx.amount : null,
           'walletName': tx.walletName,
           'photoPath': tx.photoPath,
+          'hour': tx.date.hour,
+          'minute': tx.date.minute,
         },
       )),
     );
+
+    // 2. Nếu người dùng đã lưu thành công trên màn hình sửa/thêm, cập nhật trạng thái bong bóng chat không còn pending
+    if (result == true && parentMsg != null && mounted) {
+      setState(() {
+        final idx = _messages.indexOf(parentMsg);
+        if (idx != -1) {
+          _messages[idx] = _ChatMessage(
+            text: parentMsg.text,
+            isUser: parentMsg.isUser,
+            time: parentMsg.time,
+            imagePath: parentMsg.imagePath,
+            transactions: parentMsg.transactions,
+            isPendingSaving: false,
+            needsAmount: false,
+          );
+        }
+      });
+    }
   }
 
   @override
@@ -1037,11 +1830,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16.5),
                 ),
                 Text(
-                  _isOnline ? 'Trực tuyến • Sẵn sàng' : 'Ngoại tuyến thông minh ⚡',
+                  _aiConfigService.isLocalAi
+                      ? 'Local AI • Sẵn sàng ⚡'
+                      : (_isOnline ? 'Trực tuyến • Sẵn sàng' : 'Ngoại tuyến thông minh ⚡'),
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.82),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 11.5,
-                    fontWeight: FontWeight.normal,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -1092,25 +1887,37 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
         children: [
           Column(
             children: [
-              // Banner chế độ ngoại tuyến thông minh
+              // Banner chế độ ngoại tuyến thông minh siêu mỏng (Ultra-slim 22px)
               if (!_isOnline)
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD97706).withValues(alpha: 0.95),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.offline_bolt_rounded, color: Colors.white, size: 16),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Chế độ Ngoại tuyến: Vẫn hỗ trợ ghi chép thu chi, xem báo cáo & điều khiển app!',
-                          style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w500),
+                  height: 22,
+                  color: _aiConfigService.isLocalAi
+                      ? const Color(0xFF0F766E).withValues(alpha: 0.95)
+                      : const Color(0xFFD97706).withValues(alpha: 0.95),
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _aiConfigService.isLocalAi ? Icons.shield_rounded : Icons.offline_bolt_rounded,
+                          color: Colors.white,
+                          size: 13,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 6),
+                        Text(
+                          _aiConfigService.isLocalAi
+                              ? '⚡ Local AI (On-Device): Hoạt động ngoại tuyến 100%'
+                              : '⚡ Ngoại tuyến: Sẵn sàng ghi thu chi & xem báo cáo',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
@@ -1149,16 +1956,16 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1B2625) : Colors.white,
+                            color: isDark ? const Color(0xFF162524) : Colors.white,
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(
                               color: isDark
-                                  ? Colors.white.withValues(alpha: 0.1)
+                                  ? const Color(0xFF2DD4BF).withValues(alpha: 0.35)
                                   : const Color(0xFF438883).withValues(alpha: 0.2),
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.03),
                                 blurRadius: 4,
                                 offset: const Offset(0, 1),
                               ),
@@ -1169,8 +1976,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                               suggestion,
                               style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: isDark ? Colors.white70 : const Color(0xFF2F7E79),
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? const Color(0xFF5EEAD4) : const Color(0xFF2F7E79),
                               ),
                             ),
                           ),
@@ -1239,9 +2046,24 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
       );
     }
 
-    final lines = text.split('\n');
+    // 1. Loại bỏ triệt để các code fences lập trình thô nếu có
+    String cleanText = text
+        .replaceAll(RegExp(r'```[a-zA-Z]*\n?'), '')
+        .replaceAll('```', '')
+        .trim();
+
+    // 2. Nếu lọt chuỗi JSON có "reply", tự động bóc tách nội dung thuần túy
+    final replyRegex = RegExp(r'"reply"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"');
+    final match = replyRegex.firstMatch(cleanText);
+    if (match != null && match.group(1) != null) {
+      cleanText = match.group(1)!.replaceAll(r'\"', '"').replaceAll(r'\n', '\n');
+    }
+
+    final lines = cleanText.split('\n');
     final defaultColor = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF1E293B);
     final boldColor = isDark ? const Color(0xFF5EEAD4) : const Color(0xFF0F766E);
+    final accentTeal = isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0D9488);
+    final quoteBg = isDark ? const Color(0xFF132B29) : const Color(0xFFF0FDFA);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1251,57 +2073,143 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
           return const SizedBox(height: 6);
         }
 
-        final isBullet = trimmedLine.startsWith('• ') ||
-            trimmedLine.startsWith('- ') ||
-            trimmedLine.startsWith('* ');
+        // Kẻ ngang phân cách (--- hoặc ***)
+        if (trimmedLine == '---' || trimmedLine == '***' || trimmedLine == '___') {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Divider(
+              height: 1,
+              color: isDark ? Colors.white12 : Colors.grey.shade200,
+            ),
+          );
+        }
 
-        String content = isBullet ? trimmedLine.substring(2).trim() : trimmedLine;
+        // 1. Khối Trích dẫn / Callout (> nội dung)
+        if (trimmedLine.startsWith('> ')) {
+          final content = trimmedLine.substring(2).trim();
+          return Container(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: quoteBg,
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(10),
+                bottomRight: Radius.circular(10),
+              ),
+              border: Border(
+                left: BorderSide(color: accentTeal, width: 3.5),
+              ),
+            ),
+            child: Text.rich(
+              TextSpan(children: _buildInlineSpans(content, defaultColor, boldColor, accentTeal)),
+              style: const TextStyle(fontSize: 13.8, height: 1.45, fontStyle: FontStyle.italic),
+            ),
+          );
+        }
 
-        // Parse **bold** into TextSpans
-        final List<InlineSpan> spans = [];
-        final parts = content.split('**');
-        for (int i = 0; i < parts.length; i++) {
-          if (parts[i].isEmpty) continue;
-          if (i % 2 == 1) {
-            // In đậm
-            spans.add(TextSpan(
-              text: parts[i],
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: boldColor,
-              ),
-            ));
-          } else {
-            // Văn bản thông thường
-            spans.add(TextSpan(
-              text: parts[i],
-              style: TextStyle(
-                color: defaultColor,
-              ),
-            ));
+        // 2. Mẹo & Gợi ý hành động tiếp theo (💡 hoặc 🎯)
+        String tipLine = trimmedLine;
+        if (tipLine.startsWith('• ') || tipLine.startsWith('- ') || tipLine.startsWith('* ')) {
+          final afterBullet = tipLine.substring(2).trim();
+          if (afterBullet.startsWith('💡') || afterBullet.startsWith('🎯')) {
+            tipLine = afterBullet;
           }
         }
 
-        if (isBullet) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 3),
+        if (tipLine.startsWith('💡') || tipLine.startsWith('🎯')) {
+          final isTip = tipLine.startsWith('💡');
+          final iconEmoji = isTip ? '💡' : '🎯';
+          final firstSpace = tipLine.indexOf(' ');
+          final content = firstSpace != -1 ? tipLine.substring(firstSpace + 1).trim() : tipLine;
+
+          return Container(
+            margin: const EdgeInsets.symmetric(vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            decoration: BoxDecoration(
+              color: isTip
+                  ? (isDark ? const Color(0xFF2A2415) : const Color(0xFFFFFBEB))
+                  : (isDark ? const Color(0xFF132B29) : const Color(0xFFF0FDFA)),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isTip
+                    ? Colors.amber.withValues(alpha: isDark ? 0.35 : 0.4)
+                    : accentTeal.withValues(alpha: isDark ? 0.35 : 0.4),
+                width: 1,
+              ),
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 6, right: 8),
-                  child: Container(
-                    width: 5,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF5EEAD4) : const Color(0xFF0F766E),
-                      shape: BoxShape.circle,
+                Text(
+                  iconEmoji,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(
+                      children: _buildInlineSpans(
+                        content,
+                        defaultColor,
+                        boldColor,
+                        accentTeal,
+                      ),
+                    ),
+                    style: const TextStyle(fontSize: 13.8, height: 1.45),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // 3. Tiêu đề mục (### hoặc ## hoặc #)
+        if (trimmedLine.startsWith('#')) {
+          final cleanHeader = trimmedLine.replaceAll(RegExp(r'^#+\s*'), '');
+          return Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 4),
+            child: Text.rich(
+              TextSpan(children: _buildInlineSpans(cleanHeader, boldColor, boldColor, accentTeal)),
+              style: TextStyle(
+                fontSize: 15.5,
+                fontWeight: FontWeight.bold,
+                color: boldColor,
+                height: 1.35,
+              ),
+            ),
+          );
+        }
+
+        // 4. Danh sách đánh số thứ tự (1. , 2. , 3. ...)
+        final numMatch = RegExp(r'^(\d+)\.\s+(.*)$').firstMatch(trimmedLine);
+        if (numMatch != null) {
+          final numStr = numMatch.group(1)!;
+          final content = numMatch.group(2)!;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 5),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 2, right: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                  decoration: BoxDecoration(
+                    color: accentTeal.withValues(alpha: isDark ? 0.25 : 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: accentTeal.withValues(alpha: 0.4), width: 0.8),
+                  ),
+                  child: Text(
+                    numStr,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: accentTeal,
                     ),
                   ),
                 ),
                 Expanded(
                   child: Text.rich(
-                    TextSpan(children: spans),
+                    TextSpan(children: _buildInlineSpans(content, defaultColor, boldColor, accentTeal)),
                     style: const TextStyle(fontSize: 14.2, height: 1.45),
                   ),
                 ),
@@ -1310,15 +2218,105 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
           );
         }
 
+        // 5. Danh sách gạch đầu dòng (• , - , * )
+        final isBullet = trimmedLine.startsWith('• ') ||
+            trimmedLine.startsWith('- ') ||
+            trimmedLine.startsWith('* ');
+
+        if (isBullet) {
+          final content = trimmedLine.substring(2).trim();
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 7, right: 8),
+                  child: Container(
+                    width: 5,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: accentTeal,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(children: _buildInlineSpans(content, defaultColor, boldColor, accentTeal)),
+                    style: const TextStyle(fontSize: 14.2, height: 1.45),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // 6. Dòng văn bản thông thường
         return Padding(
-          padding: const EdgeInsets.only(bottom: 3),
+          padding: const EdgeInsets.only(bottom: 4),
           child: Text.rich(
-            TextSpan(children: spans),
+            TextSpan(children: _buildInlineSpans(trimmedLine, defaultColor, boldColor, accentTeal)),
             style: const TextStyle(fontSize: 14.5, height: 1.45),
           ),
         );
       }).toList(),
     );
+  }
+
+  /// Tách và phân tích **in đậm**, *in nghiêng* với phong cách chuẩn FinTech, làm sạch dấu backtick và escape
+  List<InlineSpan> _buildInlineSpans(String text, Color defaultColor, Color boldColor, Color accentColor) {
+    final cleaned = text
+        .replaceAll('`', '')
+        .replaceAll(r'\"', '"')
+        .replaceAll(r'\\', r'\');
+
+    final List<InlineSpan> spans = [];
+    final parts = cleaned.split('**');
+
+    for (int i = 0; i < parts.length; i++) {
+      final part = parts[i];
+      if (part.isEmpty) continue;
+
+      if (i % 2 == 1) {
+        // In đậm: Đặt màu nhấn rõ nét
+        spans.add(TextSpan(
+          text: part.replaceAll('*', ''),
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: boldColor,
+            letterSpacing: 0.1,
+          ),
+        ));
+      } else {
+        // Phân tích chữ *nghiêng* trong đoạn văn bản thường
+        final regex = RegExp(r'\*([^*]+)\*');
+        int lastIndex = 0;
+        for (final match in regex.allMatches(part)) {
+          if (match.start > lastIndex) {
+            spans.add(TextSpan(
+              text: part.substring(lastIndex, match.start).replaceAll('*', ''),
+              style: TextStyle(color: defaultColor),
+            ));
+          }
+          spans.add(TextSpan(
+            text: match.group(1),
+            style: TextStyle(
+              fontStyle: FontStyle.italic,
+              color: defaultColor.withValues(alpha: 0.92),
+            ),
+          ));
+          lastIndex = match.end;
+        }
+        if (lastIndex < part.length) {
+          spans.add(TextSpan(
+            text: part.substring(lastIndex).replaceAll('*', ''),
+            style: TextStyle(color: defaultColor),
+          ));
+        }
+      }
+    }
+    return spans;
   }
 
   Widget _buildMessageItem(_ChatMessage msg, bool isDark, Color primaryColor) {
@@ -1378,7 +2376,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                           : null,
                       color: msg.isUser
                           ? null
-                          : (isDark ? const Color(0xFF1E2827) : Colors.white),
+                          : (isDark ? const Color(0xFF162524) : Colors.white),
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(18),
                         topRight: const Radius.circular(18),
@@ -1387,9 +2385,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                       ),
                       border: !msg.isUser
                           ? Border.all(
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.08)
-                                  : Colors.grey.shade200,
+                              color: msg.isError
+                                  ? (isDark ? Colors.amber.withValues(alpha: 0.45) : Colors.amber.shade400)
+                                  : (isDark
+                                      ? const Color(0xFF2DD4BF).withValues(alpha: 0.22)
+                                      : Colors.grey.shade200),
+                              width: msg.isError ? 1.4 : 1.0,
                             )
                           : null,
                       boxShadow: [
@@ -1413,20 +2414,24 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF438883).withValues(alpha: 0.12),
+                                  color: (msg.isError ? Colors.amber : const Color(0xFF438883)).withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.bolt_rounded, color: Color(0xFF438883), size: 12),
-                                    SizedBox(width: 3),
+                                    Icon(
+                                      msg.isError ? Icons.info_outline_rounded : Icons.bolt_rounded,
+                                      color: msg.isError ? Colors.amber : const Color(0xFF438883),
+                                      size: 12,
+                                    ),
+                                    const SizedBox(width: 3),
                                     Text(
                                       'Mono AI',
                                       style: TextStyle(
                                         fontSize: 10.5,
                                         fontWeight: FontWeight.bold,
-                                        color: Color(0xFF438883),
+                                        color: msg.isError ? Colors.amber : const Color(0xFF438883),
                                       ),
                                     ),
                                   ],
@@ -1495,6 +2500,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                                       child: const Icon(Icons.zoom_in_rounded, color: Colors.white, size: 14),
                                     ),
                                   ),
+                                  if (_isLoading && _messages.isNotEmpty && _messages.last == msg)
+                                    const _LaserScannerOverlay(),
                                 ],
                               ),
                             ),
@@ -1503,6 +2510,39 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                         ],
                         // Nội dung tin nhắn với định dạng Rich Text / Markdown
                         _buildFormattedMessageText(msg.text, msg.isUser, isDark),
+                        if (msg.isError) ...[
+                          const SizedBox(height: 8),
+                          InkWell(
+                            onTap: _retryLastUserMessage,
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF438883).withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: const Color(0xFF438883).withValues(alpha: 0.35),
+                                  width: 1.1,
+                                ),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.refresh_rounded, size: 14, color: Color(0xFF438883)),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Thử lại ngay',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF438883),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 4),
                         // Dấu thời gian tin nhắn
                         Align(
@@ -1574,6 +2614,24 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
               ),
             ],
 
+            // Thẻ xác nhận chuyển tiền giữa các ví (Transfer / Withdraw)
+            if (msg.transferCardData != null) ...[
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.only(left: 36),
+                child: TransferConfirmCard(
+                  fromWallet: msg.transferCardData!.fromWallet,
+                  toWallet: msg.transferCardData!.toWallet,
+                  amount: msg.transferCardData!.amount,
+                  fee: msg.transferCardData!.fee,
+                  note: msg.transferCardData!.note,
+                  onCompleted: () {
+                    if (mounted) setState(() {});
+                  },
+                ),
+              ),
+            ],
+
             // Thẻ chia tiền hóa đơn nhóm
             if (msg.splitBillResult != null) ...[
               const SizedBox(height: 10),
@@ -1637,6 +2695,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
               ),
             ],
 
+            // Thẻ tra cứu chi tiêu & việc nào chi nhiều nhất
+            if (msg.spendingQueryResult != null) ...[
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.only(left: 36),
+                child: PersonalSpendingQueryCard(result: msg.spendingQueryResult!),
+              ),
+            ],
+
             // Card xem trước giao dịch AI trích xuất được
             if (msg.transactions != null && msg.transactions!.isNotEmpty) ...[
               const SizedBox(height: 10),
@@ -1650,11 +2717,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                           isDark,
                           primaryColor,
                           needsAmount: msg.needsAmount,
+                          parentMsg: msg,
                         )),
                     const SizedBox(height: 8),
                     if (msg.needsAmount) ...[
                       AnimatedScaleButton(
-                        onTap: () => _openPrefilledAddTransaction(msg.transactions!.first),
+                        onTap: () => _openPrefilledAddTransaction(msg.transactions!.first, parentMsg: msg),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                           decoration: BoxDecoration(
@@ -1682,35 +2750,202 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                         ),
                       ),
                     ] else if (msg.isPendingSaving) ...[
-                      AnimatedScaleButton(
-                        onTap: () => _saveAllTransactions(msg.transactions!),
+                      // Dải nút chọn ví nhanh 1 chạm (Quick Wallet Action Chips)
+                      if (_wallets.isNotEmpty) ...[
+                        Text(
+                          msg.transactions!.first.type == 'income' ? 'Ví nhận tiền:' : 'Ví trừ tiền:',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white70 : const Color(0xFF475569),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: _wallets.map((wallet) {
+                            final currentTx = msg.transactions!.first;
+                            final isSelected = currentTx.walletName.toLowerCase() == wallet.name.toLowerCase();
+                            return AnimatedScaleButton(
+                              onTap: () {
+                                for (var item in msg.transactions!) {
+                                  _updateTransactionWallet(msg, item, wallet.name);
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? const Color(0xFF438883)
+                                      : (isDark ? Colors.white12 : Colors.grey.shade200),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: isSelected ? const Color(0xFF438883) : Colors.transparent,
+                                    width: 1.2,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      isSelected ? Icons.check_circle_rounded : Icons.account_balance_wallet_outlined,
+                                      size: 13,
+                                      color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      wallet.name,
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                        color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AnimatedScaleButton(
+                              onTap: () {
+                                if (msg.imagePath != null && msg.transactions != null && msg.transactions!.isNotEmpty) {
+                                  _showConfirmSaveReceiptSheet(msg);
+                                } else {
+                                  _saveAllTransactions(msg.transactions!);
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade600,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.green.withValues(alpha: 0.3),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Lưu vào sổ thu chi',
+                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          AnimatedScaleButton(
+                            onTap: () => _openPrefilledAddTransaction(msg.transactions!.first, parentMsg: msg),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.white12 : Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit_rounded, color: isDark ? Colors.white70 : Colors.black87, size: 16),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Sửa',
+                                    style: TextStyle(
+                                      color: isDark ? Colors.white70 : Colors.black87,
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+
+            // Nút xem chi tiết giao dịch tức thì sau khi lưu thành công
+            if (msg.savedTransactions != null && msg.savedTransactions!.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.only(left: 36),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: AnimatedScaleButton(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            PageTransitions.slideRight(
+                              TransactionDetailScreen(transaction: msg.savedTransactions!.first),
+                            ),
+                          );
+                        },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                          padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 12),
                           decoration: BoxDecoration(
-                            color: Colors.green.shade600,
+                            color: const Color(0xFF438883),
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.green.withValues(alpha: 0.3),
+                                color: const Color(0xFF438883).withValues(alpha: 0.3),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
                             ],
                           ),
                           child: const Row(
-                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
-                              SizedBox(width: 8),
-                              Text(
-                                'Lưu vào sổ thu chi',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                              ),
+                              Icon(Icons.visibility_rounded, color: Colors.white, size: 16),
+                              SizedBox(width: 6),
+                              Text('Xem giao dịch vừa lưu', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),
                       ),
-                    ],
+                    ),
+                    const SizedBox(width: 8),
+                    AnimatedScaleButton(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          PageTransitions.slideRight(const AllTransactionsScreen()),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white12 : Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.receipt_long_rounded, color: isDark ? Colors.white70 : Colors.black87, size: 16),
+                            const SizedBox(width: 6),
+                            Text('Sổ thu chi', style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1726,90 +2961,289 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     bool isDark,
     Color primaryColor, {
     bool needsAmount = false,
+    _ChatMessage? parentMsg,
   }) {
     final isExpense = tx.type == 'expense';
     final amountColor = needsAmount
         ? Colors.amber.shade700
         : (isExpense ? const Color(0xFFEF4444) : const Color(0xFF10B981));
+    final isPending = parentMsg?.isPendingSaving == true;
+    final now = DateTime.now();
+    final isOldDate = now.difference(tx.date).inDays.abs() > 30 || tx.date.year != now.year;
+    final isToday = tx.date.year == now.year && tx.date.month == now.month && tx.date.day == now.day;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: amountColor.withValues(alpha: 0.35), width: 1.2),
+        color: isDark ? const Color(0xFF162524) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: amountColor.withValues(alpha: isDark ? 0.45 : 0.35), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: amountColor.withValues(alpha: 0.12),
-            child: Icon(IconData(tx.categoryIconCode, fontFamily: 'MaterialIcons'), color: amountColor, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tx.description.isNotEmpty ? tx.description : tx.category,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Row(
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: amountColor.withValues(alpha: 0.12),
+                child: Icon(IconData(tx.categoryIconCode, fontFamily: 'MaterialIcons'), color: amountColor, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      tx.category,
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      tx.description.isNotEmpty ? tx.description : tx.category,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    if (tx.walletName.isNotEmpty) ...[
-                      const Text(' • ', style: TextStyle(color: Colors.grey)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: primaryColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Text(
+                          tx.category,
+                          style: TextStyle(fontSize: 12, color: isDark ? const Color(0xFFCBD5E1) : Colors.grey.shade600),
                         ),
-                        child: Text(
-                          tx.walletName,
-                          style: TextStyle(fontSize: 11, color: primaryColor, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ],
-                    if (tx.photoPath != null && tx.photoPath!.isNotEmpty) ...[
-                      const Text(' • ', style: TextStyle(color: Colors.grey)),
-                      const Icon(Icons.receipt_long_rounded, size: 13, color: Color(0xFF438883)),
-                      const SizedBox(width: 2),
-                      const Text(
-                        'Có hóa đơn',
-                        style: TextStyle(fontSize: 11, color: Color(0xFF438883), fontWeight: FontWeight.w600),
-                      ),
-                    ],
+                        if (tx.photoPath != null && tx.photoPath!.isNotEmpty) ...[
+                          Text(' • ', style: TextStyle(color: isDark ? Colors.white38 : Colors.grey)),
+                          const Icon(Icons.receipt_long_rounded, size: 13, color: Color(0xFF438883)),
+                          const SizedBox(width: 2),
+                          const Text(
+                            'Có hóa đơn',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF438883), fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              Text(
+                needsAmount
+                    ? 'Chưa có số tiền'
+                    : '${isExpense ? '-' : '+'}${CurrencyUtils.formatCurrency(tx.amount)}',
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.bold,
+                  color: amountColor,
+                ),
+              ),
+            ],
           ),
-          Text(
-            needsAmount
-                ? 'Chưa có số tiền'
-                : '${isExpense ? '-' : '+'}${CurrencyUtils.formatCurrency(tx.amount)}',
-            style: TextStyle(
-              fontSize: 14.5,
-              fontWeight: FontWeight.bold,
-              color: amountColor,
-            ),
+          const SizedBox(height: 8),
+          Divider(height: 1, thickness: 0.6, color: isDark ? Colors.white.withValues(alpha: 0.12) : const Color(0xFFE2E8F0)),
+          const SizedBox(height: 8),
+          // Hàng hiển thị & tương tác chọn Ví, Ngày và Giờ
+          Row(
+            children: [
+              // Bộ chọn ví tương tác
+              InkWell(
+                onTap: isPending && parentMsg != null
+                    ? () => _showWalletPickerSheet(parentMsg, tx)
+                    : null,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E2D2B) : primaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF2DD4BF).withValues(alpha: 0.35) : primaryColor.withValues(alpha: isPending ? 0.35 : 0.15),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.account_balance_wallet_outlined, size: 13, color: isDark ? const Color(0xFF5EEAD4) : primaryColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        tx.walletName.isNotEmpty ? tx.walletName : 'Chọn ví',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: isDark ? const Color(0xFF5EEAD4) : primaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (isPending) ...[
+                        const SizedBox(width: 2),
+                        Icon(Icons.arrow_drop_down, size: 14, color: isDark ? const Color(0xFF5EEAD4) : primaryColor),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              // Bộ chọn ngày tương tác
+              InkWell(
+                onTap: isPending && parentMsg != null
+                    ? () => _pickCustomDate(parentMsg, tx)
+                    : null,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E2D2B) : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF2DD4BF).withValues(alpha: 0.3) : Colors.grey.shade300,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.calendar_today_rounded, size: 12, color: isDark ? const Color(0xFF5EEAD4) : Colors.grey.shade700),
+                      const SizedBox(width: 4),
+                      Text(
+                        CurrencyUtils.formatDate(tx.date),
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: isDark ? Colors.white : Colors.grey.shade800,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (isPending) ...[
+                        const SizedBox(width: 2),
+                        Icon(Icons.arrow_drop_down, size: 14, color: isDark ? Colors.white70 : Colors.grey.shade600),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              // Bộ chọn giờ tương tác (NEW)
+              InkWell(
+                onTap: isPending && parentMsg != null
+                    ? () => _pickCustomTime(parentMsg, tx)
+                    : null,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E2D2B) : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF2DD4BF).withValues(alpha: 0.3) : Colors.grey.shade300,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.access_time_rounded, size: 12, color: isDark ? const Color(0xFF5EEAD4) : Colors.grey.shade700),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${tx.date.hour.toString().padLeft(2, '0')}:${tx.date.minute.toString().padLeft(2, '0')}',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: isDark ? Colors.white : Colors.grey.shade800,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (isPending) ...[
+                        const SizedBox(width: 2),
+                        Icon(Icons.arrow_drop_down, size: 14, color: isDark ? Colors.white70 : Colors.grey.shade600),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
+          // Cảnh báo nếu ngày hóa đơn cũ và gợi ý 1 chạm chuyển sang Hôm nay
+          if (isPending && parentMsg != null && isOldDate) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.info_outline_rounded, size: 13, color: Colors.amber),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          'Hóa đơn ghi ngày ${CurrencyUtils.formatDate(tx.date)} (năm cũ)',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.amber),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AnimatedScaleButton(
+                          onTap: () => _updateTransactionDate(parentMsg, tx, DateTime.now()),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            decoration: BoxDecoration(
+                              color: isToday ? Colors.amber.shade700 : (isDark ? Colors.white10 : Colors.white),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber.shade700.withValues(alpha: 0.4)),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '⚡ Ghi vào Hôm nay',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: isToday ? Colors.white : Colors.amber.shade800,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: AnimatedScaleButton(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            decoration: BoxDecoration(
+                              color: !isToday ? Colors.amber.shade700 : (isDark ? Colors.white10 : Colors.white),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber.shade700.withValues(alpha: 0.4)),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '📅 Giữ ngày hóa đơn',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: !isToday ? Colors.white : Colors.amber.shade800,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -2177,7 +3611,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
   }
 
   Widget _buildLoadingBubble(bool isDark, Color primaryColor) {
-    return _MonoThinkingBubble(isDark: isDark, primaryColor: primaryColor);
+    final isScanning = _messages.isNotEmpty && _messages.last.imagePath != null;
+    return _MonoThinkingBubble(
+      isDark: isDark,
+      primaryColor: primaryColor,
+      isScanningReceipt: isScanning,
+    );
   }
 
   Widget _buildInputActionButton({
@@ -2196,8 +3635,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
           height: 32,
           margin: const EdgeInsets.symmetric(horizontal: 2),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF1F5F9),
+            color: isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF1F5F9),
             shape: BoxShape.circle,
+            border: isDark
+                ? Border.all(color: const Color(0xFF2DD4BF).withValues(alpha: 0.25), width: 0.8)
+                : null,
           ),
           child: Center(
             child: Icon(
@@ -2473,10 +3915,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             margin: const EdgeInsets.fromLTRB(10, 4, 10, 10),
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E2827) : Colors.white,
+              color: isDark ? const Color(0xFF162524) : Colors.white,
               borderRadius: BorderRadius.circular(26),
               border: Border.all(
-                color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+                color: isDark ? const Color(0xFF2DD4BF).withValues(alpha: 0.3) : const Color(0xFFE2E8F0),
                 width: 1.2,
               ),
               boxShadow: [
@@ -2540,7 +3982,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                         hintText: 'Hỏi Mono hoặc nhập lệnh...',
                         hintStyle: TextStyle(
                           fontSize: 13.5,
-                          color: isDark ? Colors.white38 : Colors.grey.shade400,
+                          color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade400,
                         ),
                         border: InputBorder.none,
                         isDense: true,
@@ -2698,14 +4140,16 @@ class _BlinkingCursorState extends State<_BlinkingCursor> with SingleTickerProvi
 }
 
 /// Widget Thinking State với hiệu ứng sóng âm mini nhịp nhàng và text thông minh
-/// Giúp người dùng cảm thấy ứng dụng đang phản hồi sống động, không sốt ruột ở ngưỡng 800 - 1500ms
+/// Giúp người dùng cảm thấy ứng dụng đang phản hồi sống động, không sốt ruột ở mọi ngưỡng thời gian
 class _MonoThinkingBubble extends StatefulWidget {
   final bool isDark;
   final Color primaryColor;
+  final bool isScanningReceipt;
 
   const _MonoThinkingBubble({
     required this.isDark,
     required this.primaryColor,
+    this.isScanningReceipt = false,
   });
 
   @override
@@ -2714,7 +4158,8 @@ class _MonoThinkingBubble extends StatefulWidget {
 
 class _MonoThinkingBubbleState extends State<_MonoThinkingBubble> with SingleTickerProviderStateMixin {
   late AnimationController _animController;
-  Timer? _textTimer;
+  Timer? _textTimer1;
+  Timer? _textTimer2;
   String _thinkingText = 'Mono đang tính toán...';
 
   @override
@@ -2725,20 +4170,46 @@ class _MonoThinkingBubbleState extends State<_MonoThinkingBubble> with SingleTic
       duration: const Duration(milliseconds: 1200),
     )..repeat();
 
-    // Sau 800ms (ngưỡng 800-1500ms), tự động chuyển text trạng thái để người dùng yên tâm
-    _textTimer = Timer(const Duration(milliseconds: 800), () {
-      if (mounted) {
-        setState(() {
-          _thinkingText = 'Mono đang trích xuất dữ liệu tài chính...';
-        });
-      }
-    });
+    if (widget.isScanningReceipt) {
+      _thinkingText = '🔍 Đang tối ưu hóa hình ảnh hóa đơn...';
+      _textTimer1 = Timer(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          setState(() {
+            _thinkingText = '⚡ Đang nhận diện chữ & số tiền (OCR Vision)...';
+          });
+        }
+      });
+      _textTimer2 = Timer(const Duration(milliseconds: 2200), () {
+        if (mounted) {
+          setState(() {
+            _thinkingText = '✨ Đang phân loại danh mục & đối chiếu ví...';
+          });
+        }
+      });
+    } else {
+      _thinkingText = 'Mono đang phân tích yêu cầu...';
+      _textTimer1 = Timer(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          setState(() {
+            _thinkingText = 'Mono đang xử lý dữ liệu tài chính...';
+          });
+        }
+      });
+      _textTimer2 = Timer(const Duration(milliseconds: 2000), () {
+        if (mounted) {
+          setState(() {
+            _thinkingText = 'Đang hoàn tất câu trả lời tối ưu...';
+          });
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
     _animController.dispose();
-    _textTimer?.cancel();
+    _textTimer1?.cancel();
+    _textTimer2?.cancel();
     super.dispose();
   }
 
@@ -2846,3 +4317,110 @@ class _ThinkingMiniWaveform extends StatelessWidget {
     );
   }
 }
+
+/// Widget hiệu ứng chùm tia laser quang học quét lên xuống trên ảnh hóa đơn
+class _LaserScannerOverlay extends StatefulWidget {
+  const _LaserScannerOverlay();
+
+  @override
+  State<_LaserScannerOverlay> createState() => _LaserScannerOverlayState();
+}
+
+class _LaserScannerOverlayState extends State<_LaserScannerOverlay> with SingleTickerProviderStateMixin {
+  late AnimationController _scannerController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scannerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _scannerController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: AnimatedBuilder(
+        animation: _scannerController,
+        builder: (context, _) {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Stack(
+              children: [
+                // Lớp phủ tối nhẹ công nghệ
+                Container(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.22),
+                ),
+                // Badge đang quét OCR
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFF2DD4BF).withValues(alpha: 0.6),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.document_scanner_rounded, size: 12, color: Color(0xFF2DD4BF)),
+                        SizedBox(width: 4),
+                        Text(
+                          'Quét OCR...',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Tia laser chuyển động
+                Align(
+                  alignment: Alignment(0, (_scannerController.value * 2.0) - 1.0),
+                  child: Container(
+                    height: 2.5,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFF2DD4BF).withValues(alpha: 0.1),
+                          const Color(0xFF2DD4BF),
+                          const Color(0xFF5EEAD4),
+                          const Color(0xFF2DD4BF),
+                          const Color(0xFF2DD4BF).withValues(alpha: 0.1),
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF2DD4BF).withValues(alpha: 0.8),
+                          blurRadius: 8,
+                          spreadRadius: 1.5,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+

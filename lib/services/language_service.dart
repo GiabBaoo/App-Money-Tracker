@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -81,11 +80,27 @@ class LanguageService extends ChangeNotifier {
     }
   }
 
-  /// Translate a key to current language
+  /// Translate a key to current language with zero-tech-leak fallback
   String t(String key) {
     final langMap = _translations[key];
-    if (langMap == null) return key;
-    return langMap[_currentLanguage] ?? langMap['vi'] ?? key;
+    if (langMap != null) {
+      return langMap[_currentLanguage] ?? langMap['vi'] ?? key;
+    }
+    // Zero-Tech-Leak Fallback: If key is missing, avoid leaking raw snake_case programming code to UI
+    if (key.contains('_')) {
+      final clean = key
+          .replaceAll('_label', '')
+          .replaceAll('_hint', '')
+          .replaceAll('_error', '')
+          .replaceAll('_btn', '')
+          .replaceAll('_title', '')
+          .replaceAll('_desc', '');
+      final subMap = _translations[clean];
+      if (subMap != null) {
+        return subMap[_currentLanguage] ?? subMap['vi'] ?? clean;
+      }
+    }
+    return key;
   }
 
   static const Map<String, Map<String, String>> _translations = {
@@ -111,7 +126,7 @@ class LanguageService extends ChangeNotifier {
     'quick_budget': {'vi': 'Ngân sách', 'en': 'Budget'},
     'quick_mono': {'vi': 'Trợ lý Mono', 'en': 'Mono AI'},
 
-    // Wallet Screen
+    // Wallet Screen & Modern Wallet Form
     'wallets_title': {'vi': 'Ví tiền', 'en': 'Wallets'},
     'total_net_worth': {'vi': 'Tổng tài sản', 'en': 'Total Net Worth'},
     'transfer_money': {'vi': 'Chuyển tiền giữa các ví', 'en': 'Transfer Between Wallets'},
@@ -119,9 +134,24 @@ class LanguageService extends ChangeNotifier {
     'create_wallet': {'vi': 'Tạo ví mới', 'en': 'Create New Wallet'},
     'edit_wallet': {'vi': 'Chỉnh sửa ví', 'en': 'Edit Wallet'},
     'wallet_name': {'vi': 'Tên ví', 'en': 'Wallet Name'},
+    'wallet_name_label': {'vi': 'Tên chiếc ví', 'en': 'Wallet Name'},
+    'wallet_name_hint': {'vi': 'Nhập tên ví (VD: Tiền mặt, Techcombank...)', 'en': 'Enter wallet name...'},
     'initial_balance': {'vi': 'Số dư ban đầu', 'en': 'Initial Balance'},
+    'initial_balance_label': {'vi': 'Số dư ban đầu', 'en': 'Initial Balance'},
     'current_balance': {'vi': 'Số dư hiện tại', 'en': 'Current Balance'},
+    'current_balance_label': {'vi': 'Số dư hiện tại', 'en': 'Current Balance'},
     'wallet_category': {'vi': 'Phân loại ví', 'en': 'Wallet Category'},
+    'wallet_type_label': {'vi': 'Loại ví tiền', 'en': 'Wallet Type'},
+    'color_label': {'vi': 'Màu sắc nhận diện', 'en': 'Wallet Color'},
+    'icon_label': {'vi': 'Biểu tượng đại diện', 'en': 'Wallet Icon'},
+    'default_wallet': {'vi': 'Ví mặc định', 'en': 'Default Wallet'},
+    'default_wallet_label': {'vi': 'Đặt làm ví mặc định', 'en': 'Set as Default Wallet'},
+    'note_optional_label': {'vi': 'Ghi chú (tùy chọn)', 'en': 'Note (optional)'},
+    'create_wallet_btn': {'vi': 'Tạo ví ngay', 'en': 'Create Wallet'},
+    'save_changes': {'vi': 'Lưu thay đổi', 'en': 'Save Changes'},
+    'enter_wallet_name_error': {'vi': 'Vui lòng nhập tên ví!', 'en': 'Please enter wallet name!'},
+    'create_wallet_success': {'vi': 'Đã tạo ví mới thành công!', 'en': 'Wallet created successfully!'},
+    'update_wallet_success': {'vi': 'Đã cập nhật thông tin ví!', 'en': 'Wallet updated successfully!'},
     'save_wallet': {'vi': 'Lưu ví', 'en': 'Save Wallet'},
     'confirm_delete_wallet': {'vi': 'Bạn có chắc chắn muốn xóa ví này không?', 'en': 'Are you sure you want to delete this wallet?'},
     'empty_wallets': {'vi': 'Chưa có ví tiền nào. Hãy bấm nút + để tạo ví đầu tiên!', 'en': 'No wallets yet. Tap + to create your first wallet!'},
@@ -131,6 +161,21 @@ class LanguageService extends ChangeNotifier {
     'wallet_savings': {'vi': 'Sổ tiết kiệm', 'en': 'Savings'},
     'wallet_investment': {'vi': 'Đầu tư', 'en': 'Investment'},
     'wallet_other': {'vi': 'Khác', 'en': 'Other'},
+
+    // Wallet Transfer & Actions
+    'transfer_title': {'vi': 'Chuyển tiền giữa các ví', 'en': 'Transfer Between Wallets'},
+    'transfer_from': {'vi': 'Chuyển từ ví', 'en': 'From Wallet'},
+    'transfer_to': {'vi': 'Nhận vào ví', 'en': 'To Wallet'},
+    'transfer_amount_label': {'vi': 'Số tiền chuyển', 'en': 'Transfer Amount'},
+    'transfer_fee_label': {'vi': 'Phí giao dịch (nếu có)', 'en': 'Transfer Fee (optional)'},
+    'balance_prefix': {'vi': 'Số dư', 'en': 'Balance'},
+    'transfer_min_wallets_error': {'vi': 'Bạn cần ít nhất 2 ví để thực hiện chuyển tiền!', 'en': 'You need at least 2 wallets to transfer money!'},
+    'transfer_amount_error': {'vi': 'Vui lòng nhập số tiền chuyển hợp lệ!', 'en': 'Please enter a valid transfer amount!'},
+    'insufficient_balance_error': {'vi': 'Số dư trong ví nguồn không đủ để thực hiện chuyển tiền!', 'en': 'Insufficient balance in source wallet!'},
+    'transfer_success': {'vi': 'Chuyển tiền giữa các ví thành công!', 'en': 'Transfer successful!'},
+    'confirm_transfer': {'vi': 'Xác nhận chuyển tiền', 'en': 'Confirm Transfer'},
+    'delete_wallet_title': {'vi': 'Xóa ví tiền', 'en': 'Delete Wallet'},
+    'delete_wallet_confirm': {'vi': 'Bạn có chắc chắn muốn xóa ví "{name}" không?', 'en': 'Are you sure you want to delete wallet "{name}"?'},
 
     // Settings Screen
     'settings_title': {'vi': 'Cài đặt', 'en': 'Settings'},
@@ -359,21 +404,6 @@ class LanguageService extends ChangeNotifier {
 
 /// Extension for fast and convenient context.tr('key') access with real-time reactive listening
 extension LocalizationExtension on BuildContext {
-  String tr(String key) {
-    try {
-      final langService = Provider.of<LanguageService>(this);
-      return langService.t(key);
-    } catch (_) {
-      return LanguageService.instance.t(key);
-    }
-  }
-
-  String trCat(String categoryName) {
-    try {
-      final langService = Provider.of<LanguageService>(this);
-      return langService.tCategory(categoryName);
-    } catch (_) {
-      return LanguageService.instance.tCategory(categoryName);
-    }
-  }
+  String tr(String key) => LanguageService.instance.t(key);
+  String trCat(String categoryName) => LanguageService.instance.tCategory(categoryName);
 }

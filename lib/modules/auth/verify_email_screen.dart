@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../utils/page_transitions.dart';
+import '../../widgets/app_logo.dart';
 import '../../services/auth_service.dart';
 import '../home/home_screen.dart';
 
@@ -124,7 +125,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                   },
                 ),
                 const Spacer(),
-                const Text('mono', style: TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold, letterSpacing: -1.5)),
+                const AppLogo.wordmark(height: 32, color: Colors.white),
                 const Spacer(flex: 2),
               ]),
             ),

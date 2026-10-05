@@ -10,8 +10,8 @@ class AnimatedScaleButton extends StatefulWidget {
     super.key,
     required this.child,
     this.onTap,
-    this.scaleDown = 0.95,
-    this.duration = const Duration(milliseconds: 150),
+    this.scaleDown = 0.96,
+    this.duration = const Duration(milliseconds: 90),
   });
 
   @override
@@ -27,7 +27,7 @@ class _AnimatedScaleButtonState extends State<AnimatedScaleButton> with SingleTi
     super.initState();
     _controller = AnimationController(vsync: this, duration: widget.duration);
     _scaleAnimation = Tween<double>(begin: 1.0, end: widget.scaleDown).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutQuad),
     );
   }
 
@@ -62,9 +62,11 @@ class _AnimatedScaleButtonState extends State<AnimatedScaleButton> with SingleTi
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
       behavior: HitTestBehavior.opaque,
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: widget.child,
+      child: RepaintBoundary(
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: widget.child,
+        ),
       ),
     );
   }

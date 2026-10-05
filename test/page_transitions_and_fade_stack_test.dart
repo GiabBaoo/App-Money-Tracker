@@ -10,20 +10,20 @@ void main() {
 
       final slideRightRoute = PageTransitions.slideRight(dummyPage) as PageRouteBuilder;
       expect(slideRightRoute, isA<PageRouteBuilder>());
-      expect(slideRightRoute.transitionDuration, equals(const Duration(milliseconds: 300)));
-      expect(slideRightRoute.reverseTransitionDuration, equals(const Duration(milliseconds: 250)));
+      expect(slideRightRoute.transitionDuration, equals(const Duration(milliseconds: 220)));
+      expect(slideRightRoute.reverseTransitionDuration, equals(const Duration(milliseconds: 180)));
 
       final slideUpRoute = PageTransitions.slideUp(dummyPage) as PageRouteBuilder;
       expect(slideUpRoute, isA<PageRouteBuilder>());
-      expect(slideUpRoute.transitionDuration, equals(const Duration(milliseconds: 300)));
+      expect(slideUpRoute.transitionDuration, equals(const Duration(milliseconds: 220)));
 
       final fadeRoute = PageTransitions.fade(dummyPage) as PageRouteBuilder;
       expect(fadeRoute, isA<PageRouteBuilder>());
-      expect(fadeRoute.transitionDuration, equals(const Duration(milliseconds: 250)));
+      expect(fadeRoute.transitionDuration, equals(const Duration(milliseconds: 180)));
 
       final scaleRoute = PageTransitions.scale(dummyPage) as PageRouteBuilder;
       expect(scaleRoute, isA<PageRouteBuilder>());
-      expect(scaleRoute.transitionDuration, equals(const Duration(milliseconds: 300)));
+      expect(scaleRoute.transitionDuration, equals(const Duration(milliseconds: 200)));
     });
 
     testWidgets('FadeIndexedStack renders selected tab and transitions smoothly', (WidgetTester tester) async {

@@ -37,7 +37,29 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
+            <!-- Deep link để mở nhanh màn thêm giao dịch từ Android App Widget -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="moneytracker"
+                    android:host="add_transaction" />
+            </intent-filter>
         </activity>
+
+        <!-- Android App Widget: Money Tracker Widget Provider -->
+        <receiver
+            android:name=".MoneyTrackerWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_money_tracker_info" />
+        </receiver>
 
         <!-- Scheduled Notification Receivers for background & idle delivery -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />

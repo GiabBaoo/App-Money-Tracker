@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/providers/app_providers.dart';
 import '../../services/language_service.dart';
 
-class LanguageScreen extends StatelessWidget {
+class LanguageScreen extends ConsumerWidget {
   const LanguageScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final languageService = Provider.of<LanguageService>(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final languageService = ref.watch(languageServiceProvider);
 
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
-import 'package:provider/provider.dart' as provider;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 
@@ -29,6 +29,9 @@ import 'services/sync_service.dart';
 import 'services/local_notification_service.dart';
 import 'services/midnight_sync_service.dart';
 import 'services/auth_service.dart';
+import 'services/transaction_balance_service.dart';
+import 'services/app_widget_service.dart';
+import 'core/providers/app_providers.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -55,6 +58,12 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    try {
+      FirebaseFirestore.instance.settings = const Settings(
+        persistenceEnabled: true,
+        cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+      );
+    } catch (_) {}
   } catch (e) {
     debugPrint('Firebase initialization error: $e');
   }
@@ -100,8 +109,12 @@ void main() async {
     notificationRepo.setUid(activeUid);
     messageRepo.setUid(activeUid);
 
-    // Tự động dọn dẹp các giao dịch từ tháng 6 trở về trước theo yêu cầu
-    await transactionRepo.checkAndPurgeOldTransactions();
+    // Khôi phục chuẩn xác số dư ví 1 lần duy nhất theo dữ liệu chuẩn
+    try {
+      await TransactionBalanceService().restoreCorrectUserBaselineOnce(targetUid: activeUid);
+    } catch (e) {
+      debugPrint('Main: Lỗi khi khởi tạo số dư ví: $e');
+    }
   }
 
   // ═══ 4. Khởi tạo Sync Service ═══
@@ -118,6 +131,7 @@ void main() async {
   Future.microtask(() async {
     try {
       await LocalNotificationService.instance.init();
+      await AppWidgetService.instance.init();
       MidnightSyncService.instance.init();
 
       if (currentUser != null) {
@@ -133,38 +147,27 @@ void main() async {
 
   runApp(
     ProviderScope(
-      child: provider.MultiProvider(
-        providers: [
-          provider.ChangeNotifierProvider(create: (_) => themeService),
-          provider.ChangeNotifierProvider(create: (_) => languageService),
-          provider.Provider<TransactionRepository>.value(value: transactionRepo),
-          provider.Provider<UserRepository>.value(value: userRepo),
-          provider.Provider<NotificationRepository>.value(value: notificationRepo),
-          provider.Provider<MessageRepository>.value(value: messageRepo),
-          provider.Provider<ConnectivityService>.value(value: connectivityService),
-          provider.Provider<SyncService>.value(value: syncService),
-        ],
-        child: MyApp(),
-      ),
+      child: MyApp(),
     ),
   );
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends ConsumerStatefulWidget {
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   MyApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  ConsumerState<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends ConsumerState<MyApp> {
   String? _groupIdToJoin;
 
   @override
   void initState() {
     super.initState();
+    AppWidgetService.instance.setNavigatorKey(widget.navigatorKey);
     _checkInitialRoute();
   }
 
@@ -190,8 +193,8 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    final themeService = provider.Provider.of<ThemeService>(context);
-    final languageService = provider.Provider.of<LanguageService>(context);
+    final themeService = ref.watch(themeServiceProvider);
+    final languageService = ref.watch(languageServiceProvider);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,

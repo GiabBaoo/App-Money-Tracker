@@ -11,13 +11,23 @@ class AiConfigService extends ChangeNotifier {
   static const _modelStorageKey = 'gemini_model_name';
   static const _silenceDurationKey = 'voice_silence_duration_ms';
   static const _responseDelayKey = 'mono_response_delay_ms';
+  static const _engineModeStorageKey = 'ai_engine_mode';
+  static const _localModelStorageKey = 'local_model_name';
+  static const _localEndpointStorageKey = 'local_ai_endpoint';
 
   final _secureStorage = const FlutterSecureStorage();
   String _apiKey = '';
-  static const String latestModel = 'gemini-2.0-flash';
+  static const String latestModel = 'gemini-3.6-flash';
   String _modelName = latestModel;
   int _voiceSilenceDurationMs = 2000; // Mặc định 2.0 giây
   int _responseDelayMs = 700; // Mặc định 700ms (Chuẩn / Cân bằng)
+  
+  // Cấu hình AI Local (Mặc định: Qwen 2.5 1.5B-Instruct On-Device/Local)
+  static const String defaultLocalModel = 'qwen2.5:1.5b';
+  static const String defaultLocalEndpoint = 'http://10.0.2.2:11434';
+  String _engineMode = 'local_qwen'; // 'local_qwen' hoặc 'cloud_gemini'
+  String _localModelName = defaultLocalModel;
+  String _localEndpoint = defaultLocalEndpoint;
   bool _isInitialized = false;
 
   String get apiKey => _apiKey;
@@ -25,6 +35,11 @@ class AiConfigService extends ChangeNotifier {
   int get voiceSilenceDurationMs => _voiceSilenceDurationMs;
   int get responseDelayMs => _responseDelayMs;
   bool get hasValidKey => _apiKey.trim().isNotEmpty;
+  String get engineMode => _engineMode;
+  bool get isLocalAi => _engineMode == 'local_qwen';
+  String get localModelName => _localModelName;
+  String get localEndpoint => _localEndpoint;
+  bool get isReady => isLocalAi || hasValidKey;
 
   /// Khởi tạo và đọc API key từ SecureStorage
   Future<void> init() async {
@@ -40,7 +55,13 @@ class AiConfigService extends ChangeNotifier {
       }
 
       final savedModel = await _secureStorage.read(key: _modelStorageKey);
-      if (savedModel != null && savedModel.isNotEmpty && !savedModel.contains('3.6')) {
+      // Tự động nâng cấp các model đã bị Google khai tử (2.0, 1.5, 2.5) hoặc model 3.8 đang dính 503 spike lên 3.6-flash ổn định
+      if (savedModel != null &&
+          savedModel.isNotEmpty &&
+          !savedModel.contains('2.0') &&
+          !savedModel.contains('1.5') &&
+          !savedModel.contains('2.5') &&
+          savedModel != 'gemini-3.8-flash') {
         _modelName = savedModel;
       } else {
         _modelName = latestModel;
@@ -70,11 +91,57 @@ class AiConfigService extends ChangeNotifier {
         }
       }
 
+      // Đọc cấu hình Local AI
+      final savedEngineMode = await _secureStorage.read(key: _engineModeStorageKey);
+      if (savedEngineMode != null && savedEngineMode.isNotEmpty) {
+        _engineMode = savedEngineMode;
+      } else {
+        _engineMode = 'local_qwen';
+        await _secureStorage.write(key: _engineModeStorageKey, value: 'local_qwen');
+      }
+
+      final savedLocalModel = await _secureStorage.read(key: _localModelStorageKey);
+      if (savedLocalModel != null && savedLocalModel.isNotEmpty) {
+        _localModelName = savedLocalModel;
+      } else {
+        _localModelName = defaultLocalModel;
+        await _secureStorage.write(key: _localModelStorageKey, value: defaultLocalModel);
+      }
+
+      final savedEndpoint = await _secureStorage.read(key: _localEndpointStorageKey);
+      if (savedEndpoint != null && savedEndpoint.isNotEmpty) {
+        _localEndpoint = savedEndpoint.trim();
+      } else {
+        _localEndpoint = defaultLocalEndpoint;
+        await _secureStorage.write(key: _localEndpointStorageKey, value: defaultLocalEndpoint);
+      }
+
       _isInitialized = true;
       notifyListeners();
     } catch (e) {
       debugPrint('AiConfigService init error: $e');
     }
+  }
+
+  /// Cập nhật chế độ Engine ('local_qwen' hoặc 'cloud_gemini')
+  Future<void> setEngineMode(String mode) async {
+    _engineMode = mode;
+    await _secureStorage.write(key: _engineModeStorageKey, value: _engineMode);
+    notifyListeners();
+  }
+
+  /// Cập nhật tên mô hình Local (VD: 'qwen2.5:1.5b' hoặc 'qwen2.5:0.5b')
+  Future<void> setLocalModelName(String model) async {
+    _localModelName = model;
+    await _secureStorage.write(key: _localModelStorageKey, value: _localModelName);
+    notifyListeners();
+  }
+
+  /// Cập nhật endpoint Local AI (VD: 'http://10.0.2.2:11434' hoặc 'http://127.0.0.1:11434')
+  Future<void> setLocalEndpoint(String endpoint) async {
+    _localEndpoint = endpoint.trim();
+    await _secureStorage.write(key: _localEndpointStorageKey, value: _localEndpoint);
+    notifyListeners();
   }
 
   /// Cập nhật độ trễ phản hồi của Mono (ms)

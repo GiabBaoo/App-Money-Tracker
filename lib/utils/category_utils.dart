@@ -7,6 +7,9 @@ class CategoryUtils {
       case 'Ăn uống': return Icons.restaurant_outlined;
       case 'Sức khỏe': return Icons.medical_services_outlined;
       case 'Di chuyển': return Icons.directions_car_outlined;
+      case 'Gửi xe':
+      case 'Tiền gửi xe':
+      case 'Đỗ xe': return Icons.local_parking_outlined;
       case 'Học tập': return Icons.menu_book_outlined;
       case 'Giải trí': return Icons.local_activity_outlined;
       case 'Du lịch': return Icons.flight_outlined;
@@ -57,6 +60,9 @@ class CategoryUtils {
       case 'Ăn uống': return const Color(0xFFF97316); // Orange
       case 'Sức khỏe': return const Color(0xFF14B8A6); // Teal
       case 'Di chuyển': return const Color(0xFFFACC15); // Yellow
+      case 'Gửi xe':
+      case 'Tiền gửi xe':
+      case 'Đỗ xe': return const Color(0xFF0284C7); // Sky Blue
       case 'Học tập': return const Color(0xFF3B82F6); // Blue
       case 'Giải trí': return const Color(0xFFDB2777); // Pink
       case 'Du lịch': return const Color(0xFF0EA5E9); // Light Blue

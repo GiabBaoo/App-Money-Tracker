@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && (
+        (resource != null && resource.data.uid == request.auth.uid) ||
+        (request.resource != null && request.resource.data.uid == request.auth.uid)
+      );
+    }
+
+    // 1. Hồ sơ người dùng
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // 2. Giao dịch thu/chi cá nhân
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    }
+
+    // 3. Ví tiền
+    match /wallets/{walletId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    }
+
+    // 4. Ngân sách
+    match /budgets/{budgetId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    }
+
+    // 5. Mục tiêu tiết kiệm
+    match /goals/{goalId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    }
+
+    // 6. Thông báo
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    }
+
+    // 7. Phiên thiết bị hoạt động
+    match /device_sessions/{sessionId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    }
+
+    // 8. Tùy chọn sinh trắc học
+    match /biometric_prefs/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // 9. Tin nhắn phản hồi / Hỗ trợ
+    match /messages/{messageId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    }
+
+    // 10. Chi tiêu nhóm (Group Expenses)
+    match /group_expenses/{groupId} {
+      allow read: if isAuthenticated() && (
+        resource.data.ownerId == request.auth.uid ||
+        request.auth.uid in resource.data.memberIds
+      );
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.ownerId == request.auth.uid ||
+        request.auth.uid in resource.data.memberIds
+      );
+      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+
+      // Sub-collections trong nhóm (transactions, settlements,...)
+      match /{subCollection}/{docId} {
+        allow read, write: if isAuthenticated() && (
+          get(/databases/$(database)/documents/group_expenses/$(groupId)).data.ownerId == request.auth.uid ||
+          request.auth.uid in get(/databases/$(database)/documents/group_expenses/$(groupId)).data.memberIds
+        );
+      }
+    }
+
+    // Mặc định chặn toàn bộ các collection không xác định khác
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

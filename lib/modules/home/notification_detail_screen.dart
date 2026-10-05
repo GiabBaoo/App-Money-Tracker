@@ -45,13 +45,16 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
 
   String _getTypeDisplayName(String? type) {
     if (type == null) return 'Thông báo';
+    if (type.contains('spike')) return '⚡ Chi tiêu đột biến';
     if (type.contains('spending_alert_high')) return '⚠️ Cảnh báo chi tiêu';
     if (type.contains('spending_alert_saved')) return '🎉 Tiết kiệm xuất sắc';
-    if (type.contains('spending_alert_stable')) return '📊 Báo cáo ổn định';
-    if (type.contains('spending')) return '📊 Báo cáo chi tiêu';
-    if (type.contains('smart_advice')) return '💡 Lời khuyên tài chính';
     if (type.contains('limit')) return '🚨 Cảnh báo hạn mức';
+    if (type.contains('low_balance')) return '⚠️ Cảnh báo số dư';
+    if (type.contains('offline_sync')) return '☁️ Đồng bộ dữ liệu';
+    if (type.contains('spending')) return '📊 Báo cáo chi tiêu';
+    if (type.contains('smart_advice') || type.contains('budget')) return '💡 Gợi ý ngân sách';
     if (type.contains('transaction')) return '💰 Giao dịch mới';
+    if (type.contains('daily_reminder')) return '📝 Nhắc nhở ghi chép';
     if (type.contains('group')) return '👥 Chi tiêu nhóm';
     if (type.contains('welcome')) return '🎉 Chào mừng';
     return 'Thông báo hệ thống';
@@ -59,9 +62,12 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
 
   Color _getTypeColor(String? type, Color primaryColor) {
     if (type == null) return primaryColor;
-    if (type.contains('high') || type.contains('limit')) return const Color(0xFFEF4444);
+    if (type.contains('spike')) return const Color(0xFFEA580C);
+    if (type.contains('high') || type.contains('limit') || type.contains('low_balance')) return const Color(0xFFEF4444);
+    if (type.contains('warning')) return const Color(0xFFF59E0B);
     if (type.contains('saved') || type.contains('transaction')) return const Color(0xFF10B981);
-    if (type.contains('advice')) return const Color(0xFFF59E0B);
+    if (type.contains('advice') || type.contains('budget')) return const Color(0xFFF59E0B);
+    if (type.contains('offline_sync')) return Colors.blueGrey;
     return primaryColor;
   }
 

@@ -28,6 +28,7 @@ class WalletRepository {
 
   String? _explicitUid;
   String? get _currentUid => _explicitUid ?? AuthService().currentUid;
+  String? get currentUid => _currentUid;
 
   WalletRepository._internal() {
     _loadAndEmitWallets();
@@ -342,7 +343,7 @@ class WalletRepository {
           await txn.insert('wallets', fw.copyWith(syncStatus: 'synced').toSqlite());
         } else {
           final local = WalletModel.fromSqlite(existing.first);
-          if (fw.updatedAt.isAfter(local.updatedAt) || local.syncStatus == 'synced') {
+          if (fw.updatedAt.isAfter(local.updatedAt)) {
             await txn.update(
               'wallets',
               fw.copyWith(syncStatus: 'synced').toSqlite(),

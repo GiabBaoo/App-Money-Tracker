@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
-import 'package:money_tracker_app/services/language_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:money_tracker_app/modules/home/home_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   Widget buildTestableWidget() {
-    return ChangeNotifierProvider<LanguageService>.value(
-      value: LanguageService.instance,
-      child: const MaterialApp(
+    return const ProviderScope(
+      child: MaterialApp(
         home: HomeScreen(),
       ),
     );

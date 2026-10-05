@@ -18,7 +18,9 @@ import '../../services/ai_financial_context_service.dart';
 class TransactionRepository {
   static final TransactionRepository _instance = TransactionRepository._internal();
   factory TransactionRepository() => _instance;
-  TransactionRepository._internal();
+  TransactionRepository._internal() {
+    _loadAndEmitTransactions();
+  }
 
   final DatabaseHelper _dbHelper = DatabaseHelper();
   final _uuid = const Uuid();
@@ -35,8 +37,12 @@ class TransactionRepository {
   String? get currentUid => _currentUid;
 
   void setUid(String uid) {
-    _explicitUid = uid;
-    _notifyTransactionsChanged();
+    if (_explicitUid != uid) {
+      _explicitUid = uid;
+      _cachedTransactions = [];
+      _notifyTransactionsChanged();
+      getAllTransactions();
+    }
   }
 
   // ════════ TRANSACTIONS CRUD ════════
@@ -158,20 +164,10 @@ class TransactionRepository {
     _notifyTransactionsChanged();
   }
 
-  static bool _hasPurgedBeforeSeptember2026 = false;
-
-  /// Tự động kiểm tra và dọn dẹp các giao dịch cũ từ tháng 8/2026 trở về trước
+  /// Tự động kiểm tra và dọn dẹp các giao dịch cũ - ĐÃ VÔ HIỆU HÓA để bảo toàn hóa đơn và số dư người dùng
   Future<void> checkAndPurgeOldTransactions() async {
-    if (_hasPurgedBeforeSeptember2026) return;
-    _hasPurgedBeforeSeptember2026 = true;
-    try {
-      final count = await purgeHistoryBeforeSeptember2026();
-      if (count > 0) {
-        debugPrint('TransactionRepository: Đã tự động dọn dẹp $count giao dịch từ tháng 8/2026 trở về trước.');
-      }
-    } catch (e) {
-      debugPrint('TransactionRepository: Lỗi khi dọn dẹp giao dịch cũ: $e');
-    }
+    // Đã vô hiệu hóa: Không tự động xóa giao dịch cũ nhằm đảm bảo tính toàn vẹn của lịch sử và số dư ví.
+    return;
   }
 
   /// Xóa sạch toàn bộ lịch sử thu/chi trước 01/09/2026 trên cả SQLite và Cloud Firestore
@@ -302,17 +298,23 @@ class TransactionRepository {
 
   // ════════ QUERIES ════════
 
-  /// Stream danh sách giao dịch — dùng broadcast StreamController
-  /// để nhiều StreamBuilder có thể lắng nghe đồng thời mà không crash.
-  Stream<List<TransactionModel>> getTransactionsStream({int? limit}) {
-    _loadAndEmitTransactions(limit: limit);
-    return _transactionsController.stream;
+  /// Stream danh sách giao dịch — phát dữ liệu từ cache và lắng nghe broadcast sự kiện thay đổi
+  Stream<List<TransactionModel>> getTransactionsStream({int? limit}) async* {
+    if (_cachedTransactions.isNotEmpty) {
+      yield latestTransactions;
+    }
+    yield await getAllTransactions(limit: limit);
+    await for (final _ in _changeStream.stream) {
+      yield await getAllTransactions(limit: limit);
+    }
   }
 
   /// Stream tổng số dư, tổng thu, tổng chi
-  Stream<({double balance, double totalIncome, double totalExpense})> getBalanceStream() {
-    _loadAndEmitBalance();
-    return _balanceController.stream;
+  Stream<({double balance, double totalIncome, double totalExpense})> getBalanceStream() async* {
+    yield await _calculateBalance();
+    await for (final _ in _changeStream.stream) {
+      yield await _calculateBalance();
+    }
   }
 
   /// Stream các giao dịch có ảnh (dùng cho Gallery)
@@ -325,17 +327,24 @@ class TransactionRepository {
   /// Tải danh sách giao dịch một lần (không stream)
   Future<List<TransactionModel>> getAllTransactions({int? limit}) async {
     final uid = _currentUid;
-    if (uid == null) return [];
     try {
       final db = await _dbHelper.database;
-      final results = await db.query(
-        'transactions',
-        where: 'uid = ?',
-        whereArgs: [uid],
-        orderBy: 'date DESC',
-        limit: limit,
-      );
-      return results.map((row) => TransactionModel.fromSqlite(row)).toList();
+      final results = (uid != null && uid.isNotEmpty)
+          ? await db.query(
+              'transactions',
+              where: 'uid = ?',
+              whereArgs: [uid],
+              orderBy: 'date DESC',
+              limit: limit,
+            )
+          : await db.query(
+              'transactions',
+              orderBy: 'date DESC',
+              limit: limit,
+            );
+      final list = results.map((row) => TransactionModel.fromSqlite(row)).toList();
+      _cachedTransactions = list;
+      return list;
     } catch (e) {
       debugPrint('TransactionRepository.getAllTransactions error: $e');
       return _cachedTransactions;
@@ -429,7 +438,6 @@ class TransactionRepository {
 
   Future<void> _loadAndEmitTransactions({int? limit}) async {
     try {
-      await checkAndPurgeOldTransactions();
       final list = await getAllTransactions(limit: limit);
       _cachedTransactions = list;
       if (!_transactionsController.isClosed) {
@@ -453,18 +461,21 @@ class TransactionRepository {
 
   Future<({double balance, double totalIncome, double totalExpense})> _calculateBalance() async {
     final uid = _currentUid;
-    if (uid == null) {
-      return (balance: 0.0, totalIncome: 0.0, totalExpense: 0.0);
-    }
     final db = await _dbHelper.database;
 
+    final whereClause = (uid != null && uid.isNotEmpty)
+        ? "uid = ? AND type = ? AND category NOT IN ('Chuyển tiền', 'Nhận chuyển tiền', 'Chuyển ví') AND (groupId IS NULL OR groupId NOT LIKE 'transfer_%')"
+        : "type = ? AND category NOT IN ('Chuyển tiền', 'Nhận chuyển tiền', 'Chuyển ví') AND (groupId IS NULL OR groupId NOT LIKE 'transfer_%')";
+    final incomeArgs = (uid != null && uid.isNotEmpty) ? [uid, 'income'] : ['income'];
+    final expenseArgs = (uid != null && uid.isNotEmpty) ? [uid, 'expense'] : ['expense'];
+
     final incomeResult = await db.rawQuery(
-      "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE uid = ? AND type = ? AND category NOT IN ('Chuyển tiền', 'Nhận chuyển tiền', 'Chuyển ví') AND (groupId IS NULL OR groupId NOT LIKE 'transfer_%')",
-      [uid, 'income'],
+      "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE $whereClause",
+      incomeArgs,
     );
     final expenseResult = await db.rawQuery(
-      "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE uid = ? AND type = ? AND category NOT IN ('Chuyển tiền', 'Nhận chuyển tiền', 'Chuyển ví') AND (groupId IS NULL OR groupId NOT LIKE 'transfer_%')",
-      [uid, 'expense'],
+      "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE $whereClause",
+      expenseArgs,
     );
 
     final totalIncome = (incomeResult.first['total'] as num?)?.toDouble() ?? 0.0;
@@ -482,6 +493,9 @@ class TransactionRepository {
   void _notifyTransactionsChanged() {
     _loadAndEmitTransactions();
     _loadAndEmitBalance();
+    if (!_changeStream.isClosed) {
+      _changeStream.add(null);
+    }
     AiFinancialContextService().invalidateCache();
   }
 
