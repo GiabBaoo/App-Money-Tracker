@@ -512,6 +512,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
       return Image.file(
         File(_newPickedPhoto!.path),
         fit: BoxFit.contain,
+        cacheWidth: 800,
       );
     }
     return ReceiptStorageService.buildReceiptImage(
@@ -616,6 +617,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
               // ══════ LUỒNG CUỘN THỐNG NHẤT KHÔNG BỊ CẮT GÓC ══════
               Expanded(
                 child: SingleChildScrollView(
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   physics: const BouncingScrollPhysics(),
                   child: Column(
                     children: [
@@ -741,7 +743,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                       Container(
                         width: double.infinity,
                         constraints: BoxConstraints(
-                          minHeight: MediaQuery.of(context).size.height,
+                          minHeight: MediaQuery.sizeOf(context).height,
                         ),
                         decoration: BoxDecoration(
                           color: Theme.of(context).scaffoldBackgroundColor,
@@ -1065,7 +1067,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
           ),
         ),
         bottomNavigationBar: Container(
-          padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.of(context).padding.bottom + 10),
+          padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.paddingOf(context).bottom + 10),
           decoration: BoxDecoration(
             color: Theme.of(context).scaffoldBackgroundColor,
             boxShadow: [

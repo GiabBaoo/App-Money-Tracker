@@ -25,6 +25,7 @@ import 'message_center_screen.dart';
 import 'appearance_screen.dart';
 import 'language_screen.dart';
 import 'notification_settings_screen.dart';
+import 'widget_showcase_screen.dart';
 import 'dart:async';
 import 'avatar_crop_screen.dart';
 import 'about_app_screen.dart';
@@ -758,6 +759,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 title: context.tr('notification_title'),
                                 subtitle: isVi ? 'Nhắc nhở ghi chép 20h hằng ngày' : 'Daily reminder at 8 PM',
                                 onTap: () => Navigator.push(context, PageTransitions.slideRight(const NotificationSettingsScreen())),
+                                showDivider: true,
+                              ),
+                              _buildMenuItem(
+                                context: context,
+                                icon: Icons.widgets_outlined,
+                                title: isVi ? 'Tiện ích Màn hình chính' : 'Home Screen Widgets',
+                                subtitle: isVi ? 'Xem trước demo & ghim Widget ra màn hình' : 'Preview demos & pin widgets',
+                                badgeText: isVi ? 'Mới' : 'New',
+                                badgeColor: const Color(0xFF2F7E79),
+                                onTap: () => Navigator.push(context, PageTransitions.slideRight(const WidgetShowcaseScreen())),
                                 showDivider: false,
                               ),
                             ],

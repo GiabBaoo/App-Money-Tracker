@@ -2,11 +2,13 @@
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="180dp"
     android:minHeight="110dp"
-    android:targetCellWidth="3"
+    android:targetCellWidth="4"
     android:targetCellHeight="2"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_money_tracker"
+    android:previewLayout="@layout/widget_money_tracker_preview"
+    android:previewImage="@drawable/preview_widget_money_tracker"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
-    android:description="@string/widget_description">
+    android:description="@string/widget_balance_description">
 </appwidget-provider>

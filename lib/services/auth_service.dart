@@ -17,6 +17,7 @@ import '../data/repositories/wallet_repository.dart';
 import '../data/repositories/user_repository.dart';
 import '../data/repositories/notification_repository.dart';
 import '../data/repositories/message_repository.dart';
+import 'app_widget_service.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -587,6 +588,7 @@ class AuthService {
     _isOfflineSession = false;
     _offlineUid = null;
     await _secureStorage.delete(key: 'last_auth_password');
+    unawaited(AppWidgetService.instance.clearOnLogout());
     await _auth.signOut();
   }
 

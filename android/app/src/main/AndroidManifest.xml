@@ -43,22 +43,83 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:scheme="moneytracker"
-                    android:host="add_transaction" />
+                <data android:scheme="moneytracker" />
             </intent-filter>
         </activity>
 
-        <!-- Android App Widget: Money Tracker Widget Provider -->
+        <!-- Widget Configuration Activity (Chọn ví hoặc mục tiêu) -->
+        <activity
+            android:name=".WidgetConfigActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault.Light.Dialog">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <!-- 1. Balance Widget Provider (Medium 4x2) -->
         <receiver
             android:name=".MoneyTrackerWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.example.money_tracker_app.ACTION_TOGGLE_PRIVACY" />
+                <action android:name="com.example.money_tracker_app.ACTION_AUTO_HIDE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_money_tracker_info" />
+        </receiver>
+
+        <!-- 1.1 Small Widget Provider (Small 2x2) -->
+        <receiver
+            android:name=".SmallWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.example.money_tracker_app.ACTION_TOGGLE_PRIVACY" />
+                <action android:name="com.example.money_tracker_app.ACTION_AUTO_HIDE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_small_info" />
+        </receiver>
+
+        <!-- 1.2 Large Financial Dashboard Widget Provider (Large 4x4) -->
+        <receiver
+            android:name=".LargeWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.example.money_tracker_app.ACTION_TOGGLE_PRIVACY" />
+                <action android:name="com.example.money_tracker_app.ACTION_AUTO_HIDE" />
+                <action android:name="com.example.money_tracker_app.ACTION_TOGGLE_PERIOD" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_large_info" />
+        </receiver>
+
+        <!-- 1.3 Budget & Progress Widget Provider (Medium 4x2 #2) -->
+        <receiver
+            android:name=".BudgetWidgetProvider"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_money_tracker_info" />
+                android:resource="@xml/widget_budget_info" />
+        </receiver>
+
+        <!-- Date Change Receiver: Reset 'Chi hôm nay' khi qua ngày mới -->
+        <receiver
+            android:name=".WidgetDateChangeReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
         </receiver>
 
         <!-- Scheduled Notification Receivers for background & idle delivery -->

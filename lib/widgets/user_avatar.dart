@@ -170,6 +170,8 @@ class UserAvatar extends StatelessWidget {
           width: size,
           height: size,
           fit: BoxFit.cover,
+          cacheWidth: (size * 2.5).round(),
+          cacheHeight: (size * 2.5).round(),
           errorBuilder: (context, error, stackTrace) => _buildInitialsFallback(size, gradient),
         ),
       );

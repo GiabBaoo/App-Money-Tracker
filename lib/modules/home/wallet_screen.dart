@@ -143,8 +143,8 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
   Widget build(BuildContext context) {
     super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final topPadding = MediaQuery.of(context).padding.top;
-    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final topPadding = MediaQuery.paddingOf(context).top;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
     final headerHeight = topPadding + 58.0;
 
     return Scaffold(
@@ -1857,7 +1857,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
 
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(dialogCtx).viewInsets.bottom,
+                bottom: MediaQuery.viewInsetsOf(dialogCtx).bottom,
                 left: 20,
                 right: 20,
                 top: 14,
@@ -2449,7 +2449,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
 
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                bottom: MediaQuery.viewInsetsOf(ctx).bottom,
                 left: 20,
                 right: 20,
                 top: 12,
@@ -3432,7 +3432,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
 
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                bottom: MediaQuery.viewInsetsOf(ctx).bottom,
                 left: 20,
                 right: 20,
                 top: 20,

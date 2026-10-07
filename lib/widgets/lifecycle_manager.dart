@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/biometric_service.dart';
 import '../services/midnight_sync_service.dart';
 import '../services/auth_service.dart';
+import '../services/app_widget_service.dart';
 import '../modules/auth/fingerprint_unlock_screen.dart';
 import '../utils/page_transitions.dart';
 
@@ -35,6 +37,7 @@ class _LifecycleManagerState extends State<LifecycleManager> with WidgetsBinding
         setState(() {
           _isLocked = false;
         });
+        AppWidgetService.instance.setNavigationReady(false);
       }
     });
   }
@@ -58,6 +61,7 @@ class _LifecycleManagerState extends State<LifecycleManager> with WidgetsBinding
     } else if (state == AppLifecycleState.resumed) {
       // Tự động kiểm tra và bù trừ sao lưu nửa đêm nếu người dùng vừa mở lại ứng dụng
       MidnightSyncService.instance.checkAndRunCatchUpSync();
+      unawaited(AppWidgetService.instance.syncAll());
 
       if (_wasInBackground &&
           !_isLocked &&
@@ -85,6 +89,7 @@ class _LifecycleManagerState extends State<LifecycleManager> with WidgetsBinding
 
   void _lockApp() {
     if (_isLocked) return;
+    AppWidgetService.instance.setNavigationReady(false);
     setState(() {
       _isLocked = true;
     });
@@ -108,6 +113,7 @@ class _LifecycleManagerState extends State<LifecycleManager> with WidgetsBinding
               });
             }
             nav.pop();
+            AppWidgetService.instance.setNavigationReady(true);
           },
         ),
       ),

@@ -118,6 +118,9 @@ class ReceiptStorageService {
           width: width,
           height: height,
           fit: fit,
+          cacheWidth: width != null ? (width * 2.5).round() : 800,
+          cacheHeight: height != null ? (height * 2.5).round() : null,
+          filterQuality: FilterQuality.low,
           errorBuilder: (context, error, stackTrace) =>
               _buildFallbackImage(photoUrl, fit, width, height, placeholder),
         );

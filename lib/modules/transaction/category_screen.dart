@@ -924,7 +924,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
           return Container(
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(modalCtx).viewInsets.bottom + 24,
+              bottom: MediaQuery.viewInsetsOf(modalCtx).bottom + 24,
               top: 24,
               left: 20,
               right: 20,

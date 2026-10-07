@@ -103,28 +103,20 @@ class BiometricService {
   }
 
   Future<bool> isFingerprintEnabledForUser(String uid) async {
-    // 1. Đọc từ local secure storage trước để phản hồi tức thì (< 5ms)
+    // 1. Sinh trắc học gắn liền với phần cứng của từng thiết bị cục bộ (Device-bound Security).
+    // Khi mới tải app lần đầu, local secure storage chưa có dữ liệu -> LUÔN MẶC ĐỊNH LÀ FALSE.
     try {
       final cached = await _secureStorage.read(key: 'fingerprint_enabled_$uid');
       if (cached != null) {
         return cached == 'true';
       }
-    } catch (_) {}
-
-    // 2. Nếu chưa có trong local cache, thử đọc từ Firestore với timeout 1.5 giây (không đơ app khi offline)
-    try {
-      final doc = await _firestore
-          .collection('biometric_prefs')
-          .doc(uid)
-          .get()
-          .timeout(const Duration(milliseconds: 1500));
-      final data = doc.data();
-      final enabled = (data?['fingerprintEnabled'] ?? false) == true;
+      
+      // Mặc định thiết bị mới: TẮT xác thực vân tay cho đến khi người dùng chủ động bật trong Cài đặt
       await _secureStorage.write(
         key: 'fingerprint_enabled_$uid',
-        value: enabled ? 'true' : 'false',
+        value: 'false',
       );
-      return enabled;
+      return false;
     } catch (_) {
       return false;
     }

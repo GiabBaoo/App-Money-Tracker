@@ -1,4 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#5E9387</color>
+    
+    <!-- Widget Light Mode Colors -->
+    <color name="widget_bg">#FFFFFF</color>
+    <color name="widget_bg_card">#F8FAFC</color>
+    <color name="widget_btn_bg">#2F7E79</color>
+    <color name="widget_btn_secondary_bg">#EEF2F6</color>
+    <color name="widget_text_primary">#0F172A</color>
+    <color name="widget_text_secondary">#64748B</color>
+    <color name="widget_text_accent">#2F7E79</color>
+    <color name="widget_progress_green">#10B981</color>
+    <color name="widget_progress_orange">#F59E0B</color>
+    <color name="widget_progress_red">#EF4444</color>
+    <color name="widget_progress_track">#E2E8F0</color>
+    <color name="widget_divider">#E2E8F0</color>
+
+    <!-- Vibrant Button Colors (Light) -->
+    <color name="widget_btn_expense_bg">#FEE2E2</color>
+    <color name="widget_btn_expense_text">#DC2626</color>
+    <color name="widget_btn_expense_border">#FECACA</color>
+    
+    <color name="widget_btn_income_bg">#D1FAE5</color>
+    <color name="widget_btn_income_text">#059669</color>
+    <color name="widget_btn_income_border">#A7F3D0</color>
+    
+    <color name="widget_btn_scan_bg">#EEF2FF</color>
+    <color name="widget_btn_scan_text">#4F46E5</color>
+    <color name="widget_btn_scan_border">#C7D2FE</color>
+
+    <color name="widget_btn_report_bg">#E0F2FE</color>
+    <color name="widget_btn_report_text">#0284C7</color>
+    <color name="widget_btn_report_border">#BAE6FD</color>
+
+    <color name="widget_badge_safe_bg">#ECFDF5</color>
+    <color name="widget_badge_safe_border">#A7F3D0</color>
 </resources>

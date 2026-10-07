@@ -2,4 +2,18 @@
 <resources>
     <string name="app_name">Mono</string>
     <string name="widget_description">Xem số dư ví và tạo nhanh chi tiêu</string>
+    <string name="widget_balance_description">Xem số dư ví, khoản chi hôm nay và thêm nhanh giao dịch</string>
+    <string name="widget_quick_actions_description">Thanh công cụ thêm nhanh: Chi, Thu, Giọng nói, Quét hoá đơn</string>
+    <string name="widget_budget_description">Theo dõi tiến độ top 3 danh mục ngân sách</string>
+    <string name="widget_goal_description">Theo dõi tiến độ mục tiêu tiết kiệm</string>
+    <string name="widget_overview_description">Bảng tổng quan tháng: Thu, Chi, Số dư và giao dịch gần nhất</string>
+    
+    <string name="widget_small_description">Số dư nhanh gọn và 2 nút thêm Chi/Thu (2x2)</string>
+    <string name="widget_large_description">Bảng điều khiển tài chính: Số dư, đồ thị 7 ngày, cơ cấu danh mục và thao tác nhanh (4x4)</string>
+    
+    <string name="widget_config_title">Cấu hình Widget</string>
+    <string name="widget_config_choose_wallet">Chọn ví hiển thị:</string>
+    <string name="widget_config_choose_goal">Chọn mục tiêu hiển thị:</string>
+    <string name="widget_config_all_wallets">Tất cả các ví (Tổng số dư)</string>
+    <string name="widget_config_save">Hoàn tất</string>
 </resources>

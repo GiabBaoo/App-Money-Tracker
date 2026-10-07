@@ -37,8 +37,13 @@ import '../../services/financial_advisor_service.dart';
 
 class AiAssistantScreen extends StatefulWidget {
   final String? initialVoiceText;
+  final String? initialAction;
 
-  const AiAssistantScreen({super.key, this.initialVoiceText});
+  const AiAssistantScreen({
+    super.key,
+    this.initialVoiceText,
+    this.initialAction,
+  });
 
   @override
   State<AiAssistantScreen> createState() => _AiAssistantScreenState();
@@ -187,6 +192,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     if (widget.initialVoiceText != null && widget.initialVoiceText!.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _handleSendMessage(widget.initialVoiceText!);
+      });
+    } else if (widget.initialAction == 'voice') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _toggleVoiceInput();
+      });
+    } else if (widget.initialAction == 'scanReceipt') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _handlePickImage(ImageSource.camera);
       });
     }
   }
