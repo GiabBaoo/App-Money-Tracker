@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/app_logo.dart';
-import 'package:flutter/services.dart'; // Thêm thư viện này để dùng FilteringTextInputFormatter chặn nhập chữ vào sđt
 import '../../widgets/animated_scale_button.dart';
 import '../../services/auth_service.dart';
+import '../../services/language_service.dart';
 import 'verify_email_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -73,47 +74,55 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // ==================== VALIDATION FUNCTIONS ====================
-  String? _validatePassword(String password) {
-    if (password.isEmpty) return 'Vui lòng nhập mật khẩu!';
-    if (password.length < 8) return 'Mật khẩu phải có tối thiểu 8 ký tự!';
+  String? _validatePassword(String password, bool isVi) {
+    if (password.isEmpty) return isVi ? 'Vui lòng nhập mật khẩu!' : 'Please enter password!';
+    if (password.length < 8) return isVi ? 'Mật khẩu phải có tối thiểu 8 ký tự!' : 'Password must be at least 8 characters!';
     if (!RegExp(r'[a-z]').hasMatch(password) ||
         !RegExp(r'[A-Z]').hasMatch(password)) {
-      return 'Mật khẩu phải có chữ cái (vừa chữ hoa vừa chữ thường)!';
+      return isVi
+          ? 'Mật khẩu phải có chữ cái (vừa chữ hoa vừa chữ thường)!'
+          : 'Password must have uppercase and lowercase letters!';
     }
-    if (!RegExp(r'[0-9]').hasMatch(password)) return 'Mật khẩu phải có chữ số!';
+    if (!RegExp(r'[0-9]').hasMatch(password)) return isVi ? 'Mật khẩu phải có chữ số!' : 'Password must have digits!';
     if (!RegExp(
       r"""[!@#$%^&*()_+\-=\[\]{};:'",./<>?\\|`~]""",
     ).hasMatch(password)) {
-      return 'Mật khẩu phải có ký tự đặc biệt (!@#\$%^&* ...)!';
+      return isVi
+          ? 'Mật khẩu phải có ký tự đặc biệt (!@#\$%^&* ...)!'
+          : 'Password must have special characters (!@#\$%^&*...)!';
     }
     return null;
   }
 
-  String? _validatePhone(String phone) {
-    if (phone.isEmpty) return 'Vui lòng nhập số điện thoại!';
-    if (phone.length != 10) return 'Số điện thoại phải có đúng 10 chữ số!';
+  String? _validatePhone(String phone, bool isVi) {
+    if (phone.isEmpty) return isVi ? 'Vui lòng nhập số điện thoại!' : 'Please enter phone number!';
+    if (phone.length != 10) return isVi ? 'Số điện thoại phải có đúng 10 chữ số!' : 'Phone number must have exactly 10 digits!';
     if (!RegExp(r'^[0-9]+$').hasMatch(phone)) {
-      return 'Số điện thoại chỉ chứa chữ số!';
+      return isVi ? 'Số điện thoại chỉ chứa chữ số!' : 'Phone number can only contain digits!';
     }
 
-    // Check nhanh đầu số hợp lệ của VN (03, 05, 07, 08, 09) và phải đủ 10 số
     if (!RegExp(r'^(03|05|07|08|09)[0-9]{8}$').hasMatch(phone)) {
-      return 'Số điện thoại không có thực (phải bắt đầu bằng 03, 05, 07, 08 hoặc 09)!';
+      return isVi
+          ? 'Số điện thoại không có thực (phải bắt đầu bằng 03, 05, 07, 08 hoặc 09)!'
+          : 'Invalid phone number (must start with 03, 05, 07, 08 or 09)!';
     }
     return null;
   }
 
-  String? _validateDateOfBirth(DateTime? date) {
-    if (date == null) return 'Vui lòng chọn ngày sinh!';
+  String? _validateDateOfBirth(DateTime? date, bool isVi) {
+    if (date == null) return isVi ? 'Vui lòng chọn ngày sinh!' : 'Please select date of birth!';
     final now = DateTime.now();
     final minAge = DateTime(now.year - 6, now.month, now.day);
     if (date.isAfter(minAge)) {
-      return 'Bạn phải tối thiểu 6 tuổi để đăng ký tài khoản!';
+      return isVi
+          ? 'Bạn phải tối thiểu 6 tuổi để đăng ký tài khoản!'
+          : 'You must be at least 6 years old to register an account!';
     }
     return null;
   }
 
   void _updatePasswordValidation(String password) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     setState(() {
       _hasMinLength = password.length >= 8;
       _hasLetter = RegExp(r'[a-zA-Z]').hasMatch(password);
@@ -122,22 +131,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
         r"""[!@#$%^&*()_+\-=\[\]{};:'",./<>?\\|`~]""",
       ).hasMatch(password);
       _hasUpperCase = RegExp(r'[A-Z]').hasMatch(password);
-      _passwordError = _validatePassword(password);
+      _passwordError = _validatePassword(password, isVi);
     });
   }
 
   void _onNameChanged(String value) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     setState(() {
-      _nameError = value.trim().isEmpty ? 'Vui lòng nhập tên!' : null;
+      _nameError = value.trim().isEmpty ? (isVi ? 'Vui lòng nhập tên!' : 'Please enter your name!') : null;
     });
   }
 
   void _onEmailChanged(String value) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     setState(() {
       if (value.trim().isEmpty) {
-        _emailError = 'Vui lòng nhập email!';
+        _emailError = isVi ? 'Vui lòng nhập email!' : 'Please enter email!';
       } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(value)) {
-        _emailError = 'Email không hợp lệ!';
+        _emailError = isVi ? 'Email không hợp lệ!' : 'Invalid email!';
       } else {
         _emailError = null;
       }
@@ -145,17 +156,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _onPhoneChanged(String value) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     setState(() {
-      _phoneError = _validatePhone(value);
+      _phoneError = _validatePhone(value, isVi);
     });
   }
 
   void _onConfirmPasswordChanged(String value) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     setState(() {
       if (value.isEmpty) {
-        _confirmPasswordError = 'Vui lòng nhập lại mật khẩu!';
+        _confirmPasswordError = isVi ? 'Vui lòng nhập lại mật khẩu!' : 'Please re-enter password!';
       } else if (value != _passwordController.text) {
-        _confirmPasswordError = 'Mật khẩu nhập lại không khớp!';
+        _confirmPasswordError = isVi ? 'Mật khẩu nhập lại không khớp!' : 'Passwords do not match!';
       } else {
         _confirmPasswordError = null;
       }
@@ -163,12 +176,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _onDateChanged() {
+    final isVi = LanguageScope.of(context).isVietnamese;
     setState(() {
-      _dateError = _validateDateOfBirth(_selectedDate);
+      _dateError = _validateDateOfBirth(_selectedDate, isVi);
     });
   }
 
   Future<void> _handleRegister() async {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final phone = _phoneController.text.trim();
@@ -177,29 +192,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     // Validate Name
     if (name.isEmpty) {
-      _showSnackBar('Vui lòng nhập tên!', isError: true);
+      _showSnackBar(isVi ? 'Vui lòng nhập tên!' : 'Please enter your name!', isError: true);
       return;
     }
 
     // Validate Email
     if (email.isEmpty) {
-      _showSnackBar('Vui lòng nhập email!', isError: true);
+      _showSnackBar(isVi ? 'Vui lòng nhập email!' : 'Please enter your email!', isError: true);
       return;
     }
     if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(email)) {
-      _showSnackBar('Email không hợp lệ!', isError: true);
+      _showSnackBar(isVi ? 'Email không hợp lệ!' : 'Invalid email address!', isError: true);
       return;
     }
 
     // Validate Phone
-    final phoneError = _validatePhone(phone);
+    final phoneError = _validatePhone(phone, isVi);
     if (phoneError != null) {
       _showSnackBar(phoneError, isError: true);
       return;
     }
 
     // Validate Password
-    final passwordError = _validatePassword(password);
+    final passwordError = _validatePassword(password, isVi);
     if (passwordError != null) {
       _showSnackBar(passwordError, isError: true);
       return;
@@ -207,12 +222,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     // Validate Confirm Password
     if (password != confirmPassword) {
-      _showSnackBar('Mật khẩu nhập lại không khớp!', isError: true);
+      _showSnackBar(isVi ? 'Mật khẩu nhập lại không khớp!' : 'Passwords do not match!', isError: true);
       return;
     }
 
     // Validate Date of Birth
-    final dateError = _validateDateOfBirth(_selectedDate);
+    final dateError = _validateDateOfBirth(_selectedDate, isVi);
     if (dateError != null) {
       _showSnackBar(dateError, isError: true);
       return;
@@ -258,6 +273,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
@@ -323,7 +339,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Đăng ký tài khoản',
+                        isVi ? 'Đăng ký tài khoản' : 'Create Account',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -332,7 +348,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Vui lòng điền đầy đủ thông tin bên dưới.',
+                        isVi
+                            ? 'Vui lòng điền đầy đủ thông tin bên dưới.'
+                            : 'Please fill in the information below.',
                         style: TextStyle(
                           color: isDark ? Colors.white70 : const Color(0xFF666666),
                           fontSize: 14,
@@ -340,30 +358,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       const SizedBox(height: 30),
-                      _buildLabel('Tên người dùng', error: _nameError),
+                      _buildLabel(isVi ? 'Tên người dùng' : 'Full Name', error: _nameError),
                       _buildTextField(
                         controller: _nameController,
-                        hintText: 'Nhập tên người dùng',
+                        hintText: isVi ? 'Nhập tên người dùng' : 'Enter your name',
                         onChanged: _onNameChanged,
                         errorText: _nameError,
                       ),
                       _buildLabel('Email', error: _emailError),
                       _buildTextField(
                         controller: _emailController,
-                        hintText: 'Nhập email',
+                        hintText: isVi ? 'Nhập email' : 'Enter your email',
                         keyboardType: TextInputType.emailAddress,
                         onChanged: _onEmailChanged,
                         errorText: _emailError,
                       ),
-                      _buildLabel('Số điện thoại', error: _phoneError),
+                      _buildLabel(isVi ? 'Số điện thoại' : 'Phone Number', error: _phoneError),
                       _buildTextField(
                         controller: _phoneController,
-                        hintText: 'Nhập số điện thoại',
+                        hintText: isVi ? 'Nhập số điện thoại' : 'Enter your phone number',
                         keyboardType: TextInputType.phone,
                         onChanged: _onPhoneChanged,
                         errorText: _phoneError,
                         maxLength: 10,
-                        // Thêm dòng dưới đây để chặn nhập chữ vào ô số điện thoại
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
                         ],
@@ -375,12 +392,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildLabel('Giới tính'),
+                                _buildLabel(isVi ? 'Giới tính' : 'Gender'),
                                 Row(
                                   children: [
-                                    _buildGenderOption('Nam'),
+                                    _buildGenderOption('Nam', isVi ? 'Nam' : 'Male'),
                                     const SizedBox(width: 8),
-                                    _buildGenderOption('Nữ'),
+                                    _buildGenderOption('Nữ', isVi ? 'Nữ' : 'Female'),
                                   ],
                                 ),
                               ],
@@ -391,7 +408,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildLabel('Ngày sinh', error: _dateError),
+                                _buildLabel(isVi ? 'Ngày sinh' : 'Date of Birth', error: _dateError),
                                 InkWell(
                                   onTap: _pickDate,
                                   child: Container(
@@ -452,10 +469,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      _buildLabel('Mật khẩu', error: _passwordError),
+                      _buildLabel(isVi ? 'Mật khẩu' : 'Password', error: _passwordError),
                       _buildTextField(
                         controller: _passwordController,
-                        hintText: 'Nhập mật khẩu',
+                        hintText: isVi ? 'Nhập mật khẩu' : 'Enter password',
                         isObscure: _obscurePassword,
                         onChanged: _updatePasswordValidation,
                         errorText: _passwordError,
@@ -481,19 +498,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: Column(
                           children: [
                             _buildPasswordRule(
-                              'Tối thiểu 8 ký tự',
+                              isVi ? 'Tối thiểu 8 ký tự' : 'At least 8 characters',
                               _hasMinLength,
                             ),
                             _buildPasswordRule(
-                              'Bao gồm chữ cái và chữ số',
+                              isVi ? 'Bao gồm chữ cái và chữ số' : 'Includes letters and numbers',
                               _hasLetter && _hasNumber,
                             ),
                             _buildPasswordRule(
-                              'Bao gồm ký tự đặc biệt (!@#\$%^&*)',
+                              isVi ? 'Bao gồm ký tự đặc biệt (!@#\$%^&*)' : 'Includes special characters (!@#\$%^&*)',
                               _hasSpecialChar,
                             ),
                             _buildPasswordRule(
-                              'Bao gồm chữ cái in hoa',
+                              isVi ? 'Bao gồm chữ cái in hoa' : 'Includes uppercase letter',
                               _hasUpperCase,
                             ),
                           ],
@@ -501,12 +518,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 16),
                       _buildLabel(
-                        'Nhập lại mật khẩu',
+                        isVi ? 'Nhập lại mật khẩu' : 'Confirm Password',
                         error: _confirmPasswordError,
                       ),
                       _buildTextField(
                         controller: _confirmPasswordController,
-                        hintText: 'Nhập lại mật khẩu',
+                        hintText: isVi ? 'Nhập lại mật khẩu' : 'Re-enter password',
                         isObscure: _obscureConfirmPassword,
                         onChanged: _onConfirmPasswordChanged,
                         errorText: _confirmPasswordError,
@@ -562,9 +579,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       strokeWidth: 2.5,
                                     ),
                                   )
-                                : const Text(
-                                    'Đăng ký',
-                                    style: TextStyle(
+                                : Text(
+                                    isVi ? 'Đăng ký' : 'Sign Up',
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 18,
                                       fontWeight: FontWeight.w600,
@@ -669,14 +686,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildGenderOption(String gender) {
+  Widget _buildGenderOption(String genderKey, String displayLabel) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    bool s = _selectedGender == gender;
+    bool s = _selectedGender == genderKey;
     return Expanded(
       child: AnimatedScaleButton(
         onTap: () {
           HapticFeedback.lightImpact();
-          setState(() => _selectedGender = gender);
+          setState(() => _selectedGender = genderKey);
         },
         child: Container(
           height: 50,
@@ -699,7 +716,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(width: 6),
                 ],
                 Text(
-                  gender,
+                  displayLabel,
                   style: TextStyle(
                     color: s
                         ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))

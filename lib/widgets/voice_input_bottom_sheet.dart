@@ -44,14 +44,23 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
   bool _dailyLimitEnabled = false;
   double _todayExpenseTotal = 0;
 
-  final List<String> _quickSuggestions = [
-    'Bún bò 35k',
-    'Cà phê 30 ngàn',
-    'Đổ xăng 50k',
-    'Đặt hạn mức ngày 200k',
-    'Hạn mức 500k',
-    'Tiền lương 15 triệu',
-  ];
+  List<String> _getQuickSuggestions(bool isVi) => isVi
+      ? [
+          'Bún bò 35k',
+          'Cà phê 30 ngàn',
+          'Đổ xăng 50k',
+          'Đặt hạn mức ngày 200k',
+          'Hạn mức 500k',
+          'Tiền lương 15 triệu',
+        ]
+      : [
+          r'Lunch $15',
+          r'Coffee $4',
+          r'Gasoline $25',
+          r'Daily limit $50',
+          r'Salary $3000',
+          r'Groceries $40',
+        ];
 
   @override
   void initState() {
@@ -112,7 +121,8 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
         if (mounted) {
           setState(() {
             _isInitializing = false;
-            _errorMessage = 'Cần cấp quyền Microphone để sử dụng giọng nói.\nVào Cài đặt > Ứng dụng > mono > Quyền > Micro';
+            final isVi = LanguageService.instance.isVietnamese;
+        _errorMessage = isVi ? 'Cần cấp quyền Microphone để sử dụng giọng nói.\nVào Cài đặt > Ứng dụng > mono > Quyền > Micro' : 'Microphone permission required for voice input.\nGo to Settings > Apps > Mono > Permissions > Microphone';
           });
         }
         return;
@@ -126,7 +136,8 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
     if (!isReady) {
       setState(() {
         _isInitializing = false;
-        _errorMessage = _voiceService.lastError ?? 'Không thể khởi tạo nhận diện giọng nói.\nThiết bị có thể chưa hỗ trợ tính năng này.';
+        final isVi = LanguageService.instance.isVietnamese;
+        _errorMessage = _voiceService.lastError ?? (isVi ? 'Không thể khởi tạo nhận diện giọng nói.\nThiết bị có thể chưa hỗ trợ tính năng này.' : 'Could not initialize speech recognition.\nDevice may not support this feature.');
       });
       return;
     }
@@ -302,6 +313,8 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVi = LanguageScope.of(context).isVietnamese;
+    final quickSuggestions = _getQuickSuggestions(isVi);
     final isListening = _isListening;
     final hasParsedData = _parsedData != null;
     final isLimit = _parsedData?['isDailyLimit'] == true;
@@ -375,13 +388,13 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                     const SizedBox(width: 8),
                     Text(
                       hasError
-                          ? 'Lỗi'
+                          ? context.tr('error')
                           : (_isInitializing 
-                              ? 'Đang khởi tạo...'
+                              ? context.tr('loading')
                               : (_isAiProcessing
-                                  ? '✨ Trợ lý đang xử lý...'
+                                  ? context.tr('ai_processing')
                                   : (isListening 
-                                      ? '✨ Đang lắng nghe...' 
+                                      ? context.tr('voice_listening') 
                                       : context.tr('voice_input_title')))),
                       style: TextStyle(
                         color: textColor,
@@ -409,12 +422,12 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                     color: const Color(0xFF438883).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.auto_awesome, size: 15, color: Color(0xFF438883)),
-                      SizedBox(width: 4),
-                      Text('Chat AI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF438883))),
+                      const Icon(Icons.auto_awesome, size: 15, color: Color(0xFF438883)),
+                      const SizedBox(width: 4),
+                      Text(context.tr('chat_ai'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF438883))),
                     ],
                   ),
                 ),
@@ -448,7 +461,7 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                       OutlinedButton.icon(
                         onPressed: _initAndStartListening,
                         icon: Icon(Icons.refresh, color: isDark ? Colors.white70 : const Color(0xFF334155), size: 18),
-                        label: Text('Thử lại', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF334155))),
+                        label: Text(context.tr('retry_speak'), style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF334155))),
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(color: isDark ? Colors.white.withValues(alpha: 0.2) : const Color(0xFFCBD5E1)),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -465,7 +478,7 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                           }
                         },
                         icon: const Icon(Icons.settings_suggest_rounded, size: 18),
-                        label: const Text('Cài đặt giọng nói'),
+                        label: Text(context.tr('voice_settings')),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF438883),
                           foregroundColor: Colors.white,
@@ -486,7 +499,7 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
             const CircularProgressIndicator(color: Color(0xFF10B981), strokeWidth: 2.5),
             const SizedBox(height: 10),
             Text(
-              'Đang khởi tạo nhận diện giọng nói...',
+              context.tr('voice_initializing'),
               style: TextStyle(color: subtextColor, fontSize: 13),
             ),
             const SizedBox(height: 16),
@@ -571,9 +584,9 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
               child: Text(
                 _recognizedText.isEmpty
                     ? (_isAiProcessing
-                        ? '✨ Đang chuyển giọng nói thành văn bản qua AI...'
+                        ? context.tr('voice_ai_converting')
                         : (_isListening
-                            ? (_voiceService.isAiVoiceMode ? 'Đang lắng nghe... Bấm mic khi nói xong' : context.tr('voice_listening'))
+                            ? (_voiceService.isAiVoiceMode ? context.tr('voice_listening_ai') : context.tr('voice_listening'))
                             : context.tr('voice_tap_to_speak')))
                     : _recognizedText,
                 textAlign: TextAlign.center,
@@ -615,7 +628,7 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
                   child: Row(
-                    children: _quickSuggestions.map((suggestion) {
+                    children: quickSuggestions.map((suggestion) {
                       return Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: InkWell(
@@ -737,7 +750,7 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'Lý do: ${_parsedData!['description']}',
+                        '${isVi ? 'Lý do' : 'Note'}: ${_parsedData!['description']}',
                         style: TextStyle(
                           color: isDark ? Colors.white.withValues(alpha: 0.85) : const Color(0xFF334155),
                           fontSize: 12.5,
@@ -785,8 +798,8 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                               Expanded(
                                 child: Text(
                                   isOver
-                                      ? 'Cảnh báo: Khoản chi này sẽ vượt hạn mức ngày ${CurrencyUtils.formatCurrency(diff)}!'
-                                      : 'Hạn mức ngày: Còn lại ${CurrencyUtils.formatCurrency(_dailyLimit! - projectedTotal)}.',
+                                      ? (isVi ? 'Cảnh báo: Khoản chi này sẽ vượt hạn mức ngày ${CurrencyUtils.formatCurrency(diff)}!' : 'Warning: Expense exceeds daily limit by ${CurrencyUtils.formatCurrency(diff)}!')
+                                      : (isVi ? 'Hạn mức ngày: Còn lại ${CurrencyUtils.formatCurrency(_dailyLimit! - projectedTotal)}.' : 'Daily limit: Remaining ${CurrencyUtils.formatCurrency(_dailyLimit! - projectedTotal)}.'),
                                   style: TextStyle(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w600,
@@ -828,7 +841,7 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  label: Text(hasParsedData && !_isListening ? 'Nói lại' : context.tr('cancel')),
+                  label: Text(hasParsedData && !_isListening ? context.tr('retry_speak') : context.tr('cancel')),
                 ),
               ),
               const SizedBox(width: 14),
@@ -861,10 +874,10 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                   ),
                   child: Text(
                     hasError
-                        ? 'Thử lại'
+                        ? (isVi ? 'Thử lại' : 'Retry')
                         : (_isListening
-                            ? 'Dừng nói'
-                            : (isLimit ? context.tr('save') : 'Kiểm tra & Xác nhận')),
+                            ? (isVi ? 'Dừng nói' : 'Stop')
+                            : (isLimit ? context.tr('save') : (isVi ? 'Kiểm tra & Xác nhận' : 'Confirm & Save'))),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
                 ),

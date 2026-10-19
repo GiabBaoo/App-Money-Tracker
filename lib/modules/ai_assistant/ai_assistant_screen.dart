@@ -1,3 +1,4 @@
+import '../../services/language_service.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -121,6 +122,7 @@ class TransferCardData {
 
 
 class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProviderStateMixin {
+  bool get isVi => LanguageService.instance.isVietnamese;
   final GeminiAiService _aiService = GeminiAiService();
   final VoiceService _voiceService = VoiceService();
   final AiConfigService _aiConfigService = AiConfigService();
@@ -152,21 +154,38 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
   double _soundLevel = 0.0;
   List<WalletModel> _wallets = [];
 
-  final List<String> _quickSuggestions = [
-    '📈 Xu hướng chi tiêu tuần này',
-    '🏆 Điểm sức khỏe tài chính',
-    '🔄 Chi phí cố định định kỳ',
-    '📊 Mỗi ngày được tiêu bao nhiêu?',
-    '🔮 Dự báo số dư cuối tháng',
-    '☕ Phân tích tiêu vặt thủng ví',
-    '👥 Chia 600k cho 4 người',
-    '🎯 Tiết kiệm 20 triệu mua xe',
-    '🔍 Hôm nay đã tiêu bao nhiêu?',
-    '💡 Tip tiết kiệm cho tôi',
-    '🍜 Ăn bún bò 35k ví MoMo',
-    '💰 Số tiền còn lại nên làm gì?',
-    '🌙 Chuyển giao diện tối',
-  ];
+  List<String> get _quickSuggestions => _getQuickSuggestions(isVi);
+  List<String> _getQuickSuggestions(bool isVi) => isVi
+      ? [
+          '📈 Xu hướng chi tiêu tuần này',
+          '🏆 Điểm sức khỏe tài chính',
+          '🔄 Chi phí cố định định kỳ',
+          '📊 Mỗi ngày được tiêu bao nhiêu?',
+          '🔮 Dự báo số dư cuối tháng',
+          '☕ Phân tích tiêu vặt thủng ví',
+          '👥 Chia 600k cho 4 người',
+          '🎯 Tiết kiệm 20 triệu mua xe',
+          '🔍 Hôm nay đã tiêu bao nhiêu?',
+          '💡 Tip tiết kiệm cho tôi',
+          '🍜 Ăn bún bò 35k ví MoMo',
+          '💰 Số tiền còn lại nên làm gì?',
+          '🌙 Chuyển giao diện tối',
+        ]
+      : [
+          '📈 Spending trends this week',
+          '🏆 Financial health score',
+          '🔄 Recurring fixed costs',
+          '📊 Daily safe to spend',
+          '🔮 End-of-month balance forecast',
+          '☕ Latte factor analysis',
+          '👥 Split \$60 for 4 people',
+          '🎯 Save \$2000 for motorcycle',
+          '🔍 How much did I spend today?',
+          '💡 Saving tips for me',
+          '🍜 Lunch \$15 Cash',
+          '💰 What to do with savings?',
+          '🌙 Switch to dark mode',
+        ];
 
   @override
   void initState() {
@@ -184,8 +203,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
         }
       }
     });
+    final isVi = LanguageService.instance.isVietnamese;
     _messages.add(_ChatMessage(
-      text: 'Xin chào! Tôi là Trợ lý Mono 🤖.\nToàn bộ dữ liệu thu chi & số dư của bạn được bảo mật tuyệt đối 100% trên thiết bị!\n\nBạn có thể:\n• Nhập/nói tự nhiên (VD: "Ăn bún bò 35k ví MoMo", "Hôm nay được cộng thêm 36đ")\n• Điều khiển app & báo cáo: "Bật chế độ tối", "Báo cáo chi tiêu tháng này"\n• Chụp hóa đơn/biên lai để bóc tách tự động!',
+      text: isVi
+          ? 'Xin chào! Tôi là Trợ lý Mono 🤖.\nToàn bộ dữ liệu thu chi & số dư của bạn được bảo mật tuyệt đối 100% trên thiết bị!\n\nBạn có thể:\n• Nhập/nói tự nhiên (VD: "Ăn bún bò 35k ví MoMo", "Hôm nay được cộng thêm 36đ")\n• Điều khiển app & báo cáo: "Bật chế độ tối", "Báo cáo chi tiêu tháng này"\n• Chụp hóa đơn/biên lai để bóc tách tự động!'
+          : 'Hello! I am Mono Assistant 🤖.\nAll your income, expense and balance data is 100% securely kept on your device!\n\nYou can:\n• Type or speak naturally (e.g. "Lunch \$15 Cash", "Salary \$3000")\n• App commands & reports: "Turn on dark mode", "Monthly spending report"\n• Scan receipts for automatic parsing!',
       isUser: false,
     ));
 
@@ -283,7 +305,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
       final text = data?.text?.trim() ?? '';
       if (text.isEmpty) {
         if (mounted) {
-          TopToast.show(context, 'Bộ nhớ tạm (Clipboard) trống!');
+          final isVi = LanguageService.instance.isVietnamese;
+      TopToast.show(context, isVi ? 'Bộ nhớ tạm (Clipboard) trống!' : 'Clipboard is empty!');
         }
         return;
       }
@@ -291,7 +314,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
       _handleSendMessage(text);
     } catch (e) {
       if (mounted) {
-        TopToast.show(context, 'Không thể đọc bộ nhớ tạm: $e', isError: true);
+        final isVi = LanguageService.instance.isVietnamese;
+      TopToast.show(context, isVi ? 'Không thể đọc bộ nhớ tạm: $e' : 'Cannot read clipboard: $e', isError: true);
       }
     }
   }
@@ -539,7 +563,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
       } else {
         setState(() {
           _messages.add(_ChatMessage(
-            text: result.errorMessage ?? 'Trợ lý Mono hiện chưa thể xử lý yêu cầu lúc này. Bạn vui lòng thử lại nhé! ✨',
+            text: result.errorMessage ?? (LanguageService.instance.isVietnamese ? 'Trợ lý Mono hiện chưa thể xử lý yêu cầu lúc này. Bạn vui lòng thử lại nhé! ✨' : 'Mono Assistant cannot process your request right now. Please try again! ✨'),
             isUser: false,
             isError: true,
           ));
@@ -705,7 +729,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
 
   Future<void> _handlePickImage(ImageSource source) async {
     if (!_isOnline) {
-      TopToast.show(context, 'Cần kết nối mạng để quét ảnh hóa đơn!', isError: true);
+      final isVi = LanguageService.instance.isVietnamese;
+    TopToast.show(context, isVi ? 'Cần kết nối mạng để quét ảnh hóa đơn!' : 'Internet connection required to scan receipts!', isError: true);
       return;
     }
     try {
@@ -724,7 +749,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
       setState(() {
         _messages.add(_ChatMessage(
           imagePath: file.path,
-          text: '📷 Hóa đơn đính kèm',
+          text: LanguageService.instance.isVietnamese ? '📷 Hóa đơn đính kèm' : '📷 Receipt attached',
           isUser: true,
         ));
         _isLoading = true;
@@ -761,7 +786,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             if (firstTx != null) {
               final store = firstTx.description.isNotEmpty ? firstTx.description : 'hóa đơn';
               final amt = CurrencyUtils.formatCurrency(firstTx.amount);
-              promptText = 'Đã quét hóa đơn từ $store: $amt.\nBạn vui lòng xác nhận ví thanh toán và ngày ghi nhận bên dưới nhé!';
+              final isVi = LanguageService.instance.isVietnamese;
+        promptText = isVi ? 'Đã quét hóa đơn từ $store: $amt.\nBạn vui lòng xác nhận ví thanh toán và ngày ghi nhận bên dưới nhé!' : 'Scanned receipt from $store: $amt.\nPlease confirm payment wallet and date below!';
             }
 
             _messages.add(_ChatMessage(
@@ -775,7 +801,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             // để người dùng chủ động chọn ví và xác nhận ngày trước khi lưu!
           } else {
             _messages.add(_ChatMessage(
-              text: result.errorMessage ?? 'Không thể đọc được hóa đơn này. Bạn có thể chụp lại rõ hơn không?',
+              text: result.errorMessage ?? (LanguageService.instance.isVietnamese ? 'Không thể đọc được hóa đơn này. Bạn có thể chụp lại rõ hơn không?' : 'Could not read this receipt. Could you take a clearer photo?'),
               isUser: false,
             ));
           }
@@ -795,7 +821,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        TopToast.show(context, 'Lỗi chọn ảnh: $e');
+        TopToast.show(context, '${context.tr('error')}: $e');
       }
     }
   }
@@ -819,7 +845,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
   void _copyToClipboard(String text) {
     Clipboard.setData(ClipboardData(text: text));
     HapticFeedback.lightImpact();
-    TopToast.show(context, 'Đã sao chép nội dung tin nhắn!');
+    TopToast.show(context, LanguageService.instance.isVietnamese ? 'Đã sao chép nội dung tin nhắn!' : 'Message copied to clipboard!');
   }
 
   void _confirmClearChat() {
@@ -829,21 +855,21 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
       builder: (ctx) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF1E2928) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.delete_sweep_outlined, color: Colors.redAccent),
-            SizedBox(width: 8),
-            Text('Làm mới cuộc trò chuyện?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent),
+            const SizedBox(width: 8),
+            Text(LanguageScope.of(context).isVietnamese ? 'Làm mới cuộc trò chuyện?' : 'Reset conversation?', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ],
         ),
-        content: const Text(
-          'Tất cả tin nhắn trong phiên chat này sẽ được xóa để bắt đầu phiên mới.',
-          style: TextStyle(fontSize: 13.5),
+        content: Text(
+          LanguageScope.of(context).isVietnamese ? 'Tất cả tin nhắn trong phiên chat này sẽ được xóa để bắt đầu phiên mới.' : 'All messages in this chat session will be cleared to start anew.',
+          style: const TextStyle(fontSize: 13.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Hủy', style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),
+            child: Text(context.tr('cancel'), style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -856,14 +882,17 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
               _aiService.clearHistory();
               setState(() {
                 _messages.clear();
+                final isVi = LanguageService.instance.isVietnamese;
                 _messages.add(_ChatMessage(
-                  text: 'Xin chào! Tôi là Trợ lý Mono 🤖.\nToàn bộ dữ liệu thu chi & số dư của bạn được bảo mật tuyệt đối 100% trên thiết bị!\n\nBạn có thể:\n• Nhập/nói tự nhiên (VD: "Ăn bún bò 35k ví MoMo", "Hôm nay được cộng thêm 36đ")\n• Điều khiển app & báo cáo: "Bật chế độ tối", "Báo cáo chi tiêu tháng này"\n• Chụp hóa đơn/biên lai để bóc tách tự động!',
+                  text: isVi
+                      ? 'Xin chào! Tôi là Trợ lý Mono 🤖.\nToàn bộ dữ liệu thu chi & số dư của bạn được bảo mật tuyệt đối 100% trên thiết bị!\n\nBạn có thể:\n• Nhập/nói tự nhiên (VD: "Ăn bún bò 35k ví MoMo", "Hôm nay được cộng thêm 36đ")\n• Điều khiển app & báo cáo: "Bật chế độ tối", "Báo cáo chi tiêu tháng này"\n• Chụp hóa đơn/biên lai để bóc tách tự động!'
+                      : 'Hello! I am Mono Assistant 🤖.\nAll your income, expense and balance data is 100% securely kept on your device!\n\nYou can:\n• Type or speak naturally (e.g. "Lunch \$15 Cash", "Salary \$3000")\n• App commands & reports: "Turn on dark mode", "Monthly spending report"\n• Scan receipts for automatic parsing!',
                   isUser: false,
                 ));
               });
-              TopToast.show(context, 'Đã làm mới cuộc trò chuyện!');
+              TopToast.show(context, LanguageService.instance.isVietnamese ? 'Đã làm mới cuộc trò chuyện!' : 'Conversation reset successfully!');
             },
-            child: const Text('Xóa ngay'),
+            child: Text(LanguageScope.of(context).isVietnamese ? 'Xóa ngay' : 'Clear Now'),
           ),
         ],
       ),
@@ -1003,15 +1032,19 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             ),
             const SizedBox(height: 16),
             Text(
-              isMicDenied ? 'Cần cấp quyền Microphone' : 'Thiết lập Giọng nói trên thiết bị',
+              isMicDenied ? (LanguageScope.of(context).isVietnamese ? 'Cần cấp quyền Microphone' : 'Microphone Permission Required') : (LanguageScope.of(context).isVietnamese ? 'Thiết lập Giọng nói trên thiết bị' : 'Device Voice Settings'),
               style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 10),
             Text(
               isMicDenied
-                  ? 'Ứng dụng cần quyền ghi âm micro để nhận lệnh bằng giọng nói. Vui lòng bấm bên dưới để cấp quyền trong Cài đặt.'
-                  : 'Để nhận diện tiếng Việt mượt mà và chính xác nhất, vui lòng đảm bảo Google được chọn làm Dịch vụ nhận dạng giọng nói mặc định trên thiết bị.',
+                  ? (LanguageScope.of(context).isVietnamese
+                      ? 'Ứng dụng cần quyền ghi âm micro để nhận lệnh bằng giọng nói. Vui lòng bấm bên dưới để cấp quyền trong Cài đặt.'
+                      : 'Microphone permission is required to process voice commands. Please tap below to grant permission in Settings.')
+                  : (LanguageScope.of(context).isVietnamese
+                      ? 'Để nhận diện giọng nói mượt mà và chính xác nhất, vui lòng đảm bảo Google được chọn làm Dịch vụ nhận dạng giọng nói mặc định trên thiết bị.'
+                      : 'To ensure accurate speech recognition, please ensure default voice recognition service is configured on your device.'),
               style: TextStyle(
                 fontSize: 13.5,
                 color: isDark ? Colors.white70 : Colors.black87,
@@ -1029,7 +1062,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
-                    child: const Text('Đóng'),
+                    child: Text(context.tr('close')),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1049,7 +1082,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
-                    child: Text(isMicDenied ? 'Cấp quyền Micro' : 'Mở Cài đặt'),
+                    child: Text(isMicDenied ? (LanguageScope.of(context).isVietnamese ? 'Cấp quyền Micro' : 'Grant Permission') : (LanguageScope.of(context).isVietnamese ? 'Mở Cài đặt' : 'Open Settings')),
                   ),
                 ),
               ],
@@ -1198,7 +1231,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
 
     if (mounted) {
       HapticFeedback.heavyImpact();
-      TopToast.show(context, '🎉 Đã lưu thành công $count giao dịch vào sổ thu chi!');
+      final isVi = LanguageService.instance.isVietnamese;
+      TopToast.show(context, isVi ? '🎉 Đã lưu thành công $count giao dịch vào sổ thu chi!' : '🎉 Successfully saved $count transactions!');
 
       final usedWalletId = savedTxs.isNotEmpty ? savedTxs.first.walletId : '';
       final usedWalletMatches = _wallets.where((w) => w.id == usedWalletId);
@@ -1228,7 +1262,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
         }
 
         _messages.add(_ChatMessage(
-          text: '✅ Đã lưu thành công $count giao dịch vào sổ thu chi của bạn.\n• Ví trừ tiền: $usedWalletName\n• Ngày ghi nhận: $dateRecorded',
+          text: LanguageService.instance.isVietnamese ? '✅ Đã lưu thành công $count giao dịch vào sổ thu chi của bạn.\n• Ví trừ tiền: $usedWalletName\n• Ngày ghi nhận: $dateRecorded' : '✅ Successfully saved $count transactions.\n• Deduct wallet: $usedWalletName\n• Date: $dateRecorded',
           isUser: false,
           savedTransactions: savedTxs,
         ));
@@ -1323,7 +1357,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
               ),
             ),
             Text(
-              tx.type == 'income' ? 'Chọn ví nhận tiền' : 'Chọn ví trừ tiền',
+              tx.type == 'income' ? (LanguageScope.of(context).isVietnamese ? 'Chọn ví nhận tiền' : 'Select deposit wallet') : (LanguageScope.of(context).isVietnamese ? 'Chọn ví trừ tiền' : 'Select deduct wallet'),
               style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
@@ -1335,7 +1369,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                   child: Icon(IconData(w.iconCode, fontFamily: 'MaterialIcons'), color: Color(w.colorValue)),
                 ),
                 title: Text(w.name, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-                subtitle: Text('Số dư: ${CurrencyUtils.formatCurrency(w.balance)}'),
+                subtitle: Text('${LanguageScope.of(context).isVietnamese ? 'Số dư' : 'Balance'}: ${CurrencyUtils.formatCurrency(w.balance)}'),
                 trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: Color(0xFF438883)) : null,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 onTap: () {
@@ -1421,9 +1455,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Xác nhận ghi nhận hóa đơn',
-                                style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
+                              Text(
+                                LanguageScope.of(context).isVietnamese ? 'Xác nhận ghi nhận hóa đơn' : 'Confirm Receipt Transactions',
+                                style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
                               ),
                               Text(
                                 '${firstTx.description.isNotEmpty ? firstTx.description : firstTx.category} • ${CurrencyUtils.formatCurrency(firstTx.amount)}',
@@ -1448,7 +1482,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                         const Icon(Icons.event_available_rounded, size: 16, color: Color(0xFF438883)),
                         const SizedBox(width: 6),
                         Text(
-                          '1. Bạn muốn ghi nhận vào ngày nào?',
+                          LanguageScope.of(context).isVietnamese ? '1. Bạn muốn ghi nhận vào ngày nào?' : '1. Which date to record?',
                           style: TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w700,
@@ -1496,7 +1530,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                                 children: [
                                   Row(
                                     children: [
-                                      const Text('⚡ Hôm nay', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                      Text(LanguageScope.of(context).isVietnamese ? '⚡ Hôm nay' : '⚡ Today', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                       const SizedBox(width: 6),
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
@@ -1504,7 +1538,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                                           color: Colors.green.withValues(alpha: 0.15),
                                           borderRadius: BorderRadius.circular(6),
                                         ),
-                                        child: const Text('Khuyên dùng', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                                        child: Text(LanguageScope.of(context).isVietnamese ? 'Khuyên dùng' : 'Recommended', style: const TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
                                       ),
                                     ],
                                   ),
@@ -1555,7 +1589,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('🧾 Ngày in trên hóa đơn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Text(LanguageScope.of(context).isVietnamese ? '🧾 Ngày in trên hóa đơn' : '🧾 Date on receipt', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                   Text(
                                     CurrencyUtils.formatDate(originalReceiptDate),
                                     style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white60 : Colors.grey.shade600),
@@ -1609,10 +1643,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('🗓️ Chọn ngày khác trên lịch...', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Text(LanguageScope.of(context).isVietnamese ? '🗓️ Chọn ngày khác trên lịch...' : '🗓️ Pick another date...', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                   if (dateChoice == 'custom')
                                     Text(
-                                      'Đã chọn: ${CurrencyUtils.formatDate(selectedDate)}',
+                                      '${LanguageScope.of(context).isVietnamese ? 'Đã chọn' : 'Selected'}: ${CurrencyUtils.formatDate(selectedDate)}',
                                       style: const TextStyle(fontSize: 11.5, color: Color(0xFF438883), fontWeight: FontWeight.bold),
                                     ),
                                 ],
@@ -1632,7 +1666,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                         const Icon(Icons.account_balance_wallet_rounded, size: 16, color: Color(0xFF438883)),
                         const SizedBox(width: 6),
                         Text(
-                          '2. Trừ vào ví nào?',
+                          LanguageScope.of(context).isVietnamese ? '2. Trừ vào ví nào?' : '2. Deduct from which wallet?',
                           style: TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w700,
@@ -1723,14 +1757,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                           ],
                         ),
                         alignment: Alignment.center,
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-                            SizedBox(width: 8),
+                            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
                             Text(
-                              'Xác nhận lưu vào sổ thu chi',
-                              style: TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.bold),
+                              LanguageScope.of(context).isVietnamese ? 'Xác nhận lưu vào sổ thu chi' : 'Confirm Save Transactions',
+                              style: const TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -1838,14 +1872,16 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Trợ lý Mono',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16.5),
+                Text(
+                  isVi ? 'Trợ lý Mono' : 'Mono Assistant',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16.5),
                 ),
                 Text(
                   _aiConfigService.isLocalAi
-                      ? 'Local AI • Sẵn sàng ⚡'
-                      : (_isOnline ? 'Trực tuyến • Sẵn sàng' : 'Ngoại tuyến thông minh ⚡'),
+                      ? (isVi ? 'Local AI • Sẵn sàng ⚡' : 'Local AI • Ready ⚡')
+                      : (_isOnline
+                          ? (isVi ? 'Trực tuyến • Sẵn sàng' : 'Online • Ready')
+                          : (isVi ? 'Ngoại tuyến thông minh ⚡' : 'Smart Offline ⚡')),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 11.5,
@@ -1920,8 +1956,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                         const SizedBox(width: 6),
                         Text(
                           _aiConfigService.isLocalAi
-                              ? '⚡ Local AI (On-Device): Hoạt động ngoại tuyến 100%'
-                              : '⚡ Ngoại tuyến: Sẵn sàng ghi thu chi & xem báo cáo',
+                              ? (isVi ? '⚡ Local AI (On-Device): Hoạt động ngoại tuyến 100%' : '⚡ Local AI (On-Device): 100% Offline')
+                              : (isVi ? '⚡ Ngoại tuyến: Sẵn sàng ghi thu chi & xem báo cáo' : '⚡ Offline: Ready to log transactions & view reports'),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 11,
@@ -2465,7 +2501,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                                       ),
                                       const SizedBox(width: 3),
                                       Text(
-                                        'Sao chép',
+                                        isVi ? 'Sao chép' : 'Copy',
                                         style: TextStyle(
                                           fontSize: 10.5,
                                           color: isDark ? Colors.white60 : Colors.black45,
@@ -2487,7 +2523,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                                 context,
                                 photoLocalPath: msg.imagePath!,
                                 photoUrl: '',
-                                title: 'Hóa đơn gửi trợ lý Mono',
+                                title: isVi ? 'Hóa đơn gửi trợ lý Mono' : 'Receipt sent to Mono',
                               );
                             },
                             child: ClipRRect(
@@ -2538,14 +2574,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                                   width: 1.1,
                                 ),
                               ),
-                              child: const Row(
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.refresh_rounded, size: 14, color: Color(0xFF438883)),
-                                  SizedBox(width: 4),
+                                  const Icon(Icons.refresh_rounded, size: 14, color: Color(0xFF438883)),
+                                  const SizedBox(width: 4),
                                   Text(
-                                    'Thử lại ngay',
-                                    style: TextStyle(
+                                    isVi ? 'Thử lại ngay' : 'Retry Now',
+                                    style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                       color: Color(0xFF438883),
@@ -2749,14 +2785,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                               ),
                             ],
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.edit_note_rounded, color: Colors.white, size: 18),
-                              SizedBox(width: 8),
+                              const Icon(Icons.edit_note_rounded, color: Colors.white, size: 18),
+                              const SizedBox(width: 8),
                               Text(
-                                'Mở form điền sẵn để nhập số tiền',
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                isVi ? 'Mở form điền sẵn để nhập số tiền' : 'Open form to enter amount',
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                               ),
                             ],
                           ),
@@ -2766,7 +2802,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                       // Dải nút chọn ví nhanh 1 chạm (Quick Wallet Action Chips)
                       if (_wallets.isNotEmpty) ...[
                         Text(
-                          msg.transactions!.first.type == 'income' ? 'Ví nhận tiền:' : 'Ví trừ tiền:',
+                          msg.transactions!.first.type == 'income' ? (isVi ? 'Ví nhận tiền:' : 'Deposit wallet:') : (isVi ? 'Ví trừ tiền:' : 'Deduct wallet:'),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -2808,7 +2844,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
-                                      wallet.name,
+                                      context.trWallet(wallet.name),
                                       style: TextStyle(
                                         fontSize: 11.5,
                                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
@@ -2847,14 +2883,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                                     ),
                                   ],
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
-                                    SizedBox(width: 8),
+                                    const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+                                    const SizedBox(width: 8),
                                     Text(
-                                      'Lưu vào sổ thu chi',
-                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                      isVi ? 'Lưu vào sổ thu chi' : 'Save to transactions',
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                                     ),
                                   ],
                                 ),
@@ -2875,7 +2911,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                                   Icon(Icons.edit_rounded, color: isDark ? Colors.white70 : Colors.black87, size: 16),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Sửa',
+                                    context.tr('edit'),
                                     style: TextStyle(
                                       color: isDark ? Colors.white70 : Colors.black87,
                                       fontSize: 12.5,
@@ -2924,12 +2960,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                               ),
                             ],
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.visibility_rounded, color: Colors.white, size: 16),
-                              SizedBox(width: 6),
-                              Text('Xem giao dịch vừa lưu', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                              const Icon(Icons.visibility_rounded, color: Colors.white, size: 16),
+                              const SizedBox(width: 6),
+                              Text(isVi ? 'Xem giao dịch vừa lưu' : 'View saved transaction', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),
@@ -2954,7 +2990,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                           children: [
                             Icon(Icons.receipt_long_rounded, color: isDark ? Colors.white70 : Colors.black87, size: 16),
                             const SizedBox(width: 6),
-                            Text('Sổ thu chi', style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 12, fontWeight: FontWeight.bold)),
+                            Text(context.tr('all_transactions'), style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 12, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
@@ -3036,9 +3072,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                           Text(' • ', style: TextStyle(color: isDark ? Colors.white38 : Colors.grey)),
                           const Icon(Icons.receipt_long_rounded, size: 13, color: Color(0xFF438883)),
                           const SizedBox(width: 2),
-                          const Text(
-                            'Có hóa đơn',
-                            style: TextStyle(fontSize: 11, color: Color(0xFF438883), fontWeight: FontWeight.w600),
+                          Text(
+                            isVi ? 'Có hóa đơn' : 'Receipt',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF438883), fontWeight: FontWeight.w600),
                           ),
                         ],
                       ],
@@ -3048,7 +3084,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
               ),
               Text(
                 needsAmount
-                    ? 'Chưa có số tiền'
+                    ? (isVi ? 'Chưa có số tiền' : 'No amount')
                     : '${isExpense ? '-' : '+'}${CurrencyUtils.formatCurrency(tx.amount)}',
                 style: TextStyle(
                   fontSize: 14.5,
@@ -3085,7 +3121,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                       Icon(Icons.account_balance_wallet_outlined, size: 13, color: isDark ? const Color(0xFF5EEAD4) : primaryColor),
                       const SizedBox(width: 4),
                       Text(
-                        tx.walletName.isNotEmpty ? tx.walletName : 'Chọn ví',
+                        tx.walletName.isNotEmpty ? context.trWallet(tx.walletName) : (isVi ? 'Chọn ví' : 'Select wallet'),
                         style: TextStyle(
                           fontSize: 11.5,
                           color: isDark ? const Color(0xFF5EEAD4) : primaryColor,
@@ -3195,7 +3231,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                       const SizedBox(width: 5),
                       Expanded(
                         child: Text(
-                          'Hóa đơn ghi ngày ${CurrencyUtils.formatDate(tx.date)} (năm cũ)',
+                          isVi ? 'Hóa đơn ghi ngày ${CurrencyUtils.formatDate(tx.date)} (năm cũ)' : 'Receipt dated ${CurrencyUtils.formatDate(tx.date)} (past year)',
                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.amber),
                         ),
                       ),
@@ -3216,7 +3252,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                             ),
                             alignment: Alignment.center,
                             child: Text(
-                              '⚡ Ghi vào Hôm nay',
+                              isVi ? '⚡ Ghi vào Hôm nay' : '⚡ Record as Today',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -3241,7 +3277,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                             ),
                             alignment: Alignment.center,
                             child: Text(
-                              '📅 Giữ ngày hóa đơn',
+                              isVi ? '📅 Giữ ngày hóa đơn' : '📅 Keep Receipt Date',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -3289,7 +3325,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Báo cáo: ${report.periodText}',
+                  isVi ? 'Báo cáo: ${report.periodText}' : 'Report: ${report.periodText}',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
               ),
@@ -3300,7 +3336,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  isSurplus ? 'Thặng dư' : 'Thâm hụt',
+                  isSurplus ? (isVi ? 'Thặng dư' : 'Surplus') : (isVi ? 'Thâm hụt' : 'Deficit'),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -3314,10 +3350,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildReportStat('Tổng thu', report.totalIncome, const Color(0xFF10B981)),
-              _buildReportStat('Tổng chi', report.totalExpense, const Color(0xFFEF4444)),
+              _buildReportStat(isVi ? 'Tổng thu' : 'Total Income', report.totalIncome, const Color(0xFF10B981)),
+              _buildReportStat(isVi ? 'Tổng chi' : 'Total Expense', report.totalExpense, const Color(0xFFEF4444)),
               _buildReportStat(
-                isSurplus ? 'Còn dư' : 'Thâm hụt',
+                isSurplus ? (isVi ? 'Còn dư' : 'Surplus') : (isVi ? 'Thâm hụt' : 'Deficit'),
                 net.abs(),
                 isSurplus ? const Color(0xFF10B981) : const Color(0xFFEF4444),
               ),
@@ -3362,7 +3398,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
               ),
               child: Center(
                 child: Text(
-                  'Xem biểu đồ chi tiết ➔',
+                  isVi ? 'Xem biểu đồ chi tiết ➔' : 'View detailed charts ➔',
                   style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 12.5),
                 ),
               ),
@@ -3433,17 +3469,17 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildAllocationPill('50% Thiết yếu', advice.needs50, const Color(0xFF3B82F6), isDark),
-                _buildAllocationPill('30% Linh hoạt', advice.wants30, const Color(0xFFF59E0B), isDark),
-                _buildAllocationPill('20% Tiết kiệm', advice.savings20, const Color(0xFF10B981), isDark),
+                _buildAllocationPill(isVi ? '50% Thiết yếu' : '50% Needs', advice.needs50, const Color(0xFF3B82F6), isDark),
+                _buildAllocationPill(isVi ? '30% Linh hoạt' : '30% Wants', advice.wants30, const Color(0xFFF59E0B), isDark),
+                _buildAllocationPill(isVi ? '20% Tiết kiệm' : '20% Savings', advice.savings20, const Color(0xFF10B981), isDark),
               ],
             ),
           ],
           if (advice.actionableTips.isNotEmpty) ...[
             const SizedBox(height: 12),
-            const Text(
-              'Gợi ý hành động từ Mono:',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
+            Text(
+              isVi ? 'Gợi ý hành động từ Mono:' : 'Action advice from Mono:',
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
             ),
             const SizedBox(height: 6),
             ...advice.actionableTips.map((tip) => Padding(
@@ -3481,9 +3517,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                 color: const Color(0xFF10B981).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Center(
+              child: Center(
                 child: Text(
-                  'Quản lý Ngân Sách & Mục Tiêu ➔',
+                  isVi ? 'Quản lý Ngân Sách & Mục Tiêu ➔' : 'Manage Budgets & Goals ➔',
                   style: TextStyle(
                     color: Color(0xFF059669),
                     fontWeight: FontWeight.bold,
@@ -3549,13 +3585,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Bảo mật & Quyền riêng tư',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.redAccent),
+                Text(
+                  isVi ? 'Bảo mật & Quyền riêng tư' : 'Security & Privacy',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.redAccent),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Vui lòng tự thao tác để bảo vệ thông tin cá nhân',
+                  isVi ? 'Vui lòng tự thao tác để bảo vệ thông tin cá nhân' : 'Please navigate manually to protect personal info',
                   style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white70 : Colors.black87),
                 ),
               ],
@@ -3565,7 +3601,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             onPressed: () {
               Navigator.push(context, PageTransitions.slideRight(const SecurityScreen()));
             },
-            child: const Text('Đi tới', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+            child: Text(isVi ? 'Đi tới' : 'Go', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
           ),
         ],
       ),
@@ -3608,7 +3644,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             ),
             const SizedBox(width: 10),
             Text(
-              'Mở $title',
+              isVi ? 'Mở $title' : 'Open $title',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -3749,7 +3785,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Đang nghe tiếng Việt... (VD: "Ăn bún bò 35k ví MoMo")',
+                                isVi ? 'Đang nghe tiếng Việt... (VD: "Ăn bún bò 35k ví MoMo")' : 'Listening... (e.g. "Lunch \$15 Cash")',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontStyle: FontStyle.italic,
@@ -3781,8 +3817,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                     const SizedBox(width: 8),
                     Text(
                       hasText
-                          ? 'Đang lắng nghe... Dừng nói hoặc nhấn "Gửi ngay"'
-                          : 'Hãy nói yêu cầu của bạn bằng tiếng Việt...',
+                          ? (isVi ? 'Đang lắng nghe... Dừng nói hoặc nhấn "Gửi ngay"' : 'Listening... Stop speaking or tap "Send Now"')
+                          : (isVi ? 'Hãy nói yêu cầu của bạn bằng tiếng Việt...' : 'Speak your request...'),
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark ? Colors.white70 : Colors.black54,
@@ -3802,9 +3838,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                     child: OutlinedButton.icon(
                       onPressed: _cancelVoiceRecording,
                       icon: const Icon(Icons.close_rounded, size: 18, color: Colors.redAccent),
-                      label: const Text(
-                        'Hủy',
-                        style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13.5),
+                      label: Text(
+                        context.tr('cancel'),
+                        style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13.5),
                       ),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.35)),
@@ -3833,14 +3869,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                             ),
                           ],
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 19),
-                            SizedBox(width: 6),
+                            const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 19),
+                            const SizedBox(width: 6),
                             Text(
-                              'Gửi ngay',
-                              style: TextStyle(
+                              isVi ? 'Gửi ngay' : 'Send Now',
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
@@ -3889,7 +3925,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Rảnh tay: Tự động lưu sau $_autoSaveCountdown giây...',
+                      isVi ? 'Rảnh tay: Tự động lưu sau $_autoSaveCountdown giây...' : 'Hands-free: Auto-saving in $_autoSaveCountdown s...',
                       style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -3906,7 +3942,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: const Text('Lưu ngay', style: TextStyle(color: Colors.amberAccent, fontWeight: FontWeight.bold, fontSize: 12)),
+                    child: Text(isVi ? 'Lưu ngay' : 'Save now', style: const TextStyle(color: Colors.amberAccent, fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
                   const SizedBox(width: 6),
                   GestureDetector(
@@ -3953,21 +3989,21 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                     children: [
                       _buildInputActionButton(
                         icon: Icons.camera_alt_outlined,
-                        tooltip: 'Chụp ảnh hóa đơn',
+                        tooltip: isVi ? 'Chụp ảnh hóa đơn' : 'Scan receipt photo',
                         onTap: () => _handlePickImage(ImageSource.camera),
                         isDark: isDark,
                         primaryColor: primaryColor,
                       ),
                       _buildInputActionButton(
                         icon: Icons.image_outlined,
-                        tooltip: 'Chọn ảnh hóa đơn từ thư viện',
+                        tooltip: isVi ? 'Chọn ảnh hóa đơn từ thư viện' : 'Choose receipt from gallery',
                         onTap: () => _handlePickImage(ImageSource.gallery),
                         isDark: isDark,
                         primaryColor: primaryColor,
                       ),
                       _buildInputActionButton(
                         icon: Icons.content_paste_rounded,
-                        tooltip: 'Dán SMS / Biến động số dư',
+                        tooltip: isVi ? 'Dán SMS / Biến động số dư' : 'Paste SMS / Bank alert',
                         onTap: _handlePasteFromClipboard,
                         isDark: isDark,
                         primaryColor: primaryColor,
@@ -3992,7 +4028,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                         fontSize: 14.5,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Hỏi Mono hoặc nhập lệnh...',
+                        hintText: isVi ? 'Hỏi Mono hoặc nhập lệnh...' : 'Ask Mono or enter command...',
                         hintStyle: TextStyle(
                           fontSize: 13.5,
                           color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade400,
@@ -4173,7 +4209,7 @@ class _MonoThinkingBubbleState extends State<_MonoThinkingBubble> with SingleTic
   late AnimationController _animController;
   Timer? _textTimer1;
   Timer? _textTimer2;
-  String _thinkingText = 'Mono đang tính toán...';
+  String _thinkingText = LanguageService.instance.isVietnamese ? 'Mono đang tính toán...' : 'Mono is calculating...';
 
   @override
   void initState() {
@@ -4183,35 +4219,36 @@ class _MonoThinkingBubbleState extends State<_MonoThinkingBubble> with SingleTic
       duration: const Duration(milliseconds: 1200),
     )..repeat();
 
+    final isVi = LanguageService.instance.isVietnamese;
     if (widget.isScanningReceipt) {
-      _thinkingText = '🔍 Đang tối ưu hóa hình ảnh hóa đơn...';
+      _thinkingText = isVi ? '🔍 Đang tối ưu hóa hình ảnh hóa đơn...' : '🔍 Optimizing receipt image...';
       _textTimer1 = Timer(const Duration(milliseconds: 800), () {
         if (mounted) {
           setState(() {
-            _thinkingText = '⚡ Đang nhận diện chữ & số tiền (OCR Vision)...';
+            _thinkingText = isVi ? '⚡ Đang nhận diện chữ & số tiền (OCR Vision)...' : '⚡ Recognizing text & amount (OCR Vision)...';
           });
         }
       });
       _textTimer2 = Timer(const Duration(milliseconds: 2200), () {
         if (mounted) {
           setState(() {
-            _thinkingText = '✨ Đang phân loại danh mục & đối chiếu ví...';
+            _thinkingText = isVi ? '✨ Đang phân loại danh mục & đối chiếu ví...' : '✨ Categorizing & matching wallet...';
           });
         }
       });
     } else {
-      _thinkingText = 'Mono đang phân tích yêu cầu...';
+      _thinkingText = isVi ? 'Mono đang phân tích yêu cầu...' : 'Mono is analyzing request...';
       _textTimer1 = Timer(const Duration(milliseconds: 800), () {
         if (mounted) {
           setState(() {
-            _thinkingText = 'Mono đang xử lý dữ liệu tài chính...';
+            _thinkingText = isVi ? 'Mono đang xử lý dữ liệu tài chính...' : 'Mono is processing financial data...';
           });
         }
       });
       _textTimer2 = Timer(const Duration(milliseconds: 2000), () {
         if (mounted) {
           setState(() {
-            _thinkingText = 'Đang hoàn tất câu trả lời tối ưu...';
+            _thinkingText = isVi ? 'Đang hoàn tất câu trả lời tối ưu...' : 'Finalizing best response...';
           });
         }
       });
@@ -4385,14 +4422,14 @@ class _LaserScannerOverlayState extends State<_LaserScannerOverlay> with SingleT
                         width: 1,
                       ),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.document_scanner_rounded, size: 12, color: Color(0xFF2DD4BF)),
-                        SizedBox(width: 4),
+                        const Icon(Icons.document_scanner_rounded, size: 12, color: Color(0xFF2DD4BF)),
+                        const SizedBox(width: 4),
                         Text(
-                          'Quét OCR...',
-                          style: TextStyle(
+                          LanguageService.instance.isVietnamese ? 'Quét OCR...' : 'Scanning OCR...',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,

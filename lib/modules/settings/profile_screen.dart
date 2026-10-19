@@ -338,8 +338,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // 1. Phản hồi tức thì trên giao diện (Zero-latency) bằng file đã căn chỉnh
       await UserRepository().updateAvatar(croppedFile.path, localPath: croppedFile.path);
 
+      final isVi = LanguageService.instance.isVietnamese;
       if (mounted) {
-        TopToast.show(context, 'Cập nhật ảnh đại diện thành công!');
+        TopToast.show(
+          context,
+          isVi ? 'Cập nhật ảnh đại diện thành công!' : 'Profile picture updated successfully!',
+        );
       }
 
       // 2. Tải ngầm lên Firebase Storage & đồng bộ Firestore mà không làm gián đoạn người dùng
@@ -353,7 +357,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }());
     } catch (e) {
       if (mounted) {
-        TopToast.show(context, 'Lỗi cập nhật ảnh: $e', isError: true);
+        final isVi = LanguageService.instance.isVietnamese;
+        TopToast.show(
+          context,
+          isVi ? 'Lỗi cập nhật ảnh: $e' : 'Error updating avatar: $e',
+          isError: true,
+        );
       }
     } finally {
       if (mounted) setState(() => _isUploadingAvatar = false);
@@ -382,7 +391,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final languageService = LanguageService.instance;
+    final languageService = LanguageScope.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isVi = languageService.isVietnamese;
 

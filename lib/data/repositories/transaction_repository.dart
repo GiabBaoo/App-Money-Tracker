@@ -296,6 +296,56 @@ class TransactionRepository {
     _notifyTransactionsChanged();
   }
 
+  /// Đổi tên danh mục cho toàn bộ giao dịch cũ (dùng khi user đổi tên danh mục tự tạo).
+  /// Trả về số giao dịch đã cập nhật.
+  Future<int> renameCategory({
+    required String oldName,
+    required String newName,
+    required String type, // 'income' | 'expense'
+  }) async {
+    final uid = _currentUid;
+    if (uid == null || uid.isEmpty || oldName == newName) return 0;
+    final db = await _dbHelper.database;
+
+    final rows = await db.query(
+      'transactions',
+      where: 'uid = ? AND category = ? AND type = ?',
+      whereArgs: [uid, oldName, type],
+    );
+    if (rows.isEmpty) return 0;
+
+    final now = DateTime.now();
+    await db.transaction((txn) async {
+      for (final row in rows) {
+        final updated = TransactionModel.fromSqlite(row).copyWith(
+          category: newName,
+          updatedAt: now,
+          syncStatus: 'pending',
+        );
+        await txn.update(
+          'transactions',
+          updated.toSqlite(),
+          where: 'id = ?',
+          whereArgs: [updated.id],
+        );
+        await txn.insert('sync_queue', {
+          'tableName': 'transactions',
+          'recordId': updated.id,
+          'action': 'UPDATE',
+          'data': json.encode(updated.toSqlite()),
+          'createdAt': now.millisecondsSinceEpoch,
+          'retryCount': 0,
+        });
+      }
+    });
+
+    if (ConnectivityService().isOnline) {
+      unawaited(SyncService().syncAll());
+    }
+    _notifyTransactionsChanged();
+    return rows.length;
+  }
+
   // ════════ QUERIES ════════
 
   /// Stream danh sách giao dịch — phát dữ liệu từ cache và lắng nghe broadcast sự kiện thay đổi

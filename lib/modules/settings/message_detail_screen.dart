@@ -1,3 +1,4 @@
+import '../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../widgets/animated_scale_button.dart';
@@ -22,6 +23,7 @@ class MessageDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVi = LanguageScope.of(context).isVietnamese;
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
       body: SafeArea(
@@ -50,8 +52,8 @@ class MessageDetailScreen extends StatelessWidget {
                       child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
                     ),
                   ),
-                  const Text(
-                    'Chi tiết tin nhắn',
+                  Text(
+                    isVi ? 'Chi tiết tin nhắn' : 'Message Details',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -181,7 +183,7 @@ class MessageDetailScreen extends StatelessWidget {
                           ),
                           child: Center(
                             child: Text(
-                              'Đã hiểu',
+                              isVi ? 'Đã hiểu' : 'Got it',
                               style: TextStyle(
                                 color: isDark ? const Color(0xFF80CBC4) : const Color(0xFF4A9B7F),
                                 fontSize: 16,

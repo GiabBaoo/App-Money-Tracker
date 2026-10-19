@@ -12,6 +12,7 @@ import '../../data/repositories/transaction_repository.dart';
 import '../../data/repositories/wallet_repository.dart';
 import '../../utils/page_transitions.dart';
 import '../calendar/calendar_tracking_screen.dart';
+import '../../services/language_service.dart';
 
 class AllTransactionsScreen extends StatefulWidget {
   const AllTransactionsScreen({super.key});
@@ -21,6 +22,7 @@ class AllTransactionsScreen extends StatefulWidget {
 }
 
 class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
+  bool get isVi => LanguageService.instance.isVietnamese;
   final TransactionRepository _txRepo = TransactionRepository();
   final WalletRepository _walletRepo = WalletRepository();
   String _selectedType = 'Tất cả';
@@ -111,26 +113,26 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   String _getDateFilterLabel() {
     switch (_datePreset) {
       case 'month_to_date':
-        return 'Đầu tháng đến nay';
+        return context.tr('preset_month_to_date');
       case 'today':
-        return 'Hôm nay';
+        return context.tr('preset_today');
       case 'last_7_days':
-        return '7 ngày qua';
+        return context.tr('preset_last_7_days');
       case 'last_30_days':
-        return '30 ngày qua';
+        return context.tr('preset_last_30_days');
       case 'this_month':
-        return 'Tháng này';
+        return context.tr('preset_this_month');
       case 'last_month':
-        return 'Tháng trước';
+        return context.tr('preset_last_month');
       case 'this_year':
-        return 'Năm ${DateTime.now().year}';
+        return '${context.tr('year')} ${DateTime.now().year}';
       case 'year_2020':
-        return 'Năm 2020';
+        return '${context.tr('year')} 2020';
       case 'all_time':
-        return 'Tất cả thời gian';
+        return context.tr('filter_all');
       case 'custom':
       default:
-        if (_selectedDateRange == null) return 'Tất cả thời gian';
+        if (_selectedDateRange == null) return context.tr('filter_all');
         return '${CurrencyUtils.formatDate(_selectedDateRange!.start)} - ${CurrencyUtils.formatDate(_selectedDateRange!.end)}';
     }
   }
@@ -148,6 +150,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
@@ -199,13 +202,18 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                         ),
                       ),
                     ),
-                    const Text(
-                      'Lịch Sử Giao Dịch',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18.5,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.2,
+                    Expanded(
+                      child: Text(
+                        context.tr('transaction_history'),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.2,
+                        ),
                       ),
                     ),
                     Row(
@@ -313,7 +321,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Tìm theo nội dung, danh mục, số tiền...',
+                      hintText: isVi ? 'Tìm theo nội dung, danh mục, số tiền...' : 'Search by note, category, amount...',
                       hintStyle: TextStyle(
                         color: isDark ? Colors.white60 : const Color(0xFF94A3B8),
                         fontSize: 13.5,
@@ -376,12 +384,12 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                               ),
                             ],
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.refresh_rounded, size: 14, color: Colors.redAccent),
-                              SizedBox(width: 4),
-                              Text('Xóa lọc', style: TextStyle(color: Colors.redAccent, fontSize: 11.5, fontWeight: FontWeight.w700)),
+                              const Icon(Icons.refresh_rounded, size: 14, color: Colors.redAccent),
+                              const SizedBox(width: 4),
+                              Text(context.tr('clear_filter'), style: const TextStyle(color: Colors.redAccent, fontSize: 11.5, fontWeight: FontWeight.w700)),
                             ],
                           ),
                         ),
@@ -474,8 +482,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                                 const SizedBox(height: 14),
                                 Text(
                                   _searchQuery.isNotEmpty
-                                      ? 'Không tìm thấy giao dịch "$_searchQuery" trong toàn bộ lịch sử'
-                                      : 'Không tìm thấy giao dịch nào',
+                                      ? (isVi
+                                          ? 'Không tìm thấy giao dịch "$_searchQuery" trong toàn bộ lịch sử'
+                                          : 'No transactions found matching "$_searchQuery"')
+                                      : (isVi ? 'Không tìm thấy giao dịch nào' : 'No transactions found'),
                                   style: TextStyle(
                                     color: isDark ? Colors.white54 : const Color(0xFF64748B),
                                     fontSize: 14.5,
@@ -578,8 +588,24 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
     );
   }
 
+  String _getTypeDisplayLabel(String type, bool isVi) {
+    switch (type) {
+      case 'Chi tiêu':
+        return isVi ? 'Chi tiêu' : 'Expense';
+      case 'Thu nhập':
+        return isVi ? 'Thu nhập' : 'Income';
+      case 'Chuyển ví':
+        return isVi ? 'Chuyển ví' : 'Transfer';
+      case 'Tất cả':
+      default:
+        return isVi ? 'Tất cả' : 'All';
+    }
+  }
+
   Widget _buildQuickTypeChip(String label, bool isDark) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isSelected = _selectedType == label;
+    final displayLabel = _getTypeDisplayLabel(label, isVi);
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: AnimatedScaleButton(
@@ -611,7 +637,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                 : null,
           ),
           child: Text(
-            label,
+            displayLabel,
             style: TextStyle(
               fontSize: 12.5,
               fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
@@ -688,18 +714,19 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
   // BOTTOM SHEET CHỌN NHANH KHOẢNG THỜI GIAN FINTECH
   void _showDatePresetPickerSheet(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVi = LanguageScope.of(context).isVietnamese;
 
     final presets = [
-      {'key': 'month_to_date', 'title': 'Từ đầu tháng đến nay', 'desc': 'Ngày 01 đến hôm nay (Khuyên dùng)', 'icon': Icons.trending_up_rounded},
-      {'key': 'today', 'title': 'Hôm nay', 'desc': 'Giao dịch phát sinh trong ngày', 'icon': Icons.today_rounded},
-      {'key': 'last_7_days', 'title': '7 ngày qua', 'desc': '7 ngày gần nhất tính đến nay', 'icon': Icons.date_range_rounded},
-      {'key': 'last_30_days', 'title': '30 ngày qua', 'desc': '30 ngày gần nhất tính đến nay', 'icon': Icons.calendar_view_day_rounded},
-      {'key': 'this_month', 'title': 'Tháng này', 'desc': 'Toàn bộ các ngày trong tháng hiện tại', 'icon': Icons.calendar_month_rounded},
-      {'key': 'last_month', 'title': 'Tháng trước', 'desc': 'Toàn bộ các ngày của tháng vừa qua', 'icon': Icons.history_rounded},
-      {'key': 'this_year', 'title': 'Năm nay (${DateTime.now().year})', 'desc': 'Toàn bộ giao dịch trong năm hiện tại', 'icon': Icons.calendar_today_rounded},
-      {'key': 'year_2020', 'title': 'Năm 2020 (Lịch sử cũ)', 'desc': 'Xem tất cả giao dịch thuộc năm 2020', 'icon': Icons.history_toggle_off_rounded},
-      {'key': 'custom', 'title': 'Khoảng ngày tùy chọn...', 'desc': 'Tự chọn ngày bắt đầu & kết thúc', 'icon': Icons.edit_calendar_rounded},
-      {'key': 'all_time', 'title': 'Tất cả thời gian', 'desc': 'Không giới hạn ngày giao dịch', 'icon': Icons.all_inclusive_rounded},
+      {'key': 'month_to_date', 'title': isVi ? 'Từ đầu tháng đến nay' : 'Month to date', 'desc': isVi ? 'Ngày 01 đến hôm nay (Khuyên dùng)' : 'From day 1 to today (Recommended)', 'icon': Icons.trending_up_rounded},
+      {'key': 'today', 'title': isVi ? 'Hôm nay' : 'Today', 'desc': isVi ? 'Giao dịch phát sinh trong ngày' : 'Transactions today', 'icon': Icons.today_rounded},
+      {'key': 'last_7_days', 'title': isVi ? '7 ngày qua' : 'Last 7 days', 'desc': isVi ? '7 ngày gần nhất tính đến nay' : 'Past 7 days up to now', 'icon': Icons.date_range_rounded},
+      {'key': 'last_30_days', 'title': isVi ? '30 ngày qua' : 'Last 30 days', 'desc': isVi ? '30 ngày gần nhất tính đến nay' : 'Past 30 days up to now', 'icon': Icons.calendar_view_day_rounded},
+      {'key': 'this_month', 'title': isVi ? 'Tháng này' : 'This month', 'desc': isVi ? 'Toàn bộ các ngày trong tháng hiện tại' : 'All days in current month', 'icon': Icons.calendar_month_rounded},
+      {'key': 'last_month', 'title': isVi ? 'Tháng trước' : 'Last month', 'desc': isVi ? 'Toàn bộ các ngày của tháng vừa qua' : 'All days of previous month', 'icon': Icons.history_rounded},
+      {'key': 'this_year', 'title': isVi ? 'Năm nay (${DateTime.now().year})' : 'This year (${DateTime.now().year})', 'desc': isVi ? 'Toàn bộ giao dịch trong năm hiện tại' : 'All transactions in current year', 'icon': Icons.calendar_today_rounded},
+      {'key': 'year_2020', 'title': isVi ? 'Năm 2020 (Lịch sử cũ)' : 'Year 2020 (Old history)', 'desc': isVi ? 'Xem tất cả giao dịch thuộc năm 2020' : 'View all transactions from 2020', 'icon': Icons.history_toggle_off_rounded},
+      {'key': 'custom', 'title': isVi ? 'Khoảng ngày tùy chọn...' : 'Custom date range...', 'desc': isVi ? 'Tự chọn ngày bắt đầu & kết thúc' : 'Select custom start & end date', 'icon': Icons.edit_calendar_rounded},
+      {'key': 'all_time', 'title': isVi ? 'Tất cả thời gian' : 'All time', 'desc': isVi ? 'Không giới hạn ngày giao dịch' : 'No date limit for transactions', 'icon': Icons.all_inclusive_rounded},
     ];
 
     showModalBottomSheet(
@@ -738,7 +765,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Khoảng thời gian giao dịch',
+                      context.tr('transaction_time_range'),
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
@@ -753,7 +780,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                           setState(() => _applyDatePreset('all_time'));
                           Navigator.pop(ctx);
                         },
-                        child: const Text('Bỏ lọc ngày', style: TextStyle(color: Color(0xFF438883), fontWeight: FontWeight.bold, fontSize: 13)),
+                        child: Text(context.tr('clear_date_filter'), style: const TextStyle(color: Color(0xFF438883), fontWeight: FontWeight.bold, fontSize: 13)),
                       ),
                   ],
                 ),
@@ -919,7 +946,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Bộ lọc giao dịch',
+                          context.tr('filter_transactions'),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -935,14 +962,14 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                             });
                             setState(() {});
                           },
-                          child: const Text('Đặt lại', style: TextStyle(color: Color(0xFF438883), fontWeight: FontWeight.bold)),
+                          child: Text(context.tr('reset_filter'), style: const TextStyle(color: Color(0xFF438883), fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
                     
                     // 1. LỌC THEO LOẠI HÌNH
-                    const Text('Loại giao dịch', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                    Text(context.tr('transaction_type'), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 10),
                     Row(
                       children: ['Tất cả', 'Thu nhập', 'Chi tiêu', 'Chuyển ví'].map((tp) {
@@ -970,7 +997,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                               ),
                               child: Center(
                                 child: Text(
-                                  tp,
+                                  tp == 'Tất cả' ? context.tr('filter_all') : (tp == 'Thu nhập' ? context.tr('filter_income') : (tp == 'Chi tiêu' ? context.tr('filter_expense') : context.tr('filter_transfers'))),
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     color: isSelected ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF334155)),
@@ -990,10 +1017,16 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Khoảng thời gian', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                        Text(
-                          _getDateFilterLabel(),
-                          style: const TextStyle(fontSize: 12.5, color: Color(0xFF438883), fontWeight: FontWeight.w700),
+                        Text(context.tr('time_range'), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            _getDateFilterLabel(),
+                            style: const TextStyle(fontSize: 12.5, color: Color(0xFF438883), fontWeight: FontWeight.w700),
+                            textAlign: TextAlign.right,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
@@ -1002,13 +1035,13 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        {'k': 'month_to_date', 'label': 'Đầu tháng đến nay'},
-                        {'k': 'today', 'label': 'Hôm nay'},
-                        {'k': 'last_7_days', 'label': '7 ngày qua'},
-                        {'k': 'last_30_days', 'label': '30 ngày qua'},
-                        {'k': 'this_month', 'label': 'Tháng này'},
-                        {'k': 'last_month', 'label': 'Tháng trước'},
-                        {'k': 'all_time', 'label': 'Tất cả'},
+                        {'k': 'month_to_date', 'label': context.tr('preset_month_to_date')},
+                        {'k': 'today', 'label': context.tr('preset_today')},
+                        {'k': 'last_7_days', 'label': context.tr('preset_last_7_days')},
+                        {'k': 'last_30_days', 'label': context.tr('preset_last_30_days')},
+                        {'k': 'this_month', 'label': context.tr('preset_this_month')},
+                        {'k': 'last_month', 'label': context.tr('preset_last_month')},
+                        {'k': 'all_time', 'label': context.tr('filter_all')},
                       ].map((item) {
                         final key = item['k']!;
                         final isSel = _datePreset == key;
@@ -1078,7 +1111,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                               child: Text(
                                 _datePreset == 'custom' && _selectedDateRange != null
                                     ? '${CurrencyUtils.formatDate(_selectedDateRange!.start)} - ${CurrencyUtils.formatDate(_selectedDateRange!.end)}'
-                                    : 'Tùy chọn khoảng ngày cụ thể...',
+                                    : context.tr('specific_date_range'),
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: isDark ? Colors.white : const Color(0xFF1E293B),
@@ -1119,7 +1152,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                           ],
                         ),
                         alignment: Alignment.center,
-                        child: const Text('Xem kết quả', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                        child: Text(context.tr('apply_filter'), style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ],
@@ -1143,7 +1176,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
     return grouped;
   }
 
-  String _formatFriendlyDate(DateTime date) {
+  String _formatFriendlyDate(DateTime date, bool isVi) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final target = DateTime(date.year, date.month, date.day);
@@ -1152,12 +1185,13 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
     final dateStr = '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
 
     if (diffDays == 0) {
-      return 'Hôm nay, $dateStr';
+      return isVi ? 'Hôm nay, $dateStr' : 'Today, $dateStr';
     } else if (diffDays == 1) {
-      return 'Hôm qua, $dateStr';
+      return isVi ? 'Hôm qua, $dateStr' : 'Yesterday, $dateStr';
     } else {
-      const weekdays = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
-      final weekdayStr = weekdays[date.weekday - 1];
+      final weekdaysVi = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
+      final weekdaysEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      final weekdayStr = isVi ? weekdaysVi[date.weekday - 1] : weekdaysEn[date.weekday - 1];
       return '$weekdayStr, $dateStr';
     }
   }
@@ -1181,7 +1215,9 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Tìm thấy $count giao dịch trong toàn bộ lịch sử',
+              isVi
+                  ? 'Tìm thấy $count giao dịch trong toàn bộ lịch sử'
+                  : 'Found $count transactions in all history',
               style: const TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
@@ -1218,93 +1254,125 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           // Thu nhập
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: const [
-                  Icon(Icons.arrow_downward_rounded, size: 13, color: Color(0xFF2ECC71)),
-                  SizedBox(width: 4),
-                  Text(
-                    'Tổng Thu',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '+${CurrencyUtils.formatCurrency(totalIncome)}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF2ECC71),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.arrow_downward_rounded, size: 13, color: Color(0xFF2ECC71)),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        context.tr('total_income'),
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '+${CurrencyUtils.formatCurrency(totalIncome)}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF2ECC71),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           Container(
             width: 1,
             height: 32,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
             color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
           ),
           // Chi tiêu
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: const [
-                  Icon(Icons.arrow_upward_rounded, size: 13, color: Color(0xFFE63946)),
-                  SizedBox(width: 4),
-                  Text(
-                    'Tổng Chi',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '-${CurrencyUtils.formatCurrency(totalExpense)}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFFE63946),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.arrow_upward_rounded, size: 13, color: Color(0xFFE63946)),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        context.tr('total_expense'),
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '-${CurrencyUtils.formatCurrency(totalExpense)}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFE63946),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           Container(
             width: 1,
             height: 32,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
             color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
           ),
           // Dòng tiền ròng (Net)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    net >= 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded,
-                    size: 13,
-                    color: net >= 0 ? const Color(0xFF438883) : const Color(0xFFE63946),
-                  ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    'Dòng tiền',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${net >= 0 ? '+' : ''}${CurrencyUtils.formatCurrency(net)}',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: net >= 0 ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)) : const Color(0xFFE63946),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      net >= 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                      size: 13,
+                      color: net >= 0 ? const Color(0xFF438883) : const Color(0xFFE63946),
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        context.tr('net_cashflow'),
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${net >= 0 ? '+' : ''}${CurrencyUtils.formatCurrency(net)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: net >= 0 ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)) : const Color(0xFFE63946),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1326,8 +1394,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
     return Builder(
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        final dateLabel = _formatFriendlyDate(date);
-        final isToday = dateLabel.startsWith('Hôm nay');
+        final isVi = LanguageScope.of(context).isVietnamese;
+        final now = DateTime.now();
+        final isToday = (date.year == now.year && date.month == now.month && date.day == now.day);
+        final dateLabel = _formatFriendlyDate(date, isVi);
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 8, top: 16),

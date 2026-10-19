@@ -31,6 +31,7 @@ import 'services/midnight_sync_service.dart';
 import 'services/auth_service.dart';
 import 'services/transaction_balance_service.dart';
 import 'services/app_widget_service.dart';
+import 'services/category_style_service.dart';
 import 'core/providers/app_providers.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
@@ -117,6 +118,9 @@ void main() async {
     }
   }
 
+  // Lắng nghe màu/biểu tượng danh mục user tuỳ chỉnh (áp dụng toàn app)
+  CategoryStyleService.ensureInitialized();
+
   // ═══ 4. Khởi tạo Sync Service ═══
   final syncService = SyncService();
   syncService.init(
@@ -196,30 +200,35 @@ class _MyAppState extends ConsumerState<MyApp> {
     final themeService = ref.watch(themeServiceProvider);
     final languageService = ref.watch(languageServiceProvider);
 
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      navigatorKey: widget.navigatorKey,
-      title: 'Mono',
-      theme: themeService.lightTheme,
-      darkTheme: themeService.darkTheme,
-      themeMode: themeService.themeMode,
-      themeAnimationDuration: const Duration(milliseconds: 250),
-      themeAnimationCurve: Curves.easeInOut,
-      locale: Locale(languageService.currentLanguage),
-      home: _groupIdToJoin != null 
-          ? JoinGroupScreen(groupId: _groupIdToJoin!)
-          : const SplashScreen(),
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: TextScaler.linear(themeService.textScaleFactor.clamp(0.85, 1.25)),
-          ),
-          child: LifecycleManager(
-            navigatorKey: widget.navigatorKey,
-            child: child!,
-          ),
-        );
-      },
+    return LanguageScope(
+      service: languageService,
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        navigatorKey: widget.navigatorKey,
+        title: 'Mono',
+        theme: themeService.lightTheme,
+        darkTheme: themeService.darkTheme,
+        themeMode: themeService.themeMode,
+        themeAnimationDuration: const Duration(milliseconds: 250),
+        themeAnimationCurve: Curves.easeInOut,
+        locale: Locale(languageService.currentLanguage),
+        home: _groupIdToJoin != null 
+            ? JoinGroupScreen(groupId: _groupIdToJoin!)
+            : const SplashScreen(),
+        builder: (context, child) {
+          return LanguageScope(
+            service: languageService,
+            child: MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: TextScaler.linear(themeService.textScaleFactor.clamp(0.85, 1.25)),
+              ),
+              child: LifecycleManager(
+                navigatorKey: widget.navigatorKey,
+                child: child!,
+              ),
+            ),
+          );
+        },
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
@@ -238,6 +247,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         }
         return null;
       },
+      ),
     );
   }
 }

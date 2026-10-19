@@ -1,3 +1,4 @@
+import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,6 +27,7 @@ class JoinGroupScreen extends ConsumerStatefulWidget {
 }
 
 class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
+  bool get isVi => LanguageService.instance.isVietnamese;
   bool _isJoining = false;
   bool _isRejecting = false;
   bool _isAccepted = false;
@@ -131,7 +133,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
       );
 
       setState(() {
-        _errorMessage = 'Đang chuyển đến trang đăng nhập...';
+        _errorMessage = isVi ? 'Đang chuyển đến trang đăng nhập...' : 'Redirecting to login...';
       });
 
       // Chờ 1 giây rồi chuyển đến login
@@ -149,7 +151,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
 
     if (userId == null) {
       setState(() {
-        _errorMessage = 'Chưa đăng nhập';
+        _errorMessage = isVi ? 'Chưa đăng nhập' : 'Not logged in';
       });
       return;
     }
@@ -182,15 +184,15 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
       await groupRepository.addMember(widget.groupId, userId);
 
       // Lấy tên người dùng hiện tại
-      final userName = await _getCurrentUserName() ?? 'Một người dùng';
+      final userName = await _getCurrentUserName() ?? (isVi ? 'Một người dùng' : 'A user');
 
       // Gửi thông báo tới admin về việc chấp nhận lời mời
       await _sendNotificationToAdmin(
         adminId: group.adminId,
         groupName: group.name,
-        title: '✅ Chấp nhận lời mời',
+        title: isVi ? '✅ Chấp nhận lời mời' : '✅ Accepted invitation',
         description:
-            '$userName đã chấp nhận lời mời tham gia quỹ "${group.name}"',
+            isVi ? '$userName đã chấp nhận lời mời tham gia quỹ "${group.name}"' : '$userName accepted invitation to join "${group.name}"',
         iconCode: Icons.check_circle.codePoint,
       );
 
@@ -210,7 +212,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('🎉 Đã tham gia quỹ "${group.name}" thành công!'),
+            content: Text(isVi ? '🎉 Đã tham gia quỹ "${group.name}" thành công!' : '🎉 Joined fund "${group.name}" successfully!'),
             duration: const Duration(seconds: 3),
             backgroundColor: Colors.green,
           ),
@@ -231,7 +233,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
     } catch (e) {
       debugPrint('DEBUG ERROR in _joinGroup: $e');
       setState(() {
-        _errorMessage = 'Lỗi: $e';
+        _errorMessage = '${isVi ? 'Lỗi' : 'Error'}: $e';
         _isJoining = false;
       });
     }
@@ -244,14 +246,14 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
 
     try {
       // Lấy tên người dùng hiện tại
-      final userName = await _getCurrentUserName() ?? 'Một người dùng';
+      final userName = await _getCurrentUserName() ?? (isVi ? 'Một người dùng' : 'A user');
 
       // Gửi thông báo tới admin về việc từ chối lời mời
       await _sendNotificationToAdmin(
         adminId: adminId,
         groupName: groupName,
-        title: '❌ Từ chối lời mời',
-        description: '$userName đã từ chối lời mời tham gia quỹ "$groupName"',
+        title: isVi ? '❌ Từ chối lời mời' : '❌ Declined invitation',
+        description: isVi ? '$userName đã từ chối lời mời tham gia quỹ "$groupName"' : '$userName declined invitation to join "$groupName"',
         iconCode: Icons.cancel.codePoint,
       );
 
@@ -270,8 +272,8 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('👋 Đã từ chối lời mời'),
+          SnackBar(
+            content: Text(isVi ? '👋 Đã từ chối lời mời' : '👋 Invitation declined'),
             duration: Duration(seconds: 2),
             backgroundColor: Colors.orange,
           ),
@@ -282,8 +284,8 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã từ chối lời mời'),
+          SnackBar(
+            content: Text(isVi ? 'Đã từ chối lời mời' : 'Invitation declined'),
             duration: Duration(seconds: 2),
             backgroundColor: Colors.orange,
           ),
@@ -322,7 +324,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Quỹ không tồn tại',
+                        isVi ? 'Quỹ không tồn tại' : 'Fund does not exist',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -331,7 +333,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Lời mời có thể đã hết hạn hoặc quỹ đã bị xóa',
+                        isVi ? 'Lời mời có thể đã hết hạn hoặc quỹ đã bị xóa' : 'Invitation might have expired or fund was deleted',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 14,
@@ -348,8 +350,8 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                             vertical: 12,
                           ),
                         ),
-                        child: const Text(
-                          'Quay lại',
+                        child: Text(
+                          isVi ? 'Quay lại' : 'Go back',
                           style: TextStyle(color: Colors.white),
                         ),
                       ),
@@ -411,8 +413,8 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                             ),
                           ),
                           const Spacer(),
-                          const Text(
-                            'Lời mời tham gia quỹ',
+                          Text(
+                            isVi ? 'Lời mời tham gia quỹ' : 'Fund Invitation',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 18,
@@ -535,7 +537,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          'Người tạo quỹ',
+                                          isVi ? 'Người tạo quỹ' : 'Fund Creator',
                                           style: TextStyle(
                                             fontSize: 13,
                                             color: isDark
@@ -589,7 +591,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                                   ),
                                                   const SizedBox(height: 4),
                                                   Text(
-                                                    'Chủ quỹ',
+                                                    isVi ? 'Chủ quỹ' : 'Owner',
                                                     style: TextStyle(
                                                       fontSize: 13,
                                                       color: groupColor,
@@ -617,7 +619,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                     child: _buildStatCard(
                                       context,
                                       icon: Icons.people,
-                                      label: 'Thành viên',
+                                      label: isVi ? 'Thành viên' : 'Members',
                                       value: '${group.memberIds.length}',
                                       color: groupColor,
                                     ),
@@ -627,7 +629,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                     child: _buildStatCard(
                                       context,
                                       icon: Icons.calendar_today,
-                                      label: 'Tạo vào',
+                                      label: isVi ? 'Tạo vào' : 'Created on',
                                       value:
                                           '${group.createdAt.day}/${group.createdAt.month}/${group.createdAt.year}',
                                       color: groupColor,
@@ -773,7 +775,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                           ),
                                         )
                                       : Text(
-                                          'Từ chối',
+                                          isVi ? 'Từ chối' : 'Decline',
                                           style: TextStyle(
                                             color: Colors.red.withValues(
                                               alpha: 0.8,
@@ -813,8 +815,8 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                             strokeWidth: 2,
                                           ),
                                         )
-                                      : const Text(
-                                          'Chấp nhận',
+                                      : Text(
+                                          isVi ? 'Chấp nhận' : 'Accept',
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize: 16,
@@ -839,7 +841,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                 const CircularProgressIndicator(),
                 const SizedBox(height: 16),
                 Text(
-                  'Đang tải thông tin quỹ...',
+                  isVi ? 'Đang tải thông tin quỹ...' : 'Loading fund info...',
                   style: TextStyle(
                     color: Theme.of(context).brightness == Brightness.dark
                         ? Colors.white70
@@ -872,20 +874,20 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                     color: Colors.red.withValues(alpha: 0.7),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Lỗi tải quỹ',
+                  Text(
+                    isVi ? 'Lỗi tải quỹ' : 'Failed to load fund',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Không thể tải thông tin quỹ. Vui lòng thử lại sau.',
+                  Text(
+                    isVi ? 'Không thể tải thông tin quỹ. Vui lòng thử lại sau.' : 'Cannot load fund info. Please try again later.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 14),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Quay lại'),
+                    child: Text(isVi ? 'Quay lại' : 'Go back'),
                   ),
                 ],
               ),

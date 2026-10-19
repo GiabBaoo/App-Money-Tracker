@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'sync_service.dart';
 import 'connectivity_service.dart';
-import 'local_notification_service.dart';
 import 'auth_service.dart';
 
 /// Dịch vụ tự động sao lưu và đẩy dữ liệu lên Firebase vào mỗi giữa đêm (00:00).
@@ -74,15 +73,7 @@ class MidnightSyncService {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_prefLastMidnightSyncKey, todayStr);
 
-        // Bắn thông báo xác nhận thành công ra thanh trạng thái
-        await LocalNotificationService.instance.showInstantNotification(
-          id: 777000,
-          title: '🌙 Sao lưu nửa đêm thành công',
-          body: isCatchUp
-              ? 'Dữ liệu chi tiêu của bạn đã được cập nhật và lưu trữ an toàn trên Firebase.'
-              : 'Đúng 00:00, Mono đã tự động sao lưu toàn bộ dữ liệu của bạn lên đám mây.',
-          payload: 'midnight_backup',
-        );
+        // Ghi log hoàn thành âm thầm trong background (không bắn push notification quấy rầy)
         debugPrint('MidnightSyncService: Midnight sync succeeded and recorded for $todayStr');
         return true;
       }

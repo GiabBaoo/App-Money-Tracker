@@ -25,6 +25,7 @@ class WalletScreen extends StatefulWidget {
 class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
+  bool get isVi => LanguageService.instance.isVietnamese;
   final WalletRepository _walletRepo = WalletRepository();
   final TransactionRepository _txRepo = TransactionRepository();
 
@@ -227,7 +228,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Thẻ tài khoản',
+                                context.tr('account_cards'),
                                 style: TextStyle(
                                   fontSize: 15.5,
                                   fontWeight: FontWeight.w800,
@@ -242,7 +243,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
-                                  '${allWallets.length} tài khoản',
+                                  context.tr('accounts_count').replaceAll('{count}', allWallets.length.toString()),
                                   style: TextStyle(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.bold,
@@ -569,7 +570,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                           ),
                           const SizedBox(width: 7),
                           Text(
-                            'Tổng tài sản',
+                            context.tr('total_net_worth'),
                             style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w800,
@@ -608,7 +609,9 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                _isBalanceVisible ? 'Ẩn' : 'Hiện',
+                                _isBalanceVisible
+                                    ? (context.tr('cancel') == 'Cancel' ? 'Hide' : 'Ẩn')
+                                    : (context.tr('cancel') == 'Cancel' ? 'Show' : 'Hiện'),
                                 style: const TextStyle(
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w600,
@@ -676,7 +679,9 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                             ),
                             const SizedBox(width: 3),
                             Text(
-                              totalBalance >= 0 ? 'Tài chính dương' : 'Cần cân đối',
+                              totalBalance >= 0
+                                  ? (context.tr('cancel') == 'Cancel' ? 'Positive Flow' : 'Tài chính dương')
+                                  : (context.tr('cancel') == 'Cancel' ? 'Needs Attention' : 'Cần cân đối'),
                               style: TextStyle(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
@@ -691,7 +696,9 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          '•  ${allWallets.length} nguồn tiền liên kết',
+                          context.tr('cancel') == 'Cancel'
+                              ? '•  ${allWallets.length} linked sources'
+                              : '•  ${allWallets.length} nguồn tiền liên kết',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
@@ -776,7 +783,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Phân bổ tài sản',
+              context.tr('asset_allocation'),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
@@ -871,7 +878,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
           if (index == 0) {
             final isSelected = _selectedWalletId == null;
             return _buildPillChip(
-              label: 'Tất cả (${wallets.length})',
+              label: '${context.tr('filter_all')} (${wallets.length})',
               icon: Icons.account_balance_wallet_rounded,
               isSelected: isSelected,
               accentColor: const Color(0xFF438883),
@@ -1026,7 +1033,9 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(
-                              'Dòng tiền tháng ${DateFormat('MM/yyyy').format(now)}',
+                              context.tr('cancel') == 'Cancel'
+                                  ? 'Cash Flow ${DateFormat('MM/yyyy').format(now)}'
+                                  : 'Dòng tiền tháng ${DateFormat('MM/yyyy').format(now)}',
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w700,
@@ -1047,9 +1056,9 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                           color: const Color(0xFF438883).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text(
-                          'Lọc theo ví',
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF438883)),
+                        child: Text(
+                          context.tr('cancel') == 'Cancel' ? 'Filtered' : 'Lọc theo ví',
+                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF438883)),
                         ),
                       ),
                   ],
@@ -1058,12 +1067,12 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildSummaryColumn('Thu nhập', income, const Color(0xFF2E7D32), isDark),
+                    _buildSummaryColumn(context.tr('income'), income, const Color(0xFF2E7D32), isDark),
                     Container(height: 22, width: 1, color: isDark ? Colors.white12 : Colors.grey.shade300),
-                    _buildSummaryColumn('Chi tiêu', expense, const Color(0xFFD32F2F), isDark),
+                    _buildSummaryColumn(context.tr('expense'), expense, const Color(0xFFD32F2F), isDark),
                     Container(height: 22, width: 1, color: isDark ? Colors.white12 : Colors.grey.shade300),
                     _buildSummaryColumn(
-                      'Ròng',
+                      context.tr('net_flow'),
                       net,
                       net >= 0
                           ? (isDark ? const Color(0xFF4ADE80) : const Color(0xFF2E7D32))
@@ -1178,11 +1187,11 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
             wallets: effectiveWallets,
           );
 
-          String sectionTitle = 'Giao dịch gần đây';
+          String sectionTitle = context.tr('tx_history');
           if (_selectedWalletId != null) {
             try {
               final w = effectiveWallets.firstWhere((w) => w.id == _selectedWalletId);
-              sectionTitle = 'Giao dịch: ${w.name}';
+              sectionTitle = '${context.tr('tx_history')}: ${w.name}';
             } catch (_) {}
           }
 
@@ -1241,7 +1250,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                     child: Row(
                       children: [
                         Text(
-                          'Xem tất cả',
+                          context.tr('see_all'),
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
@@ -1276,7 +1285,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                       Icon(Icons.receipt_long_outlined, size: 36, color: isDark ? Colors.white24 : Colors.grey.shade400),
                       const SizedBox(height: 8),
                       Text(
-                        'Chưa có giao dịch nào',
+                        isVi ? 'Chưa có giao dịch nào' : 'No transactions yet',
                         style: TextStyle(fontSize: 13, color: isDark ? Colors.white54 : Colors.grey.shade600),
                       ),
                     ],
@@ -1518,14 +1527,14 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                 width: 0.8,
                               ),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.history_rounded, size: 12, color: Colors.white),
-                                SizedBox(width: 4),
+                                const Icon(Icons.history_rounded, size: 12, color: Colors.white),
+                                const SizedBox(width: 4),
                                 Text(
-                                  'Lịch sử',
-                                  style: TextStyle(
+                                  context.tr('cancel') == 'Cancel' ? 'History' : 'Lịch sử',
+                                  style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
@@ -1639,8 +1648,8 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                   color: Colors.white.withValues(alpha: 0.22),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Text(
-                                  'Mặc định',
+                                child: Text(
+                                  context.tr('is_default'),
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
@@ -1673,21 +1682,21 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                 }
                               },
                               itemBuilder: (context) => [
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'history',
                                   child: Row(
                                     children: [
                                       Icon(Icons.history_rounded, size: 18, color: Color(0xFF438883)),
                                       SizedBox(width: 8),
-                                      Text('Xem lịch sử'),
+                                      Text(context.tr('wallet_history')),
                                     ],
                                   ),
                                 ),
-                                const PopupMenuItem(value: 'edit', child: Text('Chỉnh sửa ví')),
+                                PopupMenuItem(value: 'edit', child: Text(context.tr('edit_wallet'))),
                                 if (!wallet.isDefault)
-                                  const PopupMenuItem(
+                                  PopupMenuItem(
                                     value: 'delete',
-                                    child: Text('Xóa ví', style: TextStyle(color: Colors.red)),
+                                    child: Text(context.tr('delete_wallet'), style: const TextStyle(color: Colors.red)),
                                   ),
                               ],
                             ),
@@ -1771,14 +1780,14 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                 width: 0.8,
                               ),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.history_rounded, size: 12, color: Colors.white),
-                                SizedBox(width: 4),
+                                const Icon(Icons.history_rounded, size: 12, color: Colors.white),
+                                const SizedBox(width: 4),
                                 Text(
-                                  'Lịch sử',
-                                  style: TextStyle(
+                                  isVi ? 'Lịch sử' : 'History',
+                                  style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
@@ -1814,24 +1823,25 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
       text: initialColor.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase(),
     );
 
+    final isVi = LanguageScope.of(context).isVietnamese;
     // Bảng 36 sắc độ phong cách tuyển chọn
     final categorizedColors = <String, List<int>>{
-      'Đỏ & Hồng': [
+      isVi ? 'Đỏ & Hồng' : 'Red & Pink': [
         0xFFE53935, 0xFFD82D8B, 0xFFE91E63, 0xFFF43F5E, 0xFFC2185B, 0xFF880E4F,
       ],
-      'Cam & Vàng': [
+      isVi ? 'Cam & Vàng' : 'Orange & Yellow': [
         0xFFFF9800, 0xFFF77F00, 0xFFE07A5F, 0xFFFFB703, 0xFFF59E0B, 0xFFFF6F00,
       ],
-      'Xanh lá & Bạc hà': [
+      isVi ? 'Xanh lá & Bạc hà' : 'Green & Mint': [
         0xFF438883, 0xFF10B981, 0xFF006E33, 0xFF06D6A0, 0xFF2A9D8F, 0xFF558B2F,
       ],
-      'Xanh dương & Biển': [
+      isVi ? 'Xanh dương & Biển' : 'Blue & Ocean': [
         0xFF0077B6, 0xFF0068FF, 0xFF3A86FF, 0xFF1429A0, 0xFF0284C7, 0xFF0369A1,
       ],
-      'Tím & Chàm': [
+      isVi ? 'Tím & Chàm' : 'Purple & Indigo': [
         0xFF8338EC, 0xFF7209B7, 0xFF6366F1, 0xFF5B21B6, 0xFF9333EA, 0xFF4C1D95,
       ],
-      'Trung tính & Sang trọng': [
+      isVi ? 'Trung tính & Sang trọng' : 'Neutral & Luxury': [
         0xFF2B2D42, 0xFF1E293B, 0xFF334155, 0xFF6F4E37, 0xFF475569, 0xFF0F172A,
       ],
     };
@@ -1900,7 +1910,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Tùy chọn màu sắc ví',
+                                  isVi ? 'Tùy chọn màu sắc ví' : 'Wallet Color Options',
                                   style: TextStyle(
                                     fontSize: 17.5,
                                     fontWeight: FontWeight.bold,
@@ -1908,7 +1918,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                   ),
                                 ),
                                 Text(
-                                  'Chọn từ bảng màu hoặc tùy biến phổ quang',
+                                  isVi ? 'Chọn từ bảng màu hoặc tùy biến phổ quang' : 'Choose from palette or customize spectrum',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: isDark ? Colors.white60 : Colors.grey.shade600,
@@ -1964,8 +1974,8 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Màu sắc hiển thị của ví',
+                                Text(
+                                  isVi ? 'Màu sắc hiển thị của ví' : 'Wallet display color',
                                   style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
                                 ),
                                 const SizedBox(height: 2),
@@ -1982,11 +1992,11 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                               color: Colors.white.withValues(alpha: 0.22),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Row(
+                            child: Row(
                               children: [
-                                Icon(Icons.check_circle_rounded, color: Colors.white, size: 16),
-                                SizedBox(width: 4),
-                                Text('Đang chọn', style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold)),
+                                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 16),
+                                const SizedBox(width: 4),
+                                Text(isVi ? 'Đang chọn' : 'Selected', style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ),
@@ -1998,7 +2008,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
 
                     // 1. Phổ quang cầu vồng tùy chỉnh (Hue Rainbow Spectrum Slider)
                     Text(
-                      'Tùy chỉnh dải màu phổ quang (Hue):',
+                      isVi ? 'Tùy chỉnh dải màu phổ quang (Hue):' : 'Customize hue spectrum:',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -2052,7 +2062,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Độ rực màu (${(currentSaturation * 100).toInt()}%):',
+                                "${isVi ? 'Độ rực màu' : 'Saturation'} (${(currentSaturation * 100).toInt()}%):",
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -2080,7 +2090,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Độ sáng (${(currentValue * 100).toInt()}%):',
+                                "${isVi ? 'Độ sáng' : 'Brightness'} (${(currentValue * 100).toInt()}%):",
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -2109,7 +2119,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
 
                     // 2. Bảng màu phối sẵn theo nhóm phong cách
                     Text(
-                      'Bảng màu phong cách tuyển chọn:',
+                      isVi ? 'Bảng màu phong cách tuyển chọn:' : 'Curated color palettes:',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -2194,7 +2204,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                     Row(
                       children: [
                         Text(
-                          'Mã màu HEX:',
+                          isVi ? 'Mã màu HEX:' : 'HEX Color Code:',
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
@@ -2270,7 +2280,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                               side: BorderSide(color: isDark ? Colors.white24 : Colors.grey.shade300),
                             ),
                             child: Text(
-                              'Đóng',
+                              isVi ? 'Đóng' : 'Close',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -2305,14 +2315,14 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                   ),
                                 ],
                               ),
-                              child: const Center(
+                              child: Center(
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.check_rounded, color: Colors.white, size: 19),
-                                    SizedBox(width: 6),
+                                    const Icon(Icons.check_rounded, color: Colors.white, size: 19),
+                                    const SizedBox(width: 6),
                                     Text(
-                                      'Áp dụng màu này',
+                                      isVi ? 'Áp dụng màu này' : 'Apply this color',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
@@ -2354,14 +2364,15 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
     int selectedIconCode = wallet?.iconCode ?? Icons.payments_rounded.codePoint;
     bool isDefault = wallet?.isDefault ?? false;
 
+    final isVi = LanguageScope.of(context).isVietnamese;
     // Danh sách các mẫu ví & ngân hàng thông dụng tại Việt Nam (1 chạm tự điền thông tin)
     final presets = [
       {
-        'name': 'Tiền mặt',
+        'name': isVi ? 'Tiền mặt' : 'Cash',
         'type': WalletType.cash,
         'color': 0xFF438883,
         'icon': Icons.payments_rounded.codePoint,
-        'label': '💵 Tiền mặt',
+        'label': isVi ? '💵 Tiền mặt' : '💵 Cash',
       },
       {
         'name': 'Ví MoMo',
@@ -2399,28 +2410,28 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
         'label': '🏦 Techcombank',
       },
       {
-        'name': 'Thẻ tín dụng',
+        'name': isVi ? 'Thẻ tín dụng' : 'Credit Card',
         'type': WalletType.credit,
         'color': 0xFF8338EC,
         'icon': Icons.credit_card_rounded.codePoint,
-        'label': '💳 Tín dụng',
+        'label': isVi ? '💳 Tín dụng' : '💳 Credit',
       },
       {
-        'name': 'Heo đất tiết kiệm',
+        'name': isVi ? 'Heo đất tiết kiệm' : 'Piggy Bank',
         'type': WalletType.savings,
         'color': 0xFFFFB703,
         'icon': Icons.savings_rounded.codePoint,
-        'label': '🐷 Tiết kiệm',
+        'label': isVi ? '🐷 Tiết kiệm' : '🐷 Savings',
       },
     ];
 
     // Các mốc tiền cộng nhanh số dư
     final quickAmounts = [
-      {'label': '0 đ', 'add': false, 'val': 0.0},
+      {'label': isVi ? '0 đ' : '0', 'add': false, 'val': 0.0},
       {'label': '+500k', 'add': true, 'val': 500000.0},
-      {'label': '+1tr', 'add': true, 'val': 1000000.0},
-      {'label': '+5tr', 'add': true, 'val': 5000000.0},
-      {'label': '+10tr', 'add': true, 'val': 10000000.0},
+      {'label': isVi ? '+1tr' : '+1M', 'add': true, 'val': 1000000.0},
+      {'label': isVi ? '+5tr' : '+5M', 'add': true, 'val': 5000000.0},
+      {'label': isVi ? '+10tr' : '+10M', 'add': true, 'val': 10000000.0},
     ];
 
     showModalBottomSheet(
@@ -2436,15 +2447,15 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
             final currentParsedBalance = CurrencyUtils.parseCurrency(balanceController.text);
             final activeColor = Color(selectedColor);
 
-            String typeDisplay = 'Tiền mặt';
+            String typeDisplay = isVi ? 'Tiền mặt' : 'Cash';
             if (selectedType == WalletType.bank) {
-              typeDisplay = 'Tài khoản Ngân hàng';
+              typeDisplay = isVi ? 'Tài khoản Ngân hàng' : 'Bank Account';
             } else if (selectedType == WalletType.eWallet) {
-              typeDisplay = 'Ví điện tử';
+              typeDisplay = isVi ? 'Ví điện tử' : 'E-Wallet';
             } else if (selectedType == WalletType.credit) {
-              typeDisplay = 'Thẻ tín dụng';
+              typeDisplay = isVi ? 'Thẻ tín dụng' : 'Credit Card';
             } else if (selectedType == WalletType.savings) {
-              typeDisplay = 'Sổ tiết kiệm';
+              typeDisplay = isVi ? 'Sổ tiết kiệm' : 'Savings';
             }
 
             return Padding(
@@ -2595,13 +2606,13 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                             color: Colors.amber.withValues(alpha: 0.9),
                                             borderRadius: BorderRadius.circular(10),
                                           ),
-                                          child: const Row(
+                                          child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Icon(Icons.star_rounded, size: 12, color: Colors.black87),
-                                              SizedBox(width: 3),
+                                              const Icon(Icons.star_rounded, size: 12, color: Colors.black87),
+                                              const SizedBox(width: 3),
                                               Text(
-                                                'Mặc định',
+                                                isVi ? 'Mặc định' : 'Default',
                                                 style: TextStyle(
                                                   color: Colors.black87,
                                                   fontSize: 10,
@@ -2641,7 +2652,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                   Text(
                                     nameController.text.trim().isNotEmpty
                                         ? nameController.text.trim()
-                                        : 'Tên chiếc ví của bạn',
+                                        : (isVi ? 'Tên chiếc ví của bạn' : 'Your wallet name'),
                                     style: TextStyle(
                                       color: Colors.white.withValues(
                                         alpha: nameController.text.trim().isNotEmpty ? 1.0 : 0.7,
@@ -2692,7 +2703,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                           Icon(Icons.auto_awesome_rounded, size: 15, color: activeColor),
                           const SizedBox(width: 6),
                           Text(
-                            'Gợi ý ví & ngân hàng phổ biến (1 chạm):',
+                            isVi ? 'Gợi ý ví & ngân hàng phổ biến (1 chạm):' : 'Popular wallet & bank suggestions (1-tap):',
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
@@ -2960,7 +2971,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                         DropdownMenuItem(value: WalletType.cash, child: Text('💵 ${context.tr('wallet_cash')}')),
                         DropdownMenuItem(value: WalletType.bank, child: Text('🏦 ${context.tr('wallet_bank')}')),
                         DropdownMenuItem(value: WalletType.eWallet, child: Text('👛 ${context.tr('wallet_e_wallet')}')),
-                        DropdownMenuItem(value: WalletType.credit, child: const Text('💳 Thẻ tín dụng')),
+                        DropdownMenuItem(value: WalletType.credit, child: Text('💳 ${context.tr('wallet_credit')}')),
                         DropdownMenuItem(value: WalletType.savings, child: Text('🐷 ${context.tr('wallet_savings')}')),
                       ],
                       onChanged: (val) {
@@ -3002,7 +3013,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Tùy chọn màu sắc...',
+                                  isVi ? 'Tùy chọn màu sắc...' : 'Choose color...',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
@@ -3211,7 +3222,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                           ),
                         ),
                         subtitle: Text(
-                          'Tự động chọn ví này khi ghi nhận thu chi mới',
+                          isVi ? 'Tự động chọn ví này khi ghi nhận thu chi mới' : 'Automatically select this wallet for new transactions',
                           style: TextStyle(
                             fontSize: 11.5,
                             color: isDark ? Colors.white60 : Colors.grey.shade600,
@@ -3592,7 +3603,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                       style: TextStyle(color: isDark ? Colors.white : Colors.black),
                       decoration: InputDecoration(
                         labelText: context.tr('transfer_amount_label'),
-                        hintText: '0 đ',
+                        hintText: isVi ? '0 đ' : '0',
                         prefixIcon: const Icon(Icons.attach_money, color: Color(0xFF438883)),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -3614,7 +3625,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                       style: TextStyle(color: isDark ? Colors.white : Colors.black),
                       decoration: InputDecoration(
                         labelText: context.tr('transfer_fee_label'),
-                        hintText: '0 đ',
+                        hintText: isVi ? '0 đ' : '0',
                         prefixIcon: const Icon(Icons.receipt_outlined, color: Colors.grey),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),

@@ -1,3 +1,4 @@
+import '../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../widgets/animated_scale_button.dart';
@@ -13,6 +14,7 @@ class VerifyPasswordScreen extends StatefulWidget {
 }
 
 class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
+  bool get isVi => LanguageService.instance.isVietnamese;
   final AuthService _authService = AuthService();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
@@ -27,7 +29,8 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
   Future<void> _handleVerify() async {
     final password = _passwordController.text;
     if (password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập mật khẩu!'), backgroundColor: Colors.red));
+      final isVi = LanguageScope.of(context).isVietnamese;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isVi ? 'Vui lòng nhập mật khẩu!' : 'Please enter your password!'), backgroundColor: Colors.red));
       return;
     }
     setState(() => _isLoading = true);
@@ -77,9 +80,9 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                       ),
                     ),
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Xác thực bảo mật',
+                      isVi ? 'Xác thực bảo mật' : 'Security Verification',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white,
@@ -110,7 +113,7 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Nhập mật khẩu hiện tại',
+                        isVi ? 'Nhập mật khẩu hiện tại' : 'Enter Current Password',
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -119,7 +122,7 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Vui lòng nhập mật khẩu bạn đang sử dụng để xác minh danh tính trước khi đổi mật khẩu mới.',
+                        isVi ? 'Vui lòng nhập mật khẩu bạn đang sử dụng để xác minh danh tính trước khi đổi mật khẩu mới.' : 'Please enter your current password to verify your identity before changing your password.',
                         style: TextStyle(
                           color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                           fontSize: 14,
@@ -132,7 +135,7 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8, left: 4),
                         child: Text(
-                          'Mật khẩu hiện tại',
+                          isVi ? 'Mật khẩu hiện tại' : 'Current Password',
                           style: TextStyle(
                             color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                             fontSize: 14,
@@ -148,7 +151,7 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                           color: Theme.of(context).textTheme.bodyLarge?.color,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Nhập mật khẩu hiện tại',
+                          hintText: isVi ? 'Nhập mật khẩu hiện tại' : 'Enter Current Password',
                           hintStyle: TextStyle(
                             color: isDark ? Colors.white38 : Colors.black.withValues(alpha: 0.3),
                             fontSize: 14,
@@ -222,9 +225,9 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                                       strokeWidth: 2.5,
                                     ),
                                   )
-                                : const Text(
-                                    'Tiếp tục',
-                                    style: TextStyle(
+                                : Text(
+                                    isVi ? 'Tiếp tục' : 'Continue',
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 18,
                                       fontWeight: FontWeight.w600,

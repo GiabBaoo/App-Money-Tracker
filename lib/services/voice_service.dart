@@ -10,6 +10,7 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'gemini_ai_service.dart';
 import 'connectivity_service.dart';
 import '../data/repositories/wallet_repository.dart';
+import 'language_service.dart';
 
 class VoiceService {
   static final VoiceService _instance = VoiceService._internal();
@@ -29,6 +30,8 @@ class VoiceService {
   bool _isAudioRecording = false;
   bool _isListeningSTT = false;
   String _vietnameseLocaleId = 'vi_VN';
+  String _englishLocaleId = 'en_US';
+  String get activeLocaleId => LanguageService.instance.currentLanguage == 'en' ? _englishLocaleId : _vietnameseLocaleId;
   String? _currentRecordingPath;
   StreamSubscription<Amplitude>? _amplitudeSub;
   String? _lastError;
@@ -181,10 +184,17 @@ class VoiceService {
             _vietnameseLocaleId = viLocale.localeId;
             debugPrint('VoiceService: Matched Vietnamese locale from system: $_vietnameseLocaleId');
           } else {
-            // Thiết bị Pixel / Samsung có thể chỉ liệt kê model offline tiếng Anh trong checkRecognitionSupport,
-            // nhưng Google Speech Services vẫn nhận diện tiếng Việt online qua vi_VN rất mượt mà.
             _vietnameseLocaleId = 'vi_VN';
-            debugPrint('VoiceService: System locales did not list vi (${locales.map((e) => e.localeId).join(", ")}). Defaulting to online vi_VN');
+            debugPrint('VoiceService: System locales did not list vi. Defaulting to online vi_VN');
+          }
+
+          final enLocale = locales.firstWhere(
+            (l) => l.localeId.toLowerCase().replaceAll('_', '-').startsWith('en'),
+            orElse: () => LocaleName('', ''),
+          );
+          if (enLocale.localeId.isNotEmpty) {
+            _englishLocaleId = enLocale.localeId;
+            debugPrint('VoiceService: Matched English locale from system: $_englishLocaleId');
           }
         } catch (e) {
           debugPrint('VoiceService: Error querying locales: $e. Defaulting to vi_VN');
@@ -246,7 +256,7 @@ class VoiceService {
           onSoundLevelChange: (level) {
             onSoundLevelChange(level.clamp(0.0, 10.0));
           },
-          localeId: _vietnameseLocaleId,
+          localeId: activeLocaleId,
           listenFor: const Duration(seconds: 30),
           pauseFor: pauseFor < const Duration(seconds: 3) ? const Duration(seconds: 3) : pauseFor,
           listenOptions: SpeechListenOptions(
@@ -255,7 +265,7 @@ class VoiceService {
             partialResults: true,
           ),
         );
-        debugPrint('VoiceService: Started real-time STT with $_vietnameseLocaleId');
+        debugPrint('VoiceService: Started real-time STT with $activeLocaleId');
         return;
       } catch (e) {
         debugPrint('VoiceService: Real-time STT failed: $e, switching to AI Audio Recording fallback');

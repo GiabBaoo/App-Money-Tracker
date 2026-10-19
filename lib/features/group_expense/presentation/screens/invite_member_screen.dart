@@ -1,3 +1,4 @@
+import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -59,14 +60,14 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
         setState(() {
           _foundUserName = null;
           _foundUserId = null;
-          _searchError = 'Không tìm thấy người dùng';
+          _searchError = isVi ? 'Không tìm thấy người dùng' : 'User not found';
           _isSearching = false;
         });
         return;
       }
 
       final userData = usersSnapshot.docs.first.data();
-      final userName = userData['name'] as String? ?? 'Người dùng';
+      final userName = userData['name'] as String? ?? (isVi ? 'Người dùng' : 'User');
       final userId = usersSnapshot.docs.first.id;
 
       setState(() {
@@ -79,7 +80,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
       setState(() {
         _foundUserName = null;
         _foundUserId = null;
-        _searchError = 'Lỗi tìm kiếm: $e';
+        _searchError = '${isVi ? 'Lỗi tìm kiếm' : 'Search error'}: $e';
         _isSearching = false;
       });
     }
@@ -88,7 +89,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
   void _inviteByPhone(String phone) async {
     if (_foundUserId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn người dùng hợp lệ')),
+        SnackBar(content: Text(isVi ? 'Vui lòng chọn người dùng hợp lệ' : 'Please select a valid user')),
       );
       return;
     }
@@ -101,8 +102,8 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
       final notificationData = {
         'uid': _foundUserId,
         'iconCode': Icons.account_balance_wallet.codePoint,
-        'title': 'Lời mời tham gia quỹ',
-        'description': 'Bạn được mời tham gia quỹ "${widget.groupName}"',
+        'title': isVi ? 'Lời mời tham gia quỹ' : 'Group Fund Invitation',
+        'description': isVi ? 'Bạn được mời tham gia quỹ "${widget.groupName}"' : 'You are invited to join fund "${widget.groupName}"',
         'isRead': false,
         'createdAt': now,
         'type': 'group_invite',
@@ -117,7 +118,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✓ Đã gửi lời mời đến $_foundUserName'),
+            content: Text(isVi ? '✓ Đã gửi lời mời đến $_foundUserName' : '✓ Invitation sent to $_foundUserName'),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
           ),
@@ -132,7 +133,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e')),
+          SnackBar(content: Text('${isVi ? 'Lỗi' : 'Error'}: $e')),
         );
       }
     } finally {
@@ -227,7 +228,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                             ),
                             const SizedBox(height: 20),
                             Text(
-                              'Mời thành viên vào ${widget.groupName}',
+                              isVi ? 'Mời thành viên vào ${widget.groupName}' : 'Invite members to ${widget.groupName}',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 20,
@@ -237,7 +238,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Nhập số điện thoại để gửi lời mời',
+                              isVi ? 'Nhập số điện thoại để gửi lời mời' : 'Enter phone number to invite',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 14,
@@ -259,7 +260,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                           _searchUser(phone.trim());
                         },
                         decoration: InputDecoration(
-                          hintText: 'Ví dụ: 0912345678',
+                          hintText: isVi ? 'Ví dụ: 0912345678' : 'e.g. 0912345678',
                           hintStyle: TextStyle(
                             color: isDark ? Colors.white38 : Colors.black38,
                           ),
@@ -356,8 +357,8 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          const Text(
-                                            'Sẽ mời',
+                                          Text(
+                                            isVi ? 'Sẽ mời' : 'Invite',
                                             style: TextStyle(
                                               fontSize: 12,
                                               color: Colors.green,

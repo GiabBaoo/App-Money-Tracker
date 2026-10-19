@@ -195,14 +195,8 @@ class SmartNotificationService {
           count++;
         }
 
-        // Luôn duy trì lịch hẹn định kỳ 20:30 mỗi tối khi người dùng bật reminders
-        await LocalNotificationService.instance.scheduleDailyReminder(
-          id: 200,
-          hour: 20,
-          minute: 30,
-          title: '📝 Nhắc nhở ghi chép chi tiêu',
-          body: 'Đừng quên ghi lại các khoản phát sinh trong ngày để quản lý dòng tiền tốt nhất nhé!',
-        );
+        // Duy trì duy nhất 1 lịch hẹn định kỳ 20:00 mỗi tối theo cài đặt của người dùng
+        await syncDailyReminderState();
       }
 
       // ════════ PHÂN TÍCH 4: NHẮC NHỞ ĐỒNG BỘ DỮ LIỆU NGOẠI TUYẾN QUÁ HẠN ════════
@@ -429,33 +423,14 @@ class SmartNotificationService {
     }
   }
 
-  /// Bắn thông báo đẩy ra ngoài màn hình chính khi vừa thêm một giao dịch mới
+  /// Đã vô hiệu hóa việc tạo thông báo khi thêm giao dịch thủ công để tránh làm rác hộp thư
   Future<void> notifyTransactionCreated({
     required String type,
     required String category,
     required double amount,
     String? note,
   }) async {
-    final isIncome = type == 'income';
-    final title = isIncome
-        ? '💰 Thu nhập mới: +${CurrencyUtils.formatCurrency(amount)}'
-        : '💸 Ghi nhận chi tiêu: -${CurrencyUtils.formatCurrency(amount)}';
-    final body = isIncome
-        ? 'Đã ghi nhận khoản thu cho "$category"${note != null && note.isNotEmpty ? ' ($note)' : ''}.'
-        : 'Đã chi ${CurrencyUtils.formatCurrency(amount)} cho "$category"${note != null && note.isNotEmpty ? ' ($note)' : ''}.';
-
-    final uid = FirebaseAuth.instance.currentUser?.uid ?? AuthService().offlineUid;
-    if (uid != null) {
-      final noti = NotificationModel(
-        uid: uid,
-        iconCode: isIncome ? Icons.arrow_downward_rounded.codePoint : Icons.arrow_upward_rounded.codePoint,
-        title: title,
-        description: body,
-        isRead: false,
-        type: 'transaction_created',
-      );
-      await _notiRepo.addNotification(noti);
-    }
+    // Không tạo thông báo cho các giao dịch do chính người dùng tự tay nhập
   }
 
   /// Tự động đồng bộ trạng thái nhắc nhở 20:00:

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/app_logo.dart';
+import '../../services/language_service.dart';
 import 'login_screen.dart';
 
 class ForgotPasswordConfirmationScreen extends StatelessWidget {
@@ -10,6 +11,7 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
@@ -58,7 +60,7 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
 
                       // Title
                       Text(
-                        'Kiem tra email cua ban',
+                        isVi ? 'Kiểm tra email của bạn' : 'Check your email',
                         style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF333333)),
                         textAlign: TextAlign.center,
                       ),
@@ -66,23 +68,27 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
 
                       // Description with email
                       Text(
-                        'Chúng tôi đã gửi email đặt lại mật khẩu tới\n$email',
+                        isVi
+                            ? 'Chúng tôi đã gửi email đặt lại mật khẩu tới\n$email'
+                            : 'We sent a password reset email to\n$email',
                         style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF666666), fontSize: 14, height: 1.5),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Vui lòng kiểm tra hộp thư và nhấp vào link để đặt lại mật khẩu.',
+                        isVi
+                            ? 'Vui lòng kiểm tra hộp thư và nhấp vào link để đặt lại mật khẩu.'
+                            : 'Please check your inbox and click the link to reset your password.',
                         style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF999999), fontSize: 13),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 40),
 
                       // Steps
-                      _buildStep(context, 1, 'Kiểm tra hộp thư (hoặc thư rác) của bạn'),
-                      _buildStep(context, 2, 'Tìm email từ "no-reply@accounts.google.com"'),
-                      _buildStep(context, 3, 'Nhấp vào link "Đặt lại mật khẩu" trong email'),
-                      _buildStep(context, 4, 'Tạo mật khẩu mới và lưu thay đổi'),
+                      _buildStep(context, 1, isVi ? 'Kiểm tra hộp thư (hoặc thư rác) của bạn' : 'Check your inbox (or spam folder)'),
+                      _buildStep(context, 2, isVi ? 'Tìm email từ "no-reply@accounts.google.com"' : 'Look for an email from "no-reply@accounts.google.com"'),
+                      _buildStep(context, 3, isVi ? 'Nhấp vào link "Đặt lại mật khẩu" trong email' : 'Click the "Reset password" link in the email'),
+                      _buildStep(context, 4, isVi ? 'Tạo mật khẩu mới và lưu thay đổi' : 'Create a new password and save changes'),
                       const SizedBox(height: 40),
 
                       // Instruction box
@@ -100,7 +106,9 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'Link se het han sau 1 gio. Neu khong nhan duoc email, kiem tra thu muc Spam hoac Promotions.',
+                                isVi
+                                    ? 'Link sẽ hết hạn sau 1 giờ. Nếu không nhận được email, kiểm tra thư mục Spam hoặc Promotions.'
+                                    : 'The link expires after 1 hour. If you do not receive the email, check your Spam or Promotions folder.',
                                 style: TextStyle(color: isDark ? const Color(0xFFE2C08A) : const Color(0xFF856404), fontSize: 13, height: 1.5),
                               ),
                             ),
@@ -126,10 +134,10 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(40),
                             boxShadow: [BoxShadow(color: const Color(0xFF3E8681).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))],
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text(
-                              'Quay lại Đăng nhập',
-                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                              isVi ? 'Quay lại Đăng nhập' : 'Back to Login',
+                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
                             ),
                           ),
                         ),
@@ -142,16 +150,16 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Vui lòng liên hệ support@mono.com'),
+                                content: Text(isVi ? 'Vui lòng liên hệ support@mono.com' : 'Please contact support@mono.com'),
                                 backgroundColor: const Color(0xFF438883),
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
                             );
                           },
-                          child: const Text(
-                            'Co van de? Lien he support',
-                            style: TextStyle(color: Color(0xFF438883), fontSize: 13, fontWeight: FontWeight.w500),
+                          child: Text(
+                            isVi ? 'Có vấn đề? Liên hệ hỗ trợ' : 'Have issues? Contact support',
+                            style: const TextStyle(color: Color(0xFF438883), fontSize: 13, fontWeight: FontWeight.w500),
                           ),
                         ),
                       ),

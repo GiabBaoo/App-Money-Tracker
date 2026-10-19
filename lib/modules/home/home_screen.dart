@@ -86,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
           final now = DateTime.now();
           if (_lastBackPressTime == null || now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
             _lastBackPressTime = now;
-            TopToast.show(context, 'Nhấn lần nữa để thoát ứng dụng');
+            TopToast.show(context, context.tr('press_again_to_exit'));
           } else {
             Navigator.of(context).pop();
           }
@@ -196,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCenterFabButton(BuildContext context, bool isDark) {
     return Tooltip(
-      message: 'Thêm giao dịch',
+      message: context.tr('add_transaction_tooltip'),
       child: AnimatedScaleButton(
         scaleDown: 0.88,
         onTap: () {
@@ -349,7 +349,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                           stream: UserRepository().getUserStream(),
                           builder: (context, userSnapshot) {
                             final user = userSnapshot.data;
-                            final fallbackName = context.tr('profile_title') == 'Profile' ? 'User' : 'Người dùng';
+                            final fallbackName = context.tr('user_fallback');
                             String? fbName;
                             String? fbPhoto;
                             try {
@@ -648,6 +648,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
   // === THẺ SỐ DƯ TỔNG QUAN FINTECH GLASSMORPHISM ===
   Widget _buildBalanceCard(double totalBalance, double income, double expense) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVi = LanguageScope.of(context).isVietnamese;
     final double totalFlow = income + expense;
     final int incomePercent = totalFlow > 0 ? ((income / totalFlow) * 100).round() : 50;
     final int expensePercent = totalFlow > 0 ? (100 - incomePercent) : 50;
@@ -752,7 +753,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              _isBalanceVisible ? 'Hiện' : 'Ẩn',
+                              _isBalanceVisible ? (isVi ? 'Hiện' : 'Show') : (isVi ? 'Ẩn' : 'Hide'),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
@@ -767,13 +768,18 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                 ),
                 const SizedBox(height: 6),
                 // CON SỐ SỐ DƯ CHÍNH
-                Text(
-                  _isBalanceVisible ? CurrencyUtils.formatCurrency(totalBalance) : '•••••••• ₫',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.3,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _isBalanceVisible ? CurrencyUtils.formatCurrency(totalBalance) : '•••••••• ₫',
+                    maxLines: 1,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -838,7 +844,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          totalFlow > 0 ? 'Thu $incomePercent%' : 'Chưa có dòng tiền',
+                          totalFlow > 0 ? '${context.tr('flow_income')} $incomePercent%' : context.tr('no_cash_flow'),
                           style: TextStyle(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w600,
@@ -847,7 +853,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                         ),
                         if (totalFlow > 0)
                           Text(
-                            'Chi $expensePercent%',
+                            '${context.tr('flow_expense')} $expensePercent%',
                             style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w600,

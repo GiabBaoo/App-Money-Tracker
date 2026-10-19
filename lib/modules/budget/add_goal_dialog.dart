@@ -4,6 +4,7 @@ import '../../models/goal_model.dart';
 import '../../data/repositories/goal_repository.dart';
 import '../../widgets/top_toast.dart';
 import '../../widgets/animated_scale_button.dart';
+import '../../services/language_service.dart';
 
 class AddGoalDialog extends StatefulWidget {
   final GoalModel? existingGoal;
@@ -68,16 +69,17 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
   }
 
   Future<void> _handleSave() async {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final title = _titleController.text.trim();
     if (title.isEmpty) {
-      TopToast.show(context, 'Vui lòng nhập tên mục tiêu');
+      TopToast.show(context, isVi ? 'Vui lòng nhập tên mục tiêu' : 'Please enter a goal name');
       return;
     }
 
     final cleanTarget = _targetAmountController.text.replaceAll(RegExp(r'[^\d]'), '');
     final target = double.tryParse(cleanTarget) ?? 0.0;
     if (target <= 0) {
-      TopToast.show(context, 'Số tiền mục tiêu phải lớn hơn 0');
+      TopToast.show(context, isVi ? 'Số tiền mục tiêu phải lớn hơn 0' : 'Target amount must be greater than 0');
       return;
     }
 
@@ -97,10 +99,10 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
 
     if (widget.existingGoal != null) {
       await _goalRepo.updateGoal(goal);
-      if (mounted) TopToast.show(context, 'Đã cập nhật mục tiêu!');
+      if (mounted) TopToast.show(context, isVi ? 'Đã cập nhật mục tiêu!' : 'Goal updated successfully!');
     } else {
       await _goalRepo.addGoal(goal);
-      if (mounted) TopToast.show(context, 'Đã tạo mục tiêu mới thành công!');
+      if (mounted) TopToast.show(context, isVi ? 'Đã tạo mục tiêu mới thành công!' : 'New savings goal created successfully!');
     }
 
     if (mounted) Navigator.pop(context, true);
@@ -110,6 +112,7 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Color(_selectedColor);
+    final isVi = LanguageScope.of(context).isVietnamese;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -124,9 +127,15 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    widget.existingGoal != null ? 'Sửa Mục Tiêu' : 'Mục Tiêu Tài Chính Mới',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  Expanded(
+                    child: Text(
+                      widget.existingGoal != null
+                          ? (isVi ? 'Sửa Mục Tiêu' : 'Edit Goal')
+                          : (isVi ? 'Mục Tiêu Tài Chính Mới' : 'New Financial Goal'),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, size: 20),
@@ -137,7 +146,10 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               const SizedBox(height: 16),
 
               // Tên mục tiêu
-              const Text('Tên mục tiêu', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey)),
+              Text(
+                isVi ? 'Tên mục tiêu' : 'Goal name',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+              ),
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -147,8 +159,8 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                 ),
                 child: TextField(
                   controller: _titleController,
-                  decoration: const InputDecoration(
-                    hintText: 'Ví dụ: Mua xe máy mới, Du lịch Đà Lạt...',
+                  decoration: InputDecoration(
+                    hintText: isVi ? 'Ví dụ: Mua xe máy mới, Du lịch Đà Lạt...' : 'e.g. Buy new bike, Travel...',
                     border: InputBorder.none,
                   ),
                 ),
@@ -157,7 +169,10 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               const SizedBox(height: 14),
 
               // Số tiền mục tiêu
-              const Text('Số tiền cần tích lũy (VNĐ)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey)),
+              Text(
+                isVi ? 'Số tiền cần tích lũy (VNĐ)' : 'Target amount (VND)',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+              ),
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -169,8 +184,8 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                   controller: _targetAmountController,
                   keyboardType: TextInputType.number,
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                  decoration: const InputDecoration(
-                    hintText: 'Ví dụ: 30.000.000',
+                  decoration: InputDecoration(
+                    hintText: isVi ? 'Ví dụ: 30.000.000' : 'e.g. 30,000,000',
                     border: InputBorder.none,
                     suffixText: 'đ',
                   ),
@@ -180,7 +195,10 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               const SizedBox(height: 14),
 
               // Số tiền đã có sẵn (ban đầu)
-              const Text('Số tiền hiện có (VNĐ)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey)),
+              Text(
+                isVi ? 'Số tiền hiện có (VNĐ)' : 'Current saved amount (VND)',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+              ),
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -191,8 +209,8 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                 child: TextField(
                   controller: _currentAmountController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    hintText: 'Ví dụ: 5.000.000 (mặc định 0đ)',
+                  decoration: InputDecoration(
+                    hintText: isVi ? 'Ví dụ: 5.000.000 (mặc định 0đ)' : 'e.g. 5,000,000 (default 0)',
                     border: InputBorder.none,
                     suffixText: 'đ',
                   ),
@@ -202,7 +220,10 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               const SizedBox(height: 14),
 
               // Ngày hết hạn (Deadline)
-              const Text('Thời hạn hoàn thành', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey)),
+              Text(
+                isVi ? 'Thời hạn hoàn thành' : 'Target deadline',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+              ),
               const SizedBox(height: 6),
               InkWell(
                 onTap: () async {
@@ -238,7 +259,10 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               const SizedBox(height: 14),
 
               // Chọn Icon
-              const Text('Biểu tượng', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey)),
+              Text(
+                isVi ? 'Biểu tượng' : 'Icon',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+              ),
               const SizedBox(height: 8),
               SizedBox(
                 height: 44,
@@ -269,7 +293,10 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               const SizedBox(height: 14),
 
               // Chọn Màu
-              const Text('Màu chủ đạo', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey)),
+              Text(
+                isVi ? 'Màu chủ đạo' : 'Color theme',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+              ),
               const SizedBox(height: 8),
               SizedBox(
                 height: 36,
@@ -320,7 +347,9 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                   ),
                   child: Center(
                     child: Text(
-                      widget.existingGoal != null ? 'Cập Nhật Mục Tiêu' : 'Bắt Đầu Tích Lũy',
+                      widget.existingGoal != null
+                          ? (isVi ? 'Cập Nhật Mục Tiêu' : 'Update Goal')
+                          : (isVi ? 'Bắt Đầu Tích Lũy' : 'Start Saving'),
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                   ),

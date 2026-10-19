@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../utils/category_utils.dart';
 
 class BudgetModel {
   final String id;
@@ -33,7 +34,12 @@ class BudgetModel {
   })  : createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 
-  IconData get icon => IconData(categoryIconCode, fontFamily: 'MaterialIcons');
+  IconData get icon {
+    if (category == 'Tất cả') {
+      return Icons.account_balance_wallet_outlined;
+    }
+    return CategoryUtils.getCategoryIcon(category, fallbackCode: categoryIconCode);
+  }
 
   double get remainingAmount => limitAmount - currentSpent;
   double get progressPercentage => limitAmount > 0 ? (currentSpent / limitAmount).clamp(0.0, 2.0) : 0.0;

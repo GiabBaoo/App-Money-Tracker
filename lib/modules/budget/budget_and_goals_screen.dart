@@ -9,8 +9,10 @@ import '../../data/repositories/goal_repository.dart';
 import '../../utils/currency_format_utils.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/top_toast.dart';
+import '../../services/category_style_service.dart';
 import 'add_budget_dialog.dart';
 import 'add_goal_dialog.dart';
+import '../../services/language_service.dart';
 
 class BudgetAndGoalsScreen extends StatefulWidget {
   final int initialTabIndex;
@@ -22,6 +24,7 @@ class BudgetAndGoalsScreen extends StatefulWidget {
 }
 
 class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with SingleTickerProviderStateMixin {
+  bool get isVi => LanguageService.instance.isVietnamese;
   late TabController _tabController;
   final BudgetRepository _budgetRepo = BudgetRepository();
   final GoalRepository _goalRepo = GoalRepository();
@@ -40,10 +43,16 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
     _tabController.addListener(() {
       if (mounted) setState(() {});
     });
+    CategoryStyleService.instance.addListener(_onCategoryStyleChanged);
+  }
+
+  void _onCategoryStyleChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    CategoryStyleService.instance.removeListener(_onCategoryStyleChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -65,6 +74,7 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVi = LanguageScope.of(context).isVietnamese;
     final headerColor = isDark ? const Color(0xFF0F2625) : const Color(0xFF438883);
 
     return Scaffold(
@@ -95,9 +105,9 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                       child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
                     ),
                   ),
-                  const Text(
-                    'Ngân Sách & Mục Tiêu',
-                    style: TextStyle(
+                  Text(
+                    isVi ? 'Ngân Sách & Mục Tiêu' : 'Budgets & Goals',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -172,7 +182,7 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                'Ngân Sách Chi',
+                                isVi ? 'Ngân Sách Chi' : 'Expense Budgets',
                                 style: TextStyle(
                                   color: _tabController.index == 0 ? const Color(0xFF438883) : Colors.white70,
                                   fontWeight: FontWeight.w700,
@@ -216,7 +226,7 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                'Mục Tiêu Tích Lũy',
+                                isVi ? 'Mục Tiêu Tích Lũy' : 'Savings Goals',
                                 style: TextStyle(
                                   color: _tabController.index == 1 ? const Color(0xFF438883) : Colors.white70,
                                   fontWeight: FontWeight.w700,
@@ -302,7 +312,9 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      _tabController.index == 0 ? 'Thêm Ngân Sách Mới' : 'Tạo Mục Tiêu Mới',
+                      _tabController.index == 0 
+                          ? (isVi ? 'Thêm Ngân Sách Mới' : 'Add New Budget') 
+                          : (isVi ? 'Tạo Mục Tiêu Mới' : 'Create New Goal'),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 15,
@@ -371,7 +383,7 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                           const Icon(Icons.calendar_month_rounded, color: Colors.white70, size: 16),
                           const SizedBox(width: 6),
                           Text(
-                            'Tháng $_selectedMonth, $_selectedYear',
+                            isVi ? 'Tháng $_selectedMonth, $_selectedYear' : 'Month $_selectedMonth, $_selectedYear',
                             style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w600),
                           ),
                         ],
@@ -383,7 +395,7 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          '${(overallProgress * 100).toStringAsFixed(0)}% đã dùng',
+                          isVi ? '${(overallProgress * 100).toStringAsFixed(0)}% đã dùng' : '${(overallProgress * 100).toStringAsFixed(0)}% used',
                           style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800),
                         ),
                       ),
@@ -413,11 +425,13 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Đã chi: ${CurrencyUtils.formatCurrency(totalSpent)}',
+                        isVi ? 'Đã chi: ${CurrencyUtils.formatCurrency(totalSpent)}' : 'Spent: ${CurrencyUtils.formatCurrency(totalSpent)}',
                         style: const TextStyle(color: Colors.white70, fontSize: 12.5, fontWeight: FontWeight.w500),
                       ),
                       Text(
-                        'Còn lại: ${CurrencyUtils.formatCurrency(overallRemaining >= 0 ? overallRemaining : 0)}',
+                        isVi 
+                            ? 'Còn lại: ${CurrencyUtils.formatCurrency(overallRemaining >= 0 ? overallRemaining : 0)}'
+                            : 'Remaining: ${CurrencyUtils.formatCurrency(overallRemaining >= 0 ? overallRemaining : 0)}',
                         style: TextStyle(
                           color: overallRemaining < 0 ? const Color(0xFFFCA5A5) : Colors.white,
                           fontWeight: FontWeight.w800,
@@ -435,12 +449,12 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Hạn mức theo danh mục',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                Text(
+                  isVi ? 'Hạn mức theo danh mục' : 'Category Limits',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                 ),
                 Text(
-                  '${budgets.length} danh mục',
+                  isVi ? '${budgets.length} danh mục' : '${budgets.length} categories',
                   style: TextStyle(fontSize: 12.5, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
                 ),
               ],
@@ -530,7 +544,9 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            isOver ? 'VƯỢT ${(progress * 100).toStringAsFixed(0)}%' : '${(progress * 100).toStringAsFixed(0)}%',
+                            isOver 
+                                ? (LanguageScope.of(context).isVietnamese ? 'VƯỢT ${(progress * 100).toStringAsFixed(0)}%' : 'OVER ${(progress * 100).toStringAsFixed(0)}%')
+                                : '${(progress * 100).toStringAsFixed(0)}%',
                             style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w800,
@@ -542,7 +558,7 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Hạn mức: ${CurrencyUtils.formatCurrency(budget.limitAmount)}',
+                      LanguageScope.of(context).isVietnamese ? 'Hạn mức: ${CurrencyUtils.formatCurrency(budget.limitAmount)}' : 'Limit: ${CurrencyUtils.formatCurrency(budget.limitAmount)}',
                       style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.grey.shade600),
                     ),
                   ],
@@ -562,8 +578,8 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                   }
                 },
                 itemBuilder: (_) => [
-                  const PopupMenuItem(value: 'edit', child: Text('Chỉnh sửa')),
-                  const PopupMenuItem(value: 'delete', child: Text('Xóa', style: TextStyle(color: Colors.red))),
+                  PopupMenuItem(value: 'edit', child: Text(LanguageScope.of(context).isVietnamese ? 'Chỉnh sửa' : 'Edit')),
+                  PopupMenuItem(value: 'delete', child: Text(LanguageScope.of(context).isVietnamese ? 'Xóa' : 'Delete', style: const TextStyle(color: Colors.red))),
                 ],
               ),
             ],
@@ -588,13 +604,13 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Đã tiêu: ${CurrencyUtils.formatCurrency(budget.currentSpent)}',
+                LanguageScope.of(context).isVietnamese ? 'Đã tiêu: ${CurrencyUtils.formatCurrency(budget.currentSpent)}' : 'Spent: ${CurrencyUtils.formatCurrency(budget.currentSpent)}',
                 style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.grey.shade600),
               ),
               Text(
                 isOver
-                    ? 'Vượt ${CurrencyUtils.formatCurrency(budget.currentSpent - budget.limitAmount)}'
-                    : 'Còn ${CurrencyUtils.formatCurrency(budget.remainingAmount)}',
+                    ? (LanguageScope.of(context).isVietnamese ? 'Vượt ${CurrencyUtils.formatCurrency(budget.currentSpent - budget.limitAmount)}' : 'Over ${CurrencyUtils.formatCurrency(budget.currentSpent - budget.limitAmount)}')
+                    : (LanguageScope.of(context).isVietnamese ? 'Còn ${CurrencyUtils.formatCurrency(budget.remainingAmount)}' : 'Remaining ${CurrencyUtils.formatCurrency(budget.remainingAmount)}'),
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
@@ -620,10 +636,15 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
         children: [
           Icon(Icons.pie_chart_outline_rounded, size: 56, color: Colors.grey.withValues(alpha: 0.3)),
           const SizedBox(height: 12),
-          const Text('Chưa có ngân sách nào trong tháng', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          Text(
+            LanguageScope.of(context).isVietnamese ? 'Chưa có ngân sách nào trong tháng' : 'No budgets set for this month',
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+          ),
           const SizedBox(height: 6),
           Text(
-            'Hãy đặt hạn mức cho các khoản ăn uống, mua sắm để chi tiêu kỷ luật và tối ưu dòng tiền hơn.',
+            LanguageScope.of(context).isVietnamese
+                ? 'Hãy đặt hạn mức cho các khoản ăn uống, mua sắm để chi tiêu kỷ luật và tối ưu dòng tiền hơn.'
+                : 'Set spending limits for dining, shopping, etc., to stay disciplined and optimize cash flow.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, color: Colors.grey.shade600, height: 1.4),
           ),
@@ -648,10 +669,15 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                 children: [
                   Icon(Icons.savings_outlined, size: 64, color: Colors.grey.withValues(alpha: 0.3)),
                   const SizedBox(height: 16),
-                  const Text('Chưa có mục tiêu tài chính nào', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+                  Text(
+                    LanguageScope.of(context).isVietnamese ? 'Chưa có mục tiêu tài chính nào' : 'No financial goals yet',
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                  ),
                   const SizedBox(height: 6),
                   Text(
-                    'Đặt mục tiêu như mua xe máy, đi du lịch hoặc quỹ khẩn cấp để có thêm động lực tiết kiệm mỗi ngày!',
+                    LanguageScope.of(context).isVietnamese
+                        ? 'Đặt mục tiêu như mua xe máy, đi du lịch hoặc quỹ khẩn cấp để có thêm động lực tiết kiệm mỗi ngày!'
+                        : 'Set goals like buying a bike, travel, or an emergency fund to motivate daily savings!',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 13.5, color: Colors.grey.shade600, height: 1.4),
                   ),
@@ -733,7 +759,9 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            isCompleted ? 'HOÀN THÀNH 🎉' : '${(progress * 100).toStringAsFixed(0)}%',
+                            isCompleted 
+                                ? (LanguageScope.of(context).isVietnamese ? 'HOÀN THÀNH 🎉' : 'COMPLETED 🎉')
+                                : '${(progress * 100).toStringAsFixed(0)}%',
                             style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w800,
@@ -745,7 +773,9 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Hạn chót: ${DateFormat('dd/MM/yyyy').format(goal.deadline)} • ${daysLeft > 0 ? "$daysLeft ngày nữa" : "Đã đến hạn"}',
+                      LanguageScope.of(context).isVietnamese
+                          ? 'Hạn chót: ${DateFormat('dd/MM/yyyy').format(goal.deadline)} • ${daysLeft > 0 ? "$daysLeft ngày nữa" : "Đã đến hạn"}'
+                          : 'Deadline: ${DateFormat('dd/MM/yyyy').format(goal.deadline)} • ${daysLeft > 0 ? "$daysLeft days left" : "Due today"}',
                       style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.grey.shade600),
                     ),
                   ],
@@ -765,8 +795,8 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                   }
                 },
                 itemBuilder: (_) => [
-                  const PopupMenuItem(value: 'edit', child: Text('Chỉnh sửa')),
-                  const PopupMenuItem(value: 'delete', child: Text('Xóa', style: TextStyle(color: Colors.red))),
+                  PopupMenuItem(value: 'edit', child: Text(LanguageScope.of(context).isVietnamese ? 'Chỉnh sửa' : 'Edit')),
+                  PopupMenuItem(value: 'delete', child: Text(LanguageScope.of(context).isVietnamese ? 'Xóa' : 'Delete', style: const TextStyle(color: Colors.red))),
                 ],
               ),
             ],
@@ -783,7 +813,7 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: goalColor),
               ),
               Text(
-                'Mục tiêu: ${CurrencyUtils.formatCurrency(goal.targetAmount)}',
+                LanguageScope.of(context).isVietnamese ? 'Mục tiêu: ${CurrencyUtils.formatCurrency(goal.targetAmount)}' : 'Target: ${CurrencyUtils.formatCurrency(goal.targetAmount)}',
                 style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w600),
               ),
             ],
@@ -821,8 +851,10 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                 Expanded(
                   child: Text(
                     isCompleted
-                        ? '🎉 Chúc mừng bạn đã hoàn thành mục tiêu này!'
-                        : 'Cần tích lũy ~${CurrencyUtils.formatCurrency(goal.recommendedDailySavings)}/ngày để kịp hạn',
+                        ? (LanguageScope.of(context).isVietnamese ? '🎉 Chúc mừng bạn đã hoàn thành mục tiêu này!' : '🎉 Congratulations on achieving this goal!')
+                        : (LanguageScope.of(context).isVietnamese
+                            ? 'Cần tích lũy ~${CurrencyUtils.formatCurrency(goal.recommendedDailySavings)}/ngày để kịp hạn'
+                            : 'Save ~${CurrencyUtils.formatCurrency(goal.recommendedDailySavings)}/day to meet your goal'),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,

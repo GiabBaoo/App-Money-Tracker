@@ -7,10 +7,12 @@ import '../../data/repositories/wallet_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../utils/currency_format_utils.dart';
 import '../../utils/category_utils.dart';
+import '../../services/category_style_service.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/staggered_list_item.dart';
 import '../../widgets/transaction_item.dart';
 import '../../services/auth_service.dart';
+import '../../services/language_service.dart';
 
 /// Trang chuyên sâu dành riêng cho lịch sử giao dịch và dòng tiền của các ví.
 /// Hỗ trợ lọc theo từng ví cụ thể, theo loại (thu/chi/chuyển tiền),
@@ -29,6 +31,7 @@ class WalletHistoryScreen extends StatefulWidget {
 }
 
 class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
+  bool get isVi => LanguageService.instance.isVietnamese;
   final WalletRepository _walletRepo = WalletRepository();
   final TransactionRepository _txRepo = TransactionRepository();
 
@@ -49,6 +52,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
     _selectedWalletId = widget.initialWalletId;
     final now = DateTime.now();
     _selectedMonth = DateTime(now.year, now.month);
+    CategoryStyleService.instance.addListener(_onCategoryStyleChanged);
 
     final uid = AuthService().currentUid;
     if (uid != null) {
@@ -63,8 +67,13 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
     });
   }
 
+  void _onCategoryStyleChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
+    CategoryStyleService.instance.removeListener(_onCategoryStyleChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -95,6 +104,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
@@ -127,7 +137,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _getHeaderTitle(),
+                          _getHeaderTitle(isVi),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
@@ -138,7 +148,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          _getHeaderSubtitle(),
+                          _getHeaderSubtitle(isVi),
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 12,
@@ -158,14 +168,14 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.refresh_rounded, color: Colors.white, size: 14),
-                            SizedBox(width: 4),
+                            const Icon(Icons.refresh_rounded, color: Colors.white, size: 14),
+                            const SizedBox(width: 4),
                             Text(
-                              'Đặt lại',
-                              style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold),
+                              isVi ? 'Đặt lại' : 'Reset',
+                              style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -192,7 +202,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                   style: const TextStyle(color: Colors.white, fontSize: 13.5),
                   cursorColor: Colors.white,
                   decoration: InputDecoration(
-                    hintText: 'Tìm kiếm theo tên món, ghi chú, danh mục...',
+                    hintText: isVi ? 'Tìm kiếm theo tên món, ghi chú, danh mục...' : 'Search by item, note, category...',
                     hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 13),
                     prefixIcon: const Icon(Icons.search_rounded, color: Colors.white70, size: 20),
                     suffixIcon: _searchQuery.isNotEmpty
@@ -351,75 +361,76 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
   }
 
   // === CÁC TIÊU ĐỀ HEADER ===
-  String _getHeaderTitle() {
+  String _getHeaderTitle(bool isVi) {
     if (_selectedWalletId == null) {
-      return 'Lịch sử thu / chi tất cả ví';
+      return isVi ? 'Lịch sử thu / chi tất cả ví' : 'Cash flow history for all wallets';
     }
     final wallet = _cachedWallets.cast<WalletModel?>().firstWhere(
           (w) => w?.id == _selectedWalletId,
           orElse: () => null,
         );
     if (wallet != null) {
-      return 'Lịch sử: ${wallet.name}';
+      return isVi ? 'Lịch sử: ${wallet.name}' : 'History: ${wallet.name}';
     }
-    return 'Lịch sử thu / chi';
+    return isVi ? 'Lịch sử thu / chi' : 'Transaction History';
   }
 
-  String _getHeaderSubtitle() {
+  String _getHeaderSubtitle(bool isVi) {
     if (_selectedWalletId == null) {
       final count = _cachedWallets.length;
-      return '$count ví đang hoạt động';
+      return isVi ? '$count ví đang hoạt động' : '$count active wallets';
     }
     final wallet = _cachedWallets.cast<WalletModel?>().firstWhere(
           (w) => w?.id == _selectedWalletId,
           orElse: () => null,
         );
     if (wallet != null) {
-      return 'Số dư hiện tại: ${CurrencyUtils.formatCurrency(wallet.balance)}';
+      return isVi ? 'Số dư hiện tại: ${CurrencyUtils.formatCurrency(wallet.balance)}' : 'Current balance: ${CurrencyUtils.formatCurrency(wallet.balance)}';
     }
-    return 'Theo dõi dòng tiền thu chi';
+    return isVi ? 'Theo dõi dòng tiền thu chi' : 'Track cash flow & transactions';
   }
 
   // === SMART ERGONOMIC FILTER BAR (1 HÀNG DUY NHẤT TỐI ƯU THUMB ZONE) ===
   Widget _buildSmartErgonomicFilterBar(List<WalletModel> wallets, bool isDark) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     WalletModel? curWallet;
     if (_selectedWalletId != null) {
       try {
         curWallet = wallets.firstWhere((w) => w.id == _selectedWalletId);
       } catch (_) {}
     }
-    final walletLabel = curWallet?.name ?? 'Tất cả ví';
+    final walletLabel = curWallet?.name ?? (isVi ? 'Tất cả ví' : 'All Wallets');
 
     final types = [
-      {'key': 'all', 'label': 'Tất cả'},
-      {'key': 'expense', 'label': 'Chi tiêu'},
-      {'key': 'income', 'label': 'Thu nhập'},
-      {'key': 'transfer', 'label': 'Chuyển ví'},
+      {'key': 'all', 'label': isVi ? 'Tất cả' : 'All'},
+      {'key': 'expense', 'label': isVi ? 'Chi tiêu' : 'Expense'},
+      {'key': 'income', 'label': isVi ? 'Thu nhập' : 'Income'},
+      {'key': 'transfer', 'label': isVi ? 'Chuyển ví' : 'Transfer'},
     ];
 
     String timeLabel;
     if (_timeFilterMode == 'month_to_date') {
-      timeLabel = 'Đầu tháng đến nay';
+      timeLabel = isVi ? 'Đầu tháng đến nay' : 'Month to date';
     } else if (_timeFilterMode == 'today') {
-      timeLabel = 'Hôm nay';
+      timeLabel = isVi ? 'Hôm nay' : 'Today';
     } else if (_timeFilterMode == 'last_7_days') {
-      timeLabel = '7 ngày qua';
+      timeLabel = isVi ? '7 ngày qua' : 'Last 7 days';
     } else if (_timeFilterMode == 'last_30_days') {
-      timeLabel = '30 ngày qua';
+      timeLabel = isVi ? '30 ngày qua' : 'Last 30 days';
     } else if (_timeFilterMode == 'last_month') {
-      timeLabel = 'Tháng trước';
+      timeLabel = isVi ? 'Tháng trước' : 'Last month';
     } else if (_timeFilterMode == 'this_year') {
-      timeLabel = 'Năm ${DateTime.now().year}';
+      timeLabel = isVi ? 'Năm ${DateTime.now().year}' : 'Year ${DateTime.now().year}';
     } else if (_timeFilterMode == 'year_2020') {
-      timeLabel = 'Năm 2020';
+      timeLabel = isVi ? 'Năm 2020' : 'Year 2020';
     } else if (_timeFilterMode == 'month') {
-      timeLabel = 'Tháng ${DateFormat('MM/yy').format(_selectedMonth)}';
+      timeLabel = isVi ? 'Tháng ${DateFormat('MM/yy').format(_selectedMonth)}' : 'Month ${DateFormat('MM/yy').format(_selectedMonth)}';
     } else if (_timeFilterMode == 'week') {
-      timeLabel = 'Tuần này';
+      timeLabel = isVi ? 'Tuần này' : 'This week';
     } else if (_timeFilterMode == 'custom' && _customDateRange != null) {
       timeLabel = '${DateFormat('dd/MM').format(_customDateRange!.start)}-${DateFormat('dd/MM').format(_customDateRange!.end)}';
     } else {
-      timeLabel = 'Tất cả time';
+      timeLabel = isVi ? 'Tất cả time' : 'All time';
     }
 
     return Padding(
@@ -606,7 +617,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Bộ lọc',
+                    isVi ? 'Bộ lọc' : 'Filter',
                     style: TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.bold,
@@ -677,7 +688,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Chọn ví xem lịch sử',
+                      LanguageScope.of(context).isVietnamese ? 'Chọn ví xem lịch sử' : 'Select wallet for history',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
@@ -716,7 +727,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                           child: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF438883), size: 20),
                         ),
                         title: Text(
-                          'Tất cả ví',
+                          LanguageScope.of(context).isVietnamese ? 'Tất cả ví' : 'All Wallets',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -724,7 +735,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                           ),
                         ),
                         subtitle: Text(
-                          '${wallets.length} ví hoạt động',
+                          LanguageScope.of(context).isVietnamese ? '${wallets.length} ví hoạt động' : '${wallets.length} active wallets',
                           style: TextStyle(
                             fontSize: 11.5,
                             color: isDark ? Colors.white54 : Colors.grey.shade600,
@@ -846,7 +857,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                               Icon(Icons.tune_rounded, size: 18, color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)),
                               const SizedBox(width: 8),
                               Text(
-                                'Bộ lọc nâng cao',
+                                isVi ? 'Bộ lọc nâng cao' : 'Advanced Filters',
                                 style: TextStyle(
                                   fontSize: 16.5,
                                   fontWeight: FontWeight.w800,
@@ -861,8 +872,8 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                                 _resetFilters();
                                 Navigator.pop(ctx);
                               },
-                              child: const Text(
-                                'Đặt lại tất cả',
+                              child: Text(
+                                isVi ? 'Đặt lại tất cả' : 'Reset All',
                                 style: TextStyle(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.bold,
@@ -876,7 +887,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
 
                       // 1. Khoảng thời gian
                       Text(
-                        'Khoảng thời gian',
+                        isVi ? 'Khoảng thời gian' : 'Time Period',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -888,7 +899,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          _buildFilterSheetTimeChip('Tháng này', 'month', isDark, setSheetState, () {
+                          _buildFilterSheetTimeChip(isVi ? 'Tháng này' : 'This Month', 'month', isDark, setSheetState, () {
                             final now = DateTime.now();
                             setState(() {
                               _timeFilterMode = 'month';
@@ -896,19 +907,19 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                               _customDateRange = null;
                             });
                           }),
-                          _buildFilterSheetTimeChip('Hôm nay', 'today', isDark, setSheetState, () {
+                          _buildFilterSheetTimeChip(isVi ? 'Hôm nay' : 'Today', 'today', isDark, setSheetState, () {
                             setState(() {
                               _timeFilterMode = 'today';
                               _customDateRange = null;
                             });
                           }),
-                          _buildFilterSheetTimeChip('Tuần này', 'week', isDark, setSheetState, () {
+                          _buildFilterSheetTimeChip(isVi ? 'Tuần này' : 'This Week', 'week', isDark, setSheetState, () {
                             setState(() {
                               _timeFilterMode = 'week';
                               _customDateRange = null;
                             });
                           }),
-                          _buildFilterSheetTimeChip('Tất cả thời gian', 'all_time', isDark, setSheetState, () {
+                          _buildFilterSheetTimeChip(isVi ? 'Tất cả thời gian' : 'All Time', 'all_time', isDark, setSheetState, () {
                             setState(() {
                               _timeFilterMode = 'all_time';
                               _customDateRange = null;
@@ -917,7 +928,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                           _buildFilterSheetTimeChip(
                             _customDateRange != null
                                 ? '${DateFormat('dd/MM').format(_customDateRange!.start)} - ${DateFormat('dd/MM').format(_customDateRange!.end)}'
-                                : 'Tùy chọn ngày...',
+                                : (isVi ? 'Tùy chọn ngày...' : 'Custom Range...'),
                             'custom',
                             isDark,
                             setSheetState,
@@ -959,7 +970,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
 
                       // 2. Loại giao dịch
                       Text(
-                        'Loại giao dịch',
+                        isVi ? 'Loại giao dịch' : 'Transaction Type',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -969,10 +980,10 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          {'key': 'all', 'label': 'Tất cả'},
-                          {'key': 'expense', 'label': 'Chi tiêu'},
-                          {'key': 'income', 'label': 'Thu nhập'},
-                          {'key': 'transfer', 'label': 'Chuyển ví'},
+                          {'key': 'all', 'label': isVi ? 'Tất cả' : 'All'},
+                          {'key': 'expense', 'label': isVi ? 'Chi tiêu' : 'Expense'},
+                          {'key': 'income', 'label': isVi ? 'Thu nhập' : 'Income'},
+                          {'key': 'transfer', 'label': isVi ? 'Chuyển ví' : 'Transfer'},
                         ].map((t) {
                           final isSel = _selectedTxType == t['key'];
                           return Expanded(
@@ -1034,8 +1045,8 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                               ),
                             ],
                           ),
-                          child: const Text(
-                            'Áp dụng bộ lọc',
+                          child: Text(
+                            isVi ? 'Áp dụng bộ lọc' : 'Apply Filters',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 14.5,
@@ -1119,24 +1130,24 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                   const SizedBox(width: 4),
                   Text(
                     _timeFilterMode == 'month_to_date'
-                        ? 'Đầu tháng đến nay'
+                        ? (isVi ? 'Đầu tháng đến nay' : 'Month to date')
                         : _timeFilterMode == 'today'
-                            ? 'Hôm nay'
+                            ? (isVi ? 'Hôm nay' : 'Today')
                             : _timeFilterMode == 'last_7_days'
-                                ? '7 ngày qua'
+                                ? (isVi ? '7 ngày qua' : 'Last 7 days')
                                 : _timeFilterMode == 'last_30_days'
-                                    ? '30 ngày qua'
+                                    ? (isVi ? '30 ngày qua' : 'Last 30 days')
                                     : _timeFilterMode == 'last_month'
-                                        ? 'Tháng trước'
+                                        ? (isVi ? 'Tháng trước' : 'Last month')
                                         : _timeFilterMode == 'this_year'
-                                            ? 'Năm ${DateTime.now().year}'
+                                            ? (isVi ? 'Năm ${DateTime.now().year}' : 'Year ${DateTime.now().year}')
                                             : _timeFilterMode == 'year_2020'
-                                                ? 'Năm 2020'
+                                                ? (isVi ? 'Năm 2020' : 'Year 2020')
                                                 : _timeFilterMode == 'week'
-                                                    ? 'Tuần này'
+                                                    ? (isVi ? 'Tuần này' : 'This week')
                                                     : _timeFilterMode == 'custom' && _customDateRange != null
                                                         ? '${DateFormat('dd/MM').format(_customDateRange!.start)} - ${DateFormat('dd/MM').format(_customDateRange!.end)}'
-                                                        : 'Tất cả thời gian',
+                                                        : (isVi ? 'Tất cả thời gian' : 'All time'),
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)),
                   ),
                   const SizedBox(width: 3),
@@ -1166,7 +1177,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                   Icon(CategoryUtils.getCategoryIcon(_selectedCategoryFilter!), size: 12, color: const Color(0xFF3A86FF)),
                   const SizedBox(width: 4),
                   Text(
-                    _selectedCategoryFilter!,
+                    context.trCat(_selectedCategoryFilter!),
                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF3A86FF)),
                   ),
                   const SizedBox(width: 3),
@@ -1191,7 +1202,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                   const Icon(Icons.history_rounded, size: 12, color: Color(0xFFE07A5F)),
                   const SizedBox(width: 4),
                   Text(
-                    'Toàn bộ lịch sử: "$_searchQuery"',
+                    isVi ? 'Toàn bộ lịch sử: "$_searchQuery"' : 'All history: "$_searchQuery"',
                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFE07A5F)),
                   ),
                   const SizedBox(width: 3),
@@ -1206,7 +1217,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
           GestureDetector(
             onTap: _resetFilters,
             child: Text(
-              'Đặt lại',
+              isVi ? 'Đặt lại' : 'Reset',
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
@@ -1221,6 +1232,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
 
   // === TÓM TẮT THU - CHI - RÒNG (MINI CASHFLOW GLANCE BAR) ===
   Widget _buildCashflowSummaryBar(double income, double expense, double net, bool isDark) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final totalFlow = income + expense;
     final incomePercent = totalFlow > 0 ? (income / totalFlow) : 0.5;
     final expensePercent = totalFlow > 0 ? (expense / totalFlow) : 0.5;
@@ -1240,12 +1252,12 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildSummaryColumn('Thu nhập', income, const Color(0xFF2E7D32), isDark),
+              _buildSummaryColumn(isVi ? 'Thu nhập' : 'Income', income, const Color(0xFF2E7D32), isDark),
               Container(height: 22, width: 1, color: isDark ? Colors.white12 : Colors.grey.shade300),
-              _buildSummaryColumn('Chi tiêu', expense, const Color(0xFFD32F2F), isDark),
+              _buildSummaryColumn(isVi ? 'Chi tiêu' : 'Expense', expense, const Color(0xFFD32F2F), isDark),
               Container(height: 22, width: 1, color: isDark ? Colors.white12 : Colors.grey.shade300),
               _buildSummaryColumn(
-                'Dòng tiền ròng',
+                isVi ? 'Dòng tiền ròng' : 'Net Cashflow',
                 net,
                 net >= 0
                     ? (isDark ? const Color(0xFF4ADE80) : const Color(0xFF2E7D32))
@@ -1328,8 +1340,8 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
             children: [
               Text(
                 _selectedTxType == 'income'
-                    ? 'Phân loại nguồn thu'
-                    : 'Phân loại chi tiêu',
+                    ? (isVi ? 'Phân loại nguồn thu' : 'Income Breakdown')
+                    : (isVi ? 'Phân loại chi tiêu' : 'Expense Breakdown'),
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.bold,
@@ -1340,7 +1352,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                 GestureDetector(
                   onTap: () => setState(() => _selectedCategoryFilter = null),
                   child: Text(
-                    'Xem tất cả',
+                    context.tr('view_all'),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
@@ -1418,6 +1430,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
 
   // === EMPTY STATE ===
   Widget _buildEmptyState(bool isDark) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -1432,8 +1445,8 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
             const SizedBox(height: 12),
             Text(
               _searchQuery.isNotEmpty
-                  ? 'Không tìm thấy giao dịch nào khớp với "$_searchQuery"'
-                  : 'Không có giao dịch nào phù hợp bộ lọc',
+                  ? (isVi ? 'Không tìm thấy giao dịch nào khớp với "$_searchQuery"' : 'No transactions matching "$_searchQuery"')
+                  : (isVi ? 'Không có giao dịch nào phù hợp bộ lọc' : 'No transactions match current filters'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13.5,
@@ -1450,13 +1463,13 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                   color: const Color(0xFF438883).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.refresh_rounded, size: 14, color: Color(0xFF438883)),
-                    SizedBox(width: 6),
+                    const Icon(Icons.refresh_rounded, size: 14, color: Color(0xFF438883)),
+                    const SizedBox(width: 6),
                     Text(
-                      'Xem tất cả giao dịch',
+                      isVi ? 'Xem tất cả giao dịch' : 'View all transactions',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -1638,19 +1651,20 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
     return groups;
   }
 
-  String _formatFriendlyDate(DateTime date) {
+  String _formatFriendlyDate(DateTime date, bool isVi) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final target = DateTime(date.year, date.month, date.day);
     final diff = today.difference(target).inDays;
 
     if (diff == 0) {
-      return 'Hôm nay - ${DateFormat('dd/MM/yyyy').format(date)}';
+      return isVi ? 'Hôm nay - ${DateFormat('dd/MM/yyyy').format(date)}' : 'Today - ${DateFormat('dd/MM/yyyy').format(date)}';
     } else if (diff == 1) {
-      return 'Hôm qua - ${DateFormat('dd/MM/yyyy').format(date)}';
+      return isVi ? 'Hôm qua - ${DateFormat('dd/MM/yyyy').format(date)}' : 'Yesterday - ${DateFormat('dd/MM/yyyy').format(date)}';
     } else {
-      final weekdayNames = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
-      final weekday = weekdayNames[date.weekday - 1];
+      final weekdayNamesVi = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
+      final weekdayNamesEn = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      final weekday = isVi ? weekdayNamesVi[date.weekday - 1] : weekdayNamesEn[date.weekday - 1];
       return '$weekday - ${DateFormat('dd/MM/yyyy').format(date)}';
     }
   }
@@ -1667,8 +1681,10 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
       }
     }
 
-    final dateLabel = _formatFriendlyDate(date);
-    final isToday = dateLabel.startsWith('Hôm nay');
+    final isVi = LanguageScope.of(context).isVietnamese;
+    final dateLabel = _formatFriendlyDate(date, isVi);
+    final now = DateTime.now();
+    final isToday = (date.year == now.year && date.month == now.month && date.day == now.day);
 
     return Padding(
       padding: const EdgeInsets.only(top: 16, bottom: 8),
@@ -1810,7 +1826,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Chọn tháng',
+                          isVi ? 'Chọn tháng' : 'Select Month',
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w800,
@@ -1927,7 +1943,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                                 ),
                               ),
                               child: Text(
-                                'Tháng $month',
+                                isVi ? 'Tháng $month' : 'Month $month',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: isSel || isCurrentMonth ? FontWeight.w700 : FontWeight.w500,
@@ -1955,6 +1971,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
 
   // === BOTTOM SHEET BỘ LỌC THỜI GIAN NÂNG CAO ===
   void _showAdvancedTimeFilterSheet(BuildContext context, bool isDark) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1969,79 +1986,82 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
             top: false,
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white24 : Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Chọn phạm vi thời gian',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF1E293B),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _buildTimeFilterOption('Từ đầu tháng đến nay', 'month_to_date', Icons.trending_up_rounded, isDark, ctx),
-                _buildTimeFilterOption('Hôm nay', 'today', Icons.today_rounded, isDark, ctx),
-                _buildTimeFilterOption('7 ngày qua', 'last_7_days', Icons.date_range_rounded, isDark, ctx),
-                _buildTimeFilterOption('30 ngày qua', 'last_30_days', Icons.calendar_view_day_rounded, isDark, ctx),
-                _buildTimeFilterOption('Tháng này (${DateFormat('MM/yyyy').format(DateTime.now())})', 'month', Icons.calendar_month_rounded, isDark, ctx, onTap: () {
-                  final now = DateTime.now();
-                  setState(() {
-                    _timeFilterMode = 'month';
-                    _selectedMonth = DateTime(now.year, now.month);
-                    _customDateRange = null;
-                  });
-                  Navigator.pop(ctx);
-                }),
-                _buildTimeFilterOption('Tháng trước', 'last_month', Icons.history_rounded, isDark, ctx),
-                _buildTimeFilterOption('Năm nay (${DateTime.now().year})', 'this_year', Icons.calendar_today_rounded, isDark, ctx),
-                _buildTimeFilterOption('Năm 2020 (Lịch sử cũ)', 'year_2020', Icons.history_toggle_off_rounded, isDark, ctx),
-                _buildTimeFilterOption('Khoảng ngày tùy chọn...', 'custom', Icons.edit_calendar_rounded, isDark, ctx, onTap: () async {
-                  Navigator.pop(ctx);
-                  final picked = await showDateRangePicker(
-                    context: context,
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime.now(),
-                    initialDateRange: _customDateRange ??
-                        DateTimeRange(
-                          start: DateTime.now().subtract(const Duration(days: 7)),
-                          end: DateTime.now(),
-                        ),
-                    builder: (context, child) {
-                      return Theme(
-                        data: Theme.of(context).copyWith(
-                          colorScheme: const ColorScheme.light(
-                            primary: Color(0xFF438883),
-                            onPrimary: Colors.white,
-                            onSurface: Color(0xFF1E293B),
-                          ),
-                        ),
-                        child: child!,
+                    const SizedBox(height: 16),
+                    Text(
+                      isVi ? 'Chọn phạm vi thời gian' : 'Select Time Range',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTimeFilterOption(isVi ? 'Từ đầu tháng đến nay' : 'Month to date', 'month_to_date', Icons.trending_up_rounded, isDark, ctx),
+                    _buildTimeFilterOption(isVi ? 'Hôm nay' : 'Today', 'today', Icons.today_rounded, isDark, ctx),
+                    _buildTimeFilterOption(isVi ? '7 ngày qua' : 'Last 7 days', 'last_7_days', Icons.date_range_rounded, isDark, ctx),
+                    _buildTimeFilterOption(isVi ? '30 ngày qua' : 'Last 30 days', 'last_30_days', Icons.calendar_view_day_rounded, isDark, ctx),
+                    _buildTimeFilterOption(isVi ? 'Tháng này (${DateFormat('MM/yyyy').format(DateTime.now())})' : 'This month (${DateFormat('MM/yyyy').format(DateTime.now())})', 'month', Icons.calendar_month_rounded, isDark, ctx, onTap: () {
+                      final now = DateTime.now();
+                      setState(() {
+                        _timeFilterMode = 'month';
+                        _selectedMonth = DateTime(now.year, now.month);
+                        _customDateRange = null;
+                      });
+                      Navigator.pop(ctx);
+                    }),
+                    _buildTimeFilterOption(isVi ? 'Tháng trước' : 'Last month', 'last_month', Icons.history_rounded, isDark, ctx),
+                    _buildTimeFilterOption(isVi ? 'Năm nay (${DateTime.now().year})' : 'This year (${DateTime.now().year})', 'this_year', Icons.calendar_today_rounded, isDark, ctx),
+                    _buildTimeFilterOption(isVi ? 'Năm 2020 (Lịch sử cũ)' : 'Year 2020 (Old history)', 'year_2020', Icons.history_toggle_off_rounded, isDark, ctx),
+                    _buildTimeFilterOption(isVi ? 'Khoảng ngày tùy chọn...' : 'Custom date range...', 'custom', Icons.edit_calendar_rounded, isDark, ctx, onTap: () async {
+                      Navigator.pop(ctx);
+                      final picked = await showDateRangePicker(
+                        context: context,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime.now(),
+                        initialDateRange: _customDateRange ??
+                            DateTimeRange(
+                              start: DateTime.now().subtract(const Duration(days: 7)),
+                              end: DateTime.now(),
+                            ),
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: const ColorScheme.light(
+                                primary: Color(0xFF438883),
+                                onPrimary: Colors.white,
+                                onSurface: Color(0xFF1E293B),
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
                       );
-                    },
-                  );
-                  if (picked != null) {
-                    setState(() {
-                      _timeFilterMode = 'custom';
-                      _customDateRange = picked;
-                    });
-                  }
-                }),
-                _buildTimeFilterOption('Tất cả thời gian', 'all_time', Icons.all_inclusive_rounded, isDark, ctx),
-              ],
-            ),
-          ),
+                      if (picked != null) {
+                        setState(() {
+                          _timeFilterMode = 'custom';
+                          _customDateRange = picked;
+                        });
+                      }
+                    }),
+                    _buildTimeFilterOption(isVi ? 'Tất cả thời gian' : 'All time', 'all_time', Icons.all_inclusive_rounded, isDark, ctx),
+                  ],
+                ),
+              ),
+            );
+          },
         );
-      },
-    );
   }
 
   Widget _buildTimeFilterOption(

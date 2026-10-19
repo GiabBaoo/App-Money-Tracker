@@ -4,6 +4,7 @@ import '../../widgets/animated_scale_button.dart';
 import '../../widgets/app_logo.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
+import '../../services/language_service.dart';
 import 'forgot_password_confirmation_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -25,16 +26,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Future<void> _handleSendPasswordReset() async {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final email = _emailController.text.trim();
 
     // Validate email
     if (email.isEmpty) {
-      _showSnackBar('Vui lòng nhập email!', isError: true);
+      _showSnackBar(isVi ? 'Vui lòng nhập email!' : 'Please enter your email!', isError: true);
       return;
     }
 
     if (!email.contains('@') || !email.contains('.')) {
-      _showSnackBar('Email khong hop le!', isError: true);
+      _showSnackBar(isVi ? 'Email không hợp lệ!' : 'Invalid email address!', isError: true);
       return;
     }
 
@@ -76,6 +78,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
@@ -127,12 +130,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Quên mật khẩu',
+                        isVi ? 'Quên mật khẩu' : 'Forgot Password',
                         style: TextStyle(color: isDark ? Colors.white : const Color(0xFF549B96), fontSize: 28, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Vui lòng nhập email của bạn. Chúng tôi sẽ gửi link đặt lại mật khẩu.',
+                        isVi
+                            ? 'Vui lòng nhập email của bạn. Chúng tôi sẽ gửi link đặt lại mật khẩu.'
+                            : 'Please enter your email. We will send you a password reset link.',
                         style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF666666), fontSize: 14, height: 1.5),
                       ),
                       const SizedBox(height: 40),
@@ -145,7 +150,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         style: TextStyle(fontSize: 15, color: isDark ? Colors.white : Colors.black),
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                          hintText: 'Nhập email của bạn',
+                          hintText: isVi ? 'Nhập email của bạn' : 'Enter your email',
                           hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black.withValues(alpha: 0.3), fontSize: 14),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           enabledBorder: OutlineInputBorder(
@@ -166,11 +171,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             HapticFeedback.lightImpact();
                             Navigator.pop(context);
                           },
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             child: Text(
-                              'Quay lại Đăng nhập',
-                              style: TextStyle(color: Color(0xFF438883), fontSize: 15, fontWeight: FontWeight.bold),
+                              isVi ? 'Quay lại Đăng nhập' : 'Back to Login',
+                              style: const TextStyle(color: Color(0xFF438883), fontSize: 15, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ),
@@ -211,9 +216,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                       strokeWidth: 2.5,
                                     ),
                                   )
-                                : const Text(
-                                    'Gửi email đặt lại mật khẩu',
-                                    style: TextStyle(
+                                : Text(
+                                    isVi ? 'Gửi email đặt lại mật khẩu' : 'Send Reset Link',
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 18,
                                       fontWeight: FontWeight.w600,
@@ -233,4 +238,3 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 }
-

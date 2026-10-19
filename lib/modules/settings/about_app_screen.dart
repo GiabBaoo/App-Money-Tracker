@@ -4,12 +4,14 @@ import '../../widgets/top_toast.dart';
 import '../../widgets/app_logo.dart';
 import 'privacy_policy_screen.dart';
 import 'support_request_screen.dart';
+import '../../services/language_service.dart';
 
 class AboutAppScreen extends StatelessWidget {
   const AboutAppScreen({super.key});
 
   void _showRatingDialog(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVi = LanguageScope.of(context).isVietnamese;
     int selectedRating = 5;
     showDialog(
       context: context,
@@ -23,7 +25,7 @@ class AboutAppScreen extends StatelessWidget {
             ),
           ),
           title: Text(
-            'Đánh giá Mono',
+            isVi ? 'Đánh giá Mono' : 'Rate Mono',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontWeight: FontWeight.bold,
@@ -34,7 +36,9 @@ class AboutAppScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Bạn cảm thấy trải nghiệm sử dụng Mono như thế nào?',
+                isVi
+                    ? 'Bạn cảm thấy trải nghiệm sử dụng Mono như thế nào?'
+                    : 'How do you feel about your experience using Mono?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -60,7 +64,7 @@ class AboutAppScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
-              child: Text('Để sau', style: TextStyle(color: isDark ? Colors.white60 : Colors.grey)),
+              child: Text(isVi ? 'Để sau' : 'Later', style: TextStyle(color: isDark ? Colors.white60 : Colors.grey)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -71,9 +75,14 @@ class AboutAppScreen extends StatelessWidget {
               ),
               onPressed: () {
                 Navigator.pop(dialogCtx);
-                TopToast.show(context, 'Cảm ơn bạn đã đánh giá $selectedRating sao cho Mono! ❤️');
+                TopToast.show(
+                  context,
+                  isVi
+                      ? 'Cảm ơn bạn đã đánh giá $selectedRating sao cho Mono! ❤️'
+                      : 'Thank you for rating Mono $selectedRating stars! ❤️',
+                );
               },
-              child: const Text('Gửi đánh giá', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(isVi ? 'Gửi đánh giá' : 'Submit', style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -83,6 +92,7 @@ class AboutAppScreen extends StatelessWidget {
 
   void _showTermsDialog(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVi = LanguageScope.of(context).isVietnamese;
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
@@ -94,7 +104,7 @@ class AboutAppScreen extends StatelessWidget {
           ),
         ),
         title: Text(
-          'Điều khoản dịch vụ',
+          isVi ? 'Điều khoản dịch vụ' : 'Terms of Service',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: isDark ? Colors.white : const Color(0xFF0F172A),
@@ -102,10 +112,15 @@ class AboutAppScreen extends StatelessWidget {
         ),
         content: SingleChildScrollView(
           child: Text(
-            '1. Chấp thuận điều khoản: Bằng việc sử dụng Mono, bạn đồng ý với các quy định về lưu trữ và bảo mật dữ liệu.\n\n'
-            '2. Quyền riêng tư: Mọi thông tin thu chi cá nhân thuộc quyền sở hữu riêng của bạn và được bảo vệ theo chuẩn mã hóa cao nhất.\n\n'
-            '3. Tính sẵn sàng: Hệ thống hỗ trợ làm việc ngoại tuyến (Offline SQLite) và tự động đồng bộ khi có kết nối Internet.\n\n'
-            '4. Trợ lý AI: Tính năng AI Gemini hỗ trợ phân tích và gợi ý quản lý chi tiêu mang tính chất tham khảo hữu ích cho kế hoạch tài chính của bạn.',
+            isVi
+                ? '1. Chấp thuận điều khoản: Bằng việc sử dụng Mono, bạn đồng ý với các quy định về lưu trữ và bảo mật dữ liệu.\n\n'
+                    '2. Quyền riêng tư: Mọi thông tin thu chi cá nhân thuộc quyền sở hữu riêng của bạn và được bảo vệ theo chuẩn mã hóa cao nhất.\n\n'
+                    '3. Tính sẵn sàng: Hệ thống hỗ trợ làm việc ngoại tuyến (Offline SQLite) và tự động đồng bộ khi có kết nối Internet.\n\n'
+                    '4. Trợ lý AI: Tính năng AI Gemini hỗ trợ phân tích và gợi ý quản lý chi tiêu mang tính chất tham khảo hữu ích cho kế hoạch tài chính của bạn.'
+                : '1. Acceptance of Terms: By using Mono, you agree to the provisions on data storage and security.\n\n'
+                    '2. Privacy: All personal financial data belongs solely to you and is protected under the highest encryption standards.\n\n'
+                    '3. Availability: The app supports offline operations (SQLite) and synchronizes seamlessly when Internet is restored.\n\n'
+                    '4. AI Assistant: AI insights provide helpful financial suggestions for reference in your personal financial planning.',
             style: TextStyle(
               fontSize: 13.5,
               height: 1.45,
@@ -122,7 +137,7 @@ class AboutAppScreen extends StatelessWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('Đã hiểu', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(isVi ? 'Đã hiểu' : 'Understood', style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -132,6 +147,7 @@ class AboutAppScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
@@ -149,9 +165,9 @@ class AboutAppScreen extends StatelessWidget {
                     icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Text(
-                    'Về ứng dụng',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                  Text(
+                    isVi ? 'Về ứng dụng' : 'About App',
+                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(width: 44),
                 ],
@@ -189,7 +205,9 @@ class AboutAppScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Quản lý chi tiêu thông minh & cá nhân hóa',
+                        isVi
+                            ? 'Quản lý chi tiêu thông minh & cá nhân hóa'
+                            : 'Smart & personalized expense management',
                         style: TextStyle(
                           color: isDark ? Colors.white70 : Colors.grey.shade600,
                           fontSize: 13,
@@ -204,14 +222,14 @@ class AboutAppScreen extends StatelessWidget {
                           color: const Color(0xFF438883).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF438883)),
-                            SizedBox(width: 6),
+                            const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF438883)),
+                            const SizedBox(width: 6),
                             Text(
-                              'Phiên bản 1.0.0 (Mới nhất)',
-                              style: TextStyle(
+                              isVi ? 'Phiên bản 1.0.0 (Mới nhất)' : 'Version 1.0.0 (Latest)',
+                              style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF438883),
@@ -223,7 +241,7 @@ class AboutAppScreen extends StatelessWidget {
                       const SizedBox(height: 28),
 
                       // Feature Highlights Grid
-                      _buildFeaturesGrid(isDark),
+                      _buildFeaturesGrid(isDark, isVi),
                       const SizedBox(height: 24),
 
                       // Information & Links
@@ -233,7 +251,7 @@ class AboutAppScreen extends StatelessWidget {
                           _buildAboutRow(
                             isDark: isDark,
                             icon: Icons.privacy_tip_outlined,
-                            title: 'Chính sách bảo mật',
+                            title: isVi ? 'Chính sách bảo mật' : 'Privacy Policy',
                             onTap: () => Navigator.push(
                               context,
                               PageTransitions.slideRight(const PrivacyPolicyScreen()),
@@ -243,21 +261,21 @@ class AboutAppScreen extends StatelessWidget {
                           _buildAboutRow(
                             isDark: isDark,
                             icon: Icons.description_outlined,
-                            title: 'Điều khoản dịch vụ',
+                            title: isVi ? 'Điều khoản dịch vụ' : 'Terms of Service',
                             onTap: () => _showTermsDialog(context),
                           ),
                           _buildDivider(isDark),
                           _buildAboutRow(
                             isDark: isDark,
                             icon: Icons.star_outline_rounded,
-                            title: 'Đánh giá ứng dụng',
+                            title: isVi ? 'Đánh giá ứng dụng' : 'Rate Application',
                             onTap: () => _showRatingDialog(context),
                           ),
                           _buildDivider(isDark),
                           _buildAboutRow(
                             isDark: isDark,
                             icon: Icons.support_agent_rounded,
-                            title: 'Liên hệ & Phản hồi hỗ trợ',
+                            title: isVi ? 'Liên hệ & Phản hồi hỗ trợ' : 'Contact & Support',
                             onTap: () => Navigator.push(
                               context,
                               PageTransitions.slideRight(const SupportRequestScreen()),
@@ -269,7 +287,9 @@ class AboutAppScreen extends StatelessWidget {
 
                       // Footer
                       Text(
-                        'Phát triển với ❤️ bởi Nhóm Mono\nBản quyền © 2024 - 2026. Tất cả các quyền được bảo lưu.',
+                        isVi
+                            ? 'Phát triển với ❤️ bởi Nhóm Mono\nBản quyền © 2024 - 2026. Tất cả các quyền được bảo lưu.'
+                            : 'Developed with ❤️ by Mono Team\nCopyright © 2024 - 2026. All rights reserved.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: isDark ? Colors.white38 : Colors.grey.shade500,
@@ -289,12 +309,28 @@ class AboutAppScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFeaturesGrid(bool isDark) {
+  Widget _buildFeaturesGrid(bool isDark, bool isVi) {
     final features = [
-      {'icon': Icons.sync_rounded, 'title': 'Đồng bộ 2 chiều', 'desc': 'Offline SQLite & Cloud'},
-      {'icon': Icons.security_rounded, 'title': 'Bảo mật tuyệt đối', 'desc': 'Mã hóa tài khoản an toàn'},
-      {'icon': Icons.auto_awesome_rounded, 'title': 'Trợ lý Mono AI', 'desc': 'Phân tích tài chính thông minh'},
-      {'icon': Icons.pie_chart_outline_rounded, 'title': 'Báo cáo chi tiết', 'desc': 'Biểu đồ trực quan sinh động'},
+      {
+        'icon': Icons.sync_rounded,
+        'title': isVi ? 'Đồng bộ 2 chiều' : '2-Way Sync',
+        'desc': 'Offline SQLite & Cloud',
+      },
+      {
+        'icon': Icons.security_rounded,
+        'title': isVi ? 'Bảo mật tuyệt đối' : 'High Security',
+        'desc': isVi ? 'Mã hóa tài khoản an toàn' : 'Safe encryption',
+      },
+      {
+        'icon': Icons.auto_awesome_rounded,
+        'title': isVi ? 'Trợ lý Mono AI' : 'Mono AI Assistant',
+        'desc': isVi ? 'Phân tích tài chính thông minh' : 'Smart insights',
+      },
+      {
+        'icon': Icons.pie_chart_outline_rounded,
+        'title': isVi ? 'Báo cáo chi tiết' : 'Detailed Reports',
+        'desc': isVi ? 'Biểu đồ trực quan sinh động' : 'Interactive charts',
+      },
     ];
 
     return GridView.builder(

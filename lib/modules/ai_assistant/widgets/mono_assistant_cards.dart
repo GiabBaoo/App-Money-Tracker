@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../services/language_service.dart';
 import '../../../models/transaction_model.dart';
 import '../../../models/wallet_model.dart';
 import '../../../data/repositories/goal_repository.dart';
@@ -112,6 +113,7 @@ class _BankSmsTransactionCardState extends State<BankSmsTransactionCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final res = widget.parseResult;
     final isIncome = res.type == 'income';
@@ -226,7 +228,7 @@ class _BankSmsTransactionCardState extends State<BankSmsTransactionCard> {
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : Icon(_isSaved ? Icons.check_circle_rounded : Icons.save_rounded, size: 18),
               label: Text(
-                _isSaved ? 'Đã ghi vào sổ' : (_isSaving ? 'Đang lưu...' : 'Lưu vào sổ giao dịch'),
+                _isSaved ? (isVi ? 'Đã ghi vào sổ' : 'Saved to ledger') : (_isSaving ? (isVi ? 'Đang lưu...' : 'Saving...') : (isVi ? 'Lưu vào sổ giao dịch' : 'Save to ledger')),
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ),
@@ -245,17 +247,19 @@ class GroupSplitBillCard extends StatelessWidget {
 
   void _copyToClipboard(BuildContext context) {
     Clipboard.setData(ClipboardData(text: splitResult.shareSummaryText));
+    final isVi = LanguageScope.of(context).isVietnamese;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('📋 Đã sao chép nội dung chia tiền! Bạn có thể dán gửi vào Zalo/Messenger.'),
-        backgroundColor: Color(0xFF438883),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: Text(isVi ? '📋 Đã sao chép nội dung chia tiền! Bạn có thể dán gửi vào Zalo/Messenger.' : '📋 Split bill copied to clipboard! You can paste into chat.'),
+        backgroundColor: const Color(0xFF438883),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -296,7 +300,7 @@ class GroupSplitBillCard extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : const Color(0xFF1E293B)),
                     ),
                     Text(
-                      'Người trả: ${splitResult.payerName}',
+                      '${isVi ? "Người trả" : "Payer"}: ${splitResult.payerName}',
                       style: TextStyle(fontSize: 12, color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF64748B)),
                     ),
                   ],
@@ -322,7 +326,7 @@ class GroupSplitBillCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Mỗi người (${splitResult.memberCount} người):',
+                  isVi ? 'Mỗi người (${splitResult.memberCount} người):' : 'Per person (${splitResult.memberCount} people):',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569)),
                 ),
                 Text(
@@ -352,7 +356,7 @@ class GroupSplitBillCard extends StatelessWidget {
                   Text(m.name, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A))),
                   const Spacer(),
                   Text(
-                    m.isPayer ? 'Đã thanh toán' : CurrencyUtils.formatCurrency(m.amount),
+                    m.isPayer ? (isVi ? 'Đã thanh toán' : 'Paid') : CurrencyUtils.formatCurrency(m.amount),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -378,7 +382,7 @@ class GroupSplitBillCard extends StatelessWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               icon: const Icon(Icons.copy_rounded, size: 18),
-              label: const Text('Sao chép tin nhắn gửi nhóm (Zalo/Mess)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              label: Text(isVi ? 'Sao chép tin nhắn gửi nhóm (Zalo/Mess)' : 'Copy message to share with group', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
             ),
           ),
         ],
@@ -411,6 +415,7 @@ class SafeDailySpendCard extends StatelessWidget {
         statusIcon = Icons.check_circle_outline_rounded;
     }
 
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -444,7 +449,7 @@ class SafeDailySpendCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Hạn mức an toàn mỗi ngày',
+                  isVi ? 'Hạn mức an toàn mỗi ngày' : 'Safe Daily Spending Limit',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : const Color(0xFF1E293B)),
                 ),
               ),
@@ -455,7 +460,7 @@ class SafeDailySpendCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Còn ${result.daysRemaining} ngày',
+                  isVi ? 'Còn ${result.daysRemaining} ngày' : '${result.daysRemaining} days left',
                   style: TextStyle(color: cardColor, fontWeight: FontWeight.bold, fontSize: 11),
                 ),
               ),
@@ -469,7 +474,7 @@ class SafeDailySpendCard extends StatelessWidget {
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: cardColor, letterSpacing: -0.5),
           ),
           Text(
-            'Số tiền bạn có thể tiêu hôm nay để không lo thâm hụt ví',
+            isVi ? 'Số tiền bạn có thể tiêu hôm nay để không lo thâm hụt ví' : 'Safe amount you can spend today without overspending',
             style: TextStyle(fontSize: 12, color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF64748B)),
           ),
           const SizedBox(height: 12),
@@ -485,9 +490,9 @@ class SafeDailySpendCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatItem('Đã tiêu hôm nay', CurrencyUtils.formatCurrency(result.todaySpent), isDark),
-                _buildStatItem('Đã tiêu tháng này', CurrencyUtils.formatCurrency(result.totalSpentThisMonth), isDark),
-                _buildStatItem('Ngân sách còn', CurrencyUtils.formatCurrency(result.remainingBudget), isDark),
+                _buildStatItem(isVi ? 'Đã tiêu hôm nay' : 'Spent today', CurrencyUtils.formatCurrency(result.todaySpent), isDark),
+                _buildStatItem(isVi ? 'Đã tiêu tháng này' : 'Spent this month', CurrencyUtils.formatCurrency(result.totalSpentThisMonth), isDark),
+                _buildStatItem(isVi ? 'Ngân sách còn' : 'Budget left', CurrencyUtils.formatCurrency(result.remainingBudget), isDark),
               ],
             ),
           ),
@@ -522,6 +527,7 @@ class LatteFactorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -558,11 +564,11 @@ class LatteFactorCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Phân tích "Thủng ví" (Latte Factor)',
+                      isVi ? 'Phân tích "Thủng ví" (Latte Factor)' : 'Latte Factor Analysis',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: isDark ? Colors.white : const Color(0xFF1E293B)),
                     ),
                     Text(
-                      'Các khoản tiêu vặt < 70k tưởng nhỏ mà không nhỏ',
+                      isVi ? 'Các khoản tiêu vặt < 70k tưởng nhỏ mà không nhỏ' : 'Small expenses that secretly add up',
                       style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF64748B)),
                     ),
                   ],
@@ -578,7 +584,7 @@ class LatteFactorCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Tổng tiêu vặt tháng này:', style: TextStyle(fontSize: 12, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
+                  Text(isVi ? 'Tổng tiêu vặt tháng này:' : 'Total small expenses this month:', style: TextStyle(fontSize: 12, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
                   Text(
                     CurrencyUtils.formatCurrency(result.totalSmallExpenses),
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFFF97316)),
@@ -594,7 +600,7 @@ class LatteFactorCard extends StatelessWidget {
                   border: isDark ? Border.all(color: const Color(0xFFF97316).withValues(alpha: 0.3)) : null,
                 ),
                 child: Text(
-                  '${result.transactionCount} lần quẹt ví',
+                  isVi ? '${result.transactionCount} lần quẹt ví' : '${result.transactionCount} transactions',
                   style: const TextStyle(color: Color(0xFFF97316), fontWeight: FontWeight.bold, fontSize: 12),
                 ),
               ),
@@ -623,7 +629,7 @@ class LatteFactorCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Nếu tiết kiệm khoản này 1 năm:',
+                        isVi ? 'Nếu tiết kiệm khoản này 1 năm:' : 'If saved for 1 year:',
                         style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFFFDBA74) : const Color(0xFF92400E)),
                       ),
                       Text(
@@ -698,6 +704,7 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final rm = widget.roadmap;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -879,7 +886,7 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
               ),
               icon: Icon(_isSaved ? Icons.check_circle_rounded : Icons.star_rounded, size: 18),
               label: Text(
-                _isSaved ? 'Đã thêm vào Sổ Tiết Kiệm' : (_isSaving ? 'Đang thêm...' : 'Lưu mục tiêu này vào sổ tiết kiệm'),
+                _isSaved ? (isVi ? 'Đã thêm vào Sổ Tiết Kiệm' : 'Added to Savings') : (_isSaving ? (isVi ? 'Đang thêm...' : 'Adding...') : (isVi ? 'Lưu mục tiêu này vào sổ tiết kiệm' : 'Save goal to savings')),
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ),
@@ -1055,6 +1062,7 @@ class FinancialHealthScoreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -1102,7 +1110,7 @@ class FinancialHealthScoreCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          'Sức khỏe tài chính',
+                          isVi ? 'Sức khỏe tài chính' : 'Financial Health',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -1129,7 +1137,7 @@ class FinancialHealthScoreCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Thang điểm 100 theo chuẩn quản lý tài chính',
+                      isVi ? 'Thang điểm 100 theo chuẩn quản lý tài chính' : '100-point scale based on personal finance standards',
                       style: TextStyle(
                         fontSize: 11,
                         color: isDark ? Colors.white60 : Colors.black54,
@@ -1234,6 +1242,7 @@ class RecurringTransactionsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -1269,7 +1278,7 @@ class RecurringTransactionsCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Chi phí cố định định kỳ',
+                      isVi ? 'Chi phí cố định định kỳ' : 'Recurring Fixed Expenses',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -1277,7 +1286,7 @@ class RecurringTransactionsCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Ước tính: ${CurrencyUtils.formatCurrency(result.totalMonthlyFixedCost)}/tháng',
+                      isVi ? 'Ước tính: ${CurrencyUtils.formatCurrency(result.totalMonthlyFixedCost)}/tháng' : 'Est: ${CurrencyUtils.formatCurrency(result.totalMonthlyFixedCost)}/mo',
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
@@ -1295,7 +1304,7 @@ class RecurringTransactionsCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
-                'Chưa phát hiện khoản chi lặp lại định kỳ nào trong 90 ngày qua.',
+                isVi ? 'Chưa phát hiện khoản chi lặp lại định kỳ nào trong 90 ngày qua.' : 'No recurring fixed expenses detected in the last 90 days.',
                 style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.black54),
               ),
             )
@@ -1697,6 +1706,7 @@ class _TransferConfirmCardState extends State<TransferConfirmCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -1741,7 +1751,7 @@ class _TransferConfirmCardState extends State<TransferConfirmCard> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  _isSuccess ? 'Chuyển tiền thành công' : 'Xác nhận chuyển tiền giữa các ví',
+                  _isSuccess ? (isVi ? 'Chuyển tiền thành công' : 'Transfer Successful') : (isVi ? 'Xác nhận chuyển tiền giữa các ví' : 'Confirm Wallet Transfer'),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
@@ -1868,7 +1878,7 @@ class _TransferConfirmCardState extends State<TransferConfirmCard> {
                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                     )
                   : Text(
-                      _isSuccess ? '✓ Đã hoàn tất chuyển tiền' : 'Xác nhận chuyển tiền ngay',
+                      _isSuccess ? (isVi ? '✓ Đã hoàn tất chuyển tiền' : '✓ Transfer Completed') : (isVi ? 'Xác nhận chuyển tiền ngay' : 'Confirm Transfer Now'),
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
             ),

@@ -1,3 +1,4 @@
+import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,9 +59,9 @@ class GroupMembersScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Thành Viên',
-                          style: TextStyle(
+                        Text(
+                          isVi ? 'Thành Viên' : 'Members',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -94,7 +95,7 @@ class GroupMembersScreen extends ConsumerWidget {
                 child: groupAsync.when(
                   data: (group) {
                     if (group == null) {
-                      return const Center(child: Text('Không tìm thấy dữ liệu nhóm'));
+                      return Center(child: Text(isVi ? 'Không tìm thấy dữ liệu nhóm' : 'Group data not found'));
                     }
                     return ListView.builder(
                       padding: const EdgeInsets.all(24),
@@ -119,7 +120,7 @@ class GroupMembersScreen extends ConsumerWidget {
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
                   error: (error, stack) => Center(
-                    child: Text('Lỗi: $error'),
+                    child: Text('${isVi ? 'Lỗi' : 'Error'}: $error'),
                   ),
                 ),
               ),
@@ -156,7 +157,7 @@ class GroupMembersScreen extends ConsumerWidget {
         }
 
         final userData = snapshot.data!.data() as Map<String, dynamic>;
-        final name = userData['name'] as String? ?? 'Người dùng';
+        final name = userData['name'] as String? ?? (isVi ? 'Người dùng' : 'User');
         final email = userData['email'] as String? ?? '';
         final phone = userData['phone'] as String? ?? '';
         final avatarUrl = userData['avatarUrl'] as String?;
@@ -216,7 +217,7 @@ class GroupMembersScreen extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              'Chủ quỹ',
+                              isVi ? 'Chủ quỹ' : 'Owner',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -289,7 +290,7 @@ class GroupMembersScreen extends ConsumerWidget {
                         children: [
                           Icon(Icons.exit_to_app, color: Colors.red, size: 18),
                           const SizedBox(width: 8),
-                          const Text('Rời nhóm'),
+                          Text(isVi ? 'Rời nhóm' : 'Leave Group'),
                         ],
                       ),
                     ),
@@ -314,7 +315,7 @@ class GroupMembersScreen extends ConsumerWidget {
                         children: [
                           Icon(Icons.person_remove, color: Colors.red, size: 18),
                           const SizedBox(width: 8),
-                          const Text('Xóa khỏi nhóm'),
+                          Text(isVi ? 'Xóa khỏi nhóm' : 'Remove from Group'),
                         ],
                       ),
                     ),
@@ -340,14 +341,16 @@ class GroupMembersScreen extends ConsumerWidget {
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF2E2E2E) : Colors.white,
         title: Text(
-          'Rời Nhóm',
+          isVi ? 'Rời Nhóm' : 'Leave Group',
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black87,
             fontWeight: FontWeight.bold,
           ),
         ),
         content: Text(
-          'Bạn có chắc muốn rời nhóm này không? Bạn sẽ không thể xem các giao dịch cũ và sẽ cần được mời lại để tham gia.',
+          isVi
+              ? 'Bạn có chắc muốn rời nhóm này không? Bạn sẽ không thể xem các giao dịch cũ và sẽ cần được mời lại để tham gia.'
+              : 'Are you sure you want to leave this group? You will not be able to view old transactions and will need to be re-invited to join.',
           style: TextStyle(
             color: isDark ? Colors.white70 : Colors.black87,
           ),
@@ -356,7 +359,7 @@ class GroupMembersScreen extends ConsumerWidget {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Hủy',
+              isVi ? 'Hủy' : 'Cancel',
               style: TextStyle(
                 color: isDark ? Colors.white70 : Colors.black87,
               ),
@@ -376,8 +379,8 @@ class GroupMembersScreen extends ConsumerWidget {
                     Navigator.pop(context);
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Đã rời khỏi nhóm'),
+                      SnackBar(
+                        content: Text(isVi ? 'Đã rời khỏi nhóm' : 'Left the group successfully'),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -386,7 +389,7 @@ class GroupMembersScreen extends ConsumerWidget {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Lỗi: $e'),
+                        content: Text('${isVi ? 'Lỗi' : 'Error'}: $e'),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -394,9 +397,9 @@ class GroupMembersScreen extends ConsumerWidget {
                 }
               }
             },
-            child: const Text(
-              'Rời',
-              style: TextStyle(color: Colors.red),
+            child: Text(
+              isVi ? 'Rời' : 'Leave',
+              style: const TextStyle(color: Colors.red),
             ),
           ),
         ],
@@ -418,14 +421,16 @@ class GroupMembersScreen extends ConsumerWidget {
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? const Color(0xFF2E2E2E) : Colors.white,
         title: Text(
-          'Xóa Thành Viên',
+          isVi ? 'Xóa Thành Viên' : 'Remove Member',
           style: TextStyle(
             color: isDark ? Colors.white : Colors.black87,
             fontWeight: FontWeight.bold,
           ),
         ),
         content: Text(
-          'Bạn có chắc muốn xóa $memberName khỏi nhóm không?',
+          isVi
+              ? 'Bạn có chắc muốn xóa $memberName khỏi nhóm không?'
+              : 'Are you sure you want to remove $memberName from the group?',
           style: TextStyle(
             color: isDark ? Colors.white70 : Colors.black87,
           ),
@@ -434,7 +439,7 @@ class GroupMembersScreen extends ConsumerWidget {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Hủy',
+              isVi ? 'Hủy' : 'Cancel',
               style: TextStyle(
                 color: isDark ? Colors.white70 : Colors.black87,
               ),
@@ -454,7 +459,7 @@ class GroupMembersScreen extends ConsumerWidget {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Đã xóa $memberName khỏi nhóm'),
+                        content: Text(isVi ? 'Đã xóa $memberName khỏi nhóm' : 'Removed $memberName from group'),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -463,7 +468,7 @@ class GroupMembersScreen extends ConsumerWidget {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Lỗi: $e'),
+                        content: Text('${isVi ? 'Lỗi' : 'Error'}: $e'),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -471,9 +476,9 @@ class GroupMembersScreen extends ConsumerWidget {
                 }
               }
             },
-            child: const Text(
-              'Xóa',
-              style: TextStyle(color: Colors.red),
+            child: Text(
+              isVi ? 'Xóa' : 'Remove',
+              style: const TextStyle(color: Colors.red),
             ),
           ),
         ],

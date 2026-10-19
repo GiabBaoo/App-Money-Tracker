@@ -1,3 +1,4 @@
+import '../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../widgets/animated_scale_button.dart';
@@ -135,20 +136,50 @@ class CategoryKeywordSuggestions extends StatelessWidget {
     ],
   };
 
-  List<String> _getKeywords() {
-    return _keywordsMap[categoryName] ??
-        [
-          'Khoản chi tiêu',
-          'Chi tiêu hàng ngày',
-          'Mua đồ',
-          'Phát sinh',
-          'Thanh toán',
-        ];
+  static const Map<String, List<String>> _enKeywordsMap = {
+    'Ăn uống': ['Breakfast', 'Lunch', 'Dinner', 'Coffee', 'Milk Tea', 'Groceries', 'Snacks', 'Dining Out'],
+    'Di chuyển': ['Gasoline', 'Grab/Taxi', 'Parking', 'Car Wash', 'Maintenance', 'Bus/Train', 'Flight Ticket'],
+    'Mua sắm': ['Supermarket', 'Clothes', 'Home Decor', 'Cosmetics', 'Electronics', 'Footwear'],
+    'Hóa đơn': ['Electricity', 'Water', 'Internet', 'Mobile Topup', 'Service Fee'],
+    'Tiền nhà': ['House Rent', 'Apartment Fee', 'Repairs', 'Furniture', 'Cleaning'],
+    'Giải trí': ['Movies', 'Gaming', 'Travel', 'Books', 'Outing', 'Concert'],
+    'Sức khỏe': ['Pharmacy', 'Doctor Visit', 'Vitamins', 'Gym/Yoga', 'Health Insurance'],
+    'Chi khác': ['Personal', 'Wedding/Party', 'Donation', 'Fees', 'Miscellaneous'],
+    'Lương': ['Monthly Salary', 'Advance Salary', 'Overtime (OT)', 'Project Payout'],
+    'Tiền thưởng': ['KPI Bonus', 'Holiday Bonus', 'Commission', 'Cash Prize'],
+    'Kinh doanh': ['Product Sales', 'Client Payment', 'Deposit', 'Profit'],
+    'Đầu tư': ['Stock Gain', 'Deposit Interest', 'Asset Sale', 'Dividends'],
+    'Bán đồ': ['Used Items', 'Vehicle Sale', 'Phone Sale', 'Recycling'],
+    'Tiền lãi': ['Savings Interest', 'Bank Yield', 'Lending Interest'],
+    'Thu khác': ['Gift Received', 'Debt Collected', 'Cashback', 'Allowance'],
+  };
+
+  List<String> _getKeywords(bool isVi) {
+    if (isVi) {
+      return _keywordsMap[categoryName] ??
+          const [
+            'Khoản chi tiêu',
+            'Chi tiêu hàng ngày',
+            'Mua đồ',
+            'Phát sinh',
+            'Thanh toán',
+          ];
+    } else {
+      return _enKeywordsMap[categoryName] ??
+          const [
+            'Expense',
+            'Daily spending',
+            'Shopping',
+            'Payment',
+            'Other',
+          ];
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final keywords = _getKeywords();
+    final isVi = LanguageScope.of(context).isVietnamese;
+    final keywords = _getKeywords(isVi);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,7 +196,7 @@ class CategoryKeywordSuggestions extends StatelessWidget {
               ),
               const SizedBox(width: 5),
               Text(
-                'Gợi ý nội dung nhanh ($categoryName):',
+                isVi ? 'Gợi ý nội dung nhanh (${context.trCat(categoryName)}):' : 'Quick note suggestions (${context.trCat(categoryName)}):',
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import '../../services/language_service.dart';
 
 /// Màn hình căn chỉnh, thu phóng (Scale / Crop) và xoay ảnh đại diện trước khi lưu
 class AvatarCropScreen extends StatefulWidget {
@@ -70,15 +71,16 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
     if (_isProcessing) return;
     HapticFeedback.mediumImpact();
     setState(() => _isProcessing = true);
+    final isVi = LanguageScope.of(context).isVietnamese;
 
     try {
       final boundary = _cropAreaKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary == null) throw Exception('Vùng ảnh chưa sẵn sàng để cắt');
+      if (boundary == null) throw Exception(isVi ? 'Vùng ảnh chưa sẵn sàng để cắt' : 'Image area is not ready for cropping');
 
       // Chụp ở tỷ lệ pixelRatio 2.0 để ảnh đạt độ nét cao ~ 560x560px
       final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) throw Exception('Không thể chuyển đổi dữ liệu ảnh');
+      if (byteData == null) throw Exception(isVi ? 'Không thể chuyển đổi dữ liệu ảnh' : 'Cannot convert image data');
 
       final buffer = byteData.buffer.asUint8List();
       final tempDir = await getApplicationDocumentsDirectory();
@@ -99,7 +101,7 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
         setState(() => _isProcessing = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi cắt ảnh: $e'),
+            content: Text(isVi ? 'Lỗi cắt ảnh: $e' : 'Crop image error: $e'),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
@@ -110,6 +112,7 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     return Scaffold(
       backgroundColor: const Color(0xFF0D1413),
       appBar: AppBar(
@@ -119,9 +122,9 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
           icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 26),
           onPressed: _isProcessing ? null : () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Căn chỉnh ảnh đại diện',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17),
+        title: Text(
+          isVi ? 'Căn chỉnh ảnh đại diện' : 'Crop Avatar',
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17),
         ),
         centerTitle: true,
         actions: [
@@ -138,9 +141,9 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                 : TextButton.icon(
                     onPressed: _handleApplyCrop,
                     icon: const Icon(Icons.check_rounded, color: Color(0xFF68AEA9), size: 20),
-                    label: const Text(
-                      'Áp dụng',
-                      style: TextStyle(color: Color(0xFF68AEA9), fontWeight: FontWeight.bold, fontSize: 15),
+                    label: Text(
+                      isVi ? 'Áp dụng' : 'Apply',
+                      style: const TextStyle(color: Color(0xFF68AEA9), fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                   ),
           ),
@@ -157,14 +160,14 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                 color: Colors.white.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.pinch_rounded, color: Color(0xFF68AEA9), size: 16),
-                  SizedBox(width: 8),
+                  const Icon(Icons.pinch_rounded, color: Color(0xFF68AEA9), size: 16),
+                  const SizedBox(width: 8),
                   Text(
-                    'Dùng 2 ngón tay thu phóng hoặc kéo để căn mặt',
-                    style: TextStyle(color: Colors.white70, fontSize: 12.5),
+                    isVi ? 'Dùng 2 ngón tay thu phóng hoặc kéo để căn mặt' : 'Pinch or drag to reposition face',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12.5),
                   ),
                 ],
               ),
@@ -301,12 +304,12 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                     children: [
                       _buildActionButton(
                         icon: Icons.rotate_right_rounded,
-                        label: 'Xoay 90°',
+                        label: isVi ? 'Xoay 90°' : 'Rotate 90°',
                         onTap: _rotateImage,
                       ),
                       _buildActionButton(
                         icon: Icons.restart_alt_rounded,
-                        label: 'Đặt lại',
+                        label: isVi ? 'Đặt lại' : 'Reset',
                         onTap: _resetTransform,
                       ),
                     ],

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/app_logo.dart';
 import '../../services/auth_service.dart';
+import '../../services/language_service.dart';
 import '../home/home_screen.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
@@ -22,7 +23,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   @override
   void initState() {
     super.initState();
-    // Tu dong kiem tra email verification moi 3 giay
+    // Tự động kiểm tra email verification mỗi 3 giây
     _startAutoCheck();
   }
 
@@ -40,7 +41,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       
       if (result.emailVerified && mounted) {
         _autoCheckTimer?.cancel();
-        _showSnackBar('Email đã xác nhận! Đang nhập vào ứng dụng...');
+        final isVi = LanguageScope.of(context).isVietnamese;
+        _showSnackBar(isVi ? 'Email đã xác nhận! Đang nhập vào ứng dụng...' : 'Email verified! Logging into app...');
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
             Navigator.pushAndRemoveUntil(
@@ -55,6 +57,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   }
 
   Future<void> _handleVerifyManually() async {
+    final isVi = LanguageScope.of(context).isVietnamese;
     setState(() => _isLoading = true);
 
     final result = await _authService.reloadAndCheckEmailVerification();
@@ -64,7 +67,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     if (!mounted) return;
 
     if (result.emailVerified) {
-      _showSnackBar('Email đã xác nhận! Đang nhập vào ứng dụng...', isError: false);
+      _showSnackBar(isVi ? 'Email đã xác nhận! Đang nhập vào ứng dụng...' : 'Email verified! Logging into app...', isError: false);
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) {
           Navigator.pushAndRemoveUntil(
@@ -80,6 +83,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   }
 
   Future<void> _handleResendEmail() async {
+    final isVi = LanguageScope.of(context).isVietnamese;
     setState(() => _isLoading = true);
 
     final result = await _authService.sendEmailVerification();
@@ -89,7 +93,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     if (!mounted) return;
 
     if (result.success) {
-      _showSnackBar('Email xác nhận đã được gửi lại!', isError: false);
+      _showSnackBar(isVi ? 'Email xác nhận đã được gửi lại!' : 'Verification email resent!', isError: false);
     } else {
       _showSnackBar(result.message, isError: true);
     }
@@ -106,6 +110,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
@@ -157,7 +162,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
                       // Title
                       Text(
-                        'Xác nhận email của bạn',
+                        isVi ? 'Xác nhận email của bạn' : 'Verify your email',
                         style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF333333)),
                         textAlign: TextAlign.center,
                       ),
@@ -165,22 +170,22 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
                       // Description
                       Text(
-                        'Chúng tôi đã gửi email xác nhận tới\n${widget.email}',
+                        isVi ? 'Chúng tôi đã gửi email xác nhận tới\n${widget.email}' : 'We sent a verification email to\n${widget.email}',
                         style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF666666), fontSize: 14, height: 1.5),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Vui lòng kiểm tra hộp thư và nhấp vào link để xác nhận.',
+                        isVi ? 'Vui lòng kiểm tra hộp thư và nhấp vào link để xác nhận.' : 'Please check your inbox and click the link to verify.',
                         style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF999999), fontSize: 13),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 40),
 
                       // Steps
-                      _buildStep(context, 1, 'Mở email mà chúng tôi vừa gửi'),
-                      _buildStep(context, 2, 'Nhấp vào link xác nhận trong email'),
-                      _buildStep(context, 3, 'Quay trở lại ứng dụng'),
+                      _buildStep(context, 1, isVi ? 'Mở email mà chúng tôi vừa gửi' : 'Open the email we just sent'),
+                      _buildStep(context, 2, isVi ? 'Nhấp vào link xác nhận trong email' : 'Click the verification link in the email'),
+                      _buildStep(context, 3, isVi ? 'Quay trở lại ứng dụng' : 'Return to the app'),
                       const SizedBox(height: 40),
 
                       // Manual Check Button
@@ -199,9 +204,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           child: Center(
                             child: _isLoading
                                 ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                                : const Text(
-                                    'Đã xác nhận email',
-                                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+                                : Text(
+                                    isVi ? 'Đã xác nhận email' : 'I have verified my email',
+                                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
                                   ),
                           ),
                         ),
@@ -220,8 +225,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           ),
                           child: Center(
                             child: Text(
-                              'Gửi lại email xác nhận',
-                              style: TextStyle(color: const Color(0xFF438883), fontSize: 16, fontWeight: FontWeight.w600),
+                              isVi ? 'Gửi lại email xác nhận' : 'Resend verification email',
+                              style: const TextStyle(color: Color(0xFF438883), fontSize: 16, fontWeight: FontWeight.w600),
                             ),
                           ),
                         ),
@@ -234,9 +239,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           _authService.logout();
                           Navigator.pushReplacementNamed(context, '/login');
                         },
-                        child: const Text(
-                          'Quay lại Đăng nhập',
-                          style: TextStyle(color: Color(0xFF438883), fontSize: 14, fontWeight: FontWeight.w500),
+                        child: Text(
+                          isVi ? 'Quay lại Đăng nhập' : 'Back to Login',
+                          style: const TextStyle(color: Color(0xFF438883), fontSize: 14, fontWeight: FontWeight.w500),
                         ),
                       ),
                     ],

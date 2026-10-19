@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../services/biometric_service.dart';
 import '../../widgets/animated_scale_button.dart';
+import '../../services/language_service.dart';
 
 class BiometricScreen extends StatefulWidget {
   const BiometricScreen({super.key});
@@ -41,10 +42,11 @@ class _BiometricScreenState extends State<BiometricScreen> {
 
   Future<bool> _persistPreference(bool enabled) async {
     HapticFeedback.selectionClick();
+    final isVi = LanguageScope.of(context).isVietnamese;
     final uid = _auth.currentUser?.uid;
     if (uid == null) {
       if (!mounted) return false;
-      _showSnackbar('Bạn cần đăng nhập để lưu cài đặt vân tay.', isError: true);
+      _showSnackbar(isVi ? 'Bạn cần đăng nhập để lưu cài đặt vân tay.' : 'Please log in to save biometric settings.', isError: true);
       return false;
     }
 
@@ -53,19 +55,19 @@ class _BiometricScreenState extends State<BiometricScreen> {
       if (status != BiometricSupportStatus.supported) {
         if (!mounted) return false;
         final message = status == BiometricSupportStatus.notEnrolled
-            ? 'Thiết bị có hỗ trợ nhưng chưa đăng ký vân tay/FaceID. Hãy cài đặt trong Cài đặt hệ thống.'
-            : 'Thiết bị này không hỗ trợ xác thực sinh trắc học.';
+            ? (isVi ? 'Thiết bị có hỗ trợ nhưng chưa đăng ký vân tay/FaceID. Hãy cài đặt trong Cài đặt hệ thống.' : 'Device supports biometrics but none enrolled. Please set up in system settings.')
+            : (isVi ? 'Thiết bị này không hỗ trợ xác thực sinh trắc học.' : 'This device does not support biometric authentication.');
         _showSnackbar(message, isError: true);
         return false;
       }
 
       // Xác thực sinh trắc học thực tế trước khi kích hoạt
       final authenticated = await BiometricService.instance.authenticateFingerprint(
-        localizedReason: 'Xác nhận danh tính để kích hoạt đăng nhập sinh trắc học',
+        localizedReason: isVi ? 'Xác nhận danh tính để kích hoạt đăng nhập sinh trắc học' : 'Confirm your identity to activate biometric login',
       );
       if (!authenticated) {
         if (!mounted) return false;
-        _showSnackbar('Xác thực thất bại. Chưa thể bật tính năng.', isError: true);
+        _showSnackbar(isVi ? 'Xác thực thất bại. Chưa thể bật tính năng.' : 'Authentication failed. Feature cannot be enabled.', isError: true);
         return false;
       }
     }
@@ -77,13 +79,15 @@ class _BiometricScreenState extends State<BiometricScreen> {
       );
       if (!mounted) return false;
       _showSnackbar(
-        enabled ? 'Đã kích hoạt đăng nhập sinh trắc học thành công!' : 'Đã tắt đăng nhập bằng sinh trắc học.',
+        enabled
+            ? (isVi ? 'Đã kích hoạt đăng nhập sinh trắc học thành công!' : 'Biometric login enabled successfully!')
+            : (isVi ? 'Đã tắt đăng nhập bằng sinh trắc học.' : 'Biometric login disabled.'),
         isError: false,
       );
       return true;
     } catch (_) {
       if (!mounted) return false;
-      _showSnackbar('Không thể lưu cài đặt sinh trắc học.', isError: true);
+      _showSnackbar(isVi ? 'Không thể lưu cài đặt sinh trắc học.' : 'Failed to save biometric settings.', isError: true);
       return false;
     }
   }
@@ -102,6 +106,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBgColor = isDark ? const Color(0xFF1E2827) : Colors.white;
     final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0);
@@ -134,9 +139,9 @@ class _BiometricScreenState extends State<BiometricScreen> {
                       child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
                     ),
                   ),
-                  const Text(
-                    'Đăng nhập sinh trắc học',
-                    style: TextStyle(
+                  Text(
+                    isVi ? 'Đăng nhập sinh trắc học' : 'Biometric Login',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -227,7 +232,9 @@ class _BiometricScreenState extends State<BiometricScreen> {
 
                       // Status Header
                       Text(
-                        _isFingerprintEnabled ? 'Đang bảo vệ an toàn' : 'Chưa bật sinh trắc học',
+                        _isFingerprintEnabled
+                            ? (isVi ? 'Đang bảo vệ an toàn' : 'Secured & Active')
+                            : (isVi ? 'Chưa bật sinh trắc học' : 'Biometrics Disabled'),
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
@@ -239,8 +246,12 @@ class _BiometricScreenState extends State<BiometricScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           _isFingerprintEnabled
-                              ? 'Bạn có thể mở khóa sổ tay tài chính Mono ngay tức thì bằng vân tay hoặc FaceID.'
-                              : 'Kích hoạt để đăng nhập nhanh mà không cần nhập lại mật khẩu mỗi lần mở ứng dụng.',
+                              ? (isVi
+                                  ? 'Bạn có thể mở khóa sổ tay tài chính Mono ngay tức thì bằng vân tay hoặc FaceID.'
+                                  : 'You can instantly unlock your Mono financial notebook using fingerprint or Face ID.')
+                              : (isVi
+                                  ? 'Kích hoạt để đăng nhập nhanh mà không cần nhập lại mật khẩu mỗi lần mở ứng dụng.'
+                                  : 'Enable for quick login without re-entering your password every time you open the app.'),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 13.5,
@@ -288,7 +299,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Vân tay & Nhận diện khuôn mặt',
+                                      isVi ? 'Vân tay & Nhận diện khuôn mặt' : 'Fingerprint & Face Recognition',
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
@@ -297,7 +308,11 @@ class _BiometricScreenState extends State<BiometricScreen> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      _isSaving ? 'Đang cập nhật...' : (_isFingerprintEnabled ? 'Đang hoạt động' : 'Đã vô hiệu hóa'),
+                                      _isSaving
+                                          ? (isVi ? 'Đang cập nhật...' : 'Updating...')
+                                          : (_isFingerprintEnabled
+                                              ? (isVi ? 'Đang hoạt động' : 'Active')
+                                              : (isVi ? 'Đã vô hiệu hóa' : 'Disabled')),
                                       style: TextStyle(
                                         fontSize: 12.5,
                                         color: _isFingerprintEnabled ? const Color(0xFF10B981) : Colors.grey.shade500,
@@ -356,7 +371,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
                                 const Icon(Icons.verified_user_rounded, color: Color(0xFF438883), size: 20),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Cam kết bảo mật FinTech',
+                                  isVi ? 'Cam kết bảo mật FinTech' : 'FinTech Security Guarantee',
                                   style: TextStyle(
                                     fontSize: 14.5,
                                     fontWeight: FontWeight.w800,
@@ -368,22 +383,28 @@ class _BiometricScreenState extends State<BiometricScreen> {
                             const SizedBox(height: 14),
                             _buildInfoBullet(
                               icon: Icons.lock_outline_rounded,
-                              title: 'Xử lý qua Secure Enclave',
-                              desc: 'Dữ liệu vân tay được lưu trữ an toàn trong chip bảo mật riêng của thiết bị và không bao giờ tải lên máy chủ.',
+                              title: isVi ? 'Xử lý qua Secure Enclave' : 'Processed via Secure Enclave',
+                              desc: isVi
+                                  ? 'Dữ liệu vân tay được lưu trữ an toàn trong chip bảo mật riêng của thiết bị và không bao giờ tải lên máy chủ.'
+                                  : 'Biometric data is securely stored on your device\'s dedicated security chip and never uploaded to servers.',
                               isDark: isDark,
                             ),
                             const SizedBox(height: 12),
                             _buildInfoBullet(
                               icon: Icons.speed_rounded,
-                              title: 'Truy cập tức thì không gián đoạn',
-                              desc: 'Mở ứng dụng chỉ mất 0.2 giây mà vẫn đảm bảo riêng tư số dư cá nhân khi ở nơi công cộng.',
+                              title: isVi ? 'Truy cập tức thì không gián đoạn' : 'Instant & Seamless Access',
+                              desc: isVi
+                                  ? 'Mở ứng dụng chỉ mất 0.2 giây mà vẫn đảm bảo riêng tư số dư cá nhân khi ở nơi công cộng.'
+                                  : 'Open the app in just 0.2 seconds while keeping your balances private in public spaces.',
                               isDark: isDark,
                             ),
                             const SizedBox(height: 12),
                             _buildInfoBullet(
                               icon: Icons.security_rounded,
-                              title: 'Tự động khóa khi ẩn ứng dụng',
-                              desc: 'Ngay khi bạn chuyển app sang màn hình khác, Mono sẽ tự động kích hoạt lại lớp khóa bảo vệ.',
+                              title: isVi ? 'Tự động khóa khi ẩn ứng dụng' : 'Auto-lock in background',
+                              desc: isVi
+                                  ? 'Ngay khi bạn chuyển app sang màn hình khác, Mono sẽ tự động kích hoạt lại lớp khóa bảo vệ.'
+                                  : 'As soon as you switch apps or minimize Mono, the security lock is automatically re-engaged.',
                               isDark: isDark,
                             ),
                           ],

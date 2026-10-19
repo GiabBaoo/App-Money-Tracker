@@ -4,7 +4,8 @@ import '../../utils/page_transitions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
 import '../../models/message_model.dart';
-import 'success_screen.dart'; // Import trang Thành Công đa năng của bạn
+import 'success_screen.dart';
+import '../../services/language_service.dart';
 
 class SupportRequestScreen extends StatefulWidget {
   const SupportRequestScreen({super.key});
@@ -22,6 +23,22 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
     'Khác',
   ];
 
+  String _getTopicLabel(String topic, bool isVi) {
+    if (isVi) return topic;
+    switch (topic) {
+      case 'Vấn đề tài khoản':
+        return 'Account issue';
+      case 'Góp ý tính năng':
+        return 'Feature feedback';
+      case 'Lỗi hệ thống':
+        return 'System bug';
+      case 'Khác':
+        return 'Other';
+      default:
+        return topic;
+    }
+  }
+
   // ĐÃ SỬA: Gán giá trị mặc định là phần tử đầu tiên của mảng _topics
   late String _selectedTopic = _topics[0];
   final _titleController = TextEditingController();
@@ -38,10 +55,12 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
+
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark 
         ? const Color(0xFF0F2625) 
-        : const Color(0xFF438883), // Nền xanh lá mạ
+        : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -60,9 +79,9 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Text(
-                    'Gửi yêu cầu hỗ trợ',
-                    style: TextStyle(
+                  Text(
+                    isVi ? 'Gửi yêu cầu hỗ trợ' : 'Submit Support Request',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -89,7 +108,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Chúng tôi có thể giúp gì cho bạn?',
+                        isVi ? 'Chúng tôi có thể giúp gì cho bạn?' : 'How can we help you?',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -98,7 +117,9 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Vui lòng mô tả chi tiết vấn đề bạn đang gặp phải, đội ngũ CSKH sẽ phản hồi trong thời gian sớm nhất.',
+                        isVi
+                            ? 'Vui lòng mô tả chi tiết vấn đề bạn đang gặp phải, đội ngũ CSKH sẽ phản hồi trong thời gian sớm nhất.'
+                            : 'Please describe the problem you are encountering, our support team will respond as soon as possible.',
                         style: TextStyle(
                           color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                           fontSize: 15,
@@ -109,7 +130,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                       const SizedBox(height: 30),
 
                       // CHỌN CHỦ ĐỀ
-                      _buildLabel('Chủ đề'),
+                      _buildLabel(isVi ? 'Chủ đề' : 'Topic'),
                       DropdownButtonFormField<String>(
                         initialValue: _selectedTopic,
                         icon: const Icon(
@@ -120,7 +141,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                         items: _topics.map((String value) {
                           return DropdownMenuItem<String>(
                             value: value,
-                            child: Text(value),
+                            child: Text(_getTopicLabel(value, isVi)),
                           );
                         }).toList(),
                         onChanged: (newValue) {
@@ -133,25 +154,25 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                       const SizedBox(height: 20),
 
                       // TIÊU ĐỀ
-                      _buildLabel('Tiêu đề'),
+                      _buildLabel(isVi ? 'Tiêu đề' : 'Title'),
                       TextFormField(
                         controller: _titleController,
                         style: const TextStyle(fontSize: 16),
                         decoration: _buildInputDecoration(
-                          hintText: 'Nhập tiêu đề ngắn gọn',
+                          hintText: isVi ? 'Nhập tiêu đề ngắn gọn' : 'Enter brief title',
                         ),
                       ),
 
                       const SizedBox(height: 20),
 
                       // NỘI DUNG CHI TIẾT
-                      _buildLabel('Nội dung chi tiết'),
+                      _buildLabel(isVi ? 'Nội dung chi tiết' : 'Detailed description'),
                       TextFormField(
                         controller: _detailsController,
-                        maxLines: 5, // Cho phép nhập nhiều dòng
+                        maxLines: 5,
                         style: const TextStyle(fontSize: 16, height: 1.5),
                         decoration: _buildInputDecoration(
-                          hintText: 'Mô tả chi tiết vấn đề của bạn...',
+                          hintText: isVi ? 'Mô tả chi tiết vấn đề của bạn...' : 'Describe your problem in detail...',
                         ),
                       ),
 
@@ -163,7 +184,11 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                           if (_titleController.text.trim().isEmpty || _detailsController.text.trim().isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Vui lòng nhập đầy đủ tiêu đề và nội dung!'),
+                                content: Text(
+                                  isVi
+                                      ? 'Vui lòng nhập đầy đủ tiêu đề và nội dung!'
+                                      : 'Please enter both title and content!',
+                                ),
                                 backgroundColor: Colors.red.shade600,
                               ),
                             );
@@ -175,14 +200,18 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                             // Tạo tin nhắn tự động phản hồi
                             final user = FirebaseAuth.instance.currentUser;
                             if (user != null) {
-                              final randomId = Random().nextInt(90000) + 10000; // random 10000 -> 99999
+                              final randomId = Random().nextInt(90000) + 10000;
                               final message = MessageModel(
                                 uid: user.uid,
                                 iconCode: Icons.headset_mic.codePoint,
                                 iconBgColorValue: 0xFF6C5CE7,
-                                title: 'Hỗ trợ khách hàng #$randomId',
-                                shortMessage: 'Yêu cầu hỗ trợ của bạn đã được tiếp nhận.',
-                                fullMessage: 'Chào bạn,\n\nYêu cầu hỗ trợ về "${_titleController.text.trim()}" (Mã số: #$randomId) của bạn đã được gửi đến bộ phận Chăm sóc khách hàng. Tư vấn viên của chúng tôi sẽ liên hệ lại với bạn trong vòng 24 giờ tới.\n\nTrân trọng!',
+                                title: isVi ? 'Hỗ trợ khách hàng #$randomId' : 'Customer Support #$randomId',
+                                shortMessage: isVi
+                                    ? 'Yêu cầu hỗ trợ của bạn đã được tiếp nhận.'
+                                    : 'Your support request has been received.',
+                                fullMessage: isVi
+                                    ? 'Chào bạn,\n\nYêu cầu hỗ trợ về "${_titleController.text.trim()}" (Mã số: #$randomId) của bạn đã được gửi đến bộ phận Chăm sóc khách hàng. Tư vấn viên của chúng tôi sẽ liên hệ lại với bạn trong vòng 24 giờ tới.\n\nTrân trọng!'
+                                    : 'Hello,\n\nYour support request regarding "${_titleController.text.trim()}" (ID: #$randomId) has been sent to Customer Support. An agent will contact you within the next 24 hours.\n\nBest regards!',
                               );
                               await _firestoreService.addMessage(message);
                             }
@@ -194,13 +223,13 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                               context,
                               PageTransitions.scale(
                                 SuccessScreen(
-                                  appBarTitle: 'Gửi yêu cầu',
-                                  successTitle: 'Gửi yêu cầu thành công',
-                                  successMessage:
-                                      'Yêu cầu của bạn đã được chuyển đến bộ phận Chăm sóc khách hàng. Chúng tôi sẽ phản hồi sớm nhất có thể.',
-                                  buttonText: 'Quay lại Hộp thư',
+                                  appBarTitle: isVi ? 'Gửi yêu cầu' : 'Submit Request',
+                                  successTitle: isVi ? 'Gửi yêu cầu thành công' : 'Request Sent Successfully',
+                                  successMessage: isVi
+                                      ? 'Yêu cầu của bạn đã được chuyển đến bộ phận Chăm sóc khách hàng. Chúng tôi sẽ phản hồi sớm nhất có thể.'
+                                      : 'Your request has been forwarded to our support team. We will respond as soon as possible.',
+                                  buttonText: isVi ? 'Quay lại Hộp thư' : 'Back to Inbox',
                                   onButtonPressed: () {
-                                    // Bấm nút thì lùi về 2 bước (về lại trang Trung tâm tin nhắn)
                                     int count = 0;
                                     Navigator.popUntil(context, (route) {
                                       return count++ == 2;
@@ -213,7 +242,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Có lỗi xảy ra: $e'),
+                                content: Text(isVi ? 'Có lỗi xảy ra: $e' : 'An error occurred: $e'),
                                 backgroundColor: Colors.red.shade600,
                               ),
                             );
@@ -225,7 +254,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            color: _isLoading ? Colors.grey : const Color(0xFF4A9B7F), // Màu xanh hoặc xám
+                            color: _isLoading ? Colors.grey : const Color(0xFF4A9B7F),
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
@@ -238,9 +267,9 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                           child: Center(
                             child: _isLoading 
                                 ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                : const Text(
-                                    'Gửi yêu cầu',
-                                    style: TextStyle(
+                                : Text(
+                                    isVi ? 'Gửi yêu cầu' : 'Submit Request',
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,

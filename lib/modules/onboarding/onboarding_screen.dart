@@ -1,3 +1,4 @@
+import '../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../widgets/animated_scale_button.dart';
@@ -17,28 +18,40 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  final List<_OnboardingItem> _items = const [
+  bool get isVi => LanguageService.instance.isVietnamese;
+  List<_OnboardingItem> get _items => _getItems(isVi);
+
+  List<_OnboardingItem> _getItems(bool isVi) => [
     _OnboardingItem(
-      title: 'Chi tiêu thông minh,\ntiết kiệm hơn mỗi ngày',
-      description:
-          'Ghi chép thu chi nhanh chóng, theo dõi trực quan theo danh mục và nắm bắt bức tranh tài chính toàn diện.',
-      badgeText: 'Quản Lý Cá Nhân',
+      title: isVi
+          ? 'Chi tiêu thông minh,\ntiết kiệm hơn mỗi ngày'
+          : 'Smart spending,\nsave more every day',
+      description: isVi
+          ? 'Ghi chép thu chi nhanh chóng, theo dõi trực quan theo danh mục và nắm bắt bức tranh tài chính toàn diện.'
+          : 'Quickly record income & expenses, track by category visually, and master your financial health.',
+      badgeText: isVi ? 'Quản Lý Cá Nhân' : 'Personal Finance',
       primaryIcon: Icons.insights_rounded,
       has3DImage: true,
     ),
     _OnboardingItem(
-      title: 'Trợ lý tài chính AI &\nGhi chép bằng giọng nói',
-      description:
-          'Trợ lý ảo Mono AI lắng nghe giọng nói tiếng Việt, tự động nhận diện danh mục và đưa ra lời khuyên chi tiêu bổ ích.',
-      badgeText: 'Trợ Lý AI Mono',
+      title: isVi
+          ? 'Trợ lý tài chính AI &\nGhi chép bằng giọng nói'
+          : 'AI Financial Assistant &\nVoice Expense Tracking',
+      description: isVi
+          ? 'Trợ lý ảo Mono AI lắng nghe giọng nói, tự động nhận diện danh mục và đưa ra lời khuyên chi tiêu bổ ích.'
+          : 'Mono AI assistant understands your voice, auto-categorizes expenses, and provides actionable insights.',
+      badgeText: isVi ? 'Trợ Lý AI Mono' : 'Mono AI Assistant',
       primaryIcon: Icons.auto_awesome_rounded,
       has3DImage: false,
     ),
     _OnboardingItem(
-      title: 'Quỹ chi tiêu nhóm &\nBảo mật sinh trắc học',
-      description:
-          'Chia tiền nhóm sòng phẳng, thanh toán QR tiện lợi. Toàn bộ dữ liệu được bảo mật vân tay và hoạt động ngoại tuyến 100%.',
-      badgeText: 'Nhóm & Bảo Mật',
+      title: isVi
+          ? 'Quỹ chi tiêu nhóm &\nBảo mật sinh trắc học'
+          : 'Shared Group Fund &\nBiometric Security',
+      description: isVi
+          ? 'Chia tiền nhóm sòng phẳng, thanh toán QR tiện lợi. Toàn bộ dữ liệu được bảo mật vân tay và hoạt động ngoại tuyến 100%.'
+          : 'Fair group bill splitting and easy QR payment. All your data is fingerprint-secured and works 100% offline.',
+      badgeText: isVi ? 'Nhóm & Bảo Mật' : 'Groups & Security',
       primaryIcon: Icons.shield_rounded,
       has3DImage: false,
     ),
@@ -46,7 +59,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _nextPage() {
     HapticFeedback.lightImpact();
-    if (_currentPage < _items.length - 1) {
+    if (_currentPage < 2) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeOutCubic,
@@ -74,6 +87,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final items = _items;
     final size = MediaQuery.of(context).size;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883);
@@ -141,7 +155,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
 
                       // Nút Bỏ qua (Skip)
-                      if (_currentPage < _items.length - 1)
+                      if (_currentPage < 2)
                         TextButton(
                           onPressed: () {
                             HapticFeedback.lightImpact();
@@ -156,18 +170,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Bỏ qua',
-                                style: TextStyle(
+                                isVi ? 'Bỏ qua' : 'Skip',
+                                style: const TextStyle(
                                   fontSize: 13.5,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              SizedBox(width: 4),
-                              Icon(Icons.arrow_forward_ios_rounded, size: 12),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.arrow_forward_ios_rounded, size: 12),
                             ],
                           ),
                         )
@@ -185,9 +199,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPageChanged: (index) {
                       setState(() => _currentPage = index);
                     },
-                    itemCount: _items.length,
+                    itemCount: items.length,
                     itemBuilder: (context, index) {
-                      final item = _items[index];
+                      final item = items[index];
                       return _buildSlideContent(item, size, isDark, primaryColor);
                     },
                   ),
@@ -198,7 +212,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(_items.length, (index) {
+                    children: List.generate(items.length, (index) {
                       final isSelected = index == _currentPage;
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
@@ -250,7 +264,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  _currentPage == _items.length - 1 ? 'Bắt đầu ngay' : 'Tiếp tục',
+                                  _currentPage == items.length - 1 ? (isVi ? 'Bắt đầu ngay' : 'Get Started') : (isVi ? 'Tiếp tục' : 'Continue'),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 16.5,
@@ -260,7 +274,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 ),
                                 const SizedBox(width: 8),
                                 Icon(
-                                  _currentPage == _items.length - 1
+                                  _currentPage == items.length - 1
                                       ? Icons.rocket_launch_rounded
                                       : Icons.arrow_forward_rounded,
                                   color: Colors.white,
@@ -283,7 +297,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             TextSpan(
                               children: [
                                 TextSpan(
-                                  text: 'Đã có tài khoản? ',
+                                  text: isVi ? 'Đã có tài khoản? ' : 'Already have an account? ',
                                   style: TextStyle(
                                     color: isDark ? Colors.white70 : const Color(0xFF64748B),
                                     fontSize: 14,
@@ -291,7 +305,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   ),
                                 ),
                                 TextSpan(
-                                  text: 'Đăng nhập',
+                                  text: isVi ? 'Đăng nhập' : 'Log In',
                                   style: TextStyle(
                                     color: primaryColor,
                                     fontWeight: FontWeight.bold,
@@ -481,7 +495,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _buildSubFeaturePill(
-                    isAi ? 'Voice Tiếng Việt' : 'Chia đều hóa đơn',
+                    isAi ? (isVi ? 'Voice Tiếng Việt' : 'Voice Input') : (isVi ? 'Chia đều hóa đơn' : 'Split Bills'),
                     isDark,
                     primaryColor,
                   ),

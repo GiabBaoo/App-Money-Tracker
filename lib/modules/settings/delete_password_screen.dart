@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
+import '../../services/language_service.dart';
 import 'success_screen.dart';
 import '../auth/login_screen.dart';
 
@@ -24,9 +25,13 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
   }
 
   Future<void> _handleDelete() async {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final password = _passwordController.text;
     if (password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập mật khẩu!'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(isVi ? 'Vui lòng nhập mật khẩu!' : 'Please enter your password!'),
+        backgroundColor: Colors.red,
+      ));
       return;
     }
     setState(() => _isLoading = true);
@@ -36,10 +41,12 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
     if (!mounted) return;
     if (result.success) {
       Navigator.push(context, PageTransitions.scale(SuccessScreen(
-        appBarTitle: 'Xóa tài khoản',
-        successTitle: 'Xóa tài khoản thành công',
-        successMessage: 'Tất cả dữ liệu tài chính cá nhân của bạn đã được gỡ bỏ vĩnh viễn khỏi hệ thống.',
-        buttonText: 'Quay về đăng nhập',
+        appBarTitle: isVi ? 'Xóa tài khoản' : 'Delete Account',
+        successTitle: isVi ? 'Xóa tài khoản thành công' : 'Account Deleted Successfully',
+        successMessage: isVi
+            ? 'Tất cả dữ liệu tài chính cá nhân của bạn đã được gỡ bỏ vĩnh viễn khỏi hệ thống.'
+            : 'All your personal financial data has been permanently removed from the system.',
+        buttonText: isVi ? 'Quay về đăng nhập' : 'Back to Login',
         onButtonPressed: () {
           Navigator.pushAndRemoveUntil(context, PageTransitions.fade(const LoginScreen()), (route) => false);
         },
@@ -51,6 +58,7 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark 
         ? const Color(0xFF1E1E1E) 
@@ -72,9 +80,9 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Text(
-                    'Xác thực danh tính',
-                    style: TextStyle(
+                  Text(
+                    isVi ? 'Xác thực danh tính' : 'Identity Verification',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -105,7 +113,7 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Nhập mật khẩu',
+                        isVi ? 'Nhập mật khẩu' : 'Enter Password',
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -114,7 +122,9 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Vui lòng nhập mật khẩu của bạn để xác nhận hành động xóa tài khoản.',
+                        isVi
+                            ? 'Vui lòng nhập mật khẩu của bạn để xác nhận hành động xóa tài khoản.'
+                            : 'Please enter your password to confirm account deletion.',
                         style: TextStyle(
                           color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                           fontSize: 15,
@@ -127,7 +137,7 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8, left: 4),
                         child: Text(
-                          'Mật khẩu',
+                          isVi ? 'Mật khẩu' : 'Password',
                           style: TextStyle(
                             color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                             fontSize: 13,
@@ -140,7 +150,7 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                         obscureText: _obscurePassword,
                         style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
                         decoration: InputDecoration(
-                          hintText: 'Nhập mật khẩu của bạn',
+                          hintText: isVi ? 'Nhập mật khẩu của bạn' : 'Enter your password',
                           hintStyle: TextStyle(
                             color: Theme.of(context).brightness == Brightness.dark 
                               ? Colors.white38 
@@ -196,10 +206,10 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                             color: const Color(0xFFE63946),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text(
-                              'Xác nhận xóa',
-                              style: TextStyle(
+                              isVi ? 'Xác nhận xóa' : 'Confirm Delete',
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,

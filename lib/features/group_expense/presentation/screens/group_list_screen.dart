@@ -1,3 +1,4 @@
+import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,6 +21,7 @@ class GroupListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final groupsAsync = ref.watch(userGroupsStreamProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).primaryColor;
@@ -56,9 +58,9 @@ class GroupListScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 14),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Quỹ Nhóm',
+                      isVi ? 'Quỹ Nhóm' : 'Group Funds',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -82,13 +84,13 @@ class GroupListScreen extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: Colors.white24, width: 1),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.add_rounded, color: Colors.white, size: 16),
-                          SizedBox(width: 4),
+                          const Icon(Icons.add_rounded, color: Colors.white, size: 16),
+                          const SizedBox(width: 4),
                           Text(
-                            'Tạo mới',
+                            isVi ? 'Tạo mới' : 'Create New',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 13,
@@ -115,7 +117,7 @@ class GroupListScreen extends ConsumerWidget {
                   data: (groups) => _buildContent(context, ref, groups, isDark, primaryColor),
                   loading: () => const Center(child: CircularProgressIndicator()),
                   error: (error, stack) => Center(
-                    child: Text('Lỗi: $error'),
+                    child: Text('${isVi ? 'Lỗi' : 'Error'}: $error'),
                   ),
                 ),
               ),
@@ -127,6 +129,7 @@ class GroupListScreen extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, WidgetRef ref, List groups, bool isDark, Color primaryColor) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -179,8 +182,8 @@ class GroupListScreen extends ConsumerWidget {
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Text(
-                        'TÍNH NĂNG ĐẶC BIỆT',
+                      child: Text(
+                        isVi ? 'TÍNH NĂNG ĐẶC BIỆT' : 'FEATURED',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -199,8 +202,8 @@ class GroupListScreen extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Một quỹ, một',
+                              Text(
+                                isVi ? 'Một quỹ, một' : 'One fund, one',
                                 style: TextStyle(
                                   fontSize: 28,
                                   fontWeight: FontWeight.w800,
@@ -208,8 +211,8 @@ class GroupListScreen extends ConsumerWidget {
                                   height: 1.1,
                                 ),
                               ),
-                              const Text(
-                                'việc',
+                              Text(
+                                isVi ? 'việc' : 'goal',
                                 style: TextStyle(
                                   fontSize: 28,
                                   fontWeight: FontWeight.w800,
@@ -240,8 +243,8 @@ class GroupListScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     
                     // Description
-                    const Text(
-                      'Quản lý tài chính hợp tác cho mục tiêu chung. Xây dựng tương lai cùng nhau với độ chính xác và dễ dàng.',
+                    Text(
+                      isVi ? 'Quản lý tài chính hợp tác cho mục tiêu chung. Xây dựng tương lai cùng nhau với độ chính xác và dễ dàng.' : 'Collaborative financial management for common goals. Build your financial future together easily.',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.white,
@@ -288,7 +291,7 @@ class GroupListScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  'Tạo Quỹ',
+                                  isVi ? 'Tạo Quỹ' : 'Create Fund',
                                   style: TextStyle(
                                     color: primaryColor,
                                     fontSize: 15,
@@ -311,7 +314,7 @@ class GroupListScreen extends ConsumerWidget {
           
           // Groups list
           Text(
-            'Quỹ của tôi',
+            isVi ? 'Quỹ của tôi' : 'My Funds',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -334,7 +337,7 @@ class GroupListScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Chưa có quỹ nào',
+                      isVi ? 'Chưa có quỹ nào' : 'No funds yet',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.grey[600],
@@ -342,7 +345,7 @@ class GroupListScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Tạo quỹ mới để bắt đầu!',
+                      isVi ? 'Tạo quỹ mới để bắt đầu!' : 'Create a new fund to get started!',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[500],
@@ -438,7 +441,7 @@ class GroupListScreen extends ConsumerWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'Chủ quỹ',
+                            isVi ? 'Chủ quỹ' : 'Owner',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -454,7 +457,7 @@ class GroupListScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 
                 Text(
-                  group.description ?? '${group.memberIds.length} thành viên',
+                  group.description ?? (isVi ? '${group.memberIds.length} thành viên' : '${group.memberIds.length} members'),
                   style: TextStyle(
                     fontSize: 14,
                     color: isDark ? Colors.white70 : Colors.black54,
@@ -464,7 +467,9 @@ class GroupListScreen extends ConsumerWidget {
                 const SizedBox(height: 4),
                 
                 Text(
-                  'Tạo ngày ${group.createdAt.day}/${group.createdAt.month}/${group.createdAt.year} lúc ${group.createdAt.hour.toString().padLeft(2, '0')}:${group.createdAt.minute.toString().padLeft(2, '0')}',
+                  isVi
+                      ? 'Tạo ngày ${group.createdAt.day}/${group.createdAt.month}/${group.createdAt.year} lúc ${group.createdAt.hour.toString().padLeft(2, '0')}:${group.createdAt.minute.toString().padLeft(2, '0')}'
+                      : 'Created on ${group.createdAt.day}/${group.createdAt.month}/${group.createdAt.year} at ${group.createdAt.hour.toString().padLeft(2, '0')}:${group.createdAt.minute.toString().padLeft(2, '0')}',
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark ? Colors.white54 : Colors.black38,
@@ -564,7 +569,7 @@ class GroupListScreen extends ConsumerWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Đã xóa quỹ "$groupName"'),
+              content: Text(LanguageService.instance.isVietnamese ? 'Đã xóa quỹ "$groupName"' : 'Deleted fund "$groupName"'),
               backgroundColor: Colors.green,
             ),
           );
@@ -573,7 +578,7 @@ class GroupListScreen extends ConsumerWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Lỗi khi xóa quỹ: $e'),
+              content: Text(LanguageService.instance.isVietnamese ? 'Lỗi khi xóa quỹ: $e' : 'Error deleting fund: $e'),
               backgroundColor: Colors.red,
             ),
           );

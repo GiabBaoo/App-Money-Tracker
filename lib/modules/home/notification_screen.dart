@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../widgets/top_toast.dart';
+import '../../services/language_service.dart';
 import '../../widgets/staggered_list_item.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../services/firestore_service.dart';
@@ -21,6 +22,7 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
+  bool get isVi => LanguageService.instance.isVietnamese;
   final FirestoreService _firestoreService = FirestoreService();
   final NotificationRepository _notiRepo = NotificationRepository();
   bool _isRefreshing = false;
@@ -58,9 +60,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
         _firestoreService.markAllNotificationsAsRead().catchError((_) {});
       }
       if (forceAnalyze && mounted) {
+        final isVi = LanguageScope.of(context).isVietnamese;
         TopToast.show(context, newCount > 0
-            ? 'Đã tạo $newCount báo cáo phân tích chi tiêu mới!'
-            : 'Dữ liệu chi tiêu của bạn đã được cập nhật mới nhất!');
+            ? (isVi ? 'Đã tạo $newCount báo cáo phân tích chi tiêu mới!' : 'Generated $newCount new spending insights!')
+            : (isVi ? 'Dữ liệu chi tiêu của bạn đã được cập nhật mới nhất!' : 'Your spending insights are up to date!'));
       }
     } catch (e) {
       debugPrint('Refresh error: $e');
@@ -73,6 +76,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -103,8 +107,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
                     ),
                   ),
-                  const Text(
-                    'Thông báo',
+                  Text(
+                    isVi ? 'Thông báo' : 'Notifications',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -145,7 +149,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           await _firestoreService.markAllNotificationsAsRead();
                           await _notiRepo.markAllAsRead();
                           if (context.mounted) {
-                            TopToast.show(context, 'Đã đánh dấu tất cả thông báo là đã đọc!');
+                            TopToast.show(context, isVi ? 'Đã đánh dấu tất cả thông báo là đã đọc!' : 'All notifications marked as read!');
                           }
                         },
                         child: Container(
@@ -187,7 +191,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               const Icon(Icons.error_outline_rounded, size: 56, color: Colors.redAccent),
                               const SizedBox(height: 16),
                               Text(
-                                'Lỗi tải thông báo: ${snapshot.error}',
+                                isVi ? 'Lỗi tải thông báo: ${snapshot.error}' : 'Error loading notifications: ${snapshot.error}',
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(fontSize: 14),
                               ),
@@ -195,7 +199,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               ElevatedButton.icon(
                                 onPressed: _handleRefresh,
                                 icon: const Icon(Icons.refresh_rounded),
-                                label: const Text('Thử lại'),
+                                label: Text(isVi ? 'Thử lại' : 'Retry'),
                               ),
                             ],
                           ),
@@ -303,7 +307,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Chưa có thông báo nào',
+              isVi ? 'Chưa có thông báo nào' : 'No notifications yet',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -312,7 +316,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Mọi thông tin về giao dịch, quỹ nhóm và nhắc nhở chi tiêu sẽ được hiển thị tại đây.',
+              isVi ? 'Mọi thông tin về giao dịch, quỹ nhóm và nhắc nhở chi tiêu sẽ được hiển thị tại đây.' : 'All transaction, group fund, and reminder updates will appear here.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -330,7 +334,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
               ),
               onPressed: () => _handleRefresh(forceAnalyze: true),
               icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-              label: const Text('Phân tích chi tiêu thông minh ngay'),
+              label: Text(isVi ? 'Phân tích chi tiêu thông minh ngay' : 'Analyze smart spending now'),
             ),
           ],
         ),
@@ -386,13 +390,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
     if (notification.type == 'group_invite') {
       if (notification.status == 'accepted') {
-        statusLabel = 'Đã tham gia';
+        statusLabel = isVi ? 'Đã tham gia' : 'Joined';
         statusColor = Colors.green;
       } else if (notification.status == 'rejected') {
-        statusLabel = 'Đã từ chối';
+        statusLabel = isVi ? 'Đã từ chối' : 'Declined';
         statusColor = Colors.red;
       } else {
-        statusLabel = 'Chờ phản hồi';
+        statusLabel = isVi ? 'Chờ phản hồi' : 'Pending';
         statusColor = Colors.orange;
       }
     }
@@ -400,13 +404,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final diff = DateTime.now().difference(notification.createdAt);
     String timeAgo;
     if (diff.inMinutes < 1) {
-      timeAgo = 'Vừa xong';
+      timeAgo = isVi ? 'Vừa xong' : 'Just now';
     } else if (diff.inMinutes < 60) {
-      timeAgo = '${diff.inMinutes} phút trước';
+      timeAgo = isVi ? '${diff.inMinutes} phút trước' : '${diff.inMinutes}m ago';
     } else if (diff.inHours < 24) {
-      timeAgo = '${diff.inHours} giờ trước';
+      timeAgo = isVi ? '${diff.inHours} giờ trước' : '${diff.inHours}h ago';
     } else if (diff.inDays < 7) {
-      timeAgo = '${diff.inDays} ngày trước';
+      timeAgo = isVi ? '${diff.inDays} ngày trước' : '${diff.inDays}d ago';
     } else {
       timeAgo = dateStr;
     }

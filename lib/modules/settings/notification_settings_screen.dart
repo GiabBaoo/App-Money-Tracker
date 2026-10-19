@@ -99,46 +99,72 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
   }
 
   Future<void> _testSendSystemNotification() async {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final granted = await LocalNotificationService.instance.requestPermission();
     if (!granted) {
       if (!mounted) return;
-      TopToast.show(context, 'Vui lòng cấp quyền thông báo cho ứng dụng trong cài đặt điện thoại!', isError: true);
+      TopToast.show(
+        context,
+        isVi
+            ? 'Vui lòng cấp quyền thông báo cho ứng dụng trong cài đặt điện thoại!'
+            : 'Please grant notification permissions in phone settings!',
+        isError: true,
+      );
       return;
     }
 
     await LocalNotificationService.instance.showInstantNotification(
       id: 999,
-      title: '🔔 Thông báo thử nghiệm từ Mono',
-      body: 'Tuyệt vời! Thiết bị của bạn đã kích hoạt thành công tính năng thông báo tài chính thông minh ra màn hình khóa & thanh trạng thái.',
+      title: isVi ? '🔔 Thông báo thử nghiệm từ Mono' : '🔔 Test notification from Mono',
+      body: isVi
+          ? 'Tuyệt vời! Thiết bị của bạn đã kích hoạt thành công tính năng thông báo tài chính thông minh ra màn hình khóa & thanh trạng thái.'
+          : 'Awesome! Your device has successfully activated smart financial alerts on your lock screen & status bar.',
     );
 
     if (!mounted) return;
-    TopToast.show(context, 'Đã gửi thông báo thử nghiệm ra thanh trạng thái điện thoại!');
+    TopToast.show(
+      context,
+      isVi
+          ? 'Đã gửi thông báo thử nghiệm ra thanh trạng thái điện thoại!'
+          : 'Test notification sent to phone status bar!',
+    );
   }
 
   Future<void> _testScheduledNotificationIn5Seconds() async {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final granted = await LocalNotificationService.instance.requestPermission();
     if (!granted) {
       if (!mounted) return;
-      TopToast.show(context, 'Vui lòng cấp quyền thông báo cho ứng dụng trong cài đặt điện thoại!', isError: true);
+      TopToast.show(
+        context,
+        isVi
+            ? 'Vui lòng cấp quyền thông báo cho ứng dụng trong cài đặt điện thoại!'
+            : 'Please grant notification permissions in phone settings!',
+        isError: true,
+      );
       return;
     }
 
     await LocalNotificationService.instance.scheduleTestNotification(
       id: 998,
       delaySeconds: 5,
-      title: '📝 Nhắc nhở chi tiêu Mono (Thử nghiệm 5s)',
-      body: 'Tuyệt vời! Thông báo ngoài màn hình hoạt động hoàn hảo. Lịch hẹn 20:00 mỗi tối của bạn đã được kích hoạt!',
+      title: isVi ? '📝 Nhắc nhở chi tiêu Mono (Thử nghiệm 5s)' : '📝 Mono Expense Reminder (5s Test)',
+      body: isVi
+          ? 'Tuyệt vời! Thông báo ngoài màn hình hoạt động hoàn hảo. Lịch hẹn 20:00 mỗi tối của bạn đã được kích hoạt!'
+          : 'Awesome! Lock screen alerts work properly. Your 20:00 daily reminder is active!',
     );
 
     if (!mounted) return;
     TopToast.show(
       context,
-      '⏳ Đã lập lịch! Hãy khóa màn hình hoặc về Home, sau 5 giây thông báo sẽ xuất hiện!',
+      isVi
+          ? '⏳ Đã lập lịch! Hãy khóa màn hình hoặc về Home, sau 5 giây thông báo sẽ xuất hiện!'
+          : '⏳ Scheduled! Lock your screen or return Home; notification will appear in 5 seconds!',
     );
   }
 
   Future<void> _triggerInstantAnalysis() async {
+    final isVi = LanguageScope.of(context).isVietnamese;
     setState(() => _isAnalyzing = true);
     try {
       final count = await SmartNotificationService.instance.generateSmartFinancialNotifications(forceRefresh: true);
@@ -146,8 +172,12 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       TopToast.show(
         context,
         count > 0
-            ? 'Đã tạo $count thông báo phân tích chi tiêu mới và đẩy ra điện thoại!'
-            : 'Dữ liệu chi tiêu của bạn đã được phân tích mới nhất!',
+            ? (isVi
+                ? 'Đã tạo $count thông báo phân tích chi tiêu mới và đẩy ra điện thoại!'
+                : 'Generated $count new spending analysis alerts and sent to phone!')
+            : (isVi
+                ? 'Dữ liệu chi tiêu của bạn đã được phân tích mới nhất!'
+                : 'Your spending data is already up to date!'),
       );
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
@@ -250,7 +280,13 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                   onPressed: () {
                     final amount = CurrencyUtils.parseCurrency(controller.text);
                     if (amount <= 0) {
-                      TopToast.show(context, 'Vui lòng nhập số tiền hợp lệ!', isError: true);
+                      TopToast.show(
+                        context,
+                        LanguageScope.of(context).isVietnamese
+                            ? 'Vui lòng nhập số tiền hợp lệ!'
+                            : 'Please enter a valid amount!',
+                        isError: true,
+                      );
                       return;
                     }
                     Navigator.pop(modalCtx);
@@ -312,6 +348,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
@@ -435,7 +472,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                                     onPressed: _showSetDailyLimitDialog,
                                     icon: const Icon(Icons.edit, size: 16, color: Colors.white),
                                     label: Text(
-                                      context.tr('tab_expense') == 'Chi tiêu' ? 'Sửa' : 'Edit',
+                                      isVi ? 'Sửa' : 'Edit',
                                       style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                                     ),
                                     style: ElevatedButton.styleFrom(
@@ -453,13 +490,15 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                       const SizedBox(height: 28),
 
                       // ════════ THÔNG BÁO TÀI CHÍNH THÔNG MINH ════════
-                      _buildSectionTitle(context, 'THÔNG BÁO TÀI CHÍNH THÔNG MINH'),
+                      _buildSectionTitle(context, isVi ? 'THÔNG BÁO TÀI CHÍNH THÔNG MINH' : 'SMART FINANCIAL ALERTS'),
                       _buildInfoBox(context, [
                         _buildToggleRow(
                           context,
                           icon: Icons.pie_chart_rounded,
-                          title: 'Cảnh báo ngân sách (80% & 100%)',
-                          subtitle: 'Nhận thông báo khi danh mục chi tiêu chạm 80% hoặc vượt hạn mức ngân sách',
+                          title: isVi ? 'Cảnh báo ngân sách (80% & 100%)' : 'Budget Alerts (80% & 100%)',
+                          subtitle: isVi
+                              ? 'Nhận thông báo khi danh mục chi tiêu chạm 80% hoặc vượt hạn mức ngân sách'
+                              : 'Get notified when category spending reaches 80% or exceeds budget limit',
                           value: _budgetAlertsEnabled,
                           onChanged: (val) {
                             setState(() => _budgetAlertsEnabled = val);
@@ -470,8 +509,10 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                         _buildToggleRow(
                           context,
                           icon: Icons.trending_up_rounded,
-                          title: 'Báo cáo chi tiêu so kỳ trước',
-                          subtitle: 'So sánh chi tiêu tháng này với tháng trước (cảnh báo tăng / khen tiết kiệm)',
+                          title: isVi ? 'Báo cáo chi tiêu so kỳ trước' : 'Period Spending Report',
+                          subtitle: isVi
+                              ? 'So sánh chi tiêu tháng này với tháng trước (cảnh báo tăng / khen tiết kiệm)'
+                              : 'Compare spending this month vs last month (growth warning / saving praise)',
                           value: _spendingReportEnabled,
                           onChanged: (val) {
                             setState(() => _spendingReportEnabled = val);
@@ -482,8 +523,10 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                         _buildToggleRow(
                           context,
                           icon: Icons.lightbulb_outline_rounded,
-                          title: 'Gợi ý chi tiêu khoa học',
-                          subtitle: 'Gợi ý hạn mức chi tiêu trung bình mỗi ngày dựa trên số dư ví còn lại',
+                          title: isVi ? 'Gợi ý chi tiêu khoa học' : 'Smart Spending Guidance',
+                          subtitle: isVi
+                              ? 'Gợi ý hạn mức chi tiêu trung bình mỗi ngày dựa trên số dư ví còn lại'
+                              : 'Suggest daily spending allowance based on remaining wallet balance',
                           value: _smartAdviceEnabled,
                           onChanged: (val) {
                             setState(() => _smartAdviceEnabled = val);
@@ -494,8 +537,10 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                         _buildToggleRow(
                           context,
                           icon: Icons.edit_note_rounded,
-                          title: 'Nhắc nhở ghi chép mỗi ngày',
-                          subtitle: 'Nhắc nhở ghi lại chi tiêu nếu hôm nay bạn chưa có giao dịch',
+                          title: isVi ? 'Nhắc nhở ghi chép mỗi ngày' : 'Daily Expense Reminder',
+                          subtitle: isVi
+                              ? 'Nhắc nhở ghi lại chi tiêu nếu hôm nay bạn chưa có giao dịch'
+                              : 'Remind you to log expenses if you haven\'t recorded any transaction today',
                           value: _remindersEnabled,
                           onChanged: (val) {
                             setState(() => _remindersEnabled = val);
@@ -527,7 +572,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                                     )
                                   : const Icon(Icons.auto_awesome_rounded, size: 20),
                               label: Text(
-                                _isAnalyzing ? 'Đang phân tích...' : 'Phân tích & Cập nhật thông báo ngay',
+                                _isAnalyzing
+                                    ? (isVi ? 'Đang phân tích...' : 'Analyzing...')
+                                    : (isVi ? 'Phân tích & Cập nhật thông báo ngay' : 'Analyze & Update Alerts Now'),
                                 style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600),
                               ),
                             ),
@@ -541,9 +588,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                               ),
                               onPressed: _testScheduledNotificationIn5Seconds,
                               icon: const Icon(Icons.timer_outlined, size: 20),
-                              label: const Text(
-                                'Thử nghiệm thông báo sau 5 giây (Khóa màn hình để test)',
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                              label: Text(
+                                isVi
+                                    ? 'Thử nghiệm thông báo sau 5 giây (Khóa màn hình để test)'
+                                    : 'Test alert in 5s (Lock screen to test)',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -559,9 +608,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                               ),
                               onPressed: _testSendSystemNotification,
                               icon: const Icon(Icons.notifications_active_rounded, size: 20),
-                              label: const Text(
-                                'Bắn thử thông báo ra màn hình điện thoại ngay',
-                                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+                              label: Text(
+                                isVi
+                                    ? 'Bắn thử thông báo ra màn hình điện thoại ngay'
+                                    : 'Send instant test notification to phone',
+                                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
                               ),
                             ),
                           ],
@@ -584,7 +635,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Để nhận thông báo 20:00 đều đặn ngoài màn hình (đặc biệt trên Xiaomi, Samsung, Oppo), vui lòng cho phép Mono tự khởi chạy và tắt "Tiết kiệm pin" trong Cài đặt ứng dụng của máy.',
+                                isVi
+                                    ? 'Để nhận thông báo 20:00 đều đặn ngoài màn hình (đặc biệt trên Xiaomi, Samsung, Oppo), vui lòng cho phép Mono tự khởi chạy và tắt "Tiết kiệm pin" trong Cài đặt ứng dụng của máy.'
+                                    : 'To receive daily 20:00 alerts reliably on your lock screen (especially on Xiaomi, Samsung, Oppo), please enable Mono Auto-start and disable Battery Saver in app settings.',
                                 style: TextStyle(
                                   fontSize: 12,
                                   height: 1.45,
@@ -597,7 +650,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Hệ thống sẽ tự động quét các giao dịch và ví tiền thực tế để tạo báo cáo chi tiêu và cảnh báo vượt hạn mức kịp thời cho bạn.',
+                        isVi
+                            ? 'Hệ thống sẽ tự động quét các giao dịch và ví tiền thực tế để tạo báo cáo chi tiêu và cảnh báo vượt hạn mức kịp thời cho bạn.'
+                            : 'The system automatically scans transactions and wallet balances to generate spending reports and timely budget alerts.',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 12, color: Colors.grey.shade600, height: 1.4),
                       ),

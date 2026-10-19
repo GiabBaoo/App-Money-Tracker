@@ -100,7 +100,7 @@ class AppearanceScreen extends ConsumerWidget {
                       const SizedBox(height: 12),
                       _buildFontSizeSelector(context, themeService, isDark),
                       const SizedBox(height: 16),
-                      _buildFontSizeDescriptionBox(themeService, isDark),
+                      _buildFontSizeDescriptionBox(context, themeService, isDark),
                     ],
                   ),
                 ),
@@ -147,6 +147,7 @@ class AppearanceScreen extends ConsumerWidget {
 
   // === 1. THẺ XEM TRƯỚC ĐỘNG THỜI GIAN THỰC ===
   Widget _buildLiveMockupCard(BuildContext context, ThemeService themeService, bool isDark) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     // Xác định màu sắc hiển thị của mockup theo themeMode đang chọn
     final isPreviewDark = themeService.themeMode == ThemeMode.dark ||
         (themeService.themeMode == ThemeMode.system &&
@@ -199,11 +200,11 @@ class AppearanceScreen extends ConsumerWidget {
                       const SizedBox(width: 10),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Chào bạn,', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                        children: [
+                          Text(isVi ? 'Chào bạn,' : 'Hello,', style: const TextStyle(color: Colors.white70, fontSize: 11)),
                           Text(
-                            'Trần Hoàng Nam',
-                            style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                            isVi ? 'Trần Hoàng Nam' : 'Alex Johnson',
+                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -251,11 +252,11 @@ class AppearanceScreen extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Tổng tài sản ví',
+                                  isVi ? 'Tổng tài sản ví' : 'Total wallet balance',
                                   style: TextStyle(fontSize: 12, color: subtextColor),
                                 ),
                                 Text(
-                                  '48,500,000 đ',
+                                  isVi ? '48,500,000 đ' : '\$2,150.00',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -272,9 +273,9 @@ class AppearanceScreen extends ConsumerWidget {
                             color: const Color(0xFF22C55E).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text(
-                            '+15% tháng',
-                            style: TextStyle(
+                          child: Text(
+                            isVi ? '+15% tháng' : '+15% mo',
+                            style: const TextStyle(
                               color: Color(0xFF16A34A),
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -305,11 +306,11 @@ class AppearanceScreen extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Ăn uống & Cà phê',
+                                isVi ? 'Ăn uống & Cà phê' : 'Food & Beverages',
                                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textColor),
                               ),
                               Text(
-                                'Hôm nay • Tiền mặt',
+                                isVi ? 'Hôm nay • Tiền mặt' : 'Today • Cash',
                                 style: TextStyle(fontSize: 11, color: subtextColor),
                               ),
                             ],
@@ -317,7 +318,7 @@ class AppearanceScreen extends ConsumerWidget {
                         ],
                       ),
                       Text(
-                        '- 65,000 đ',
+                        isVi ? '- 65,000 đ' : '- \$3.50',
                         style: const TextStyle(
                           fontSize: 13.5,
                           fontWeight: FontWeight.bold,
@@ -477,11 +478,12 @@ class AppearanceScreen extends ConsumerWidget {
 
   // === 3. KÍCH THƯỚC CHỮ (SEGMENTED PILLS) ===
   Widget _buildFontSizeSelector(BuildContext context, ThemeService themeService, bool isDark) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final factors = [
-      {'label': 'Nhỏ', 'scale': '0.85x', 'val': 0.85, 'symbol': 'A-'},
-      {'label': 'Chuẩn', 'scale': '1.0x', 'val': 1.0, 'symbol': 'A'},
-      {'label': 'Lớn', 'scale': '1.15x', 'val': 1.15, 'symbol': 'A+'},
-      {'label': 'Cực đại', 'scale': '1.30x', 'val': 1.30, 'symbol': 'A++'},
+      {'label': isVi ? 'Nhỏ' : 'Small', 'scale': '0.85x', 'val': 0.85, 'symbol': 'A-'},
+      {'label': isVi ? 'Chuẩn' : 'Normal', 'scale': '1.0x', 'val': 1.0, 'symbol': 'A'},
+      {'label': isVi ? 'Lớn' : 'Large', 'scale': '1.15x', 'val': 1.15, 'symbol': 'A+'},
+      {'label': isVi ? 'Cực đại' : 'Huge', 'scale': '1.30x', 'val': 1.30, 'symbol': 'A++'},
     ];
 
     return Container(
@@ -553,16 +555,25 @@ class AppearanceScreen extends ConsumerWidget {
   }
 
   // === HỘP DIỄN GIẢI KÍCH THƯỚC CHỮ ĐANG CHỌN ===
-  Widget _buildFontSizeDescriptionBox(ThemeService themeService, bool isDark) {
+  Widget _buildFontSizeDescriptionBox(BuildContext context, ThemeService themeService, bool isDark) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     String desc;
     if (themeService.textScaleFactor <= 0.88) {
-      desc = 'Cỡ chữ Nhỏ (0.85x): Hiển thị được nhiều thông tin hơn trên cùng màn hình, phù hợp người thích bố cục gọn gàng.';
+      desc = isVi
+          ? 'Cỡ chữ Nhỏ (0.85x): Hiển thị được nhiều thông tin hơn trên cùng màn hình, phù hợp người thích bố cục gọn gàng.'
+          : 'Small font (0.85x): Displays more information on the screen, suitable for users preferring compact layouts.';
     } else if (themeService.textScaleFactor <= 1.05) {
-      desc = 'Cỡ chữ Chuẩn (1.0x): Kích thước mặc định cân đối và sắc nét nhất cho hầu hết mọi màn hình điện thoại.';
+      desc = isVi
+          ? 'Cỡ chữ Chuẩn (1.0x): Kích thước mặc định cân đối và sắc nét nhất cho hầu hết mọi màn hình điện thoại.'
+          : 'Normal font (1.0x): Default balanced size, crisp and clear on virtually all mobile screens.';
     } else if (themeService.textScaleFactor <= 1.20) {
-      desc = 'Cỡ chữ Lớn (1.15x): Chữ to rõ ràng, dễ đọc khi đang di chuyển và giảm đáng kể tình trạng mỏi mắt.';
+      desc = isVi
+          ? 'Cỡ chữ Lớn (1.15x): Chữ to rõ ràng, dễ đọc khi đang di chuyển và giảm đáng kể tình trạng mỏi mắt.'
+          : 'Large font (1.15x): Large and legible text, easy to read on the move and reduces eye strain.';
     } else {
-      desc = 'Cỡ chữ Cực đại (1.30x): Kích thước chữ tối đa, hỗ trợ đọc dễ dàng cho người lớn tuổi hoặc thị lực kém.';
+      desc = isVi
+          ? 'Cỡ chữ Cực đại (1.30x): Kích thước chữ tối đa, hỗ trợ đọc dễ dàng cho người lớn tuổi hoặc thị lực kém.'
+          : 'Huge font (1.30x): Maximum accessibility font size for effortless readability.';
     }
 
     return Container(

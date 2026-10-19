@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../services/ai_config_service.dart';
 import '../../services/local_qwen_service.dart';
 import '../../services/gemini_ai_service.dart';
+import '../../services/language_service.dart';
 import '../../widgets/top_toast.dart';
 import '../../widgets/animated_scale_button.dart';
 
@@ -66,7 +67,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
     await _configService.setLocalModelName(_selectedLocalModel);
     await _configService.setEngineMode(_selectedEngineMode);
     if (!mounted) return;
-    TopToast.show(context, 'Đã lưu cấu hình Trợ lý Local Qwen 2.5 thành công!');
+    TopToast.show(context, LanguageScope.of(context).isVietnamese ? 'Đã lưu cấu hình Trợ lý Local Qwen 2.5 thành công!' : 'Local Qwen 2.5 Assistant settings saved successfully!');
   }
 
   Future<void> _testLocalModel() async {
@@ -89,9 +90,9 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
       });
 
       if (_testLocalSuccess == true) {
-        TopToast.show(context, 'Đã kết nối Qwen 2.5 thành công! ⚡');
+        TopToast.show(context, LanguageScope.of(context).isVietnamese ? 'Đã kết nối Qwen 2.5 thành công! ⚡' : 'Connected to Qwen 2.5 successfully! ⚡');
       } else {
-        TopToast.show(context, 'Không tìm thấy server. Mono sẽ dùng Offline Engine 0ms.');
+        TopToast.show(context, LanguageScope.of(context).isVietnamese ? 'Không tìm thấy server. Mono sẽ dùng Offline Engine 0ms.' : 'Server not found. Mono will use 0ms Offline Engine.');
       }
     }
   }
@@ -99,7 +100,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
   Future<void> _testCloudKey() async {
     final key = _apiKeyController.text.trim();
     if (key.isEmpty) {
-      TopToast.show(context, 'Vui lòng nhập API Key để kiểm tra');
+      TopToast.show(context, LanguageScope.of(context).isVietnamese ? 'Vui lòng nhập API Key để kiểm tra' : 'Please enter an API Key to test');
       return;
     }
 
@@ -115,15 +116,16 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
       });
 
       if (success) {
-        TopToast.show(context, 'Kết nối Google AI Studio thành công! 🚀');
+        TopToast.show(context, LanguageScope.of(context).isVietnamese ? 'Kết nối Google AI Studio thành công! 🚀' : 'Connected to Google AI Studio successfully! 🚀');
       } else {
-        TopToast.show(context, 'Không thể kết nối. Vui lòng kiểm tra lại Key');
+        TopToast.show(context, LanguageScope.of(context).isVietnamese ? 'Không thể kết nối. Vui lòng kiểm tra lại Key' : 'Failed to connect. Please check your Key');
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = isDark ? const Color(0xFF162321) : Colors.white;
     final cardBorder = isDark ? const Color(0xFF334B48) : const Color(0xFFE2E8F0);
@@ -145,8 +147,8 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                     icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Text(
-                    'Cài đặt Trợ lý AI Mono',
+                  Text(
+                    isVi ? 'Cài đặt Trợ lý AI Mono' : 'Mono AI Assistant Settings',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -276,7 +278,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
-                                        'Trợ lý Mono chạy cục bộ trên thiết bị của bạn. Dữ liệu thu chi, số dư ví không bao giờ rời khỏi điện thoại, tuyệt đối bảo mật và riêng tư.',
+                                        isVi ? 'Trợ lý Mono chạy cục bộ trên thiết bị của bạn. Dữ liệu thu chi, số dư ví không bao giờ rời khỏi điện thoại, tuyệt đối bảo mật và riêng tư.' : 'Mono Assistant runs locally on your device. Transaction records and balances never leave your phone, ensuring 100% privacy.',
                                         style: TextStyle(
                                           fontSize: 12.5,
                                           color: isDark ? Colors.white.withValues(alpha: 0.85) : const Color(0xFF334155),
@@ -297,8 +299,8 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                       // ════════════ 2. CHỌN MÔ HÌNH LOCAL ════════════
                       _buildSectionHeader(
                         icon: Icons.psychology_rounded,
-                        title: 'Cấu hình Mô hình Trí tuệ Nhân tạo',
-                        subtitle: 'Chọn mức độ thông minh phù hợp với cấu hình thiết bị của bạn.',
+                        title: isVi ? 'Cấu hình Mô hình Trí tuệ Nhân tạo' : 'AI Model Configuration',
+                        subtitle: isVi ? 'Chọn mức độ thông minh phù hợp với cấu hình thiết bị của bạn.' : 'Choose intelligence level matching your device specs.',
                         isDark: isDark,
                       ),
                       const SizedBox(height: 12),
@@ -323,8 +325,8 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                               _buildModelOption(
                                 modelKey: 'qwen2.5:1.5b',
                                 title: 'Qwen 2.5 1.5B-Instruct',
-                                badge: 'Khuyên dùng (Pixel 7a)',
-                                subtitle: 'Độ thông minh cao nhất, bóc tách tiếng Việt và lập luận tài chính xuất sắc (~980MB RAM)',
+                                badge: isVi ? 'Khuyên dùng (Pixel 7a)' : 'Recommended (Pixel 7a)',
+                                subtitle: isVi ? 'Độ thông minh cao nhất, bóc tách tiếng Việt và lập luận tài chính xuất sắc (~980MB RAM)' : 'Highest intelligence, outstanding parsing and financial reasoning (~980MB RAM)',
                                 isDark: isDark,
                                 activeMint: activeMint,
                               ),
@@ -335,8 +337,8 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                               _buildModelOption(
                                 modelKey: 'qwen2.5:0.5b',
                                 title: 'Qwen 2.5 0.5B-Instruct',
-                                badge: 'Siêu nhẹ & Tiết kiệm',
-                                subtitle: 'Phản hồi chớp nhoáng, tối ưu hóa cho máy cấu hình nhẹ và tiết kiệm pin (~390MB RAM)',
+                                badge: isVi ? 'Siêu nhẹ & Tiết kiệm' : 'Ultra-light & Efficient',
+                                subtitle: isVi ? 'Phản hồi chớp nhoáng, tối ưu hóa cho máy cấu hình nhẹ và tiết kiệm pin (~390MB RAM)' : 'Instant response, optimized for lightweight devices and battery saving (~390MB RAM)',
                                 isDark: isDark,
                                 activeMint: activeMint,
                               ),
@@ -350,8 +352,8 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                       // ════════════ 3. CỔNG KẾT NỐI LOCAL AI ════════════
                       _buildSectionHeader(
                         icon: Icons.hub_rounded,
-                        title: 'Cổng kết nối Local AI (Endpoint)',
-                        subtitle: 'Mono kết nối trực tiếp với On-Device Inference hoặc máy chủ Ollama trên máy tính khi chạy dev.',
+                        title: isVi ? 'Cổng kết nối Local AI (Endpoint)' : 'Local AI Connection Port (Endpoint)',
+                        subtitle: isVi ? 'Mono kết nối trực tiếp với On-Device Inference hoặc máy chủ Ollama trên máy tính khi chạy dev.' : 'Mono connects directly to on-device inference or dev host Ollama server.',
                         isDark: isDark,
                       ),
                       const SizedBox(height: 12),
@@ -385,7 +387,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                             color: isDark ? Colors.white : const Color(0xFF0F172A),
                           ),
                           decoration: InputDecoration(
-                            hintText: 'VD: http://10.0.2.2:11434 hoặc http://127.0.0.1:11434',
+                            hintText: isVi ? 'VD: http://10.0.2.2:11434 hoặc http://127.0.0.1:11434' : 'E.g.: http://10.0.2.2:11434 or http://127.0.0.1:11434',
                             hintStyle: TextStyle(
                               color: isDark ? Colors.white38 : Colors.grey.shade400,
                               fontSize: 13,
@@ -410,7 +412,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                   color: activeMint,
                                 ),
                               ),
-                              tooltip: 'Dán địa chỉ',
+                              tooltip: isVi ? 'Dán địa chỉ' : 'Paste address',
                               onPressed: () async {
                                 final data = await Clipboard.getData('text/plain');
                                 if (data?.text != null) {
@@ -499,7 +501,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
-                                              'Kiểm tra Qwen 2.5',
+                                              isVi ? 'Kiểm tra Qwen 2.5' : 'Test Qwen 2.5',
                                               style: TextStyle(
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 13.5,
@@ -529,14 +531,14 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                     ),
                                   ],
                                 ),
-                                child: const Center(
+                                child: Center(
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(Icons.save_rounded, color: Colors.white, size: 18),
                                       SizedBox(width: 8),
                                       Text(
-                                        'Lưu cấu hình',
+                                        isVi ? 'Lưu cấu hình' : 'Save Config',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
@@ -557,8 +559,8 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                       // ════════════ 4. ĐỘ TRỄ PHẢN HỒI CỦA MONO ════════════
                       _buildSectionHeader(
                         icon: Icons.timer_outlined,
-                        title: 'Độ trễ phản hồi của Mono',
-                        subtitle: 'Tùy chỉnh nhịp độ hiển thị phản hồi của Mono cho phù hợp với thói quen đọc.',
+                        title: isVi ? 'Độ trễ phản hồi của Mono' : 'Mono Response Delay',
+                        subtitle: isVi ? 'Tùy chỉnh nhịp độ hiển thị phản hồi của Mono cho phù hợp với thói quen đọc.' : 'Adjust typing rhythm of Mono responses to match your reading speed.',
                         isDark: isDark,
                       ),
                       const SizedBox(height: 12),
@@ -582,24 +584,24 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                             children: [
                               _buildResponseDelayOption(
                                 ms: 300,
-                                title: 'Nhanh (300ms)',
-                                subtitle: 'Phản hồi chớp nhoáng, tức thì',
+                                title: isVi ? 'Nhanh (300ms)' : 'Fast (300ms)',
+                                subtitle: isVi ? 'Phản hồi chớp nhoáng, tức thì' : 'Lightning-fast, immediate',
                                 isDark: isDark,
                                 activeMint: activeMint,
                               ),
                               Divider(height: 1, color: isDark ? const Color(0xFF263937) : const Color(0xFFF1F5F9)),
                               _buildResponseDelayOption(
                                 ms: 700,
-                                title: 'Chuẩn (700ms)',
-                                subtitle: 'Khuyên dùng (tự nhiên & cân bằng)',
+                                title: isVi ? 'Chuẩn (700ms)' : 'Standard (700ms)',
+                                subtitle: isVi ? 'Khuyên dùng (tự nhiên & cân bằng)' : 'Recommended (natural & balanced)',
                                 isDark: isDark,
                                 activeMint: activeMint,
                               ),
                               Divider(height: 1, color: isDark ? const Color(0xFF263937) : const Color(0xFFF1F5F9)),
                               _buildResponseDelayOption(
                                 ms: 1500,
-                                title: 'Thư thả (1500ms)',
-                                subtitle: 'Bình tĩnh, nhịp nhàng',
+                                title: isVi ? 'Thư thả (1500ms)' : 'Relaxed (1500ms)',
+                                subtitle: isVi ? 'Bình tĩnh, nhịp nhàng' : 'Steady, paced',
                                 isDark: isDark,
                                 activeMint: activeMint,
                               ),
@@ -613,8 +615,8 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                       // ════════════ 5. THỜI GIAN CHỜ IM LẶNG GIỌNG NÓI ════════════
                       _buildSectionHeader(
                         icon: Icons.mic_rounded,
-                        title: 'Khoảng chờ khi nói (Voice Silence)',
-                        subtitle: 'Thời gian yên lặng trước khi Mono tự động gửi câu lệnh.',
+                        title: isVi ? 'Khoảng chờ khi nói (Voice Silence)' : 'Voice Silence Wait Time',
+                        subtitle: isVi ? 'Thời gian yên lặng trước khi Mono tự động gửi câu lệnh.' : 'Silence duration before Mono automatically sends your query.',
                         isDark: isDark,
                       ),
                       const SizedBox(height: 12),
@@ -631,24 +633,24 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                             children: [
                               _buildSilenceOption(
                                 ms: 1500,
-                                title: '1.5 giây',
-                                subtitle: 'Dành cho người nói nhanh và dứt khoát',
+                                title: isVi ? '1.5 giây' : '1.5 seconds',
+                                subtitle: isVi ? 'Dành cho người nói nhanh và dứt khoát' : 'For quick, decisive speakers',
                                 isDark: isDark,
                                 activeMint: activeMint,
                               ),
                               Divider(height: 1, color: isDark ? const Color(0xFF263937) : const Color(0xFFF1F5F9)),
                               _buildSilenceOption(
                                 ms: 2000,
-                                title: '2.0 giây (Mặc định)',
-                                subtitle: 'Cân bằng, tránh bị ngắt lời giữa chừng',
+                                title: isVi ? '2.0 giây (Mặc định)' : '2.0 seconds (Default)',
+                                subtitle: isVi ? 'Cân bằng, tránh bị ngắt lời giữa chừng' : 'Balanced, avoids mid-sentence cutoffs',
                                 isDark: isDark,
                                 activeMint: activeMint,
                               ),
                               Divider(height: 1, color: isDark ? const Color(0xFF263937) : const Color(0xFFF1F5F9)),
                               _buildSilenceOption(
                                 ms: 3000,
-                                title: '3.0 giây',
-                                subtitle: 'Dành cho người nói chậm, có khoảng nghỉ dài',
+                                title: isVi ? '3.0 giây' : '3.0 seconds',
+                                subtitle: isVi ? 'Dành cho người nói chậm, có khoảng nghỉ dài' : 'For relaxed speakers with longer pauses',
                                 isDark: isDark,
                                 activeMint: activeMint,
                               ),
@@ -669,7 +671,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                               Icon(Icons.cloud_queue_rounded, size: 18, color: activeMint),
                               const SizedBox(width: 8),
                               Text(
-                                'Cấu hình Dự phòng Cloud (Tùy chọn)',
+                                isVi ? 'Cấu hình Dự phòng Cloud (Tùy chọn)' : 'Cloud Backup Configuration (Optional)',
                                 style: TextStyle(
                                   fontSize: 14.5,
                                   fontWeight: FontWeight.bold,
@@ -691,7 +693,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Bạn có thể nhập Google Gemini API Key làm phương án dự phòng khi cần so sánh hiệu năng:',
+                                    isVi ? 'Bạn có thể nhập Google Gemini API Key làm phương án dự phòng khi cần so sánh hiệu năng:' : 'You can enter a Google Gemini API Key as a fallback benchmark:',
                                     style: TextStyle(
                                       fontSize: 12.5,
                                       color: isDark ? Colors.white70 : Colors.black87,
@@ -703,7 +705,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                     obscureText: _obscureKey,
                                     style: TextStyle(fontSize: 13.5, color: isDark ? Colors.white : Colors.black87),
                                     decoration: InputDecoration(
-                                      hintText: 'Dán API Key (AIzaSy...) dự phòng...',
+                                      hintText: isVi ? 'Dán API Key (AIzaSy...) dự phòng...' : 'Paste backup API Key (AIzaSy...)...',
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                                       suffixIcon: IconButton(
@@ -724,14 +726,14 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                         ),
                                         icon: const Icon(Icons.bolt_rounded, size: 16),
-                                        label: const Text('Kiểm tra Key Cloud', style: TextStyle(fontSize: 12)),
+                                        label: Text(isVi ? 'Kiểm tra Key Cloud' : 'Test Cloud Key', style: const TextStyle(fontSize: 12)),
                                       ),
                                       const SizedBox(width: 8),
                                       ElevatedButton.icon(
                                         onPressed: () async {
                                           await _configService.setApiKey(_apiKeyController.text.trim());
                                           if (!context.mounted) return;
-                                          TopToast.show(context, 'Đã lưu API Key dự phòng!');
+                                          TopToast.show(context, isVi ? 'Đã lưu API Key dự phòng!' : 'Backup API Key saved successfully!');
                                         },
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: _brandTeal,
@@ -740,7 +742,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                         ),
                                         icon: const Icon(Icons.save_rounded, size: 16),
-                                        label: const Text('Lưu Key', style: TextStyle(fontSize: 12)),
+                                        label: Text(isVi ? 'Lưu Key' : 'Save Key', style: const TextStyle(fontSize: 12)),
                                       ),
                                     ],
                                   ),
@@ -815,7 +817,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
         setState(() => _selectedLocalModel = modelKey);
         await _configService.setLocalModelName(modelKey);
         if (mounted) {
-          TopToast.show(context, 'Đã chọn mô hình: $title');
+          TopToast.show(context, LanguageScope.of(context).isVietnamese ? 'Đã chọn mô hình: $title' : 'Selected model: $title');
         }
       },
       child: Container(
@@ -891,7 +893,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
         setState(() => _selectedResponseDelayMs = ms);
         await _configService.setResponseDelayMs(ms);
         if (mounted) {
-          TopToast.show(context, 'Đã đặt độ trễ phản hồi: $title');
+          TopToast.show(context, LanguageScope.of(context).isVietnamese ? 'Đã đặt độ trễ phản hồi: $title' : 'Response delay set: $title');
         }
       },
       child: Container(
@@ -947,7 +949,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
         setState(() => _selectedSilenceMs = ms);
         await _configService.setVoiceSilenceDurationMs(ms);
         if (mounted) {
-          TopToast.show(context, 'Đã đặt khoảng chờ giọng nói: $title');
+          TopToast.show(context, LanguageScope.of(context).isVietnamese ? 'Đã đặt khoảng chờ giọng nói: $title' : 'Voice silence duration set: $title');
         }
       },
       child: Container(

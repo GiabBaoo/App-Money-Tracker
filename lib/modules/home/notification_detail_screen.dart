@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../models/notification_model.dart';
 import '../../data/repositories/notification_repository.dart';
 import '../../utils/page_transitions.dart';
+import '../../services/language_service.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../budget/budget_and_goals_screen.dart';
 import 'statistics_screen.dart';
@@ -19,6 +20,7 @@ class NotificationDetailScreen extends StatefulWidget {
 }
 
 class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
+  bool get isVi => LanguageService.instance.isVietnamese;
   late NotificationModel _notification;
 
   @override
@@ -43,21 +45,21 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
     return '$hour:$minute • $day/$month/$year';
   }
 
-  String _getTypeDisplayName(String? type) {
-    if (type == null) return 'Thông báo';
-    if (type.contains('spike')) return '⚡ Chi tiêu đột biến';
-    if (type.contains('spending_alert_high')) return '⚠️ Cảnh báo chi tiêu';
-    if (type.contains('spending_alert_saved')) return '🎉 Tiết kiệm xuất sắc';
-    if (type.contains('limit')) return '🚨 Cảnh báo hạn mức';
-    if (type.contains('low_balance')) return '⚠️ Cảnh báo số dư';
-    if (type.contains('offline_sync')) return '☁️ Đồng bộ dữ liệu';
-    if (type.contains('spending')) return '📊 Báo cáo chi tiêu';
-    if (type.contains('smart_advice') || type.contains('budget')) return '💡 Gợi ý ngân sách';
-    if (type.contains('transaction')) return '💰 Giao dịch mới';
-    if (type.contains('daily_reminder')) return '📝 Nhắc nhở ghi chép';
-    if (type.contains('group')) return '👥 Chi tiêu nhóm';
-    if (type.contains('welcome')) return '🎉 Chào mừng';
-    return 'Thông báo hệ thống';
+  String _getTypeDisplayName(String? type, bool isVi) {
+    if (type == null) return isVi ? 'Thông báo' : 'Notification';
+    if (type.contains('spike')) return isVi ? '⚡ Chi tiêu đột biến' : '⚡ Spending Spike';
+    if (type.contains('spending_alert_high')) return isVi ? '⚠️ Cảnh báo chi tiêu' : '⚠️ Spending Alert';
+    if (type.contains('spending_alert_saved')) return isVi ? '🎉 Tiết kiệm xuất sắc' : '🎉 Great Savings';
+    if (type.contains('limit')) return isVi ? '🚨 Cảnh báo hạn mức' : '🚨 Limit Alert';
+    if (type.contains('low_balance')) return isVi ? '⚠️ Cảnh báo số dư' : '⚠️ Low Balance Alert';
+    if (type.contains('offline_sync')) return isVi ? '☁️ Đồng bộ dữ liệu' : '☁️ Data Sync';
+    if (type.contains('spending')) return isVi ? '📊 Báo cáo chi tiêu' : '📊 Spending Report';
+    if (type.contains('smart_advice') || type.contains('budget')) return isVi ? '💡 Gợi ý ngân sách' : '💡 Budget Advice';
+    if (type.contains('transaction')) return isVi ? '💰 Giao dịch mới' : '💰 New Transaction';
+    if (type.contains('daily_reminder')) return isVi ? '📝 Nhắc nhở ghi chép' : '📝 Daily Reminder';
+    if (type.contains('group')) return isVi ? '👥 Chi tiêu nhóm' : '👥 Group Expense';
+    if (type.contains('welcome')) return isVi ? '🎉 Chào mừng' : '🎉 Welcome';
+    return isVi ? 'Thông báo hệ thống' : 'System Notification';
   }
 
   Color _getTypeColor(String? type, Color primaryColor) {
@@ -73,6 +75,7 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).primaryColor;
     final typeColor = _getTypeColor(_notification.type, primaryColor);
@@ -105,8 +108,8 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
                       child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
                     ),
                   ),
-                  const Text(
-                    'Chi tiết thông báo',
+                  Text(
+                    isVi ? 'Chi tiết thông báo' : 'Notification Details',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -121,13 +124,13 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
                         context: context,
                         builder: (ctx) => AlertDialog(
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                          title: const Text('Xác nhận xóa'),
-                          content: const Text('Bạn có chắc chắn muốn xóa thông báo này không?'),
+                          title: Text(isVi ? 'Xác nhận xóa' : 'Confirm Delete'),
+                          content: Text(isVi ? 'Bạn có chắc chắn muốn xóa thông báo này không?' : 'Are you sure you want to delete this notification?'),
                           actions: [
-                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(isVi ? 'Hủy' : 'Cancel')),
                             TextButton(
                               onPressed: () => Navigator.pop(ctx, true),
-                              child: const Text('Xóa', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                              child: Text(isVi ? 'Xóa' : 'Delete', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
@@ -190,7 +193,7 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
-                                    _getTypeDisplayName(_notification.type),
+                                    _getTypeDisplayName(_notification.type, isVi),
                                     style: TextStyle(
                                       color: typeColor,
                                       fontWeight: FontWeight.w700,
@@ -280,13 +283,13 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
               BoxShadow(color: primaryColor.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
             ],
           ),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.insights_rounded, color: Colors.white, size: 20),
-              SizedBox(width: 8),
+              const Icon(Icons.insights_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
               Text(
-                'Xem Báo Cáo Thống Kê',
+                isVi ? 'Xem Báo Cáo Thống Kê' : 'View Statistics Report',
                 style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ],
@@ -311,13 +314,13 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
               BoxShadow(color: const Color(0xFF438883).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
             ],
           ),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.track_changes_rounded, color: Colors.white, size: 20),
-              SizedBox(width: 8),
+              const Icon(Icons.track_changes_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
               Text(
-                'Quản Lý Ngân Sách & Mục Tiêu',
+                isVi ? 'Quản Lý Ngân Sách & Mục Tiêu' : 'Manage Budgets & Goals',
                 style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ],
@@ -346,13 +349,13 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
             color: const Color(0xFF438883),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: const Row(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.groups_rounded, color: Colors.white, size: 20),
-              SizedBox(width: 8),
+              const Icon(Icons.groups_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
               Text(
-                'Xem Chi Tiết Nhóm',
+                isVi ? 'Xem Chi Tiết Nhóm' : 'View Group Details',
                 style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ],
@@ -373,13 +376,13 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
           color: const Color(0xFF438883),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.receipt_long_rounded, color: Colors.white, size: 20),
-            SizedBox(width: 8),
+            const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
             Text(
-              'Xem Lịch Sử Giao Dịch',
+              isVi ? 'Xem Lịch Sử Giao Dịch' : 'View Transaction History',
               style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
             ),
           ],

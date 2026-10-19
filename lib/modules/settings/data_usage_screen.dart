@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../services/firestore_service.dart';
+import '../../services/language_service.dart';
 import '../../models/user_model.dart';
 import '../../services/voice_service.dart';
 
@@ -16,6 +17,7 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
@@ -32,8 +34,10 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
                     icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Text('Sử dụng dữ liệu', 
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
+                  Text(
+                    isVi ? 'Sử dụng dữ liệu' : 'Data Usage',
+                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(width: 48),
                 ],
               ),
@@ -61,13 +65,13 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildSectionTitle(context, 'QUYỀN TRUY CẬP'),
+                          _buildSectionTitle(context, isVi ? 'QUYỀN TRUY CẬP' : 'APP PERMISSIONS'),
                           _buildInfoBox(context, [
                             _buildToggleItem(
                               context,
                               icon: Icons.location_on_outlined,
-                              title: 'Vị trí',
-                              subtitle: 'Tối ưu hóa gợi ý địa phương',
+                              title: isVi ? 'Vị trí' : 'Location',
+                              subtitle: isVi ? 'Tối ưu hóa gợi ý địa phương' : 'Optimize local suggestions',
                               value: isLocation,
                               onChanged: (val) => _updatePermission(user, 'location', val),
                               showDivider: true,
@@ -75,8 +79,8 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
                             _buildToggleItem(
                               context,
                               icon: Icons.contacts_outlined,
-                              title: 'Danh bạ',
-                              subtitle: 'Kết nối nhanh với bạn bè',
+                              title: isVi ? 'Danh bạ' : 'Contacts',
+                              subtitle: isVi ? 'Kết nối nhanh với bạn bè' : 'Quickly connect with contacts',
                               value: isContacts,
                               onChanged: (val) => _updatePermission(user, 'contacts', val),
                               showDivider: true,
@@ -85,7 +89,7 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
                               context,
                               icon: Icons.mic_none_outlined,
                               title: 'Microphone',
-                              subtitle: 'Sử dụng giọng nói để nhập liệu',
+                              subtitle: isVi ? 'Sử dụng giọng nói để nhập liệu' : 'Use voice commands for entry',
                               value: isMicrophone,
                               onChanged: (val) => _updatePermission(user, 'microphone', val),
                               showDivider: false,

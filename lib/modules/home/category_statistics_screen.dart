@@ -7,6 +7,8 @@ import '../../services/firestore_service.dart';
 import '../../utils/currency_format_utils.dart';
 import '../../utils/category_utils.dart';
 import '../../widgets/animated_scale_button.dart';
+import '../../services/category_style_service.dart';
+import '../../services/language_service.dart';
 
 class CategoryStatisticsScreen extends StatefulWidget {
   final String type; // 'income' or 'expense'
@@ -26,12 +28,24 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
   void initState() {
     super.initState();
     _currentType = widget.type;
+    CategoryStyleService.instance.addListener(_onCategoryStyleChanged);
+  }
+
+  void _onCategoryStyleChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    CategoryStyleService.instance.removeListener(_onCategoryStyleChanged);
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final headerColor = isDark ? const Color(0xFF0F2625) : const Color(0xFF438883);
+    final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
       backgroundColor: headerColor,
@@ -61,13 +75,18 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                       child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
                     ),
                   ),
-                  const Text(
-                    'Thống Kê Danh Mục',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.3,
+                  Expanded(
+                    child: Text(
+                      isVi ? 'Thống Kê Danh Mục' : 'Category Statistics',
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 42),
@@ -89,7 +108,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                   children: [
                     Expanded(
                       child: _buildSegmentButton(
-                        label: 'Khoản Chi',
+                        label: isVi ? 'Khoản Chi' : 'Expense',
                         type: 'expense',
                         icon: Icons.trending_down_rounded,
                         activeColor: const Color(0xFFEF4444),
@@ -97,7 +116,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                     ),
                     Expanded(
                       child: _buildSegmentButton(
-                        label: 'Khoản Thu',
+                        label: isVi ? 'Khoản Thu' : 'Income',
                         type: 'income',
                         icon: Icons.trending_up_rounded,
                         activeColor: const Color(0xFF10B981),
@@ -131,7 +150,12 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                     }
 
                     if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return const Center(child: Text('Chưa có dữ liệu giao dịch', style: TextStyle(color: Colors.grey)));
+                      return Center(
+                        child: Text(
+                          isVi ? 'Chưa có dữ liệu giao dịch' : 'No transaction data yet',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      );
                     }
 
                     final now = DateTime.now();
@@ -149,7 +173,9 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                             Icon(Icons.pie_chart_outline_rounded, size: 70, color: Colors.grey.withValues(alpha: 0.3)),
                             const SizedBox(height: 16),
                             Text(
-                              'Không có ${_currentType == 'income' ? 'khoản thu' : 'khoản chi'} nào trong tháng ${now.month}',
+                              isVi
+                                  ? 'Không có ${_currentType == 'income' ? 'khoản thu' : 'khoản chi'} nào trong tháng ${now.month}'
+                                  : 'No ${_currentType == 'income' ? 'income' : 'expense'} recorded in month ${now.month}',
                               style: const TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.w500),
                             ),
                           ],
@@ -158,9 +184,11 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                     }
 
                     final Map<String, double> categorySums = {};
+                    final Map<String, int> storedIconCodes = {};
                     double totalSum = 0;
                     for (var tx in filteredData) {
                       categorySums[tx.category] = (categorySums[tx.category] ?? 0) + tx.amount;
+                      storedIconCodes.putIfAbsent(tx.category, () => tx.categoryIconCode);
                       totalSum += tx.amount;
                     }
 
@@ -246,7 +274,9 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        'Tổng ${_currentType == 'income' ? 'thu' : 'chi'}',
+                                        isVi
+                                            ? 'Tổng ${_currentType == 'income' ? 'thu' : 'chi'}'
+                                            : 'Total ${_currentType == 'income' ? 'Income' : 'Expense'}',
                                         style: TextStyle(
                                           color: isDark ? Colors.white60 : Colors.grey.shade600,
                                           fontSize: 12.5,
@@ -265,7 +295,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                                         ),
                                       ),
                                       Text(
-                                        'VNĐ',
+                                        'VND',
                                         style: TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
@@ -285,12 +315,12 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Chi tiết theo danh mục',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                              Text(
+                                isVi ? 'Chi tiết theo danh mục' : 'Category breakdown',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                               ),
                               Text(
-                                '${categories.length} danh mục',
+                                isVi ? '${categories.length} danh mục' : '${categories.length} categories',
                                 style: TextStyle(fontSize: 12.5, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
                               ),
                             ],
@@ -331,7 +361,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                                           borderRadius: BorderRadius.circular(12),
                                         ),
                                         child: Icon(
-                                          CategoryUtils.getCategoryIcon(category),
+                                          CategoryUtils.getCategoryIcon(category, fallbackCode: storedIconCodes[category]),
                                           color: color,
                                           size: 20,
                                         ),
@@ -342,7 +372,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              category,
+                                              context.trCat(category),
                                               style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
                                             ),
                                             const SizedBox(height: 2),

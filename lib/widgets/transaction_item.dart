@@ -7,10 +7,12 @@ import '../utils/currency_format_utils.dart';
 import '../utils/page_transitions.dart';
 import '../modules/transaction/transaction_detail_screen.dart';
 import '../utils/category_utils.dart';
+import '../core/providers/app_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/group_expense/presentation/providers/group_expense_providers.dart';
 import 'animated_scale_button.dart';
 import 'colored_amount_text.dart';
+import '../services/language_service.dart';
 
 class TransactionItem extends ConsumerWidget {
   final TransactionModel transaction;
@@ -30,14 +32,18 @@ class TransactionItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(categoryStyleProvider);
     final bool isIncome = transaction.isIncome;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Kiểm tra xem đây có phải là giao dịch quỹ không
     final bool isGroupTransaction = transaction.groupId != null;
     
-    // Lấy icon: nếu là giao dịch quỹ, lấy từ groupIconCode hoặc query group
-    IconData displayIcon = transaction.icon;
+    // Lấy icon: ưu tiên cấu hình mới của danh mục, fallback icon đã lưu của transaction
+    IconData displayIcon = CategoryUtils.getCategoryIcon(
+      transaction.category,
+      fallbackCode: transaction.categoryIconCode,
+    );
     
     if (isGroupTransaction) {
       // Nếu có groupIconCode, dùng nó
@@ -143,7 +149,7 @@ class TransactionItem extends ConsumerWidget {
                             children: [
                               Flexible(
                                 child: Text(
-                                  transaction.category,
+                                  context.trCat(transaction.category),
                                   style: TextStyle(
                                     fontSize: 15.5,
                                     fontWeight: FontWeight.w700,
@@ -168,7 +174,7 @@ class TransactionItem extends ConsumerWidget {
                                       Icon(Icons.swap_horiz_rounded, size: 11, color: isDark ? Colors.lightBlueAccent : const Color(0xFF0284C7)),
                                       const SizedBox(width: 2),
                                       Text(
-                                        'Chuyển ví',
+                                        context.trCat('Chuyển ví'),
                                         style: TextStyle(
                                           fontSize: 10,
                                           color: isDark ? Colors.lightBlueAccent : const Color(0xFF0284C7),
@@ -187,14 +193,14 @@ class TransactionItem extends ConsumerWidget {
                                     color: const Color(0xFF438883).withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.receipt_long_rounded, size: 11, color: Color(0xFF438883)),
-                                      SizedBox(width: 2),
+                                      const Icon(Icons.receipt_long_rounded, size: 11, color: Color(0xFF438883)),
+                                      const SizedBox(width: 2),
                                       Text(
-                                        'Hóa đơn',
-                                        style: TextStyle(fontSize: 10, color: Color(0xFF438883), fontWeight: FontWeight.w600),
+                                        context.trCat('Hóa đơn'),
+                                        style: const TextStyle(fontSize: 10, color: Color(0xFF438883), fontWeight: FontWeight.w600),
                                       ),
                                     ],
                                   ),
@@ -204,11 +210,14 @@ class TransactionItem extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        ColoredAmountText(
-                          amount: transaction.amount,
-                          isIncome: isIncome,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: ColoredAmountText(
+                            amount: transaction.amount,
+                            isIncome: isIncome,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ],
                     ),
@@ -281,7 +290,7 @@ class TransactionItem extends ConsumerWidget {
 
     final String name = (wallet != null && wallet.name.trim().isNotEmpty)
         ? wallet.name.trim()
-        : 'Ví tiền';
+        : context.tr('wallets_title');
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -325,7 +334,7 @@ class TransactionItem extends ConsumerWidget {
   /// Hiển thị số dư ví rõ ràng, tinh tế bên dưới số tiền
   Widget _buildBalanceText(BuildContext context, bool isDark) {
     final bool isCustomLabel = runningTotalLabel != null;
-    final String label = isCustomLabel ? runningTotalLabel! : 'Số dư';
+    final String label = isCustomLabel ? runningTotalLabel! : context.tr('balance_prefix');
     final String formattedAmount = CurrencyUtils.formatCurrency(runningTotal!);
 
     return Text.rich(
@@ -351,6 +360,7 @@ class TransactionItem extends ConsumerWidget {
         ],
       ),
       maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }

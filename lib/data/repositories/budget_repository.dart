@@ -134,6 +134,37 @@ class BudgetRepository {
     await _notifyChanged(month: month, year: year);
   }
 
+  /// Đổi tên danh mục trong mọi ngân sách (khi user đổi tên danh mục tự tạo).
+  Future<int> renameCategory({
+    required String oldName,
+    required String newName,
+    int? iconCode,
+  }) async {
+    final uid = _currentUid;
+    if (uid == null || oldName == newName) return 0;
+    final db = await _dbHelper.database;
+    final target = oldName.toLowerCase().trim();
+    // SQLite LOWER() chỉ xử lý ASCII → lọc bằng Dart để đúng với tiếng Việt có dấu
+    final rows = (await db.query('budgets', where: 'uid = ?', whereArgs: [uid]))
+        .where((r) => ((r['category'] as String?) ?? '').toLowerCase().trim() == target)
+        .toList();
+    if (rows.isEmpty) return 0;
+
+    final now = DateTime.now();
+    for (final row in rows) {
+      final updated = BudgetModel.fromSqlite(row).copyWith(
+        category: newName,
+        categoryIconCode: iconCode,
+        updatedAt: now,
+        syncStatus: 'pending',
+      );
+      await db.update('budgets', updated.toSqlite(), where: 'id = ?', whereArgs: [updated.id]);
+      await _enqueueSyncAction('budgets', updated.id, 'UPDATE', updated.toSqlite());
+    }
+    await _notifyChanged();
+    return rows.length;
+  }
+
   Future<void> _enqueueSyncAction(String tableName, String recordId, String action, Map<String, dynamic> data) async {
     try {
       final db = await _dbHelper.database;

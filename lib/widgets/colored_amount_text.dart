@@ -1,3 +1,4 @@
+import '../services/language_service.dart';
 import 'package:flutter/material.dart';
 import '../utils/currency_format_utils.dart';
 
@@ -38,7 +39,7 @@ class ColoredAmountText extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        isIncome ? 'KHOẢN THU' : 'KHOẢN CHI',
+        isIncome ? (LanguageService.instance.isVietnamese ? 'KHOẢN THU' : 'INCOME') : (LanguageService.instance.isVietnamese ? 'KHOẢN CHI' : 'EXPENSE'),
         style: TextStyle(
           fontSize: fontSize,
           fontWeight: FontWeight.w800,
@@ -58,6 +59,8 @@ class ColoredAmountText extends StatelessWidget {
 
     return Text(
       text,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
       style: TextStyle(
         fontSize: fontSize,
         fontWeight: fontWeight,

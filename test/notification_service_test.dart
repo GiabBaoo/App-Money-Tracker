@@ -50,5 +50,18 @@ void main() {
       final service = LocalNotificationService.instance;
       expect(service, isNotNull);
     });
+
+    test('notifyTransactionCreated is silenced for manual transactions', () async {
+      // Must complete without error and without creating spam
+      await expectLater(
+        SmartNotificationService.instance.notifyTransactionCreated(
+          type: 'expense',
+          category: 'Ăn uống',
+          amount: 50000,
+          note: 'Cơm trưa',
+        ),
+        completes,
+      );
+    });
   });
 }

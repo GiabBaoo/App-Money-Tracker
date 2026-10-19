@@ -1,3 +1,4 @@
+import '../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -23,6 +24,7 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
@@ -52,21 +54,21 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                       child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
                     ),
                   ),
-                  const Column(
+                  Column(
                     children: [
                       Text(
-                        'Thư viện hóa đơn',
-                        style: TextStyle(
+                        isVi ? 'Thư viện hóa đơn' : 'Receipt Gallery',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.3,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        'Chứng từ thu chi đã lưu',
-                        style: TextStyle(
+                        isVi ? 'Chứng từ thu chi đã lưu' : 'Saved financial receipts',
+                        style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 11.5,
                           fontWeight: FontWeight.w500,
@@ -206,7 +208,7 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          '${photos.length} hóa đơn đã lưu trữ',
+                                          isVi ? '${photos.length} hóa đơn đã lưu trữ' : '${photos.length} receipts archived',
                                           style: TextStyle(
                                             fontSize: 15,
                                             fontWeight: FontWeight.w800,
@@ -285,7 +287,7 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
-                                      '${grouped[month]!.length} ảnh',
+                                      isVi ? '${grouped[month]!.length} ảnh' : '${grouped[month]!.length} photos',
                                       style: TextStyle(
                                         color: isDark ? Colors.white60 : Colors.grey.shade700,
                                         fontSize: 11.5,
@@ -354,7 +356,8 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
   }
 
   String _monthLabel(DateTime month) {
-    return 'Tháng ${month.month}, ${month.year}';
+    final isVi = LanguageService.instance.isVietnamese;
+    return isVi ? 'Tháng ${month.month}, ${month.year}' : 'Month ${month.month}, ${month.year}';
   }
 }
 
@@ -364,6 +367,7 @@ class _GalleryEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVi = LanguageScope.of(context).isVietnamese;
 
     return Center(
       child: Padding(
@@ -390,7 +394,7 @@ class _GalleryEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Chưa có hóa đơn nào',
+              isVi ? 'Chưa có hóa đơn nào' : 'No receipts yet',
               style: TextStyle(
                 color: isDark ? Colors.white : const Color(0xFF1E293B),
                 fontSize: 19,
@@ -399,7 +403,7 @@ class _GalleryEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Khi thêm khoản thu chi hoặc dùng Trợ lý Mono quét hóa đơn, ảnh chứng từ sẽ tự động lưu trữ tại đây.',
+              isVi ? 'Khi thêm khoản thu chi hoặc dùng Trợ lý Mono quét hóa đơn, ảnh chứng từ sẽ tự động lưu trữ tại đây.' : 'When you add transactions or scan receipts with Mono Assistant, photos will be stored here.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: isDark ? Colors.white60 : Colors.grey.shade600,
@@ -433,14 +437,14 @@ class _GalleryEmptyState extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.camera_alt_rounded, size: 20, color: Colors.white),
-                    SizedBox(width: 8),
+                    const Icon(Icons.camera_alt_rounded, size: 20, color: Colors.white),
+                    const SizedBox(width: 8),
                     Text(
-                      'Chụp hóa đơn mới',
-                      style: TextStyle(
+                      isVi ? 'Chụp hóa đơn mới' : 'Scan New Receipt',
+                      style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
                         color: Colors.white,

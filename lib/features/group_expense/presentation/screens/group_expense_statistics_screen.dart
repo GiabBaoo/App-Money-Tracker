@@ -1,3 +1,4 @@
+import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,6 +35,7 @@ class GroupExpenseStatisticsScreen extends ConsumerStatefulWidget {
 }
 
 class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStatisticsScreen> {
+  bool get isVi => LanguageService.instance.isVietnamese;
   int touchedIndex = -1;
   late int selectedTab; // Sẽ khởi tạo từ initialTab
 
@@ -107,7 +109,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                     duration: const Duration(milliseconds: 200),
                     opacity: isCollapsed ? 1.0 : 0.0,
                     child: Text(
-                      'Thống kê - ${widget.groupName}',
+                      isVi ? 'Thống kê - ${widget.groupName}' : 'Statistics - ${widget.groupName}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -141,7 +143,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                         children: [
                           Expanded(
                             child: _buildHeaderSummaryItem(
-                              'Tổng thu',
+                              isVi ? 'Tổng thu' : 'Total Income',
                               totalIncome,
                               Icons.arrow_circle_down_rounded,
                               Colors.greenAccent,
@@ -150,7 +152,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildHeaderSummaryItem(
-                              'Tổng chi',
+                              isVi ? 'Tổng chi' : 'Total Expense',
                               totalExpense,
                               Icons.arrow_circle_up_rounded,
                               Colors.redAccent,
@@ -164,8 +166,8 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
-                          'Thống kê chi tiết',
+                        Text(
+                          isVi ? 'Thống kê chi tiết' : 'Detailed Statistics',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 22,
@@ -264,8 +266,8 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                               // Foreground Items
                               Row(
                                 children: [
-                                  _buildToggleItem('Chi phí', 0, Icons.arrow_circle_up_rounded, isDark),
-                                  _buildToggleItem('Thu nhập', 1, Icons.arrow_circle_down_rounded, isDark),
+                                  _buildToggleItem(isVi ? 'Chi phí' : 'Expense', 0, Icons.arrow_circle_up_rounded, isDark),
+                                  _buildToggleItem(isVi ? 'Thu nhập' : 'Income', 1, Icons.arrow_circle_down_rounded, isDark),
                                 ],
                               ),
                             ],
@@ -289,10 +291,10 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                         );
                       },
                       loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (error, _) => Center(child: Text('Lỗi: $error')),
+                      error: (error, _) => Center(child: Text('${isVi ? 'Lỗi' : 'Error'}: $error')),
                     ),
                     loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (error, _) => Center(child: Text('Lỗi: $error')),
+                    error: (error, _) => Center(child: Text('${isVi ? 'Lỗi' : 'Error'}: $error')),
                   ),
                 ],
               ),
@@ -401,13 +403,13 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
     // Group withdrawals BY USER to match Income tab consistency
     final withdrawals = transactions.where((tx) => tx.type == TransactionType.withdraw).toList();
     for (var tx in withdrawals) {
-      final key = "Rút quỹ - ${tx.userName}";
+      final key = isVi ? "Rút quỹ - ${tx.userName}" : "Withdrawal - ${tx.userName}";
       categorySums[key] = (categorySums[key] ?? 0) + tx.amount;
       totalSum += tx.amount;
     }
 
     if (totalSum == 0) {
-      return _buildEmptyState(isDark, 'chi phí');
+      return _buildEmptyState(isDark, isVi ? 'chi phí' : 'expenses');
     }
 
     final List<PieChartSectionData> sections = [];
@@ -457,14 +459,14 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
     final contributions = transactions.where((tx) => tx.type == TransactionType.contribute).toList();
     
     if (contributions.isEmpty) {
-      return _buildEmptyState(isDark, 'thu nhập/góp quỹ');
+      return _buildEmptyState(isDark, isVi ? 'thu nhập/góp quỹ' : 'income/contributions');
     }
 
     final Map<String, double> groupedData = {};
     double totalSum = 0;
     
     for (var tx in contributions) {
-      final key = "Góp quỹ - ${tx.userName}";
+      final key = isVi ? "Góp quỹ - ${tx.userName}" : "Contribution - ${tx.userName}";
       groupedData[key] = (groupedData[key] ?? 0) + tx.amount;
       totalSum += tx.amount;
     }
@@ -545,7 +547,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Tổng ${selectedTab == 0 ? 'chi' : 'thu'}',
+                      '${isVi ? "Tổng" : "Total"} ${selectedTab == 0 ? (isVi ? "chi" : "expense") : (isVi ? "thu" : "income")}',
                       style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
                     ),
                     const SizedBox(height: 4),
@@ -558,7 +560,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                       ),
                     ),
                     Text(
-                      'VNĐ',
+                      isVi ? 'VNĐ' : 'VND',
                       style: TextStyle(color: Colors.grey.shade500, fontSize: 11, letterSpacing: 1),
                     ),
                   ],
@@ -589,7 +591,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 12),
             child: Text(
-              'CHI TIẾT HOẠT ĐỘNG',
+              isVi ? 'CHI TIẾT HOẠT ĐỘNG' : 'ACTIVITY DETAILS',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -644,7 +646,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          tx.type == TransactionType.contribute ? 'Đã góp quỹ' : 'Đã rút quỹ',
+                          tx.type == TransactionType.contribute ? (isVi ? 'Đã góp quỹ' : 'Contributed') : (isVi ? 'Đã rút quỹ' : 'Withdrawn'),
                           style: TextStyle(
                             fontSize: 12,
                             color: isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54,
@@ -691,7 +693,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
         children: [
           Icon(Icons.pie_chart_outline, size: 80, color: Colors.grey.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
-          Text('Không có $type nào', style: TextStyle(color: isDark ? Colors.white60 : Colors.grey)),
+          Text(isVi ? 'Không có $type nào' : 'No $type recorded', style: TextStyle(color: isDark ? Colors.white60 : Colors.grey)),
         ],
       ),
     );

@@ -12,6 +12,7 @@ import '../../services/language_service.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/staggered_list_item.dart';
 import '../../widgets/transaction_item.dart';
+import '../../services/category_style_service.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -47,6 +48,12 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
     _transactionStream = TransactionRepository().getTransactionsStream();
+    CategoryStyleService.instance.addListener(_onCategoryStyleChanged);
+  }
+
+  /// User đổi màu/biểu tượng danh mục → vẽ lại biểu đồ & danh sách
+  void _onCategoryStyleChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onScroll() {
@@ -59,6 +66,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
   @override
   void dispose() {
+    CategoryStyleService.instance.removeListener(_onCategoryStyleChanged);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _isScrolledNotifier.dispose();
@@ -187,13 +195,13 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     if (_selectedMainTab == 0) {
       final range = _getRangeFromFilter();
       final rangeStr = '${range.start.day.toString().padLeft(2, '0')}/${range.start.month.toString().padLeft(2, '0')} - ${range.end.day.toString().padLeft(2, '0')}/${range.end.month.toString().padLeft(2, '0')}';
-      if (_selectedWeekOffset == 0) return 'Tuần này ($rangeStr)';
-      if (_selectedWeekOffset == 1) return 'Tuần trước ($rangeStr)';
+      if (_selectedWeekOffset == 0) return '${context.tr('this_week')} ($rangeStr)';
+      if (_selectedWeekOffset == 1) return '${context.tr('last_week')} ($rangeStr)';
       return '$rangeStr (${range.start.year})';
     } else if (_selectedMainTab == 1) {
-      return 'Tháng $_selectedMonth/$_selectedYear';
+      return '${context.tr('month')} $_selectedMonth/$_selectedYear';
     } else {
-      return 'Năm $_selectedYear';
+      return '${context.tr('year')} $_selectedYear';
     }
   }
 
@@ -953,13 +961,13 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
   String _getPeriodSummaryLabel() {
     if (_selectedMainTab == 0) {
-      if (_selectedWeekOffset == 0) return 'Tuần này';
-      if (_selectedWeekOffset == 1) return 'Tuần trước';
-      return 'Theo tuần';
+      if (_selectedWeekOffset == 0) return context.tr('this_week');
+      if (_selectedWeekOffset == 1) return context.tr('last_week');
+      return context.tr('by_week');
     } else if (_selectedMainTab == 1) {
-      return 'Tháng $_selectedMonth';
+      return '${context.tr('month')} $_selectedMonth';
     } else {
-      return 'Năm $_selectedYear';
+      return '${context.tr('year')} $_selectedYear';
     }
   }
 
@@ -991,7 +999,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               child: Row(
                 children: [
                   Text(
-                    _isDescending ? (context.tr('see_all') != 'Xem tất cả' ? 'Highest' : 'Cao nhất') : (context.tr('see_all') != 'Xem tất cả' ? 'Lowest' : 'Thấp nhất'),
+                    context.tr(_isDescending ? 'highest' : 'lowest'),
                     style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                   Icon(_isDescending ? Icons.expand_more : Icons.expand_less, color: Colors.grey, size: 20),
@@ -1355,7 +1363,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                 transaction: tx,
                                 showDate: true,
                                 runningTotal: runningTotals[key],
-                                runningTotalLabel: 'Tổng',
+                                runningTotalLabel: context.tr('total'),
                                 wallet: walletMap[tx.walletId],
                               );
                             },
@@ -1397,7 +1405,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           ),
           const SizedBox(height: 12),
           Text(
-            'Chưa có dữ liệu thống kê trong kỳ này',
+            context.tr('no_data'),
             style: TextStyle(
               color: isDark ? Colors.white60 : const Color(0xFF64748B),
               fontSize: 13.5,
@@ -1461,7 +1469,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Chọn tháng thống kê',
+                      context.tr('select_month_stat'),
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -1572,7 +1580,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Tháng $month',
+                              '${context.tr('month')} $month',
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: isSelected
@@ -1590,7 +1598,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                             if (isDisabled) ...[
                               const SizedBox(height: 2),
                               Text(
-                                'Chưa tới',
+                                context.tr('not_yet'),
                                 style: TextStyle(
                                   fontSize: 9,
                                   color: isDark ? Colors.white24 : Colors.grey.shade400,
@@ -1653,7 +1661,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               ),
               const SizedBox(height: 20),
               Text(
-                'Chọn năm thống kê',
+                context.tr('select_year_stat'),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -1690,7 +1698,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Năm $year',
+                              '${context.tr('year')} $year',
                               style: TextStyle(
                                 color: isSelected
                                     ? Colors.white
@@ -1730,9 +1738,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
       String label;
       if (offset == 0) {
-        label = 'Tuần (${startOfWeek.day}/${startOfWeek.month} - ${endOfWeek.day}/${endOfWeek.month})';
+        label = '${context.tr('this_week')} (${startOfWeek.day}/${startOfWeek.month} - ${endOfWeek.day}/${endOfWeek.month})';
       } else if (offset == 1) {
-        label = 'Tuần trước (${startOfWeek.day}/${startOfWeek.month} - ${endOfWeek.day}/${endOfWeek.month})';
+        label = '${context.tr('last_week')} (${startOfWeek.day}/${startOfWeek.month} - ${endOfWeek.day}/${endOfWeek.month})';
       } else {
         label = '${startOfWeek.day}/${startOfWeek.month} - ${endOfWeek.day}/${endOfWeek.month}/${startOfWeek.year}';
       }
@@ -1767,7 +1775,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               ),
               const SizedBox(height: 20),
               Text(
-                'Chọn tuần thống kê',
+                context.tr('select_week_stat'),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -1846,9 +1854,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
       ),
       child: Row(
         children: [
-          _buildChartTypeTab(0, Icons.show_chart_rounded, 'Xu hướng', isDark),
-          _buildChartTypeTab(1, Icons.pie_chart_rounded, 'Phân bổ', isDark),
-          _buildChartTypeTab(2, Icons.bar_chart_rounded, 'Thu / Chi', isDark),
+          _buildChartTypeTab(0, Icons.show_chart_rounded, context.tr('chart_trend'), isDark),
+          _buildChartTypeTab(1, Icons.pie_chart_rounded, context.tr('chart_distribution'), isDark),
+          _buildChartTypeTab(2, Icons.bar_chart_rounded, context.tr('chart_income_expense'), isDark),
         ],
       ),
     );
@@ -1926,8 +1934,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               : const Color(0xFFF9FAFB),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Center(
-          child: Text('Chưa có dữ liệu phân bổ trong kỳ này', style: TextStyle(color: Color(0xFF999999))),
+        child: Center(
+          child: Text(context.tr('no_distribution_data'), style: const TextStyle(color: Color(0xFF999999))),
         ),
       );
     }
@@ -1994,7 +2002,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               children: [
                 Container(width: 9, height: 9, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
                 const SizedBox(width: 4),
-                Text('${g.category} ($percent%)', style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white70 : Colors.black87)),
+                Text('${context.trCat(g.category)} ($percent%)', style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white70 : Colors.black87)),
               ],
             );
           }).toList(),
@@ -2014,8 +2022,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               : const Color(0xFFF9FAFB),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Center(
-          child: Text('Chưa có dữ liệu so sánh Thu - Chi', style: TextStyle(color: Color(0xFF999999))),
+        child: Center(
+          child: Text(context.tr('no_compare_data'), style: const TextStyle(color: Color(0xFF999999))),
         ),
       );
     }
@@ -2024,7 +2032,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     List<({String label, double income, double expense})> barData = [];
 
     if (_selectedMainTab == 0) {
-      final dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+      final isEn = LanguageService.instance.currentLanguage == 'en';
+      final dayNames = isEn ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] : ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
       for (int i = 0; i < 7; i++) {
         final d = range.start.add(Duration(days: i));
         final dayTx = allFilteredTx.where((tx) =>
@@ -2056,7 +2065,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
         final monthTx = allFilteredTx.where((tx) => tx.date.year == _selectedYear && tx.date.month == i);
         final inc = monthTx.where((t) => t.isIncome).fold<double>(0, (s, t) => s + t.amount);
         final exp = monthTx.where((t) => !t.isIncome).fold<double>(0, (s, t) => s + t.amount);
-        barData.add((label: 'T$i', income: inc, expense: exp));
+        final isEn = LanguageService.instance.currentLanguage == 'en';
+        barData.add((label: isEn ? 'M$i' : 'T$i', income: inc, expense: exp));
       }
     }
 
@@ -2096,11 +2106,11 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           children: [
             Container(width: 9, height: 9, decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle)),
             const SizedBox(width: 4),
-            const Text('Thu nhập', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+            Text(context.tr('income'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
             const SizedBox(width: 16),
             Container(width: 9, height: 9, decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle)),
             const SizedBox(width: 4),
-            const Text('Chi tiêu', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFEF4444))),
+            Text(context.tr('expense'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFEF4444))),
           ],
         ),
         const SizedBox(height: 12),
@@ -2116,7 +2126,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
                     final isInc = rodIndex == 0;
                     return BarTooltipItem(
-                      '${isInc ? "Thu" : "Chi"}: ${CurrencyUtils.formatCurrency(rod.toY)}',
+                      '${isInc ? context.tr('flow_income') : context.tr('flow_expense')}: ${CurrencyUtils.formatCurrency(rod.toY)}',
                       TextStyle(
                         color: isInc ? const Color(0xFF10B981) : const Color(0xFFEF4444),
                         fontWeight: FontWeight.bold,
@@ -2156,24 +2166,24 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
   }
 
   Widget _buildFinancialHealthCard(double income, double expense, double savingsRate, bool isDark) {
-    String healthStatus = 'Cân đối';
+    String healthStatus = context.tr('health_fair');
     Color healthColor = const Color(0xFF10B981);
     IconData healthIcon = Icons.sentiment_satisfied_alt;
 
     if (savingsRate >= 30) {
-      healthStatus = 'Rất tốt';
+      healthStatus = context.tr('health_excellent');
       healthColor = const Color(0xFF10B981);
       healthIcon = Icons.sentiment_very_satisfied;
     } else if (savingsRate > 0) {
-      healthStatus = 'Tốt';
+      healthStatus = context.tr('health_good');
       healthColor = const Color(0xFF0EA5E9);
       healthIcon = Icons.sentiment_satisfied;
     } else if (savingsRate == 0) {
-      healthStatus = 'Vừa đủ';
+      healthStatus = context.tr('health_fair');
       healthColor = Colors.orange;
       healthIcon = Icons.sentiment_neutral;
     } else {
-      healthStatus = 'Báo động';
+      healthStatus = context.tr('health_warning');
       healthColor = const Color(0xFFEF4444);
       healthIcon = Icons.sentiment_dissatisfied;
     }
@@ -2207,7 +2217,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 children: [
                   Icon(healthIcon, color: healthColor, size: 20),
                   const SizedBox(width: 8),
-                  const Text('Sức khỏe tài chính', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text(context.tr('financial_health'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 ],
               ),
               Container(
@@ -2230,7 +2240,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Tỷ lệ tiết kiệm', style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600)),
+                    Text(context.tr('savings_rate'), style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600)),
                     const SizedBox(height: 2),
                     Text(
                       '${savingsRate >= 0 ? "+" : ""}${savingsRate.toStringAsFixed(1)}%',
@@ -2245,7 +2255,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Chênh lệch thu chi', style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600)),
+                    Text(context.tr('net_income_gap'), style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600)),
                     const SizedBox(height: 2),
                     Text(
                       CurrencyUtils.formatCurrency(income - expense),
@@ -2277,8 +2287,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               : const Color(0xFFF9FAFB),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Center(
-          child: Text('Chưa có dữ liệu giao dịch trong kỳ này', style: TextStyle(color: Color(0xFF999999))),
+        child: Center(
+          child: Text(context.tr('no_transactions_period'), style: const TextStyle(color: Color(0xFF999999))),
         ),
       );
     }
@@ -2400,10 +2410,12 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     final list = map.entries.map((e) {
       final sortedTxs = List<TransactionModel>.from(e.value)..sort((a, b) => b.date.compareTo(a.date));
       final sum = sortedTxs.fold<double>(0, (prev, element) => prev + element.amount);
-      // Ưu tiên lấy icon từ giao dịch đầu tiên (đã lưu đúng icon user chọn)
-      final IconData icon = sortedTxs.isNotEmpty
-          ? sortedTxs.first.icon
-          : CategoryUtils.getCategoryIcon(e.key);
+      // Ưu tiên icon theo cấu hình danh mục hiện tại (user có thể đã đổi icon).
+      // Icon lưu trong giao dịch chỉ dùng khi danh mục không còn tồn tại.
+      final IconData icon = CategoryUtils.getCategoryIcon(
+        e.key,
+        fallbackCode: sortedTxs.isNotEmpty ? sortedTxs.first.categoryIconCode : null,
+      );
       return _CategoryGroup(
         category: e.key,
         totalAmount: sum,

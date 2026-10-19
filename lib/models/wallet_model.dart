@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../services/language_service.dart';
 
 /// Phân loại ví / nơi chứa tiền
 class WalletType {
@@ -10,21 +11,22 @@ class WalletType {
   static const String savings = 'savings';
   static const String other = 'other';
 
-  static String getDisplayName(String type) {
+  static String getDisplayName(String type, [BuildContext? context]) {
+    final isEn = LanguageService.instance.currentLanguage == 'en';
     switch (type) {
       case cash:
-        return 'Tiền mặt';
+        return isEn ? 'Cash' : 'Tiền mặt';
       case bank:
-        return 'Tài khoản ngân hàng';
+        return isEn ? 'Bank Account' : 'Tài khoản ngân hàng';
       case eWallet:
-        return 'Ví điện tử';
+        return isEn ? 'E-Wallet' : 'Ví điện tử';
       case credit:
-        return 'Thẻ tín dụng';
+        return isEn ? 'Credit Card' : 'Thẻ tín dụng';
       case savings:
-        return 'Sổ tiết kiệm / Heo đất';
+        return isEn ? 'Savings' : 'Sổ tiết kiệm / Heo đất';
       case other:
       default:
-        return 'Khác';
+        return isEn ? 'Other' : 'Khác';
     }
   }
 

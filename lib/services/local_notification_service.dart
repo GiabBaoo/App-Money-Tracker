@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
@@ -29,8 +30,8 @@ class LocalNotificationService {
         tz.setLocalLocation(tz.getLocation('Asia/Ho_Chi_Minh'));
       } catch (_) {}
 
-      // 2. Cài đặt icon thông báo Android (sử dụng ic_launcher đã có trong res/mipmap)
-      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      // 2. Cài đặt icon thông báo Android (sử dụng icon đơn sắc ic_stat_mono trên thanh taskbar/status bar)
+      const androidSettings = AndroidInitializationSettings('@drawable/ic_stat_mono');
 
       // 3. Cài đặt iOS / macOS
       const darwinSettings = DarwinInitializationSettings(
@@ -137,7 +138,8 @@ class LocalNotificationService {
         priority: Priority.high,
         ticker: 'Thông báo Mono',
         styleInformation: BigTextStyleInformation(''),
-        icon: '@mipmap/ic_launcher',
+        icon: '@drawable/ic_stat_mono',
+        color: Color(0xFF438883),
         enableVibration: true,
         playSound: true,
         channelShowBadge: true,
@@ -185,7 +187,8 @@ class LocalNotificationService {
         priority: Priority.high,
         ticker: 'Thử nghiệm thông báo Mono',
         styleInformation: BigTextStyleInformation(''),
-        icon: '@mipmap/ic_launcher',
+        icon: '@drawable/ic_stat_mono',
+        color: Color(0xFF438883),
         enableVibration: true,
         playSound: true,
         channelShowBadge: true,
@@ -254,7 +257,8 @@ class LocalNotificationService {
         priority: Priority.high,
         ticker: 'Thông báo Mono',
         styleInformation: BigTextStyleInformation(''),
-        icon: '@mipmap/ic_launcher',
+        icon: '@drawable/ic_stat_mono',
+        color: Color(0xFF438883),
         enableVibration: true,
         playSound: true,
         channelShowBadge: true,
@@ -357,7 +361,8 @@ class LocalNotificationService {
         priority: Priority.high,
         ticker: 'Báo cáo tuần Mono',
         styleInformation: BigTextStyleInformation(''),
-        icon: '@mipmap/ic_launcher',
+        icon: '@drawable/ic_stat_mono',
+        color: Color(0xFF438883),
         enableVibration: true,
         playSound: true,
         channelShowBadge: true,

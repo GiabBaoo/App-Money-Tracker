@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/biometric_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/language_service.dart';
 import '../../widgets/animated_scale_button.dart';
 import 'login_screen.dart';
 
@@ -57,8 +58,9 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
       return;
     }
 
+    final isVi = LanguageScope.of(context).isVietnamese;
     final ok = await BiometricService.instance.authenticateFingerprint(
-      localizedReason: 'Chạm cảm biến để mở khóa ứng dụng Mono',
+      localizedReason: isVi ? 'Chạm cảm biến để mở khóa ứng dụng Mono' : 'Touch sensor to unlock Mono app',
     );
     if (!mounted) return;
 
@@ -77,7 +79,7 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
       HapticFeedback.selectionClick();
       setState(() {
         _isAuthenticating = false;
-        _errorMessage = 'Chưa nhận diện được vân tay. Vui lòng chạm lại!';
+        _errorMessage = isVi ? 'Chưa nhận diện được vân tay. Vui lòng chạm lại!' : 'Fingerprint not recognized. Please try again!';
       });
     }
   }
@@ -112,6 +114,7 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     const primaryColor = Color(0xFF438883);
     final bgColor = isDark ? const Color(0xFF0D1B1A) : const Color(0xFFF8FAFC);
@@ -171,7 +174,7 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
 
                 // 2. TIÊU ĐỀ & HƯỚNG DẪN NGẮN GỌN
                 Text(
-                  'Xác thực sinh trắc học',
+                  isVi ? 'Xác thực sinh trắc học' : 'Biometric Authentication',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
@@ -181,7 +184,7 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  _errorMessage ?? 'Chạm vào cảm biến vân tay để mở khóa ứng dụng',
+                  _errorMessage ?? (isVi ? 'Chạm vào cảm biến vân tay để mở khóa ứng dụng' : 'Touch the fingerprint sensor to unlock the app'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -202,9 +205,9 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
                     ),
                     onPressed: _authenticate,
                     icon: const Icon(Icons.refresh_rounded, size: 18),
-                    label: const Text(
-                      'Chạm để quét lại',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    label: Text(
+                      isVi ? 'Chạm để quét lại' : 'Tap to scan again',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],
@@ -241,7 +244,7 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Đăng nhập bằng mật khẩu',
+                          isVi ? 'Đăng nhập bằng mật khẩu' : 'Log in with password',
                           style: TextStyle(
                             fontSize: 14.5,
                             fontWeight: FontWeight.w600,

@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../utils/currency_format_utils.dart';
 import '../../../widgets/animated_scale_button.dart';
+import '../../../services/language_service.dart';
 
 /// Dải gợi ý số tiền thông minh theo thời gian thực (Smart Amount Auto-Suggestions)
 /// - Khi người dùng gõ số cơ sở (vd: 7), tự động gợi ý: 7.000đ, 70.000đ, 700.000đ, 7.000.000đ
-/// - Khi chưa gõ số nào, hiển thị các mốc chi tiêu phổ biến (20k, 50k, 100k, 200k, 500k)
+/// - Khi chưa gõ số nào, hiển thị các mức quen thuộc lặp lại + mốc chi tiêu phổ biến (20k, 50k, 100k...)
 /// - Chạm 1 lần điền số ngay tức thì, giảm 80% thao tác bấm
 class AmountSuggestionBar extends StatelessWidget {
   final String rawInput;
   final ValueChanged<double> onSelectAmount;
   final Color activeColor;
   final bool isDark;
+  final List<double>? frequentAmounts;
 
   const AmountSuggestionBar({
     super.key,
@@ -19,13 +21,18 @@ class AmountSuggestionBar extends StatelessWidget {
     required this.onSelectAmount,
     required this.activeColor,
     required this.isDark,
+    this.frequentAmounts,
   });
 
   List<double> _calculateSuggestions() {
     final cleanDigits = rawInput.replaceAll(RegExp(r'[^0-9]'), '');
     if (cleanDigits.isEmpty) {
-      // Mặc định khi chưa nhập: Các mệnh giá thông dụng hàng ngày
-      return [20000, 50000, 100000, 200000, 500000, 1000000];
+      final baseDefaults = [20000.0, 50000.0, 100000.0, 200000.0, 500000.0, 1000000.0];
+      if (frequentAmounts != null && frequentAmounts!.isNotEmpty) {
+        final merged = <double>{...frequentAmounts!, ...baseDefaults};
+        return merged.toList();
+      }
+      return baseDefaults;
     }
 
     final baseNumber = double.tryParse(cleanDigits) ?? 0;
@@ -79,7 +86,9 @@ class AmountSuggestionBar extends StatelessWidget {
               ),
               const SizedBox(width: 5),
               Text(
-                isDefault ? 'Gợi ý nhanh:' : 'Gợi ý số tiền phù hợp:',
+                isDefault
+                    ? context.tr('quick_suggestions_label')
+                    : context.tr('matching_suggestions_label'),
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
@@ -100,6 +109,7 @@ class AmountSuggestionBar extends StatelessWidget {
             itemBuilder: (context, index) {
               final amount = suggestions[index];
               final label = CurrencyUtils.formatCurrency(amount);
+              final isFrequent = isDefault && (frequentAmounts?.contains(amount) ?? false);
 
               return AnimatedScaleButton(
                 scaleDown: 0.92,
@@ -110,25 +120,42 @@ class AmountSuggestionBar extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF152625)
-                        : const Color(0xFFF1F5F9),
+                    color: isFrequent
+                        ? activeColor.withValues(alpha: isDark ? 0.22 : 0.12)
+                        : (isDark
+                            ? const Color(0xFF152625)
+                            : const Color(0xFFF1F5F9)),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: activeColor.withValues(alpha: isDark ? 0.35 : 0.25),
-                      width: 1.0,
+                      color: isFrequent
+                          ? activeColor.withValues(alpha: isDark ? 0.6 : 0.45)
+                          : activeColor.withValues(alpha: isDark ? 0.35 : 0.25),
+                      width: isFrequent ? 1.3 : 1.0,
                     ),
                   ),
-                  child: Center(
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white : const Color(0xFF1E293B),
-                        letterSpacing: -0.2,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isFrequent) ...[
+                        Icon(
+                          Icons.history_rounded,
+                          size: 13,
+                          color: activeColor,
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: isFrequent ? FontWeight.w800 : FontWeight.w700,
+                          color: isFrequent
+                              ? (isDark ? Colors.white : activeColor)
+                              : (isDark ? Colors.white : const Color(0xFF1E293B)),
+                          letterSpacing: -0.2,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               );

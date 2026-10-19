@@ -1,3 +1,4 @@
+import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,11 +45,11 @@ class GroupDetailScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Bạn đã rời khỏi nhóm hoặc không có quyền truy cập'),
+                  Text(isVi ? 'Bạn đã rời khỏi nhóm hoặc không có quyền truy cập' : 'You have left the group or have no access'),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Quay lại'),
+                    child: Text(isVi ? 'Quay lại' : 'Go back'),
                   ),
                 ],
               ),
@@ -203,12 +204,12 @@ class GroupDetailScreen extends ConsumerWidget {
                                           color: Colors.white.withValues(alpha: 0.2),
                                           borderRadius: BorderRadius.circular(12),
                                         ),
-                                        child: const Row(
+                                        child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Icon(Icons.person_add_rounded, color: Colors.white, size: 16),
-                                            SizedBox(width: 6),
-                                            Text('Mời', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                                            const Icon(Icons.person_add_rounded, color: Colors.white, size: 16),
+                                            const SizedBox(width: 6),
+                                            Text(isVi ? 'Mời' : 'Invite', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                                           ],
                                         ),
                                       ),
@@ -262,7 +263,7 @@ class GroupDetailScreen extends ConsumerWidget {
                       Expanded(
                         child: _buildActionButton(
                           isDark: isDark,
-                          label: 'Góp quỹ',
+                          label: isVi ? 'Góp quỹ' : 'Contribute',
                           icon: Icons.add_rounded,
                           color: const Color(0xFFFF1493),
                           onPressed: () => Navigator.push(
@@ -287,7 +288,7 @@ class GroupDetailScreen extends ConsumerWidget {
                         Expanded(
                           child: _buildActionButton(
                             isDark: isDark,
-                            label: 'Rút quỹ',
+                            label: isVi ? 'Rút quỹ' : 'Withdraw',
                             icon: Icons.arrow_outward_rounded,
                             color: primaryColor,
                             onPressed: () => Navigator.push(
@@ -323,7 +324,7 @@ class GroupDetailScreen extends ConsumerWidget {
                     if (debts.isEmpty) return const SizedBox.shrink();
                     return _buildSectionHeader(
                       context,
-                      title: 'Công nợ',
+                      title: isVi ? 'Công nợ' : 'Debts & Balances',
                       icon: Icons.compare_arrows_rounded,
                       iconColor: Colors.orange,
                       isDark: isDark,
@@ -343,7 +344,7 @@ class GroupDetailScreen extends ConsumerWidget {
                   data: (transactions) {
                     return _buildSectionHeader(
                       context,
-                      title: 'Hoạt động gần đây',
+                      title: isVi ? 'Hoạt động gần đây' : 'Recent Activities',
                       icon: Icons.history_rounded,
                       iconColor: primaryColor,
                       isDark: isDark,
@@ -363,7 +364,7 @@ class GroupDetailScreen extends ConsumerWidget {
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Center(child: Text('Lỗi: $e')),
+                  error: (e, _) => Center(child: Text('${isVi ? 'Lỗi' : 'Error'}: $e')),
                 ),
                 
                 const SizedBox(height: 50),
@@ -372,7 +373,7 @@ class GroupDetailScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Lỗi: $error')),
+        error: (error, stack) => Center(child: Text('${isVi ? 'Lỗi' : 'Error'}: $error')),
       ),
     );
   }
@@ -405,7 +406,7 @@ class GroupDetailScreen extends ConsumerWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Số dư quỹ nhóm', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+                      Text(isVi ? 'Số dư quỹ nhóm' : 'Group fund balance', style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
                       const SizedBox(height: 6),
                       Text('${_formatMoney(balance)}đ', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
                     ],
@@ -499,7 +500,7 @@ class GroupDetailScreen extends ConsumerWidget {
                 const Spacer(),
                 TextButton(
                   onPressed: onSeeAll,
-                  child: Text('Tất cả >', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.w600)),
+                  child: Text(isVi ? 'Tất cả >' : 'All >', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.w600)),
                 ),
               ],
             ],
@@ -533,7 +534,7 @@ class GroupDetailScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(isOwed ? 'Bạn phải trả' : 'Bạn sẽ nhận', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(isOwed ? (isVi ? 'Bạn phải trả' : 'You owe') : (isVi ? 'Bạn sẽ nhận' : 'You get back'), style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 const SizedBox(height: 2),
                 Text('${_formatMoney(debt.amount.abs())}đ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
               ],
@@ -571,7 +572,7 @@ class GroupDetailScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(isContribute ? 'Góp quỹ' : 'Rút quỹ', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text(isContribute ? (isVi ? 'Góp quỹ' : 'Contribute') : (isVi ? 'Rút quỹ' : 'Withdraw'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                   const SizedBox(height: 2),
                   Text(tx.userName, style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 ],
@@ -600,7 +601,7 @@ class GroupDetailScreen extends ConsumerWidget {
         children: [
           Icon(Icons.history_toggle_off_rounded, size: 50, color: Colors.grey.withValues(alpha: 0.5)),
           const SizedBox(height: 12),
-          const Text('Chưa có hoạt động nào', style: TextStyle(color: Colors.grey)),
+          Text(isVi ? 'Chưa có hoạt động nào' : 'No activities yet', style: const TextStyle(color: Colors.grey)),
         ],
       ),
     );
@@ -631,18 +632,18 @@ class GroupDetailScreen extends ConsumerWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(transaction.type == TransactionType.contribute ? 'Góp quỹ' : 'Rút quỹ', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(transaction.type == TransactionType.contribute ? (isVi ? 'Góp quỹ' : 'Contribution') : (isVi ? 'Rút quỹ' : 'Withdrawal'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                     Text(transaction.userName, style: const TextStyle(color: Colors.grey)),
                   ],
                 ),
               ],
             ),
             const SizedBox(height: 32),
-            const Text('SỐ TIỀN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
+            Text(isVi ? 'SỐ TIỀN' : 'AMOUNT', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
             const SizedBox(height: 8),
             Text('${_formatMoney(transaction.amount)}đ', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: transaction.type == TransactionType.contribute ? Colors.green : Colors.red)),
             const SizedBox(height: 24),
-            const Text('THỜI GIAN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
+            Text(isVi ? 'THỜI GIAN' : 'TIME', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
             const SizedBox(height: 8),
             Text('${transaction.createdAt.day}/${transaction.createdAt.month}/${transaction.createdAt.year} • ${transaction.createdAt.hour.toString().padLeft(2, '0')}:${transaction.createdAt.minute.toString().padLeft(2, '0')}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
             const Spacer(),
@@ -655,14 +656,14 @@ class GroupDetailScreen extends ConsumerWidget {
                         context: context,
                         builder: (context) => AlertDialog(
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          title: const Text('Xác nhận xóa'),
-                          content: const Text('Bạn có chắc chắn muốn xóa giao dịch này không? Hành động này sẽ cập nhật lại số dư quỹ và ví cá nhân.'),
+                          title: Text(isVi ? 'Xác nhận xóa' : 'Confirm Delete'),
+                          content: Text(isVi ? 'Bạn có chắc chắn muốn xóa giao dịch này không? Hành động này sẽ cập nhật lại số dư quỹ và ví cá nhân.' : 'Are you sure you want to delete this transaction? This will update group and personal balances.'),
                           actions: [
-                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
+                            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(isVi ? 'Hủy' : 'Cancel')),
                             TextButton(
                               onPressed: () => Navigator.pop(context, true),
                               style: TextButton.styleFrom(foregroundColor: Colors.red),
-                              child: const Text('Xóa'),
+                              child: Text(isVi ? 'Xóa' : 'Delete'),
                             ),
                           ],
                         ),
@@ -674,13 +675,13 @@ class GroupDetailScreen extends ConsumerWidget {
                           if (context.mounted) {
                             Navigator.pop(context); // Close bottom sheet
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Đã xóa giao dịch thành công')),
+                              SnackBar(content: Text(isVi ? 'Đã xóa giao dịch thành công' : 'Transaction deleted successfully')),
                             );
                           }
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Lỗi khi xóa: $e'), backgroundColor: Colors.red),
+                              SnackBar(content: Text(isVi ? 'Lỗi khi xóa: $e' : 'Delete error: $e'), backgroundColor: Colors.red),
                             );
                           }
                         }
@@ -691,7 +692,7 @@ class GroupDetailScreen extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
-                    child: const Text('Xóa', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                    child: Text(isVi ? 'Xóa' : 'Delete', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -705,7 +706,7 @@ class GroupDetailScreen extends ConsumerWidget {
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
-                    child: const Text('Đóng'),
+                    child: Text(isVi ? 'Đóng' : 'Close'),
                   ),
                 ),
               ],

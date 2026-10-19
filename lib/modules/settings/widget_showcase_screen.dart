@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/app_widget_service.dart';
+import '../../services/language_service.dart';
 import '../../widgets/top_toast.dart';
 
 class WidgetShowcaseScreen extends StatefulWidget {
@@ -12,16 +13,24 @@ class WidgetShowcaseScreen extends StatefulWidget {
 
 class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
   Future<void> _pinWidget(String providerName, String widgetName) async {
+    final isVi = LanguageScope.of(context).isVietnamese;
     HapticFeedback.mediumImpact();
     final success = await AppWidgetService.instance.requestPinWidget(providerName);
     if (!mounted) return;
 
     if (success == true) {
-      TopToast.show(context, 'Đã gửi yêu cầu ghim $widgetName ra màn hình chính!');
+      TopToast.show(
+        context,
+        isVi
+            ? 'Đã gửi yêu cầu ghim $widgetName ra màn hình chính!'
+            : 'Pin request sent for $widgetName to home screen!',
+      );
     } else {
       TopToast.show(
         context,
-        'Bạn cũng có thể ấn giữ màn hình chính > Chọn Tiện ích > Mono để thêm thủ công.',
+        isVi
+            ? 'Bạn cũng có thể ấn giữ màn hình chính > Chọn Tiện ích > Mono để thêm thủ công.'
+            : 'You can also press and hold home screen > Select Widgets > Mono to add manually.',
         isError: false,
       );
     }
@@ -29,6 +38,7 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = const Color(0xFF2F7E79);
     final cardBg = isDark ? const Color(0xFF1E293B) : Colors.white;
@@ -39,7 +49,10 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Tiện ích Màn hình chính', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(
+          isVi ? 'Tiện ích Màn hình chính' : 'Home Screen Widgets',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -77,7 +90,7 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Xem trước & Thêm Widget',
+                        isVi ? 'Xem trước & Thêm Widget' : 'Preview & Add Widgets',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -86,7 +99,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Theo dõi dòng tiền, số dư và ghi chép chi tiêu siêu tốc ngay từ màn hình chính!',
+                        isVi
+                            ? 'Theo dõi dòng tiền, số dư và ghi chép chi tiêu siêu tốc ngay từ màn hình chính!'
+                            : 'Track cash flow, balance, and record expenses quickly right from your home screen!',
                         style: TextStyle(
                           fontSize: 12.5,
                           color: isDark ? Colors.white70 : const Color(0xFF285E5A),
@@ -103,64 +118,92 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
 
           // 1. WIDGET NHỎ (2x2)
           _buildWidgetCard(
-            title: '1. Widget Nhỏ (Small 2×2)',
-            badgeText: 'Gọn nhẹ • Tối giản',
+            title: isVi ? '1. Widget Nhỏ (Small 2×2)' : '1. Small Widget (2×2)',
+            badgeText: isVi ? 'Gọn nhẹ • Tối giản' : 'Compact • Minimal',
             badgeColor: Colors.blue,
-            description: 'Hiển thị số dư hiện tại, chi hôm nay và 2 nút thêm nhanh giao dịch.',
+            description: isVi
+                ? 'Hiển thị số dư hiện tại, chi hôm nay và 2 nút thêm nhanh giao dịch.'
+                : 'Displays current balance, today\'s spending, and 2 quick transaction buttons.',
             cardBg: cardBg,
             borderColor: borderColor,
             textPrimary: textPrimary,
             textSecondary: textSecondary,
-            onPinPressed: () => _pinWidget(AppWidgetService.smallWidgetProvider, 'Widget Nhỏ'),
-            previewContent: _buildSmallPreview(isDark),
+            pinButtonLabel: isVi ? 'Ghim ra Màn hình chính' : 'Pin to Home Screen',
+            onPinPressed: () => _pinWidget(
+              AppWidgetService.smallWidgetProvider,
+              isVi ? 'Widget Nhỏ' : 'Small Widget',
+            ),
+            previewContent: _buildSmallPreview(isDark, isVi),
           ),
 
           const SizedBox(height: 20),
 
           // 2. WIDGET VỪA #1 (4x2): SỐ DƯ & THAO TÁC NHANH
           _buildWidgetCard(
-            title: '2. Widget Vừa (Medium 4×2) - Phong cách Vibrant',
-            badgeText: 'Khuyên dùng • Phổ biến',
+            title: isVi
+                ? '2. Widget Vừa (Medium 4×2) - Phong cách Vibrant'
+                : '2. Medium Widget (4×2) - Vibrant Style',
+            badgeText: isVi ? 'Khuyên dùng • Phổ biến' : 'Recommended • Popular',
             badgeColor: primaryColor,
-            description: 'Thiết kế Vibrant sắc nét, hiển thị số dư to rõ, hạn mức an toàn và 2 nút Chi / Thu lớn công thái học.',
+            description: isVi
+                ? 'Thiết kế Vibrant sắc nét, hiển thị số dư to rõ, hạn mức an toàn và 2 nút Chi / Thu lớn công thái học.'
+                : 'Sharp Vibrant design, prominent balance, daily allowance, and 2 ergonomic Expense / Income buttons.',
             cardBg: cardBg,
             borderColor: borderColor,
             textPrimary: textPrimary,
             textSecondary: textSecondary,
-            onPinPressed: () => _pinWidget(AppWidgetService.mediumWidgetProvider, 'Widget Vừa (Số dư)'),
-            previewContent: _buildMediumPreview(isDark),
+            pinButtonLabel: isVi ? 'Ghim ra Màn hình chính' : 'Pin to Home Screen',
+            onPinPressed: () => _pinWidget(
+              AppWidgetService.mediumWidgetProvider,
+              isVi ? 'Widget Vừa (Số dư)' : 'Medium Widget (Balance)',
+            ),
+            previewContent: _buildMediumPreview(isDark, isVi),
           ),
 
           const SizedBox(height: 20),
 
           // 2.1 WIDGET VỪA #2 (4x2): TIẾN ĐỘ NGÂN SÁCH
           _buildWidgetCard(
-            title: '3. Widget Vừa (Medium 4×2) - Tiến độ Ngân sách',
-            badgeText: 'Kiểm soát chi tiêu',
+            title: isVi
+                ? '3. Widget Vừa (Medium 4×2) - Tiến độ Ngân sách'
+                : '3. Medium Widget (4×2) - Budget Progress',
+            badgeText: isVi ? 'Kiểm soát chi tiêu' : 'Spending Control',
             badgeColor: Colors.teal,
-            description: 'Thanh tiến độ ngân sách tháng trực quan (đổi màu Xanh/Cam/Đỏ), hạn mức ngày và nút Chi/Quét.',
+            description: isVi
+                ? 'Thanh tiến độ ngân sách tháng trực quan (đổi màu Xanh/Cam/Đỏ), hạn mức ngày và nút Chi/Quét.'
+                : 'Intuitive monthly budget progress bar (Green/Orange/Red), daily limit, and Expense/Scan buttons.',
             cardBg: cardBg,
             borderColor: borderColor,
             textPrimary: textPrimary,
             textSecondary: textSecondary,
-            onPinPressed: () => _pinWidget(AppWidgetService.budgetWidgetProvider, 'Widget Ngân sách'),
-            previewContent: _buildBudgetPreview(isDark),
+            pinButtonLabel: isVi ? 'Ghim ra Màn hình chính' : 'Pin to Home Screen',
+            onPinPressed: () => _pinWidget(
+              AppWidgetService.budgetWidgetProvider,
+              isVi ? 'Widget Ngân sách' : 'Budget Widget',
+            ),
+            previewContent: _buildBudgetPreview(isDark, isVi),
           ),
 
           const SizedBox(height: 20),
 
           // 3. WIDGET LỚN (4x4)
           _buildWidgetCard(
-            title: '3. Widget Lớn (Large 4×4)',
-            badgeText: 'Bảng điều khiển tài chính',
+            title: isVi ? '4. Widget Lớn (Large 4×4)' : '4. Large Widget (4×4)',
+            badgeText: isVi ? 'Bảng điều khiển tài chính' : 'Financial Dashboard',
             badgeColor: Colors.deepPurple,
-            description: 'Báo cáo toàn diện: Tab Tuần/Tháng, so sánh tháng trước, Top 3 danh mục và 4 nút đáy.',
+            description: isVi
+                ? 'Báo cáo toàn diện: Tab Tuần/Tháng, so sánh tháng trước, Top 3 danh mục và 4 nút đáy.'
+                : 'Comprehensive report: Week/Month tabs, vs last month, Top 3 categories, and 4 bottom buttons.',
             cardBg: cardBg,
             borderColor: borderColor,
             textPrimary: textPrimary,
             textSecondary: textSecondary,
-            onPinPressed: () => _pinWidget(AppWidgetService.largeWidgetProvider, 'Widget Lớn'),
-            previewContent: _buildLargePreview(isDark),
+            pinButtonLabel: isVi ? 'Ghim ra Màn hình chính' : 'Pin to Home Screen',
+            onPinPressed: () => _pinWidget(
+              AppWidgetService.largeWidgetProvider,
+              isVi ? 'Widget Lớn' : 'Large Widget',
+            ),
+            previewContent: _buildLargePreview(isDark, isVi),
           ),
 
           const SizedBox(height: 24),
@@ -181,17 +224,24 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                     const Icon(Icons.info_outline_rounded, color: Color(0xFF2F7E79), size: 20),
                     const SizedBox(width: 8),
                     Text(
-                      'Cách thêm thủ công từ màn hình chính',
+                      isVi
+                          ? 'Cách thêm thủ công từ màn hình chính'
+                          : 'How to add manually from home screen',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: textPrimary),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  '1. Chạm và giữ vào một vùng trống trên màn hình chính của điện thoại.\n'
-                  '2. Chọn mục "Tiện ích" (hoặc "Widgets").\n'
-                  '3. Cuộn tìm ứng dụng "Mono" để xem trước giao diện demo sắc nét.\n'
-                  '4. Chạm và kéo widget mong muốn ra vị trí bạn thích.',
+                  isVi
+                      ? '1. Chạm và giữ vào một vùng trống trên màn hình chính của điện thoại.\n'
+                          '2. Chọn mục "Tiện ích" (hoặc "Widgets").\n'
+                          '3. Cuộn tìm ứng dụng "Mono" để xem trước giao diện demo sắc nét.\n'
+                          '4. Chạm và kéo widget mong muốn ra vị trí bạn thích.'
+                      : '1. Touch and hold an empty space on your phone\'s home screen.\n'
+                          '2. Select "Widgets".\n'
+                          '3. Scroll to find "Mono".\n'
+                          '4. Touch and drag the desired widget to your preferred position.',
                   style: TextStyle(fontSize: 13, height: 1.5, color: textSecondary),
                 ),
               ],
@@ -213,6 +263,7 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
     required Color borderColor,
     required Color textPrimary,
     required Color textSecondary,
+    required String pinButtonLabel,
     required VoidCallback onPinPressed,
     required Widget previewContent,
   }) {
@@ -267,7 +318,10 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
             child: ElevatedButton.icon(
               onPressed: onPinPressed,
               icon: const Icon(Icons.add_to_home_screen_rounded, size: 18),
-              label: const Text('Ghim ra Màn hình chính', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+              label: Text(
+                pinButtonLabel,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2F7E79),
                 foregroundColor: Colors.white,
@@ -283,7 +337,7 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
   }
 
   // Preview Widget Nhỏ (2x2)
-  Widget _buildSmallPreview(bool isDark) {
+  Widget _buildSmallPreview(bool isDark, bool isVi) {
     return Container(
       width: 165,
       padding: const EdgeInsets.all(12),
@@ -305,9 +359,15 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
             ],
           ),
           const SizedBox(height: 6),
-          const Text('Tổng số dư', style: TextStyle(color: Color(0xFF64748B), fontSize: 9.5)),
+          Text(
+            isVi ? 'Tổng số dư' : 'Total Balance',
+            style: const TextStyle(color: Color(0xFF64748B), fontSize: 9.5),
+          ),
           const Text('25.500.000đ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const Text('Hôm nay còn 250.000đ', style: TextStyle(color: Color(0xFF059669), fontSize: 9.5, fontWeight: FontWeight.bold)),
+          Text(
+            isVi ? 'Hôm nay còn 250.000đ' : 'Today: 250,000đ left',
+            style: const TextStyle(color: Color(0xFF059669), fontSize: 9.5, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -315,8 +375,11 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFFECACA))),
-                  child: const Center(
-                    child: Text('− Chi', style: TextStyle(color: Color(0xFFDC2626), fontSize: 11, fontWeight: FontWeight.bold)),
+                  child: Center(
+                    child: Text(
+                      isVi ? '− Chi' : '− Exp',
+                      style: const TextStyle(color: Color(0xFFDC2626), fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
               ),
@@ -325,8 +388,11 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFA7F3D0))),
-                  child: const Center(
-                    child: Text('+ Thu', style: TextStyle(color: Color(0xFF059669), fontSize: 11, fontWeight: FontWeight.bold)),
+                  child: Center(
+                    child: Text(
+                      isVi ? '+ Thu' : '+ Inc',
+                      style: const TextStyle(color: Color(0xFF059669), fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
               ),
@@ -338,7 +404,7 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
   }
 
   // Preview Widget Vừa #1 (4x2 - Số dư & Thao tác Vibrant Gradient)
-  Widget _buildMediumPreview(bool isDark) {
+  Widget _buildMediumPreview(bool isDark, bool isVi) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -368,7 +434,7 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'Tổng số dư',
+                    isVi ? 'Tổng số dư' : 'Total Balance',
                     style: TextStyle(
                       color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                       fontSize: 12,
@@ -404,9 +470,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                     color: isDark ? const Color(0xFF065F46) : const Color(0xFFA7F3D0),
                   ),
                 ),
-                child: const Text(
-                  'Hôm nay còn 250.000đ',
-                  style: TextStyle(
+                child: Text(
+                  isVi ? 'Hôm nay còn 250.000đ' : 'Remaining today: 250,000đ',
+                  style: const TextStyle(
                     color: Color(0xFF059669),
                     fontSize: 10.5,
                     fontWeight: FontWeight.bold,
@@ -432,7 +498,7 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      '− Chi tiền',
+                      isVi ? '− Chi tiền' : '− Expense',
                       style: TextStyle(
                         color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
                         fontSize: 12.5,
@@ -455,7 +521,7 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      '+ Thu tiền',
+                      isVi ? '+ Thu tiền' : '+ Income',
                       style: TextStyle(
                         color: isDark ? const Color(0xFF34D399) : const Color(0xFF059669),
                         fontSize: 12.5,
@@ -473,7 +539,7 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
   }
 
   // Preview Widget Vừa #2 (4x2 - Tiến độ Ngân sách)
-  Widget _buildBudgetPreview(bool isDark) {
+  Widget _buildBudgetPreview(bool isDark, bool isVi) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -494,9 +560,12 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text('Ngân sách tháng', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
-                    Text('71%', style: TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold)),
+                  children: [
+                    Text(
+                      isVi ? 'Ngân sách tháng' : 'Monthly budget',
+                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
+                    ),
+                    const Text('71%', style: TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 const SizedBox(height: 2),
@@ -504,13 +573,16 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                 const SizedBox(height: 5),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(value: 0.71, minHeight: 6, backgroundColor: const Color(0xFFE2E8F0), valueColor: const AlwaysStoppedAnimation(Color(0xFF10B981))),
+                  child: const LinearProgressIndicator(value: 0.71, minHeight: 6, backgroundColor: Color(0xFFE2E8F0), valueColor: AlwaysStoppedAnimation(Color(0xFF10B981))),
                 ),
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(color: const Color(0xFFECFDF5), borderRadius: BorderRadius.circular(6), border: Border.all(color: const Color(0xFFA7F3D0))),
-                  child: const Text('Hôm nay còn 250.000đ', style: TextStyle(color: Color(0xFF059669), fontSize: 10, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    isVi ? 'Hôm nay còn 250.000đ' : 'Today: 250,000đ left',
+                    style: const TextStyle(color: Color(0xFF059669), fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
@@ -525,28 +597,28 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text('Ăn uống', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                    Text('85%', style: TextStyle(fontSize: 9.5, color: Color(0xFFF59E0B), fontWeight: FontWeight.bold)),
+                  children: [
+                    Text(isVi ? 'Ăn uống' : 'Dining', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                    const Text('85%', style: TextStyle(fontSize: 9.5, color: Color(0xFFF59E0B), fontWeight: FontWeight.bold)),
                   ],
                 ),
                 const SizedBox(height: 2),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(3),
-                  child: LinearProgressIndicator(value: 0.85, minHeight: 4, backgroundColor: const Color(0xFFE2E8F0), valueColor: const AlwaysStoppedAnimation(Color(0xFFF59E0B))),
+                  child: const LinearProgressIndicator(value: 0.85, minHeight: 4, backgroundColor: Color(0xFFE2E8F0), valueColor: AlwaysStoppedAnimation(Color(0xFFF59E0B))),
                 ),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text('Mua sắm', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                    Text('45%', style: TextStyle(fontSize: 9.5, color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
+                  children: [
+                    Text(isVi ? 'Mua sắm' : 'Shopping', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                    const Text('45%', style: TextStyle(fontSize: 9.5, color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
                   ],
                 ),
                 const SizedBox(height: 2),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(3),
-                  child: LinearProgressIndicator(value: 0.45, minHeight: 4, backgroundColor: const Color(0xFFE2E8F0), valueColor: const AlwaysStoppedAnimation(Color(0xFF10B981))),
+                  child: const LinearProgressIndicator(value: 0.45, minHeight: 4, backgroundColor: Color(0xFFE2E8F0), valueColor: AlwaysStoppedAnimation(Color(0xFF10B981))),
                 ),
                 const SizedBox(height: 6),
                 Row(
@@ -555,7 +627,12 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFFECACA))),
-                        child: const Center(child: Text('− Chi', style: TextStyle(color: Color(0xFFDC2626), fontSize: 10, fontWeight: FontWeight.bold))),
+                        child: Center(
+                          child: Text(
+                            isVi ? '− Chi' : '− Exp',
+                            style: const TextStyle(color: Color(0xFFDC2626), fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -563,7 +640,12 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 4),
                         decoration: BoxDecoration(color: const Color(0xFFEEF2FF), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFC7D2FE))),
-                        child: const Center(child: Text('Quét', style: TextStyle(color: Color(0xFF4F46E5), fontSize: 10, fontWeight: FontWeight.bold))),
+                        child: Center(
+                          child: Text(
+                            isVi ? 'Quét' : 'Scan',
+                            style: const TextStyle(color: Color(0xFF4F46E5), fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -577,7 +659,7 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
   }
 
   // Preview Widget Lớn (4x4)
-  Widget _buildLargePreview(bool isDark) {
+  Widget _buildLargePreview(bool isDark, bool isVi) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -593,19 +675,28 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
         children: [
           Row(
             children: [
-              const Expanded(
-                child: Text('Tài chính', style: TextStyle(color: Color(0xFF2F7E79), fontSize: 12, fontWeight: FontWeight.bold)),
+              Expanded(
+                child: Text(
+                  isVi ? 'Tài chính' : 'Finance',
+                  style: const TextStyle(color: Color(0xFF2F7E79), fontSize: 12, fontWeight: FontWeight.bold),
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(color: const Color(0xFFEEF2F6), borderRadius: BorderRadius.circular(8)),
-                child: const Text('Tuần', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                child: Text(
+                  isVi ? 'Tuần' : 'Week',
+                  style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                ),
               ),
               const SizedBox(width: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(color: const Color(0xFF2F7E79), borderRadius: BorderRadius.circular(8)),
-                child: const Text('Tháng', style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+                child: Text(
+                  isVi ? 'Tháng' : 'Month',
+                  style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                ),
               ),
               const SizedBox(width: 6),
               const Icon(Icons.remove_red_eye_outlined, size: 14, color: Color(0xFF64748B)),
@@ -624,7 +715,10 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Tổng số dư', style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
+                    Text(
+                      isVi ? 'Tổng số dư' : 'Total Balance',
+                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
+                    ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                       decoration: BoxDecoration(
@@ -632,16 +726,22 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: const Color(0xFF10B981)),
                       ),
-                      child: const Text('↓ 12% so với tháng trước', style: TextStyle(color: Color(0xFF059669), fontSize: 9, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        isVi ? '↓ 12% so với tháng trước' : '↓ 12% vs last month',
+                        style: const TextStyle(color: Color(0xFF059669), fontSize: 9, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ],
                 ),
                 const Text('45.280.000đ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text('Tháng: +28tr • -15.5tr', style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
-                    Text('+12.500.000đ', style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold)),
+                  children: [
+                    Text(
+                      isVi ? 'Tháng: +28tr • -15.5tr' : 'Month: +28M • -15.5M',
+                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
+                    ),
+                    const Text('+12.500.000đ', style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ],
@@ -660,19 +760,22 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Hạn mức hôm nay: 250k', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold)),
+                      Text(
+                        isVi ? 'Hạn mức hôm nay: 250k' : 'Today limit: 250k',
+                        style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 6),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          _buildMiniBar('T2', 10, false),
-                          _buildMiniBar('T3', 16, false),
-                          _buildMiniBar('T4', 8, false),
-                          _buildMiniBar('T5', 22, false),
-                          _buildMiniBar('T6', 12, false),
-                          _buildMiniBar('T7', 18, false),
-                          _buildMiniBar('CN', 15, true),
+                          _buildMiniBar(isVi ? 'T2' : 'M', 10, false),
+                          _buildMiniBar(isVi ? 'T3' : 'T', 16, false),
+                          _buildMiniBar(isVi ? 'T4' : 'W', 8, false),
+                          _buildMiniBar(isVi ? 'T5' : 'T', 22, false),
+                          _buildMiniBar(isVi ? 'T6' : 'F', 12, false),
+                          _buildMiniBar(isVi ? 'T7' : 'S', 18, false),
+                          _buildMiniBar(isVi ? 'CN' : 'S', 15, true),
                         ],
                       ),
                     ],
@@ -689,12 +792,15 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text('Chi nhiều nhất', style: TextStyle(color: Color(0xFF64748B), fontSize: 9, fontWeight: FontWeight.bold)),
-                      SizedBox(height: 2),
-                      Text('• Ăn uống: 5.2tr', style: TextStyle(fontSize: 9)),
-                      Text('• Mua sắm: 3.8tr', style: TextStyle(fontSize: 9)),
-                      Text('• Di chuyển: 1.5tr', style: TextStyle(fontSize: 9)),
+                    children: [
+                      Text(
+                        isVi ? 'Chi nhiều nhất' : 'Top Spending',
+                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 9, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(isVi ? '• Ăn uống: 5.2tr' : '• Dining: 5.2M', style: const TextStyle(fontSize: 9)),
+                      Text(isVi ? '• Mua sắm: 3.8tr' : '• Shopping: 3.8M', style: const TextStyle(fontSize: 9)),
+                      Text(isVi ? '• Di chuyển: 1.5tr' : '• Transport: 1.5M', style: const TextStyle(fontSize: 9)),
                     ],
                   ),
                 ),
@@ -704,13 +810,13 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
           const SizedBox(height: 8),
           Row(
             children: [
-              _buildLargeBtn('− Chi', const Color(0xFFFEE2E2), const Color(0xFFDC2626)),
+              _buildLargeBtn(isVi ? '− Chi' : '− Exp', const Color(0xFFFEE2E2), const Color(0xFFDC2626)),
               const SizedBox(width: 4),
-              _buildLargeBtn('+ Thu', const Color(0xFFD1FAE5), const Color(0xFF059669)),
+              _buildLargeBtn(isVi ? '+ Thu' : '+ Inc', const Color(0xFFD1FAE5), const Color(0xFF059669)),
               const SizedBox(width: 4),
-              _buildLargeBtn('Quét', const Color(0xFFEEF2FF), const Color(0xFF4F46E5)),
+              _buildLargeBtn(isVi ? 'Quét' : 'Scan', const Color(0xFFEEF2FF), const Color(0xFF4F46E5)),
               const SizedBox(width: 4),
-              _buildLargeBtn('Báo cáo', const Color(0xFFE0F2FE), const Color(0xFF0284C7)),
+              _buildLargeBtn(isVi ? 'Báo cáo' : 'Report', const Color(0xFFE0F2FE), const Color(0xFF0284C7)),
             ],
           ),
         ],

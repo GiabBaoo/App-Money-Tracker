@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../utils/time_utils.dart';
 import '../../utils/device_utils.dart';
 import '../../services/firestore_service.dart';
+import '../../services/language_service.dart';
 import '../../models/device_session_model.dart';
 
 class ActiveDevicesScreen extends StatefulWidget {
@@ -33,6 +34,7 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -50,13 +52,13 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                     icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Text(
-                    'Thiết bị đang hoạt động',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+                  Text(
+                    isVi ? 'Thiết bị đang hoạt động' : 'Active Devices',
+                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                   IconButton(
                     icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 22),
-                    tooltip: 'Làm mới',
+                    tooltip: isVi ? 'Làm mới' : 'Refresh',
                     onPressed: () {
                       _loadCurrentDevice();
                       setState(() {});
@@ -101,9 +103,9 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                     currentSession ??= DeviceSessionModel(
                       id: 'current_device',
                       uid: '',
-                      deviceName: _currentDeviceInfo?['name'] ?? 'Thiết bị này',
+                      deviceName: _currentDeviceInfo?['name'] ?? (isVi ? 'Thiết bị này' : 'This Device'),
                       deviceType: _currentDeviceInfo?['type'] ?? 'mobile',
-                      location: 'Thiết bị hiện hành',
+                      location: isVi ? 'Thiết bị hiện hành' : 'Current Device',
                       lastActive: DateTime.now(),
                     );
 
@@ -112,20 +114,21 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildSectionTitle(context, 'THIẾT BỊ HIỆN TẠI'),
+                          _buildSectionTitle(context, isVi ? 'THIẾT BỊ HIỆN TẠI' : 'CURRENT DEVICE'),
                           _buildInfoBox(context, [
                             _buildDeviceItem(
                               context,
                               session: currentSession,
                               isCurrent: true,
+                              isVi: isVi,
                               onRemove: null,
                               showDivider: false,
                             ),
                           ]),
                           const SizedBox(height: 24),
-                          _buildSectionTitle(context, 'CÁC PHIÊN ĐĂNG NHẬP KHÁC'),
+                          _buildSectionTitle(context, isVi ? 'CÁC PHIÊN ĐĂNG NHẬP KHÁC' : 'OTHER SESSIONS'),
                           if (otherSessions.isEmpty)
-                            _buildEmptyOtherSessions(context, isDark)
+                            _buildEmptyOtherSessions(context, isDark, isVi)
                           else
                             _buildInfoBox(
                               context,
@@ -135,6 +138,7 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                                   context,
                                   session: s,
                                   isCurrent: false,
+                                  isVi: isVi,
                                   onRemove: () => _firestoreService.removeDeviceSession(s.id),
                                   showDivider: e.key != otherSessions.length - 1,
                                 );
@@ -153,7 +157,7 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
     );
   }
 
-  Widget _buildEmptyOtherSessions(BuildContext context, bool isDark) {
+  Widget _buildEmptyOtherSessions(BuildContext context, bool isDark, bool isVi) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
@@ -167,7 +171,7 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
           Icon(Icons.verified_user_outlined, color: Colors.green.shade400, size: 36),
           const SizedBox(height: 8),
           Text(
-            'Chỉ có thiết bị này đang kết nối',
+            isVi ? 'Chỉ có thiết bị này đang kết nối' : 'Only this device is connected',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -176,7 +180,9 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Không phát hiện phiên đăng nhập nào khác trên tài khoản của bạn.',
+            isVi
+                ? 'Không phát hiện phiên đăng nhập nào khác trên tài khoản của bạn.'
+                : 'No other login sessions detected on your account.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
           ),
@@ -216,11 +222,12 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
     BuildContext context, {
     required DeviceSessionModel session,
     required bool isCurrent,
+    required bool isVi,
     required VoidCallback? onRemove,
     required bool showDivider,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final timeStr = isCurrent ? 'Đang hoạt động' : TimeUtils.timeAgo(session.lastActive);
+    final timeStr = isCurrent ? (isVi ? 'Đang hoạt động' : 'Active now') : TimeUtils.timeAgo(session.lastActive, isVi: isVi);
 
     return Column(
       children: [
@@ -267,9 +274,9 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                               color: Colors.green.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: const Text(
-                              'Thiết bị này',
-                              style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold),
+                            child: Text(
+                              isVi ? 'Thiết bị này' : 'This device',
+                              style: const TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
@@ -286,7 +293,7 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
               if (!isCurrent && onRemove != null)
                 IconButton(
                   onPressed: onRemove,
-                  tooltip: 'Đăng xuất thiết bị này',
+                  tooltip: isVi ? 'Đăng xuất thiết bị này' : 'Log out from this device',
                   icon: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
                 ),
             ],

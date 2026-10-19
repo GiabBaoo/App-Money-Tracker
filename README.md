@@ -28,6 +28,10 @@
 - Xuất báo cáo tài chính chuyên nghiệp định dạng **PDF**, **Excel (.xlsx)** hoặc **CSV**.
 
 ### 5. Tiện Ích Thông Minh & AI
+- **Tự động điền theo thói quen (Smart Habit Autofill)**: Phân tích tần suất và lịch sử chi tiêu, tự động gợi ý/điền danh mục và ghi chú khi người dùng nhập số tiền quen thuộc mà không cần thao tác thủ công.
+- **Hệ thống thông báo tinh gọn & Nhận diện Mono**:
+  - Biểu tượng thông báo đơn sắc chuẩn Android mang chữ **mono** đặc trưng trên thanh trạng thái (status bar / taskbar) kèm tint màu thương hiệu.
+  - Lọc bỏ thông báo spam/rác, sao lưu ngầm không quấy rầy người dùng, duy trì cảnh báo tài chính quan trọng (vượt ngân sách 80%/100%, chạm trần chi tiêu ngày/tháng, giao dịch định kỳ đến hạn).
 - **Trợ lý tài chính AI (Google Gemini & Local Qwen)**: Phân tích thói quen tiêu dùng, gợi ý tối ưu ngân sách và giải đáp thắc mắc tài chính.
 - **Nhập liệu bằng giọng nói (Voice Input)**: Nói câu lệnh tự nhiên để tạo giao dịch (ví dụ: *"Ăn trưa 45 nghìn ví tiền mặt"*).
 - **Quét hóa đơn (Receipt OCR)**: Tự động trích xuất số tiền, ngày tháng và nội dung từ ảnh chụp hóa đơn.
@@ -37,6 +41,7 @@
 - Khóa bảo mật bằng sinh trắc học: Vân tay / Face ID qua `local_auth`.
 - Lưu trữ an toàn thông tin đăng nhập với `flutter_secure_storage`.
 - Hoạt động mượt mà cả khi offline qua SQLite / Hive, tự động đồng bộ lên Firebase Cloud Firestore khi có mạng.
+- Sao lưu nửa đêm định kỳ chạy ngầm (Midnight Sync) an toàn và hoàn toàn không làm gián đoạn người dùng.
 
 ---
 

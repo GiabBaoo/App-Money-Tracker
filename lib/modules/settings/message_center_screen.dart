@@ -7,6 +7,7 @@ import '../../widgets/top_toast.dart';
 import '../../widgets/animated_scale_button.dart';
 import 'message_detail_screen.dart';
 import 'support_request_screen.dart';
+import '../../services/language_service.dart';
 
 class MessageCenterScreen extends StatefulWidget {
   const MessageCenterScreen({super.key});
@@ -24,39 +25,39 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
     _messagesStream = FirestoreService().getMessagesStream();
   }
 
-  String _formatRelativeTime(DateTime dt) {
+  String _formatRelativeTime(DateTime dt, bool isVi) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inDays > 0) return '${diff.inDays} ngày trước';
-    if (diff.inHours > 0) return '${diff.inHours} giờ trước';
-    if (diff.inMinutes > 0) return '${diff.inMinutes} phút trước';
-    return 'Vừa xong';
+    if (diff.inDays > 0) return isVi ? '${diff.inDays} ngày trước' : '${diff.inDays}d ago';
+    if (diff.inHours > 0) return isVi ? '${diff.inHours} giờ trước' : '${diff.inHours}h ago';
+    if (diff.inMinutes > 0) return isVi ? '${diff.inMinutes} phút trước' : '${diff.inMinutes}m ago';
+    return isVi ? 'Vừa xong' : 'Just now';
   }
 
-  Map<String, dynamic> _getCategoryInfo(String title, int iconCode) {
+  Map<String, dynamic> _getCategoryInfo(String title, int iconCode, bool isVi) {
     final lower = title.toLowerCase();
-    if (lower.contains('hỗ trợ') || lower.contains('kỹ thuật') || lower.contains('ticket') || lower.contains('yêu cầu')) {
+    if (lower.contains('hỗ trợ') || lower.contains('kỹ thuật') || lower.contains('ticket') || lower.contains('yêu cầu') || lower.contains('support')) {
       return {
-        'label': 'Hỗ trợ',
+        'label': isVi ? 'Hỗ trợ' : 'Support',
         'color': const Color(0xFFF59E0B),
         'icon': Icons.support_agent_rounded,
       };
     }
-    if (lower.contains('bảo mật') || lower.contains('đăng nhập') || lower.contains('mật khẩu') || lower.contains('cảnh báo')) {
+    if (lower.contains('bảo mật') || lower.contains('đăng nhập') || lower.contains('mật khẩu') || lower.contains('cảnh báo') || lower.contains('security')) {
       return {
-        'label': 'Bảo mật',
+        'label': isVi ? 'Bảo mật' : 'Security',
         'color': const Color(0xFFEF4444),
         'icon': Icons.shield_rounded,
       };
     }
-    if (lower.contains('số dư') || lower.contains('ví') || lower.contains('giao dịch') || lower.contains('tiền')) {
+    if (lower.contains('số dư') || lower.contains('ví') || lower.contains('giao dịch') || lower.contains('tiền') || lower.contains('balance')) {
       return {
-        'label': 'Biến động',
+        'label': isVi ? 'Biến động' : 'Balance',
         'color': const Color(0xFF10B981),
         'icon': Icons.account_balance_wallet_rounded,
       };
     }
     return {
-      'label': 'Hệ thống',
+      'label': isVi ? 'Hệ thống' : 'System',
       'color': const Color(0xFF3B82F6),
       'icon': Icons.notifications_active_rounded,
     };
@@ -65,6 +66,7 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
@@ -94,9 +96,9 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                       child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
                     ),
                   ),
-                  const Text(
-                    'Hòm thư tin nhắn',
-                    style: TextStyle(
+                  Text(
+                    isVi ? 'Hòm thư tin nhắn' : 'Message Inbox',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -164,7 +166,7 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                               ),
                               const SizedBox(height: 20),
                               Text(
-                                'Hòm thư đang trống',
+                                isVi ? 'Hòm thư đang trống' : 'Inbox is empty',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -173,7 +175,9 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Bạn chưa có thông báo hoặc phản hồi hỗ trợ nào. Khi có tin nhắn từ hệ thống hoặc CSKH, chúng sẽ hiển thị tại đây.',
+                                isVi
+                                    ? 'Bạn chưa có thông báo hoặc phản hồi hỗ trợ nào. Khi có tin nhắn từ hệ thống hoặc CSKH, chúng sẽ hiển thị tại đây.'
+                                    : 'You have no notifications or support replies yet. When you receive system alerts or customer support messages, they will appear here.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 13,
@@ -193,8 +197,8 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                       separatorBuilder: (context, index) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final msg = messages[index];
-                        final timeStr = _formatRelativeTime(msg.createdAt);
-                        final catInfo = _getCategoryInfo(msg.title, msg.iconCode);
+                        final timeStr = _formatRelativeTime(msg.createdAt, isVi);
+                        final catInfo = _getCategoryInfo(msg.title, msg.iconCode, isVi);
                         final Color catColor = catInfo['color'] as Color;
                         final String catLabel = catInfo['label'] as String;
                         final IconData itemIcon = IconData(msg.iconCode, fontFamily: 'MaterialIcons');
@@ -209,21 +213,21 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                               color: const Color(0xFFEF4444),
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24),
-                                SizedBox(width: 8),
+                                const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24),
+                                const SizedBox(width: 8),
                                 Text(
-                                  'Xóa',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  isVi ? 'Xóa' : 'Delete',
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
                           ),
                           onDismissed: (_) {
                             FirestoreService().deleteMessage(msg.id);
-                            TopToast.show(context, 'Đã xóa tin nhắn');
+                            TopToast.show(context, isVi ? 'Đã xóa tin nhắn' : 'Message deleted');
                           },
                           child: InkWell(
                             onTap: () {

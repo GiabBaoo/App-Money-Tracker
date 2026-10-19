@@ -64,3 +64,12 @@ assets/config/api_keys.json
 /rs_them.txt
 /pure_test.dart
 /test_*.dart
+
+# tokenade — per-project cache / scaffold flag / dedup refs
+.tokenade/
+
+# tokenade — legacy per-project embedding model cache (now global)
+.fastembed_cache/
+ 
+.gitignore.tokenade-original
+token-optimizer/

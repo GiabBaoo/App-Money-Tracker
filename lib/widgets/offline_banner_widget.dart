@@ -1,3 +1,4 @@
+import '../services/language_service.dart';
 import 'package:flutter/material.dart';
 import '../services/connectivity_service.dart';
 
@@ -20,15 +21,17 @@ class OfflineBanner extends StatelessWidget {
           color: const Color(0xFFEA580C),
           child: isOnline
               ? const SizedBox.shrink()
-              : const Center(
+              : Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.wifi_off_rounded, color: Colors.white, size: 12),
-                      SizedBox(width: 6),
+                      const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 12),
+                      const SizedBox(width: 6),
                       Text(
-                        'Đang offline — Dữ liệu sẽ đồng bộ khi có mạng',
-                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: -0.2),
+                        LanguageScope.of(context).isVietnamese
+                            ? 'Đang offline — Dữ liệu sẽ đồng bộ khi có mạng'
+                            : 'Offline — Data will sync when reconnected',
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: -0.2),
                       ),
                     ],
                   ),

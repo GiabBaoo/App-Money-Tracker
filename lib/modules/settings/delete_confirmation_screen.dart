@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/page_transitions.dart';
+import '../../services/language_service.dart';
 import 'delete_password_screen.dart'; // Gọi trang nhập mật khẩu ở Bước 2
 
 class DeleteConfirmationScreen extends StatelessWidget {
@@ -7,6 +8,8 @@ class DeleteConfirmationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
+
     return Scaffold(
       backgroundColor: Theme.of(context).brightness == Brightness.dark 
         ? const Color(0xFF1E1E1E) 
@@ -28,9 +31,9 @@ class DeleteConfirmationScreen extends StatelessWidget {
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Text(
-                    'Xác nhận xóa',
-                    style: TextStyle(
+                  Text(
+                    isVi ? 'Xác nhận xóa' : 'Confirm Deletion',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -83,7 +86,7 @@ class DeleteConfirmationScreen extends StatelessWidget {
                     const SizedBox(height: 30),
 
                     Text(
-                      'Bạn có chắc chắn muốn xóa?',
+                      isVi ? 'Bạn có chắc chắn muốn xóa?' : 'Are you sure you want to delete?',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Theme.of(context).textTheme.bodyLarge?.color,
@@ -95,7 +98,9 @@ class DeleteConfirmationScreen extends StatelessWidget {
                     const SizedBox(height: 16),
 
                     Text(
-                      'Sau khi xóa, toàn bộ dữ liệu, giao dịch và thông tin cá nhân của bạn sẽ bị mất vĩnh viễn. Hành động này không thể hoàn tác.',
+                      isVi
+                          ? 'Sau khi xóa, toàn bộ dữ liệu, giao dịch và thông tin cá nhân của bạn sẽ bị mất vĩnh viễn. Hành động này không thể hoàn tác.'
+                          : 'Once deleted, all your data, transactions, and account information will be permanently lost. This action cannot be undone.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
@@ -123,10 +128,10 @@ class DeleteConfirmationScreen extends StatelessWidget {
                           color: const Color(0xFFE63946),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
-                            'Tiếp tục xóa',
-                            style: TextStyle(
+                            isVi ? 'Tiếp tục xóa' : 'Continue to Delete',
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -151,7 +156,7 @@ class DeleteConfirmationScreen extends StatelessWidget {
                         ),
                         child: Center(
                           child: Text(
-                            'Hủy bỏ',
+                            isVi ? 'Hủy bỏ' : 'Cancel',
                             style: TextStyle(
                               color: Theme.of(context).textTheme.bodyLarge?.color,
                               fontSize: 16,

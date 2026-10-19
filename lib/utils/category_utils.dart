@@ -1,7 +1,34 @@
 import 'package:flutter/material.dart';
+import '../services/category_style_service.dart';
 
 class CategoryUtils {
-  static IconData getCategoryIcon(String name) {
+  static const Color _fallbackColor = Color(0xFF438883);
+
+  /// Icon hiển thị cho danh mục [name].
+  ///
+  /// Thứ tự ưu tiên: icon user đã chọn (danh mục tự tạo / override mặc định)
+  /// → icon mặc định theo tên → [fallbackCode] (vd. `tx.categoryIconCode`,
+  /// hữu ích khi danh mục tự tạo đã bị xoá) → `Icons.category_outlined`.
+  static IconData getCategoryIcon(String name, {int? fallbackCode}) {
+    final custom = CategoryStyleService.instance.styleFor(name)?.iconCode;
+    if (custom != null) return IconData(custom, fontFamily: 'MaterialIcons');
+    final def = _defaultIcon(name);
+    if (def != null) return def;
+    if (fallbackCode != null) return IconData(fallbackCode, fontFamily: 'MaterialIcons');
+    return Icons.category_outlined;
+  }
+
+  /// Icon gốc của hệ thống (bỏ qua tuỳ chỉnh của user).
+  static IconData getDefaultCategoryIcon(String name) =>
+      _defaultIcon(name) ?? Icons.category_outlined;
+
+  /// Màu gốc của hệ thống (bỏ qua tuỳ chỉnh của user).
+  static Color getDefaultVibrantColor(String name) => _defaultColor(name) ?? _fallbackColor;
+
+  /// Danh mục [name] có phải danh mục mặc định của hệ thống không.
+  static bool isDefaultCategory(String name) => _defaultIcon(name) != null;
+
+  static IconData? _defaultIcon(String name) {
     switch (name) {
       // EXPENSES — Thống nhất dùng _outlined để khớp với CategoryScreen
       case 'Ăn uống': return Icons.restaurant_outlined;
@@ -50,11 +77,18 @@ class CategoryUtils {
       case 'Chuyển tiền': return Icons.swap_horiz_rounded;
       case 'Nhận chuyển tiền': return Icons.call_received_rounded;
       case 'Chuyển ví': return Icons.sync_alt_rounded;
-      default: return Icons.category_outlined;
+      default: return null;
     }
   }
 
+  /// Màu hiển thị cho danh mục [name]: màu user đã chọn → màu mặc định theo tên.
   static Color getVibrantColor(String name) {
+    final custom = CategoryStyleService.instance.styleFor(name)?.colorValue;
+    if (custom != null) return Color(custom);
+    return _defaultColor(name) ?? _fallbackColor;
+  }
+
+  static Color? _defaultColor(String name) {
     switch (name) {
       // EXPENSES
       case 'Ăn uống': return const Color(0xFFF97316); // Orange
@@ -103,7 +137,7 @@ class CategoryUtils {
       case 'Chuyển tiền': return const Color(0xFF64748B); // Slate
       case 'Nhận chuyển tiền': return const Color(0xFF0D9488); // Teal
       case 'Chuyển ví': return const Color(0xFF0284C7); // Sky Blue
-      default: return const Color(0xFF438883);
+      default: return null;
     }
   }
 

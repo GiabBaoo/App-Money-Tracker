@@ -1,3 +1,4 @@
+import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -23,9 +24,9 @@ class DebtSummaryWidget extends ConsumerWidget {
     final currentUserId = ref.watch(currentUserIdProvider);
 
     if (debts.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(16),
-        child: Text('Không có công nợ'),
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(isVi ? 'Không có công nợ' : 'No debts or balances'),
       );
     }
 
@@ -47,16 +48,16 @@ class DebtSummaryWidget extends ConsumerWidget {
             ),
             title: Text(
               isDebtor
-                  ? 'Bạn nợ ${debt.creditorId}'
+                  ? (isVi ? 'Bạn nợ ${debt.creditorId}' : 'You owe ${debt.creditorId}')
                   : isCreditor
-                      ? '${debt.debtorId} nợ bạn'
-                      : '${debt.debtorId} nợ ${debt.creditorId}',
+                      ? (isVi ? '${debt.debtorId} nợ bạn' : '${debt.debtorId} owes you')
+                      : (isVi ? '${debt.debtorId} nợ ${debt.creditorId}' : '${debt.debtorId} owes ${debt.creditorId}'),
             ),
             subtitle: Text(currencyFormat.format(debt.amount)),
             trailing: isDebtor
                 ? ElevatedButton(
                     onPressed: () => _showSettlementDialog(context, ref, debt),
-                    child: const Text('Thanh toán'),
+                    child: Text(isVi ? 'Thanh toán' : 'Settle'),
                   )
                 : null,
           ),
@@ -69,21 +70,21 @@ class DebtSummaryWidget extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận thanh toán'),
+        title: Text(isVi ? 'Xác nhận thanh toán' : 'Confirm Settlement'),
         content: Text(
-          'Bạn muốn thanh toán ${NumberFormat.currency(locale: 'vi_VN', symbol: '₫').format(debt.amount)}?',
+          isVi ? 'Bạn muốn thanh toán ${NumberFormat.currency(locale: 'vi_VN', symbol: '₫').format(debt.amount)}?' : 'Do you want to settle ${NumberFormat.currency(locale: 'en_US', symbol: '\$').format(debt.amount)}?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
+            child: Text(isVi ? 'Hủy' : 'Cancel'),
           ),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
               await _createSettlement(context, ref, debt);
             },
-            child: const Text('Xác nhận'),
+            child: Text(isVi ? 'Xác nhận' : 'Confirm'),
           ),
         ],
       ),
@@ -106,7 +107,7 @@ class DebtSummaryWidget extends ConsumerWidget {
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã tạo thanh toán, chờ xác nhận')),
+          SnackBar(content: Text(LanguageService.instance.isVietnamese ? 'Đã tạo thanh toán, chờ xác nhận' : 'Settlement created, awaiting confirmation')),
         );
         
         Navigator.push(
@@ -119,7 +120,7 @@ class DebtSummaryWidget extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e')),
+          SnackBar(content: Text('${LanguageService.instance.isVietnamese ? 'Lỗi' : 'Error'}: $e')),
         );
       }
     }

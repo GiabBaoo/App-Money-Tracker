@@ -8,12 +8,16 @@ import '../../data/repositories/notification_repository.dart';
 import '../../data/repositories/message_repository.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/sync_service.dart';
+import '../../services/category_style_service.dart';
 
 /// Provider quản lý Giao diện (Theme, Dark/Light Mode, Font scale)
 final themeServiceProvider = ChangeNotifierProvider<ThemeService>((ref) => ThemeService());
 
 /// Provider quản lý Đa ngôn ngữ (Tiếng Việt / English)
 final languageServiceProvider = ChangeNotifierProvider<LanguageService>((ref) => LanguageService());
+
+/// Provider màu/biểu tượng danh mục user tuỳ chỉnh — widget `ref.watch` để tự rebuild khi đổi
+final categoryStyleProvider = ChangeNotifierProvider<CategoryStyleService>((ref) => CategoryStyleService.instance);
 
 /// Provider truy xuất TransactionRepository
 final transactionRepoProvider = Provider<TransactionRepository>((ref) => TransactionRepository());

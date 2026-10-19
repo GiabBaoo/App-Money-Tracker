@@ -8,6 +8,7 @@ import '../../widgets/app_logo.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import '../../services/biometric_service.dart';
+import '../../services/language_service.dart';
 import '../home/home_screen.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
@@ -82,15 +83,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleBiometricLogin() async {
     if (_lastOfflineUid == null) return;
+    final isVi = LanguageScope.of(context).isVietnamese;
     final authenticated = await BiometricService.instance.authenticateFingerprint(
-      localizedReason: 'Quét vân tay để đăng nhập vào Mono',
+      localizedReason: isVi ? 'Quét vân tay để đăng nhập vào Mono' : 'Scan fingerprint to log in to Mono',
     );
     if (authenticated && mounted) {
       _authService.setOfflineUid(_lastOfflineUid!);
       // Tự động re-authenticate Firebase Auth ngầm và ghi nhận vân tay (không await)
       unawaited(_authService.silentReauthenticateIfNeeded().catchError((_) => false));
       unawaited(BiometricService.instance.recordFingerprintLogin(uid: _lastOfflineUid!).catchError((_) {}));
-      _showSnackBar('Đăng nhập bằng vân tay thành công!');
+      _showSnackBar(isVi ? 'Đăng nhập bằng vân tay thành công!' : 'Fingerprint login successful!');
       Navigator.pushReplacement(
         context,
         PageTransitions.fade(const HomeScreen()),
@@ -106,11 +108,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      _showSnackBar('Vui lòng nhập đầy đủ email và mật khẩu!', isError: true);
+      _showSnackBar(
+        isVi ? 'Vui lòng nhập đầy đủ email và mật khẩu!' : 'Please enter your email and password!',
+        isError: true,
+      );
       return;
     }
 
@@ -137,7 +143,10 @@ class _LoginScreenState extends State<LoginScreen> {
       final isOffline = _authService.isOfflineSession;
       final currentUser = _authService.currentUser;
       if (!isOffline && currentUser != null && currentUser.email != null && !currentUser.emailVerified) {
-        _showSnackBar('Vui lòng xác nhận email trước khi đăng nhập!', isError: true);
+        _showSnackBar(
+          isVi ? 'Vui lòng xác nhận email trước khi đăng nhập!' : 'Please verify your email before logging in!',
+          isError: true,
+        );
         await _authService.logout();
         return;
       }
@@ -155,7 +164,11 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (isOffline) {
-        _showSnackBar('Đang vào chế độ Ngoại tuyến. Dữ liệu sẽ tự động đồng bộ khi có mạng.');
+        _showSnackBar(
+          isVi
+              ? 'Đang vào chế độ Ngoại tuyến. Dữ liệu sẽ tự động đồng bộ khi có mạng.'
+              : 'Entering Offline mode. Data will sync automatically when online.',
+        );
       }
       
       if (!mounted) return;
@@ -181,6 +194,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = const Color(0xFF438883);
 
@@ -246,7 +260,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Quản lý tài chính cá nhân thông minh',
+                      isVi
+                          ? 'Quản lý tài chính cá nhân thông minh'
+                          : 'Smart personal financial management',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -280,7 +296,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Đăng Nhập',
+                            isVi ? 'Đăng Nhập' : 'Log In',
                             style: TextStyle(
                               color: isDark ? Colors.white : const Color(0xFF0F172A),
                               fontSize: 22,
@@ -290,7 +306,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Chào mừng bạn trở lại với Mono',
+                            isVi ? 'Chào mừng bạn trở lại với Mono' : 'Welcome back to Mono',
                             style: TextStyle(
                               color: isDark ? Colors.white60 : const Color(0xFF64748B),
                               fontSize: 13.5,
@@ -320,7 +336,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: isDark ? const Color(0xFF1B2E2C) : const Color(0xFFF8FAFC),
-                              hintText: 'Nhập email của bạn',
+                              hintText: isVi ? 'Nhập email của bạn' : 'Enter your email',
                               hintStyle: TextStyle(
                                 color: isDark ? Colors.white24 : const Color(0xFF94A3B8),
                                 fontSize: 14,
@@ -353,7 +369,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           // Trường Mật khẩu
                           Text(
-                            'Mật khẩu',
+                            isVi ? 'Mật khẩu' : 'Password',
                             style: TextStyle(
                               color: isDark ? Colors.white70 : const Color(0xFF334155),
                               fontSize: 14,
@@ -372,7 +388,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: isDark ? const Color(0xFF1B2E2C) : const Color(0xFFF8FAFC),
-                              hintText: 'Nhập mật khẩu của bạn',
+                              hintText: isVi ? 'Nhập mật khẩu của bạn' : 'Enter your password',
                               hintStyle: TextStyle(
                                 color: isDark ? Colors.white24 : const Color(0xFF94A3B8),
                                 fontSize: 14,
@@ -431,7 +447,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      'Ghi nhớ đăng nhập',
+                                      isVi ? 'Ghi nhớ đăng nhập' : 'Remember me',
                                       style: TextStyle(
                                         color: isDark ? Colors.white70 : const Color(0xFF475569),
                                         fontSize: 13.5,
@@ -447,7 +463,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Navigator.push(context, PageTransitions.slideRight(const ForgotPasswordScreen()));
                                 },
                                 child: Text(
-                                  'Quên mật khẩu?',
+                                  isVi ? 'Quên mật khẩu?' : 'Forgot password?',
                                   style: TextStyle(
                                     color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
                                     fontSize: 13.5,
@@ -498,20 +514,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                           strokeWidth: 2.4,
                                         ),
                                       )
-                                    : const Row(
+                                    : Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           Text(
-                                            'Đăng Nhập',
-                                            style: TextStyle(
+                                            isVi ? 'Đăng Nhập' : 'Log In',
+                                            style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 16.5,
                                               fontWeight: FontWeight.w700,
                                               letterSpacing: 0.4,
                                             ),
                                           ),
-                                          SizedBox(width: 8),
-                                          Icon(
+                                          const SizedBox(width: 8),
+                                          const Icon(
                                             Icons.arrow_forward_rounded,
                                             color: Colors.white,
                                             size: 18,
@@ -551,7 +567,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
-                                      'Đăng nhập nhanh bằng vân tay',
+                                      isVi ? 'Đăng nhập nhanh bằng vân tay' : 'Quick login with fingerprint',
                                       style: TextStyle(
                                         color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
                                         fontWeight: FontWeight.w700,
@@ -581,14 +597,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextSpan(
                             children: [
                               TextSpan(
-                                text: 'Chưa có tài khoản? ',
+                                text: isVi ? 'Chưa có tài khoản? ' : "Don't have an account? ",
                                 style: TextStyle(
                                   color: isDark ? Colors.white60 : const Color(0xFF64748B),
                                   fontSize: 14.5,
                                 ),
                               ),
                               TextSpan(
-                                text: 'Đăng ký ngay',
+                                text: isVi ? 'Đăng ký ngay' : 'Sign up now',
                                 style: TextStyle(
                                   color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
                                   fontWeight: FontWeight.w800,

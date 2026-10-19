@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../utils/category_utils.dart';
 
 class TransactionModel {
   final String id;
@@ -53,8 +54,8 @@ class TransactionModel {
   })  : createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 
-  // Lấy IconData từ codePoint đã lưu
-  IconData get icon => IconData(categoryIconCode, fontFamily: 'MaterialIcons');
+  // Lấy IconData linh hoạt theo cấu hình hiện tại (hoặc fallback về codePoint đã lưu)
+  IconData get icon => CategoryUtils.getCategoryIcon(category, fallbackCode: categoryIconCode);
 
   bool get isIncome => type == 'income';
 

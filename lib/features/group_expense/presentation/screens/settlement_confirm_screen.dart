@@ -1,3 +1,4 @@
+import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,8 +52,8 @@ class SettlementConfirmScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 14),
-                  const Text(
-                    'Xác Nhận Thanh Toán',
+                  Text(
+                    isVi ? 'Xác Nhận Thanh Toán' : 'Confirm Settlement',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -82,11 +83,11 @@ class SettlementConfirmScreen extends ConsumerWidget {
                     }
 
                     if (snapshot.hasError) {
-                      return Center(child: Text('Lỗi: ${snapshot.error}'));
+                      return Center(child: Text('${isVi ? 'Lỗi' : 'Error'}: ${snapshot.error}'));
                     }
 
                     if (!snapshot.hasData) {
-                      return const Center(child: Text('Không tìm thấy thanh toán'));
+                      return Center(child: Text(isVi ? 'Không tìm thấy thanh toán' : 'Settlement not found'));
                     }
 
                     final settlement = snapshot.data!;
@@ -128,7 +129,7 @@ class SettlementConfirmScreen extends ConsumerWidget {
                                     ),
                                     const SizedBox(width: 12),
                                     Text(
-                                      'Thông tin thanh toán',
+                                      isVi ? 'Thông tin thanh toán' : 'Settlement Information',
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -138,20 +139,20 @@ class SettlementConfirmScreen extends ConsumerWidget {
                                   ],
                                 ),
                                 const SizedBox(height: 20),
-                                _buildInfoRow('Người trả:', settlement.payerId, isDark),
-                                _buildInfoRow('Người nhận:', settlement.payeeId, isDark),
-                                _buildInfoRow('Số tiền:', currencyFormat.format(settlement.amount), isDark, isHighlight: true),
-                                _buildInfoRow('Trạng thái:', _getStatusText(settlement.status), isDark),
+                                _buildInfoRow(isVi ? 'Người trả:' : 'Payer:', settlement.payerId, isDark),
+                                _buildInfoRow(isVi ? 'Người nhận:' : 'Recipient:', settlement.payeeId, isDark),
+                                _buildInfoRow(isVi ? 'Số tiền:' : 'Amount:', currencyFormat.format(settlement.amount), isDark, isHighlight: true),
+                                _buildInfoRow(isVi ? 'Trạng thái:' : 'Status:', _getStatusText(settlement.status), isDark),
                                 if (settlement.notes != null)
-                                  _buildInfoRow('Ghi chú:', settlement.notes!, isDark),
+                                  _buildInfoRow(isVi ? 'Ghi chú:' : 'Notes:', settlement.notes!, isDark),
                                 _buildInfoRow(
-                                  'Ngày tạo:',
+                                  isVi ? 'Ngày tạo:' : 'Created date:',
                                   DateFormat('dd/MM/yyyy HH:mm').format(settlement.createdAt),
                                   isDark,
                                 ),
                                 if (settlement.confirmedAt != null)
                                   _buildInfoRow(
-                                    'Ngày xác nhận:',
+                                    isVi ? 'Ngày xác nhận:' : 'Confirmed date:',
                                     DateFormat('dd/MM/yyyy HH:mm').format(settlement.confirmedAt!),
                                     isDark,
                                   ),
@@ -179,9 +180,9 @@ class SettlementConfirmScreen extends ConsumerWidget {
                                     ),
                                   ],
                                 ),
-                                child: const Center(
+                                child: Center(
                                   child: Text(
-                                    'Xác Nhận Đã Nhận Tiền',
+                                    isVi ? 'Xác Nhận Đã Nhận Tiền' : 'Confirm Received Money',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
@@ -205,9 +206,9 @@ class SettlementConfirmScreen extends ConsumerWidget {
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(color: Colors.red.withValues(alpha: 0.4), width: 1.5),
                                 ),
-                                child: const Center(
+                                child: Center(
                                   child: Text(
-                                    'Từ Chối',
+                                    isVi ? 'Từ Chối' : 'Decline',
                                     style: TextStyle(
                                       color: Colors.red,
                                       fontSize: 16,
@@ -268,11 +269,11 @@ class SettlementConfirmScreen extends ConsumerWidget {
   String _getStatusText(SettlementStatus status) {
     switch (status) {
       case SettlementStatus.pendingConfirmation:
-        return 'Chờ xác nhận';
+        return isVi ? 'Chờ xác nhận' : 'Pending Confirmation';
       case SettlementStatus.confirmed:
-        return 'Đã xác nhận';
+        return isVi ? 'Đã xác nhận' : 'Confirmed';
       case SettlementStatus.rejected:
-        return 'Đã từ chối';
+        return isVi ? 'Đã từ chối' : 'Declined';
     }
   }
 
@@ -285,14 +286,14 @@ class SettlementConfirmScreen extends ConsumerWidget {
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã xác nhận thanh toán')),
+          SnackBar(content: Text(LanguageService.instance.isVietnamese ? 'Đã xác nhận thanh toán' : 'Payment confirmed')),
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e')),
+          SnackBar(content: Text('${LanguageService.instance.isVietnamese ? 'Lỗi' : 'Error'}: $e')),
         );
       }
     }
@@ -307,14 +308,14 @@ class SettlementConfirmScreen extends ConsumerWidget {
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã từ chối thanh toán')),
+          SnackBar(content: Text(LanguageService.instance.isVietnamese ? 'Đã từ chối thanh toán' : 'Payment declined')),
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e')),
+          SnackBar(content: Text('${LanguageService.instance.isVietnamese ? 'Lỗi' : 'Error'}: $e')),
         );
       }
     }

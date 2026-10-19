@@ -1,3 +1,4 @@
+import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +18,7 @@ class CreateExpenseScreen extends ConsumerStatefulWidget {
 }
 
 class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
+  bool get isVi => LanguageService.instance.isVietnamese;
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
@@ -42,14 +44,14 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
 
     if (_selectedPayerId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn người trả tiền')),
+        SnackBar(content: Text(isVi ? 'Vui lòng chọn người trả tiền' : 'Please select a payer')),
       );
       return;
     }
 
     if (_selectedParticipantIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn người tham gia')),
+        SnackBar(content: Text(isVi ? 'Vui lòng chọn người tham gia' : 'Please select participants')),
       );
       return;
     }
@@ -79,13 +81,13 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tạo chi tiêu thành công')),
+          SnackBar(content: Text(isVi ? 'Tạo chi tiêu thành công' : 'Expense created successfully')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e')),
+          SnackBar(content: Text('${isVi ? 'Lỗi' : 'Error'}: $e')),
         );
       }
     } finally {
@@ -133,9 +135,9 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                     ),
                   ),
                   const SizedBox(width: 14),
-                  const Text(
-                    'Thêm Chi Tiêu',
-                    style: TextStyle(
+                  Text(
+                    isVi ? 'Thêm Chi Tiêu' : 'Add Expense',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -157,7 +159,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                 child: groupAsync.when(
                   data: (group) {
                     if (group == null) {
-                      return const Center(child: Text('Không tìm thấy dữ liệu nhóm'));
+                      return Center(child: Text(isVi ? 'Không tìm thấy dữ liệu nhóm' : 'Group data not found'));
                     }
                     final members = group.memberIds;
 
@@ -173,7 +175,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           TextFormField(
                             controller: _nameController,
                             decoration: InputDecoration(
-                              labelText: 'Tên chi tiêu',
+                              labelText: isVi ? 'Tên chi tiêu' : 'Expense name',
                               filled: true,
                               fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
                               border: OutlineInputBorder(
@@ -183,7 +185,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'Vui lòng nhập tên chi tiêu';
+                                return isVi ? 'Vui lòng nhập tên chi tiêu' : 'Please enter expense name';
                               }
                               return null;
                             },
@@ -192,7 +194,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           TextFormField(
                             controller: _amountController,
                             decoration: InputDecoration(
-                              labelText: 'Số tiền',
+                              labelText: isVi ? 'Số tiền' : 'Amount',
                               filled: true,
                               fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
                               border: OutlineInputBorder(
@@ -205,10 +207,10 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                             inputFormatters: [CurrencyInputFormatter()],
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'Vui lòng nhập số tiền';
+                                return isVi ? 'Vui lòng nhập số tiền' : 'Please enter amount';
                               }
                               if (CurrencyUtils.parseCurrency(value) <= 0) {
-                                return 'Số tiền phải lớn hơn 0';
+                                return isVi ? 'Số tiền phải lớn hơn 0' : 'Amount must be greater than 0';
                               }
                               return null;
                             },
@@ -217,7 +219,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           DropdownButtonFormField<String>(
                             initialValue: _selectedPayerId,
                             decoration: InputDecoration(
-                              labelText: 'Người trả tiền',
+                              labelText: isVi ? 'Người trả tiền' : 'Payer',
                               filled: true,
                               fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
                               border: OutlineInputBorder(
@@ -228,7 +230,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                             items: members.map((memberId) {
                               return DropdownMenuItem(
                                 value: memberId,
-                                child: Text('Thành viên ${memberId.substring(0, 8)}...'),
+                                child: Text('${isVi ? 'Thành viên' : 'Member'} ${memberId.substring(0, 8)}...'),
                               );
                             }).toList(),
                             onChanged: (value) {
@@ -237,7 +239,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           ),
                           const SizedBox(height: 24),
                           Text(
-                            'Người tham gia:',
+                            isVi ? 'Người tham gia:' : 'Participants:',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -247,7 +249,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           const SizedBox(height: 8),
                           ...members.map((memberId) {
                             return CheckboxListTile(
-                              title: Text('Thành viên ${memberId.substring(0, 8)}...'),
+                              title: Text('${isVi ? 'Thành viên' : 'Member'} ${memberId.substring(0, 8)}...'),
                               value: _selectedParticipantIds.contains(memberId),
                               onChanged: (checked) {
                                 setState(() {
@@ -264,7 +266,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           DropdownButtonFormField<SplitMethod>(
                             initialValue: _splitMethod,
                             decoration: InputDecoration(
-                              labelText: 'Cách chia',
+                              labelText: isVi ? 'Cách chia' : 'Split method',
                               filled: true,
                               fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
                               border: OutlineInputBorder(
@@ -272,14 +274,14 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                                 borderSide: BorderSide.none,
                               ),
                             ),
-                            items: const [
+                            items: [
                               DropdownMenuItem(
                                 value: SplitMethod.equal,
-                                child: Text('Chia đều'),
+                                child: Text(isVi ? 'Chia đều' : 'Split equally'),
                               ),
                               DropdownMenuItem(
                                 value: SplitMethod.singlePayer,
-                                child: Text('Một người trả'),
+                                child: Text(isVi ? 'Một người trả' : 'Single payer'),
                               ),
                             ],
                             onChanged: (value) {
@@ -292,7 +294,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           DropdownButtonFormField<String>(
                             initialValue: _category,
                             decoration: InputDecoration(
-                              labelText: 'Danh mục',
+                              labelText: isVi ? 'Danh mục' : 'Category',
                               filled: true,
                               fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
                               border: OutlineInputBorder(
@@ -300,12 +302,12 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                                 borderSide: BorderSide.none,
                               ),
                             ),
-                            items: const [
-                              DropdownMenuItem(value: 'Ăn uống', child: Text('Ăn uống')),
-                              DropdownMenuItem(value: 'Di chuyển', child: Text('Di chuyển')),
-                              DropdownMenuItem(value: 'Mua sắm', child: Text('Mua sắm')),
-                              DropdownMenuItem(value: 'Giải trí', child: Text('Giải trí')),
-                              DropdownMenuItem(value: 'Khác', child: Text('Khác')),
+                            items: [
+                              DropdownMenuItem(value: 'Ăn uống', child: Text(isVi ? 'Ăn uống' : 'Food & Dining')),
+                              DropdownMenuItem(value: 'Di chuyển', child: Text(isVi ? 'Di chuyển' : 'Transport')),
+                              DropdownMenuItem(value: 'Mua sắm', child: Text(isVi ? 'Mua sắm' : 'Shopping')),
+                              DropdownMenuItem(value: 'Giải trí', child: Text(isVi ? 'Giải trí' : 'Entertainment')),
+                              DropdownMenuItem(value: 'Khác', child: Text(isVi ? 'Khác' : 'Other')),
                             ],
                             onChanged: (value) {
                               if (value != null) {
@@ -317,7 +319,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           TextFormField(
                             controller: _notesController,
                             decoration: InputDecoration(
-                              labelText: 'Ghi chú (tùy chọn)',
+                              labelText: isVi ? 'Ghi chú (tùy chọn)' : 'Notes (optional)',
                               filled: true,
                               fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
                               border: OutlineInputBorder(
@@ -363,9 +365,9 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                                           color: Colors.white,
                                         ),
                                       )
-                                    : const Text(
-                                        'Tạo Chi Tiêu',
-                                        style: TextStyle(
+                                    : Text(
+                                        isVi ? 'Tạo Chi Tiêu' : 'Create Expense',
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
@@ -383,7 +385,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                   error: (error, stack) => Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
-                      child: Text('Lỗi: $error'),
+                      child: Text('${isVi ? 'Lỗi' : 'Error'}: $error'),
                     ),
                   ),
                 ),

@@ -24,9 +24,12 @@ import '../../services/transaction_balance_service.dart';
 import '../../services/sync_service.dart';
 import '../../utils/currency_format_utils.dart';
 import '../../utils/category_utils.dart';
+import '../../services/category_style_service.dart';
+import '../../services/language_service.dart';
 import 'category_screen.dart';
 import 'widgets/fintech_keypad.dart';
-import 'widgets/amount_suggestion_bar.dart';
+import '../../data/repositories/transaction_repository.dart';
+import '../../services/frequent_amount_service.dart';
 import 'widgets/category_keyword_suggestions.dart';
 
 /// Màn hình Thêm Giao Dịch Thu / Chi thế hệ mới
@@ -64,6 +67,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _descriptionController = TextEditingController();
   final FocusNode _noteFocusNode = FocusNode();
+  final ValueNotifier<bool> _isKeypadCollapsedNotifier = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _isHabitAutofilledNotifier = ValueNotifier<bool>(false);
+  Timer? _debounceHabitAutofillTimer;
+  String? _autoFilledCategory;
+  String? _autoFilledDescription;
+  bool get _isManualEntry => widget.initialData == null;
 
   bool isIncome = false; // Mặc định là Khoản Chi
   bool _isLoading = false;
@@ -84,7 +93,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     'Ăn uống',
     'Mua sắm',
     'Di chuyển',
-    'Hóa đơn',
+    'Tiền điện',
     'Tiền nhà',
     'Giải trí',
     'Sức khỏe',
@@ -93,7 +102,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
   // Top danh mục thu phổ biến nhất
   static const List<String> _topIncomeCategories = [
-    'Lương',
+    'Tiền lương',
     'Tiền thưởng',
     'Kinh doanh',
     'Đầu tư',
@@ -150,7 +159,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         selectedCategoryIcon = Icons.receipt_long_outlined;
       } else {
         selectedCategoryName = widget.initialData!['category'] ??
-            (isIncome ? 'Lương' : 'Ăn uống');
+            (isIncome ? 'Tiền lương' : 'Ăn uống');
         if (widget.initialData!['iconCode'] != null) {
           selectedCategoryIcon = IconData(
             widget.initialData!['iconCode'],
@@ -197,15 +206,31 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         }
       }
     } else {
-      selectedCategoryName = isIncome ? 'Lương' : 'Ăn uống';
+      selectedCategoryName = isIncome ? 'Tiền lương' : 'Ăn uống';
       selectedCategoryIcon = CategoryUtils.getCategoryIcon(selectedCategoryName);
+    }
+    CategoryStyleService.instance.addListener(_onCategoryStyleChanged);
+  }
+
+  void _onCategoryStyleChanged() {
+    if (mounted) {
+      setState(() {
+        selectedCategoryIcon = CategoryUtils.getCategoryIcon(
+          selectedCategoryName,
+          fallbackCode: selectedCategoryIcon.codePoint,
+        );
+      });
     }
   }
 
   @override
   void dispose() {
+    CategoryStyleService.instance.removeListener(_onCategoryStyleChanged);
+    _debounceHabitAutofillTimer?.cancel();
     _amountRawNotifier.dispose();
     _isTypingNoteNotifier.dispose();
+    _isKeypadCollapsedNotifier.dispose();
+    _isHabitAutofilledNotifier.dispose();
     _scrollController.dispose();
     _descriptionController.dispose();
     _noteFocusNode.dispose();
@@ -242,6 +267,86 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     }
   }
 
+  void _onAmountChanged(String rawText) {
+    _debounceHabitAutofillTimer?.cancel();
+
+    if (!_isManualEntry) return;
+
+    final cleanDigits = rawText.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanDigits.isEmpty) {
+      if (_isHabitAutofilledNotifier.value) {
+        if (selectedCategoryName == _autoFilledCategory) {
+          setState(() {
+            selectedCategoryName = isIncome ? 'Tiền lương' : 'Ăn uống';
+            selectedCategoryIcon = CategoryUtils.getCategoryIcon(selectedCategoryName);
+          });
+        }
+        if (_descriptionController.text == _autoFilledDescription) {
+          _descriptionController.clear();
+        }
+        _isHabitAutofilledNotifier.value = false;
+        _autoFilledCategory = null;
+        _autoFilledDescription = null;
+      }
+      return;
+    }
+
+    final amount = double.tryParse(cleanDigits) ?? 0.0;
+    if (amount <= 0) return;
+
+    _debounceHabitAutofillTimer = Timer(const Duration(milliseconds: 280), () {
+      if (!mounted) return;
+      final pattern = FrequentAmountService.findRecurringPattern(
+        transactions: TransactionRepository().latestTransactions,
+        isIncome: isIncome,
+        amount: amount,
+        minOccurrences: 2,
+      );
+
+      if (pattern != null) {
+        setState(() {
+          selectedCategoryName = pattern.category;
+          selectedCategoryIcon = CategoryUtils.getCategoryIcon(pattern.category);
+        });
+        if (pattern.description.isNotEmpty) {
+          _descriptionController.text = pattern.description;
+        } else if (_descriptionController.text == _autoFilledDescription) {
+          _descriptionController.clear();
+        }
+        _autoFilledCategory = pattern.category;
+        _autoFilledDescription = pattern.description;
+        _isHabitAutofilledNotifier.value = true;
+        HapticFeedback.selectionClick();
+      } else {
+        if (_isHabitAutofilledNotifier.value) {
+          if (selectedCategoryName == _autoFilledCategory) {
+            setState(() {
+              selectedCategoryName = isIncome ? 'Tiền lương' : 'Ăn uống';
+              selectedCategoryIcon = CategoryUtils.getCategoryIcon(selectedCategoryName);
+            });
+          }
+          if (_descriptionController.text == _autoFilledDescription) {
+            _descriptionController.clear();
+          }
+          _isHabitAutofilledNotifier.value = false;
+          _autoFilledCategory = null;
+          _autoFilledDescription = null;
+        }
+      }
+    });
+  }
+
+  void _onCategorySelected(String name, IconData icon) {
+    setState(() {
+      selectedCategoryName = name;
+      selectedCategoryIcon = icon;
+    });
+    if (selectedCategoryName != _autoFilledCategory) {
+      _isHabitAutofilledNotifier.value = false;
+      _autoFilledCategory = null;
+    }
+  }
+
   void _onKeypadPress(String value) {
     _noteFocusNode.unfocus();
     final current = _amountRawNotifier.value;
@@ -253,6 +358,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     } else {
       _amountRawNotifier.value = current + value;
     }
+    _onAmountChanged(_amountRawNotifier.value);
   }
 
   void _onKeypadDelete() {
@@ -261,17 +367,16 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     if (current.isNotEmpty) {
       _amountRawNotifier.value = current.substring(0, current.length - 1);
     }
+    _onAmountChanged(_amountRawNotifier.value);
   }
 
   void _onKeypadClear() {
     _noteFocusNode.unfocus();
     _amountRawNotifier.value = '';
+    _isKeypadCollapsedNotifier.value = false;
+    _onAmountChanged('');
   }
 
-  void _onSelectSuggestedAmount(double amount) {
-    _noteFocusNode.unfocus();
-    _amountRawNotifier.value = amount.toInt().toString();
-  }
 
   void _onSelectKeywordTag(String keyword) {
     HapticFeedback.lightImpact();
@@ -293,7 +398,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
     final amount = _currentAmountValue;
     if (amount <= 0) {
-      TopToast.show(context, 'Vui lòng nhập số tiền hợp lệ!', isError: true);
+      TopToast.show(context, context.tr('transfer_amount_error'), isError: true);
       return;
     }
 
@@ -326,7 +431,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             );
       } else {
         if (_selectedWallet == null) {
-          TopToast.show(context, 'Vui lòng chọn ví tiền!', isError: true);
+          TopToast.show(context, context.tr('select_wallet_prompt'), isError: true);
           setState(() => _isLoading = false);
           return;
         }
@@ -382,12 +487,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       if (!mounted) return;
       TopToast.show(
         context,
-        isIncome ? 'Đã thêm khoản thu thành công! 💰' : 'Đã thêm khoản chi thành công! ✨',
+        isIncome ? context.tr('add_income_success') : context.tr('add_expense_success'),
       );
       // Đóng màn hình ngay lập tức để đạt độ mượt tối đa
       Navigator.pop(context, true);
     } catch (e) {
-      TopToast.show(context, 'Lỗi: $e', isError: true);
+      TopToast.show(context, '${context.tr('error')}: $e', isError: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -422,13 +527,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     _descriptionController.clear();
     setState(() {
       _pickedPhoto = null;
-      selectedCategoryName = isIncome ? 'Lương' : 'Ăn uống';
+      selectedCategoryName = isIncome ? 'Tiền lương' : 'Ăn uống';
       selectedCategoryIcon = CategoryUtils.getCategoryIcon(selectedCategoryName);
       final now = DateTime.now();
       _selectedDate = DateTime(now.year, now.month, now.day);
       _selectedTime = TimeOfDay.now();
     });
-    TopToast.show(context, 'Đã làm mới thông tin giao dịch');
+    TopToast.show(context, context.tr('form_reset_toast'));
   }
 
   void _pickWallet() {
@@ -460,7 +565,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  isIncome ? 'Chọn ví nhận tiền' : 'Chọn ví chi tiền',
+                  isIncome ? context.tr('transfer_to') : context.tr('transfer_from'),
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
@@ -502,7 +607,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                         child: Icon(w.icon, color: color, size: 22),
                       ),
                       title: Text(
-                        w.name,
+                        context.trWallet(w.name),
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
@@ -510,7 +615,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                         ),
                       ),
                       subtitle: Text(
-                        'Số dư: ${CurrencyUtils.formatCurrency(w.balance)} • ${w.typeDisplayName}',
+                        '${context.tr('balance_prefix')}: ${CurrencyUtils.formatCurrency(w.balance)} • ${w.typeDisplayName}',
                         style: TextStyle(
                           fontSize: 12,
                           color: isDark ? Colors.white60 : const Color(0xFF64748B),
@@ -617,7 +722,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Ảnh hóa đơn / chứng từ',
+                context.tr('receipt_photo'),
                 style: TextStyle(
                   color: isDark ? Colors.white : const Color(0xFF111827),
                   fontSize: 18,
@@ -635,8 +740,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   ),
                 ),
                 icon: const Icon(Icons.camera_alt_rounded),
-                label: const Text('Chụp ảnh ngay',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
+                label: Text(context.tr('take_photo'),
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
                 onPressed: () async {
                   Navigator.pop(context);
                   await _pickTransactionPhotoFromSource(ImageSource.camera);
@@ -656,8 +761,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   ),
                 ),
                 icon: const Icon(Icons.photo_library_rounded),
-                label: const Text('Chọn từ thư viện ảnh',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
+                label: Text(context.tr('choose_from_gallery'),
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
                 onPressed: () async {
                   Navigator.pop(context);
                   await _pickTransactionPhotoFromSource(ImageSource.gallery);
@@ -680,14 +785,14 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         builder: (ctx) => AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Hủy giao dịch?',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          content: const Text(
-              'Nội dung bạn đang nhập chưa được lưu. Bạn có chắc muốn thoát?'),
+          title: Text(context.tr('discard_tx_title'),
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          content: Text(
+              context.tr('discard_tx_content')),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Tiếp tục nhập'),
+              child: Text(context.tr('keep_editing')),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -698,7 +803,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 ),
               ),
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Thoát'),
+              child: Text(context.tr('discard')),
             ),
           ],
         ),
@@ -778,8 +883,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       ),
                       Text(
                         widget.initialData?['isFundAction'] == true
-                            ? 'Góp / Rút Quỹ'
-                            : (isIncome ? 'Thêm Khoản Thu' : 'Thêm Khoản Chi'),
+                            ? context.tr('fund_action')
+                            : (isIncome ? context.tr('tx_income') : context.tr('tx_expense')),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 17.5,
@@ -851,7 +956,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                             child: Row(
                               children: [
                                 _buildTypeSegment(
-                                  title: 'Khoản Chi',
+                                  title: context.tr('tx_expense'),
                                   icon: Icons.arrow_upward_rounded,
                                   isSelected: !isIncome,
                                   activeColor: const Color(0xFFEF4444),
@@ -865,11 +970,15 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                         selectedCategoryIcon =
                                             CategoryUtils.getCategoryIcon('Ăn uống');
                                       });
+                                      _isHabitAutofilledNotifier.value = false;
+                                      _autoFilledCategory = null;
+                                      _autoFilledDescription = null;
+                                      _onAmountChanged(_amountRawNotifier.value);
                                     }
                                   },
                                 ),
                                 _buildTypeSegment(
-                                  title: 'Khoản Thu',
+                                  title: context.tr('tx_income'),
                                   icon: Icons.arrow_downward_rounded,
                                   isSelected: isIncome,
                                   activeColor: const Color(0xFF10B981),
@@ -879,10 +988,14 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                       HapticFeedback.selectionClick();
                                       setState(() {
                                         isIncome = true;
-                                        selectedCategoryName = 'Lương';
+                                        selectedCategoryName = 'Tiền lương';
                                         selectedCategoryIcon =
-                                            CategoryUtils.getCategoryIcon('Lương');
+                                            CategoryUtils.getCategoryIcon('Tiền lương');
                                       });
+                                      _isHabitAutofilledNotifier.value = false;
+                                      _autoFilledCategory = null;
+                                      _autoFilledDescription = null;
+                                      _onAmountChanged(_amountRawNotifier.value);
                                     }
                                   },
                                 ),
@@ -894,14 +1007,19 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
                         // 2. HERO AMOUNT CARD (Hiển thị số tiền to, rõ, không lag)
                         GestureDetector(
-                          onTap: () => _noteFocusNode.unfocus(),
+                          onTap: () {
+                            _noteFocusNode.unfocus();
+                            if (_isKeypadCollapsedNotifier.value) {
+                              _isKeypadCollapsedNotifier.value = false;
+                            }
+                          },
                           child: ValueListenableBuilder<String>(
                             valueListenable: _amountRawNotifier,
                             builder: (context, rawText, _) {
                               final parsed = double.tryParse(rawText) ?? 0.0;
                               final formattedAmount = parsed > 0
                                   ? CurrencyUtils.formatCurrency(parsed)
-                                  : '0đ';
+                                  : CurrencyUtils.formatCurrency(0);
 
                               return Container(
                                 width: double.infinity,
@@ -937,8 +1055,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                       children: [
                                         Text(
                                           isIncome
-                                              ? 'SỐ TIỀN THU VÀO'
-                                              : 'SỐ TIỀN CHI RA',
+                                              ? context.tr('income').toUpperCase()
+                                              : context.tr('expense').toUpperCase(),
                                           style: TextStyle(
                                             fontSize: 11,
                                             fontWeight: FontWeight.w800,
@@ -1017,20 +1135,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                           ),
                         ),
 
-                        const SizedBox(height: 8),
 
-                        // 3. GỢI Ý SỐ TIỀN THÔNG MINH THEO THỜI GIAN THỰC (7 -> 7k, 70k, 700k...)
-                        ValueListenableBuilder<String>(
-                          valueListenable: _amountRawNotifier,
-                          builder: (context, rawText, _) {
-                            return AmountSuggestionBar(
-                              rawInput: rawText,
-                              onSelectAmount: _onSelectSuggestedAmount,
-                              activeColor: activeColor,
-                              isDark: isDark,
-                            );
-                          },
-                        ),
 
                         const SizedBox(height: 14),
 
@@ -1074,21 +1179,81 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Chuyển đổi êm ái giữa bàn phím Fintech và chế độ gõ bàn phím chữ
-                          AnimatedSize(
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.easeInOutCubic,
-                            child: isTypingNote
-                                ? const SizedBox.shrink()
-                                : RepaintBoundary(
-                                    child: FintechKeypad(
-                                      onKeyPress: _onKeypadPress,
-                                      onDelete: _onKeypadDelete,
-                                      onClear: _onKeypadClear,
-                                      activeColor: activeColor,
-                                      isDark: isDark,
+                          // THANH THU GỌN / ẨN BÀN PHÍM
+                          ValueListenableBuilder<bool>(
+                            valueListenable: _isKeypadCollapsedNotifier,
+                            builder: (context, isCollapsed, _) {
+                              final shouldShowKeypad = !isTypingNote && !isCollapsed;
+                              return Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Nút ẩn / hiện bàn phím
+                                  InkWell(
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      if (_noteFocusNode.hasFocus) {
+                                        _noteFocusNode.unfocus();
+                                      } else {
+                                        _isKeypadCollapsedNotifier.value = !isCollapsed;
+                                      }
+                                    },
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 16),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            width: 32,
+                                            height: 4,
+                                            decoration: BoxDecoration(
+                                              color: (isDark ? Colors.white30 : Colors.grey.shade300),
+                                              borderRadius: BorderRadius.circular(2),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Icon(
+                                            isTypingNote || !isCollapsed
+                                                ? Icons.keyboard_hide_rounded
+                                                : Icons.keyboard_rounded,
+                                            size: 15,
+                                            color: isDark ? Colors.white60 : Colors.grey.shade600,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            isTypingNote || !isCollapsed
+                                                ? (LanguageService.instance.isVietnamese ? 'Ẩn bàn phím' : 'Hide keypad')
+                                                : (LanguageService.instance.isVietnamese ? 'Hiện bàn phím' : 'Show keypad'),
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: isDark ? Colors.white60 : Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
+
+                                  AnimatedSize(
+                                    duration: const Duration(milliseconds: 200),
+                                    curve: Curves.easeInOutCubic,
+                                    child: shouldShowKeypad
+                                        ? RepaintBoundary(
+                                            child: FintechKeypad(
+                                              onKeyPress: _onKeypadPress,
+                                              onDelete: _onKeypadDelete,
+                                              onClear: _onKeypadClear,
+                                              activeColor: activeColor,
+                                              isDark: isDark,
+                                            ),
+                                          )
+                                        : const SizedBox.shrink(),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
 
                           // NÚT LƯU GIAO DỊCH
@@ -1155,9 +1320,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
-                                              isIncome
-                                                  ? 'Lưu Khoản Thu'
-                                                  : 'Lưu Khoản Chi',
+                                              '${context.tr('save')} ${isIncome ? context.tr('tx_income') : context.tr('tx_expense')}',
                                               style: const TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 16,
@@ -1254,15 +1417,20 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'DANH MỤC NHANH (1 CHẠM)',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
+              Expanded(
+                child: Text(
+                  (isIncome ? context.tr('top_income_categories') : context.tr('top_expense_categories')).toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                    color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               InkWell(
                 onTap: () async {
                   _noteFocusNode.unfocus();
@@ -1270,13 +1438,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   final result = await Navigator.push(
                     context,
                     PageTransitions.slideRight(
-                        CategoryScreen(isIncome: isIncome)),
+                        CategoryScreen(isIncome: isIncome, lockType: true)),
                   );
                   if (result != null) {
-                    setState(() {
-                      selectedCategoryName = result['name'];
-                      selectedCategoryIcon = result['icon'];
-                    });
+                    _onCategorySelected(result['name'], result['icon']);
                   }
                 },
                 borderRadius: BorderRadius.circular(8),
@@ -1286,7 +1451,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Xem thêm',
+                        context.tr('see_all'),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -1302,7 +1467,48 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 6),
+        ValueListenableBuilder<bool>(
+          valueListenable: _isHabitAutofilledNotifier,
+          builder: (context, isAuto, _) {
+            if (!isAuto) return const SizedBox(height: 6);
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(4, 2, 4, 6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.28),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.auto_awesome_rounded,
+                      size: 12,
+                      color: Color(0xFF10B981),
+                    ),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        context.tr('habit_autofilled'),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF10B981),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
         SizedBox(
           height: 40,
           child: ListView.separated(
@@ -1320,13 +1526,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     final result = await Navigator.push(
                       context,
                       PageTransitions.slideRight(
-                          CategoryScreen(isIncome: isIncome)),
+                          CategoryScreen(isIncome: isIncome, lockType: true)),
                     );
                     if (result != null) {
-                      setState(() {
-                        selectedCategoryName = result['name'];
-                        selectedCategoryIcon = result['icon'];
-                      });
+                      _onCategorySelected(result['name'], result['icon']);
                     }
                   },
                   child: Container(
@@ -1348,7 +1551,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                             color: isDark ? Colors.white70 : const Color(0xFF475569)),
                         const SizedBox(width: 5),
                         Text(
-                          'Khác...',
+                          '${context.tr('other')}...',
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
@@ -1370,10 +1573,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 scaleDown: 0.92,
                 onTap: () {
                   HapticFeedback.selectionClick();
-                  setState(() {
-                    selectedCategoryName = catName;
-                    selectedCategoryIcon = catIcon;
-                  });
+                  _onCategorySelected(catName, catIcon);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1401,7 +1601,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                               : (isDark ? Colors.white70 : const Color(0xFF64748B))),
                       const SizedBox(width: 6),
                       Text(
-                        catName,
+                        context.trCat(catName),
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight:
@@ -1494,7 +1694,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                           color: isDark ? Colors.white : const Color(0xFF1E293B),
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Nhập nội dung (vd: Ăn trưa, Đổ xăng...)',
+                          hintText: context.tr('note_hint'),
                           hintStyle: TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.normal,
@@ -1542,7 +1742,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           // 1. Chọn ví
           _buildQuickOptionPill(
             icon: _selectedWallet?.icon ?? Icons.account_balance_wallet_rounded,
-            label: _selectedWallet?.name ?? 'Chọn ví',
+            label: _selectedWallet != null ? context.trWallet(_selectedWallet!.name) : context.tr('wallet'),
             iconColor: Color(_selectedWallet?.colorValue ?? 0xFF438883),
             isDark: isDark,
             onTap: _pickWallet,
@@ -1575,7 +1775,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             icon: _pickedPhoto != null
                 ? Icons.check_circle_rounded
                 : Icons.add_a_photo_rounded,
-            label: _pickedPhoto != null ? 'Đã có ảnh' : 'Ảnh hóa đơn',
+            label: _pickedPhoto != null ? context.tr('done') : context.tr('receipt_photo'),
             iconColor: _pickedPhoto != null
                 ? const Color(0xFF10B981)
                 : const Color(0xFF64748B),

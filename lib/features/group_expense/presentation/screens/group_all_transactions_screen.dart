@@ -1,3 +1,4 @@
+import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -134,7 +135,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                     const Icon(Icons.calendar_month_rounded, color: Colors.white, size: 18),
                     const SizedBox(width: 8),
                     Text(
-                      'Tháng ${_selectedDate.month.toString().padLeft(2, '0')} / ${_selectedDate.year}',
+                      isVi ? 'Tháng ${_selectedDate.month.toString().padLeft(2, '0')} / ${_selectedDate.year}' : 'Month ${_selectedDate.month.toString().padLeft(2, '0')} / ${_selectedDate.year}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -176,7 +177,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'Không có hoạt động nào trong tháng ${_selectedDate.month}/${_selectedDate.year}',
+                              isVi ? 'Không có hoạt động nào trong tháng ${_selectedDate.month}/${_selectedDate.year}' : 'No activities in ${_selectedDate.month}/${_selectedDate.year}',
                               style: TextStyle(
                                 fontSize: 15,
                                 color: isDark ? Colors.white60 : Colors.grey[600],
@@ -219,9 +220,9 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                         
                         String dateHeader = '${date.day}/${date.month}/${date.year}';
                         if (date == todayKey) {
-                          dateHeader = 'Hôm nay - $dateHeader';
+                          dateHeader = '${isVi ? 'Hôm nay' : 'Today'} - $dateHeader';
                         } else if (date == yesterdayKey) {
-                          dateHeader = 'Hôm qua - $dateHeader';
+                          dateHeader = '${isVi ? 'Hôm qua' : 'Yesterday'} - $dateHeader';
                         }
 
                         return Column(
@@ -280,7 +281,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              isContribute ? 'Góp quỹ' : 'Rút quỹ',
+                                              isContribute ? (isVi ? 'Góp quỹ' : 'Contribution') : (isVi ? 'Rút quỹ' : 'Withdrawal'),
                                               style: TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.bold,
@@ -333,7 +334,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                     child: CircularProgressIndicator(),
                   ),
                   error: (error, _) => Center(
-                    child: Text('Lỗi: $error'),
+                    child: Text('${isVi ? 'Lỗi' : 'Error'}: $error'),
                   ),
                 ),
               ),
@@ -344,43 +345,43 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
     );
   }
 
-  static void _showTransactionDetail(BuildContext context, FundTransactionModel transaction, bool isDark) {
+  void _showTransactionDetail(BuildContext context, FundTransactionModel transaction, bool isDark) {
     final isContribute = transaction.type == TransactionType.contribute;
     
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(isContribute ? 'Chi tiết góp quỹ' : 'Chi tiết rút quỹ'),
+        title: Text(isContribute ? (isVi ? 'Chi tiết góp quỹ' : 'Contribution Details') : (isVi ? 'Chi tiết rút quỹ' : 'Withdrawal Details')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDetailRow('Người thực hiện:', transaction.userName, isDark),
+            _buildDetailRow(isVi ? 'Người thực hiện:' : 'By:', transaction.userName, isDark),
             const SizedBox(height: 12),
-            _buildDetailRow('Số tiền:', '${_formatMoney(transaction.amount)}đ', isDark),
+            _buildDetailRow(isVi ? 'Số tiền:' : 'Amount:', '${_formatMoney(transaction.amount)}đ', isDark),
             const SizedBox(height: 12),
             _buildDetailRow(
-              'Thời gian:', 
+              isVi ? 'Thời gian:' : 'Time:', 
               '${transaction.createdAt.day}/${transaction.createdAt.month}/${transaction.createdAt.year} ${transaction.createdAt.hour}:${transaction.createdAt.minute.toString().padLeft(2, '0')}',
               isDark,
             ),
             if (transaction.notes != null && transaction.notes!.isNotEmpty) ...[
               const SizedBox(height: 12),
-              _buildDetailRow('Ghi chú:', transaction.notes!, isDark),
+              _buildDetailRow(isVi ? 'Ghi chú:' : 'Notes:', transaction.notes!, isDark),
             ],
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
+            child: Text(isVi ? 'Đóng' : 'Close'),
           ),
         ],
       ),
     );
   }
 
-  static Widget _buildDetailRow(String label, String value, bool isDark) {
+  Widget _buildDetailRow(String label, String value, bool isDark) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -456,8 +457,8 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Lọc theo thời gian',
+            Text(
+              isVi ? 'Lọc theo thời gian' : 'Filter by Time',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -475,7 +476,7 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Text(
-                    'Year $_selectedYear',
+                    isVi ? 'Năm $_selectedYear' : 'Year $_selectedYear',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -525,7 +526,7 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      'Tháng $month',
+                      isVi ? 'Tháng $month' : 'Month $month',
                       style: TextStyle(
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                         color: isSelected 
@@ -547,8 +548,8 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                 widget.onDateSelected(DateTime(now.year, now.month));
                 Navigator.pop(context);
               },
-              child: const Text(
-                'Trở về hôm nay',
+              child: Text(
+                isVi ? 'Trở về hôm nay' : 'Back to Today',
                 style: TextStyle(
                   color: Color(0xFF438883),
                   fontWeight: FontWeight.w600,

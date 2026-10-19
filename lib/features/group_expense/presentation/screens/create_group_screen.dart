@@ -1,3 +1,4 @@
+import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +14,7 @@ class CreateGroupScreen extends ConsumerStatefulWidget {
 }
 
 class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with SingleTickerProviderStateMixin {
+  bool get isVi => LanguageService.instance.isVietnamese;
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   late TabController _tabController;
@@ -20,13 +22,13 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
   IconData _selectedIcon = Icons.person_outline;
   bool _isLoading = false;
 
-  final List<Map<String, dynamic>> _templates = [
-    {'name': 'Quỹ cá nhân', 'icon': Icons.person_outline, 'color': Colors.blue},
-    {'name': 'Ăn uống 🍜', 'icon': Icons.restaurant_outlined, 'color': Colors.orange},
-    {'name': 'Cafe, trà sữa ☕', 'icon': Icons.local_cafe_outlined, 'color': Colors.brown},
-    {'name': 'Grab, xăng 🚗', 'icon': Icons.local_taxi_outlined, 'color': Colors.green},
-    {'name': 'Du lịch ✈️', 'icon': Icons.flight_outlined, 'color': Colors.purple},
-    {'name': 'Mua sắm 🛍️', 'icon': Icons.shopping_bag_outlined, 'color': Colors.pink},
+  List<Map<String, dynamic>> get _templates => [
+    {'name': isVi ? 'Quỹ cá nhân' : 'Personal Fund', 'icon': Icons.person_outline, 'color': Colors.blue},
+    {'name': isVi ? 'Ăn uống 🍜' : 'Dining 🍜', 'icon': Icons.restaurant_outlined, 'color': Colors.orange},
+    {'name': isVi ? 'Cafe, trà sữa ☕' : 'Coffee ☕', 'icon': Icons.local_cafe_outlined, 'color': Colors.brown},
+    {'name': isVi ? 'Grab, xăng 🚗' : 'Transport 🚗', 'icon': Icons.local_taxi_outlined, 'color': Colors.green},
+    {'name': isVi ? 'Du lịch ✈️' : 'Travel ✈️', 'icon': Icons.flight_outlined, 'color': Colors.purple},
+    {'name': isVi ? 'Mua sắm 🛍️' : 'Shopping 🛍️', 'icon': Icons.shopping_bag_outlined, 'color': Colors.pink},
   ];
 
   @override
@@ -80,9 +82,9 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                     ),
                   ),
                   const SizedBox(width: 14),
-                  const Text(
-                    'Tạo Quỹ Mới',
-                    style: TextStyle(
+                  Text(
+                    isVi ? 'Tạo Quỹ Mới' : 'Create New Fund',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -164,9 +166,9 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                                 const SizedBox(height: 16),
                                 
                                 // Title with italic style
-                                const Text(
-                                  'Tạo Quỹ Mới',
-                                  style: TextStyle(
+                                Text(
+                                  isVi ? 'Tạo Quỹ Mới' : 'Create New Fund',
+                                  style: const TextStyle(
                                     fontSize: 32,
                                     fontWeight: FontWeight.w800,
                                     color: Colors.white,
@@ -177,9 +179,9 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                                 const SizedBox(height: 12),
                                 
                                 // Description
-                                const Text(
-                                  'Kiến tạo tương lai tài chính vững chắc với các giải pháp tiết kiệm ưu việt',
-                                  style: TextStyle(
+                                Text(
+                                  isVi ? 'Kiến tạo tương lai tài chính vững chắc với các giải pháp tiết kiệm ưu việt' : 'Build a solid financial future with superior savings solutions',
+                                  style: const TextStyle(
                                     fontSize: 14,
                                     color: Colors.white,
                                     height: 1.5,
@@ -230,30 +232,30 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                         unselectedLabelColor: isDark ? Colors.white38 : Colors.black38,
                         labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                         unselectedLabelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
-                        tabs: const [
+                        tabs: [
                           Tab(
                             height: 54,
-                            icon: Icon(Icons.person_rounded, size: 20),
-                            iconMargin: EdgeInsets.only(bottom: 4),
-                            text: 'Cá nhân',
+                            icon: const Icon(Icons.person_rounded, size: 20),
+                            iconMargin: const EdgeInsets.only(bottom: 4),
+                            text: isVi ? 'Cá nhân' : 'Personal',
                           ),
                           Tab(
                             height: 54,
-                            icon: Icon(Icons.favorite_rounded, size: 20),
-                            iconMargin: EdgeInsets.only(bottom: 4),
-                            text: 'Cặp đôi',
+                            icon: const Icon(Icons.favorite_rounded, size: 20),
+                            iconMargin: const EdgeInsets.only(bottom: 4),
+                            text: isVi ? 'Cặp đôi' : 'Couple',
                           ),
                           Tab(
                             height: 54,
-                            icon: Icon(Icons.savings_rounded, size: 20),
-                            iconMargin: EdgeInsets.only(bottom: 4),
-                            text: 'Tích lũy',
+                            icon: const Icon(Icons.savings_rounded, size: 20),
+                            iconMargin: const EdgeInsets.only(bottom: 4),
+                            text: isVi ? 'Tích lũy' : 'Savings',
                           ),
                           Tab(
                             height: 54,
-                            icon: Icon(Icons.groups_rounded, size: 20),
-                            iconMargin: EdgeInsets.only(bottom: 4),
-                            text: 'Nhóm',
+                            icon: const Icon(Icons.groups_rounded, size: 20),
+                            iconMargin: const EdgeInsets.only(bottom: 4),
+                            text: isVi ? 'Nhóm' : 'Group',
                           ),
                         ],
                       ),
@@ -270,7 +272,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                           children: [
                             // Name field
                             Text(
-                              'Tên quỹ (${_nameController.text.length}/60)*',
+                              isVi ? 'Tên quỹ (${_nameController.text.length}/60)*' : 'Fund name (${_nameController.text.length}/60)*',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -283,7 +285,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                               maxLength: 60,
                               onChanged: (_) => setState(() {}),
                               decoration: InputDecoration(
-                                hintText: _selectedTemplate.isEmpty ? 'Nhập tên quỹ...' : _selectedTemplate,
+                                hintText: _selectedTemplate.isEmpty ? (isVi ? 'Nhập tên quỹ...' : 'Enter fund name...') : _selectedTemplate,
                                 filled: true,
                                 fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
                                 border: OutlineInputBorder(
@@ -298,7 +300,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                             
                             // Templates
                             Text(
-                              'Chọn mẫu có sẵn',
+                              isVi ? 'Chọn mẫu có sẵn' : 'Choose a template',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -367,7 +369,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
 
                             // Description field
                             Text(
-                              'Mô tả quỹ (${_descriptionController.text.length}/300)',
+                              isVi ? 'Mô tả quỹ (${_descriptionController.text.length}/300)' : 'Fund description (${_descriptionController.text.length}/300)',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -381,7 +383,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                               maxLines: 3,
                               onChanged: (_) => setState(() {}),
                               decoration: InputDecoration(
-                                hintText: 'Dự phòng cho chi phí đột xuất, khẩn cấp',
+                                hintText: isVi ? 'Dự phòng cho chi phí đột xuất, khẩn cấp' : 'For emergency and unexpected expenses',
                                 filled: true,
                                 fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
                                 border: OutlineInputBorder(
@@ -396,7 +398,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                             
                             // Terms
                             Text(
-                              'Bằng cách bấm Tạo quỹ, tôi đồng ý với Điều khoản và Điều kiện sử dụng dịch vụ',
+                              isVi ? 'Bằng cách bấm Tạo quỹ, tôi đồng ý với Điều khoản và Điều kiện sử dụng dịch vụ' : 'By tapping Create fund, I agree to the Terms & Conditions of service',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: isDark ? Colors.white60 : Colors.black45,
@@ -450,16 +452,16 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                                           )
                                         : Row(
                                             mainAxisAlignment: MainAxisAlignment.center,
-                                            children: const [
-                                              Icon(
+                                            children: [
+                                              const Icon(
                                                 Icons.add_rounded,
                                                 color: Colors.white,
                                                 size: 20,
                                               ),
-                                              SizedBox(width: 8),
+                                              const SizedBox(width: 8),
                                               Text(
-                                                'Tạo quỹ',
-                                                style: TextStyle(
+                                                isVi ? 'Tạo quỹ' : 'Create Fund',
+                                                style: const TextStyle(
                                                   color: Colors.white,
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.bold,
@@ -491,7 +493,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
     final userId = ref.read(currentUserIdProvider);
     if (userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng đăng nhập!')),
+        SnackBar(content: Text(isVi ? 'Vui lòng đăng nhập!' : 'Please log in!')),
       );
       return;
     }
@@ -531,8 +533,8 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
         
         // Hiển thị thông báo thành công
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tạo quỹ thành công!'),
+          SnackBar(
+            content: Text(isVi ? 'Tạo quỹ thành công!' : 'Fund created successfully!'),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -542,7 +544,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi: $e'),
+            content: Text('${isVi ? 'Lỗi' : 'Error'}: $e'),
             backgroundColor: Colors.red,
           ),
         );

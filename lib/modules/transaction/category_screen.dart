@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/firestore_service.dart';
 import '../../data/repositories/user_repository.dart';
+import '../../data/repositories/transaction_repository.dart';
+import '../../data/repositories/budget_repository.dart';
+import '../../services/category_style_service.dart';
 import '../../models/user_model.dart';
 import '../../utils/category_utils.dart';
 import '../../features/group_expense/presentation/screens/group_list_screen.dart';
@@ -12,13 +15,19 @@ import '../../widgets/animated_scale_button.dart';
 
 class CategoryScreen extends StatefulWidget {
   final bool isIncome;
-  const CategoryScreen({super.key, required this.isIncome});
+  final bool lockType;
+  const CategoryScreen({
+    super.key,
+    required this.isIncome,
+    this.lockType = false,
+  });
 
   @override
   State<CategoryScreen> createState() => _CategoryScreenState();
 }
 
 class _CategoryScreenState extends State<CategoryScreen> {
+  bool get isVi => LanguageService.instance.isVietnamese;
   final FirestoreService _firestoreService = FirestoreService();
   final UserRepository _userRepo = UserRepository();
   late bool _isIncomeTab;
@@ -143,6 +152,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0A1817) : const Color(0xFFF8FAFC),
@@ -196,10 +206,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         ),
                       ),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Danh Mục Giao Dịch',
-                        style: TextStyle(
+                        isVi ? 'Danh Mục Giao Dịch' : 'Transaction Categories',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -223,12 +233,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.add_rounded, color: Colors.white, size: 18),
-                            SizedBox(width: 4),
+                          children: [
+                            const Icon(Icons.add_rounded, color: Colors.white, size: 18),
+                            const SizedBox(width: 4),
                             Text(
-                              'Tạo',
-                              style: TextStyle(
+                              isVi ? 'Tạo' : 'New',
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
@@ -243,8 +253,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
               ),
 
               // ════════ LIQUID TAB SWITCHER: CHI TIÊU VS THU NHẬP ════════
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+              if (!widget.lockType)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
                 child: Container(
                   height: 46,
                   padding: const EdgeInsets.all(4),
@@ -293,7 +304,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    'Khoản Chi',
+                                    context.tr('expense'),
                                     style: TextStyle(
                                       color: !_isIncomeTab ? Colors.white : Colors.white70,
                                       fontWeight: !_isIncomeTab ? FontWeight.w700 : FontWeight.w500,
@@ -341,7 +352,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    'Khoản Thu',
+                                    context.tr('income'),
                                     style: TextStyle(
                                       color: _isIncomeTab ? Colors.white : Colors.white70,
                                       fontWeight: _isIncomeTab ? FontWeight.w700 : FontWeight.w500,
@@ -402,7 +413,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                 fontWeight: FontWeight.w500,
                               ),
                               decoration: InputDecoration(
-                                hintText: 'Tìm kiếm danh mục nhanh...',
+                                hintText: isVi ? 'Tìm kiếm danh mục nhanh...' : 'Search categories quickly...',
                                 hintStyle: TextStyle(
                                   color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
                                   fontSize: 14,
@@ -459,12 +470,46 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   // ════════ EXPENSE LIST ════════
   Widget _buildExpenseCategoryList(List<dynamic> customCategories, UserModel? user, bool isDark) {
-    final Map<String, List<Map<String, dynamic>>> groupedData = {};
-    for (var g in _expenseGroups) {
-      groupedData[g] = List.from(_defaultExpenseGroups[g] ?? []);
-    }
+    // Trích xuất các override màu / icon của danh mục hệ thống
+    final Map<String, Map<String, dynamic>> overrideMap = {};
     for (int idx = 0; idx < customCategories.length; idx++) {
       final item = customCategories[idx];
+      if (item is Map && item['isOverride'] == true) {
+        overrideMap[item['name'] as String] = {
+          'iconCode': item['iconCode'],
+          'colorValue': item['colorValue'],
+          'customIndex': idx,
+        };
+      }
+    }
+
+    final Map<String, List<Map<String, dynamic>>> groupedData = {};
+    for (var g in _expenseGroups) {
+      groupedData[g] = (_defaultExpenseGroups[g] ?? []).map((cat) {
+        final override = overrideMap[cat['name']];
+        final bool isOverridden = override != null;
+        final icon = isOverridden && override['iconCode'] != null
+            ? IconData(override['iconCode'], fontFamily: 'MaterialIcons')
+            : (cat['icon'] as IconData);
+        final color = isOverridden && override['colorValue'] != null
+            ? Color(override['colorValue'])
+            : CategoryUtils.getVibrantColor(cat['name']);
+
+        return {
+          ...cat,
+          'icon': icon,
+          'color': color,
+          'isCustom': false,
+          'isDefault': true,
+          'isOverridden': isOverridden,
+          'overrideIndex': override?['customIndex'],
+        };
+      }).toList();
+    }
+
+    for (int idx = 0; idx < customCategories.length; idx++) {
+      final item = customCategories[idx];
+      if (item is Map && item['isOverride'] == true) continue; // Bỏ qua override, đã gộp vào nhóm mặc định
       if (item['isIncome'] == false) {
         String group = item['group'] ?? 'Khác';
         if (!groupedData.containsKey(group)) groupedData[group] = [];
@@ -549,7 +594,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Nhóm Chi Tiêu',
+                              isVi ? 'Nhóm Chi Tiêu' : 'Group Fund',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
@@ -558,7 +603,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Quản lý chi tiêu nhóm, quỹ chung',
+                              isVi ? 'Quản lý chi tiêu nhóm, quỹ chung' : 'Manage shared group expenses & funds',
                               style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.grey.shade600),
                             ),
                           ],
@@ -597,12 +642,46 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   // ════════ INCOME LIST ════════
   Widget _buildIncomeCategoryList(List<dynamic> customCategories, UserModel? user, bool isDark) {
-    final Map<String, List<Map<String, dynamic>>> groupedData = {};
-    for (var g in _incomeGroups) {
-      groupedData[g] = List.from(_defaultIncomeGroups[g] ?? []);
-    }
+    // Trích xuất các override màu / icon của danh mục hệ thống
+    final Map<String, Map<String, dynamic>> overrideMap = {};
     for (int idx = 0; idx < customCategories.length; idx++) {
       final item = customCategories[idx];
+      if (item is Map && item['isOverride'] == true) {
+        overrideMap[item['name'] as String] = {
+          'iconCode': item['iconCode'],
+          'colorValue': item['colorValue'],
+          'customIndex': idx,
+        };
+      }
+    }
+
+    final Map<String, List<Map<String, dynamic>>> groupedData = {};
+    for (var g in _incomeGroups) {
+      groupedData[g] = (_defaultIncomeGroups[g] ?? []).map((cat) {
+        final override = overrideMap[cat['name']];
+        final bool isOverridden = override != null;
+        final icon = isOverridden && override['iconCode'] != null
+            ? IconData(override['iconCode'], fontFamily: 'MaterialIcons')
+            : (cat['icon'] as IconData);
+        final color = isOverridden && override['colorValue'] != null
+            ? Color(override['colorValue'])
+            : CategoryUtils.getVibrantColor(cat['name']);
+
+        return {
+          ...cat,
+          'icon': icon,
+          'color': color,
+          'isCustom': false,
+          'isDefault': true,
+          'isOverridden': isOverridden,
+          'overrideIndex': override?['customIndex'],
+        };
+      }).toList();
+    }
+
+    for (int idx = 0; idx < customCategories.length; idx++) {
+      final item = customCategories[idx];
+      if (item is Map && item['isOverride'] == true) continue; // Bỏ qua override, đã gộp vào nhóm mặc định
       if (item['isIncome'] == true) {
         String group = item['group'] ?? 'Khác';
         if (!groupedData.containsKey(group)) groupedData[group] = [];
@@ -675,26 +754,51 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   // ════════ UI COMPONENTS ════════
 
+  String _getGroupDisplay(String group, bool isVi) {
+    switch (group.toUpperCase()) {
+      case 'THIẾT YẾU':
+        return isVi ? 'THIẾT YẾU' : 'ESSENTIALS';
+      case 'PHÁT TRIỂN':
+        return isVi ? 'PHÁT TRIỂN' : 'GROWTH';
+      case 'HƯỞNG THỤ':
+        return isVi ? 'HƯỞNG THỤ' : 'LIFESTYLE';
+      case 'THU NHẬP CHÍNH':
+        return isVi ? 'THU NHẬP CHÍNH' : 'PRIMARY INCOME';
+      case 'THU NHẬP PHỤ':
+        return isVi ? 'THU NHẬP PHỤ' : 'SECONDARY INCOME';
+      case 'KHÁC':
+        return isVi ? 'KHÁC' : 'OTHER';
+      default:
+        return group.toUpperCase();
+    }
+  }
+
   Widget _buildSectionHeader(String title) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.only(left: 24, right: 24, bottom: 8, top: 8),
-        child: Text(
-          title,
-          style: const TextStyle(
-            color: Colors.grey,
-            fontSize: 11.5,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.2,
+    return Builder(
+      builder: (context) {
+        final isVi = LanguageScope.of(context).isVietnamese;
+        return SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(left: 24, right: 24, bottom: 8, top: 8),
+            child: Text(
+              _getGroupDisplay(title, isVi),
+              style: const TextStyle(
+                color: Colors.grey,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   /// List Item kiểu mới: 2 cột (icon + tên + mô tả) — thiết kế premium
   Widget _buildCategoryListItem(BuildContext context, Map<String, dynamic> cat, UserModel? user, bool isDark) {
     final isCustom = cat['isCustom'] == true;
+    final isOverridden = cat['isOverridden'] == true;
     final Color color = cat['color'] ?? CategoryUtils.getVibrantColor(cat['name']);
     final Color bgColor = isDark ? color.withValues(alpha: 0.12) : color.withValues(alpha: 0.08);
     final String desc = cat['desc'] ?? '';
@@ -710,10 +814,18 @@ class _CategoryScreenState extends State<CategoryScreen> {
               'name': cat['name'],
               'icon': cat['icon'],
               'color': color,
+              'isIncome': _isIncomeTab,
             });
           },
-          onLongPress: isCustom && user != null
-              ? () => _showCustomCategoryOptions(context, cat, user)
+          onLongPress: user != null
+              ? () {
+                  HapticFeedback.lightImpact();
+                  if (isCustom) {
+                    _showCustomCategoryOptions(context, cat, user);
+                  } else {
+                    _showDefaultCategoryOptions(context, cat, user);
+                  }
+                }
               : null,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
@@ -722,10 +834,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
               color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isCustom
+                color: (isCustom || isOverridden)
                     ? color.withValues(alpha: 0.3)
                     : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.12)),
-                width: isCustom ? 1.5 : 1,
+                width: (isCustom || isOverridden) ? 1.5 : 1,
               ),
             ),
             child: Row(
@@ -760,7 +872,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (isCustom) ...[
+                          if (isCustom || isOverridden) ...[
                             const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -769,7 +881,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                'Tùy chỉnh',
+                                isCustom ? (LanguageScope.of(context).isVietnamese ? 'Tùy chỉnh' : 'Custom') : (LanguageScope.of(context).isVietnamese ? 'Đã sửa' : 'Edited'),
                                 style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color),
                               ),
                             ),
@@ -887,10 +999,101 @@ class _CategoryScreenState extends State<CategoryScreen> {
     );
   }
 
+  /// Hiển thị tùy chọn Tùy chỉnh màu & icon / Khôi phục cho danh mục hệ thống
+  void _showDefaultCategoryOptions(BuildContext context, Map<String, dynamic> cat, UserModel user) {
+    final bool isOverridden = cat['isOverridden'] == true;
+    final color = cat['color'] ?? CategoryUtils.getVibrantColor(cat['name']);
+    final icon = cat['icon'] ?? CategoryUtils.getCategoryIcon(cat['name']);
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)),
+              ),
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(icon, color: color, size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.trCat(cat['name']),
+                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          isOverridden ? (isVi ? 'Danh mục hệ thống (đã tùy chỉnh)' : 'System category (customized)') : (isVi ? 'Danh mục hệ thống mặc định' : 'Default system category'),
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 24),
+              ListTile(
+                leading: const Icon(Icons.palette_outlined, color: Color(0xFF438883)),
+                title: Text(isVi ? 'Đổi màu & biểu tượng' : 'Change Color & Icon'),
+                subtitle: Text(isVi ? 'Cập nhật màu và icon trên trang thống kê và toàn bộ app' : 'Update color and icon across statistics and app', style: const TextStyle(fontSize: 12)),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _showAddOrEditCategoryModal(
+                    context,
+                    isEdit: true,
+                    isDefaultEdit: true,
+                    initialName: cat['name'],
+                    initialIcon: icon,
+                    initialColor: color,
+                    initialGroup: cat['group'] ?? (_isIncomeTab ? _incomeGroups[0] : _expenseGroups[0]),
+                    initialIsIncome: _isIncomeTab,
+                  );
+                },
+              ),
+              if (isOverridden)
+                ListTile(
+                  leading: const Icon(Icons.restart_alt_rounded, color: Colors.orange),
+                  title: Text(isVi ? 'Khôi phục mặc định' : 'Reset to Default', style: const TextStyle(color: Colors.orange)),
+                  subtitle: Text(isVi ? 'Trở về màu sắc và biểu tượng gốc của hệ thống' : 'Revert to original system color and icon', style: const TextStyle(fontSize: 12)),
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    await _resetDefaultCategory(cat['name']);
+                    if (context.mounted) {
+                      TopToast.show(context, isVi ? 'Đã khôi phục mặc định' : 'Reset to default successfully');
+                    }
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// BottomSheet thêm mới hoặc chỉnh sửa danh mục hoàn chỉnh
   void _showAddOrEditCategoryModal(
     BuildContext context, {
     bool isEdit = false,
+    bool isDefaultEdit = false,
     int? editCategoryIndex,
     String? initialName,
     IconData? initialIcon,
@@ -913,13 +1116,18 @@ class _CategoryScreenState extends State<CategoryScreen> {
       backgroundColor: Colors.transparent,
       builder: (modalCtx) => StatefulBuilder(
         builder: (modalCtx, setModalState) {
-          final currentIcons = isIncomeLocal ? _incomeIcons : _expenseIcons;
-          final currentGroups = isIncomeLocal ? _incomeGroups : _expenseGroups;
+          final currentIcons = List<IconData>.from(isIncomeLocal ? _incomeIcons : _expenseIcons);
           if (!currentIcons.contains(selectedIcon)) {
-            selectedIcon = currentIcons.first;
+            currentIcons.insert(0, selectedIcon);
           }
+          final currentGroups = isIncomeLocal ? _incomeGroups : _expenseGroups;
           if (!currentGroups.contains(selectedGroup)) {
             selectedGroup = currentGroups.first;
+          }
+
+          final palette = List<Color>.from(_paletteColors);
+          if (!palette.contains(selectedColor)) {
+            palette.insert(0, selectedColor);
           }
 
           return Container(
@@ -957,8 +1165,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        isEdit ? context.tr('edit_category_title') : context.tr('create_category_title'),
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        isDefaultEdit
+                            ? 'Tùy chỉnh danh mục'
+                            : (isEdit ? context.tr('edit_category_title') : context.tr('create_category_title')),
+                        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close),
@@ -968,106 +1178,111 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Segmented Switch: Chi tiêu vs Thu nhập
-                  Container(
-                    height: 42,
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFEEEEEE),
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setModalState(() {
-                              isIncomeLocal = false;
-                              selectedIcon = _expenseIcons.first;
-                              selectedGroup = _expenseGroups.first;
-                            }),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: !isIncomeLocal ? const Color(0xFF438883) : Colors.transparent,
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                context.tr('tab_expense'),
-                                style: TextStyle(
-                                  color: !isIncomeLocal ? Colors.white : Colors.grey,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
+                  if (!isDefaultEdit) ...[
+                    // Segmented Switch: Chi tiêu vs Thu nhập
+                    Container(
+                      height: 42,
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFEEEEEE),
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setModalState(() {
+                                isIncomeLocal = false;
+                                selectedIcon = _expenseIcons.first;
+                                selectedGroup = _expenseGroups.first;
+                              }),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: !isIncomeLocal ? const Color(0xFF438883) : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  context.tr('tab_expense'),
+                                  style: TextStyle(
+                                    color: !isIncomeLocal ? Colors.white : Colors.grey,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setModalState(() {
-                              isIncomeLocal = true;
-                              selectedIcon = _incomeIcons.first;
-                              selectedGroup = _incomeGroups.first;
-                            }),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: isIncomeLocal ? const Color(0xFF438883) : Colors.transparent,
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                context.tr('tab_income'),
-                                style: TextStyle(
-                                  color: isIncomeLocal ? Colors.white : Colors.grey,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setModalState(() {
+                                isIncomeLocal = true;
+                                selectedIcon = _incomeIcons.first;
+                                selectedGroup = _incomeGroups.first;
+                              }),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isIncomeLocal ? const Color(0xFF438883) : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  context.tr('tab_income'),
+                                  style: TextStyle(
+                                    color: isIncomeLocal ? Colors.white : Colors.grey,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  // Group Choice Chips
-                  Text(
-                    context.tr('select_group'),
-                    style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 10),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: currentGroups.map((group) {
-                        final isSelected = selectedGroup == group;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(context.trCat(group)),
-                            selected: isSelected,
-                            onSelected: (_) => setModalState(() => selectedGroup = group),
-                            selectedColor: const Color(0xFF438883),
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              fontSize: 13,
-                            ),
-                            backgroundColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          ),
-                        );
-                      }).toList(),
+                    // Group Choice Chips
+                    Text(
+                      context.tr('select_group'),
+                      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Colors.grey),
                     ),
-                  ),
-                  const SizedBox(height: 18),
+                    const SizedBox(height: 10),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: currentGroups.map((group) {
+                          final isSelected = selectedGroup == group;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: Text(context.trCat(group)),
+                              selected: isSelected,
+                              onSelected: (_) => setModalState(() => selectedGroup = group),
+                              selectedColor: const Color(0xFF438883),
+                              labelStyle: TextStyle(
+                                color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 13,
+                              ),
+                              backgroundColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                  ],
 
                   // Tên danh mục TextField
                   TextField(
                     controller: nameController,
+                    readOnly: isDefaultEdit,
                     decoration: InputDecoration(
                       hintText: context.tr('category_name_hint'),
+                      helperText: isDefaultEdit ? 'Tên danh mục mặc định của hệ thống không thể thay đổi' : null,
+                      helperStyle: TextStyle(fontSize: 11.5, color: isDark ? Colors.white38 : Colors.grey.shade600),
                       filled: true,
                       fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
                       prefixIcon: Icon(selectedIcon, color: selectedColor),
@@ -1087,10 +1302,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     height: 44,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      itemCount: _paletteColors.length,
+                      itemCount: palette.length,
                       separatorBuilder: (context, index) => const SizedBox(width: 10),
                       itemBuilder: (ctx, i) {
-                        final c = _paletteColors[i];
+                        final c = palette[i];
                         final isSel = selectedColor == c;
                         return GestureDetector(
                           onTap: () => setModalState(() => selectedColor = c),
@@ -1176,9 +1391,38 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           return;
                         }
 
-                        Navigator.pop(modalCtx);
+                        // Kiểm tra trùng tên nếu là danh mục tự tạo
+                        if (!isDefaultEdit) {
+                          final user = await _userRepo.getUser();
+                          final currentCustom = List<dynamic>.from(user?.customCategories ?? []);
+                          final isDup = currentCustom.asMap().entries.any((entry) {
+                            if (isEdit && entry.key == editCategoryIndex) return false;
+                            final c = entry.value;
+                            return c is Map &&
+                                c['isOverride'] != true &&
+                                (c['name'] as String? ?? '').toLowerCase().trim() == name.toLowerCase();
+                          });
+                          if (isDup) {
+                            if (context.mounted) {
+                              TopToast.show(context, 'Tên danh mục "$name" đã tồn tại', isError: true);
+                            }
+                            return;
+                          }
+                        }
 
-                        if (isEdit && editCategoryIndex != null) {
+                        if (modalCtx.mounted) {
+                          Navigator.pop(modalCtx);
+                        }
+
+                        if (isDefaultEdit) {
+                          await _saveDefaultCategoryOverride(
+                            name: name,
+                            iconCode: selectedIcon.codePoint,
+                            isIncome: isIncomeLocal,
+                            group: selectedGroup,
+                            colorValue: selectedColor.toARGB32(),
+                          );
+                        } else if (isEdit && editCategoryIndex != null) {
                           await _updateCustomCategory(
                             editCategoryIndex,
                             name: name,
@@ -1243,6 +1487,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     try {
       await _firestoreService.updateUserProfile({'customCategories': currentCustom});
     } catch (_) {}
+    CategoryStyleService.instance.applyCustomCategories(currentCustom);
   }
 
   /// Cập nhật danh mục đã có
@@ -1257,6 +1502,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
     final user = await _userRepo.getUser();
     final currentCustom = List<dynamic>.from(user?.customCategories ?? []);
     if (index >= 0 && index < currentCustom.length) {
+      final oldItem = currentCustom[index] as Map;
+      final oldName = oldItem['name'] as String? ?? '';
+
       currentCustom[index] = {
         'name': name,
         'iconCode': iconCode,
@@ -1268,7 +1516,71 @@ class _CategoryScreenState extends State<CategoryScreen> {
       try {
         await _firestoreService.updateUserProfile({'customCategories': currentCustom});
       } catch (_) {}
+      CategoryStyleService.instance.applyCustomCategories(currentCustom);
+
+      // Cập nhật tên ở các giao dịch cũ & ngân sách cũ nếu user đổi tên
+      if (oldName.isNotEmpty && oldName != name) {
+        await TransactionRepository().renameCategory(
+          oldName: oldName,
+          newName: name,
+          type: isIncome ? 'income' : 'expense',
+        );
+        await BudgetRepository().renameCategory(
+          oldName: oldName,
+          newName: name,
+          iconCode: iconCode,
+        );
+      }
     }
+  }
+
+  /// Lưu override màu / icon cho danh mục mặc định của hệ thống
+  Future<void> _saveDefaultCategoryOverride({
+    required String name,
+    required int iconCode,
+    required bool isIncome,
+    required String group,
+    required int colorValue,
+  }) async {
+    final user = await _userRepo.getUser();
+    final currentCustom = List<dynamic>.from(user?.customCategories ?? []);
+    final existingIdx = currentCustom.indexWhere(
+      (e) => e is Map && e['name'] == name && e['isOverride'] == true,
+    );
+    final overrideData = {
+      'name': name,
+      'iconCode': iconCode,
+      'isIncome': isIncome,
+      'group': group,
+      'colorValue': colorValue,
+      'isOverride': true,
+    };
+    if (existingIdx >= 0) {
+      currentCustom[existingIdx] = overrideData;
+    } else {
+      currentCustom.add(overrideData);
+    }
+
+    await _userRepo.updateUserProfile({'customCategories': currentCustom});
+    try {
+      await _firestoreService.updateUserProfile({'customCategories': currentCustom});
+    } catch (_) {}
+    CategoryStyleService.instance.applyCustomCategories(currentCustom);
+  }
+
+  /// Khôi phục mặc định cho danh mục hệ thống
+  Future<void> _resetDefaultCategory(String name) async {
+    final user = await _userRepo.getUser();
+    final currentCustom = List<dynamic>.from(user?.customCategories ?? []);
+    currentCustom.removeWhere(
+      (e) => e is Map && e['name'] == name && e['isOverride'] == true,
+    );
+
+    await _userRepo.updateUserProfile({'customCategories': currentCustom});
+    try {
+      await _firestoreService.updateUserProfile({'customCategories': currentCustom});
+    } catch (_) {}
+    CategoryStyleService.instance.applyCustomCategories(currentCustom);
   }
 
   /// Xóa danh mục tự tạo
@@ -1281,6 +1593,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
       try {
         await _firestoreService.updateUserProfile({'customCategories': currentCustom});
       } catch (_) {}
+      CategoryStyleService.instance.applyCustomCategories(currentCustom);
     }
   }
 }

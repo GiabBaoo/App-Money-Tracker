@@ -166,12 +166,17 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const Text(
-                    'Chi tiết giao dịch',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: Text(
+                      'Chi tiết giao dịch',
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   PopupMenuButton<String>(
@@ -479,9 +484,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                               ),
                                             ),
                                             const SizedBox(width: 6),
-                                            const Text(
-                                              'Đang đồng bộ...',
-                                              style: TextStyle(
+                                            Text(
+                                              context.tr('syncing_in_progress'),
+                                              style: const TextStyle(
                                                 color: Color(0xFF438883),
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600,

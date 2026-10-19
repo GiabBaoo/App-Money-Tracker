@@ -9,6 +9,7 @@ import '../../services/report_export_service.dart';
 import '../../services/theme_service.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/top_toast.dart';
+import '../../services/language_service.dart';
 
 class ExportReportScreen extends StatefulWidget {
   const ExportReportScreen({super.key});
@@ -29,19 +30,38 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     'Tùy chỉnh',
   ];
 
+  String _getDateRangeLabel(String range, bool isVi) {
+    if (isVi) return range;
+    switch (range) {
+      case 'Tháng này':
+        return 'This month';
+      case 'Tháng trước':
+        return 'Last month';
+      case '3 tháng qua':
+        return 'Last 3 months';
+      case 'Năm nay':
+        return 'This year';
+      case 'Tùy chỉnh':
+        return 'Custom';
+      default:
+        return range;
+    }
+  }
+
   String _selectedFormat = 'PDF';
   DateTimeRange? _customDateRange;
   bool _isLoading = false;
 
   Future<void> _pickDateRange() async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVi = LanguageScope.of(context).isVietnamese;
     DateTimeRange? picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
-      helpText: 'Chọn khoảng thời gian',
-      cancelText: 'HỦY',
-      confirmText: 'CHỌN',
+      helpText: isVi ? 'Chọn khoảng thời gian' : 'Select date range',
+      cancelText: isVi ? 'HỦY' : 'CANCEL',
+      confirmText: isVi ? 'CHỌN' : 'SELECT',
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -73,9 +93,10 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
 
   Future<void> _handleDownload() async {
     if (_isLoading) return;
+    final isVi = LanguageScope.of(context).isVietnamese;
 
     if (_selectedDateRange == 'Tùy chỉnh' && _customDateRange == null) {
-      _showSnackBar('Vui lòng chọn khoảng thời gian!', isError: true);
+      _showSnackBar(isVi ? 'Vui lòng chọn khoảng thời gian!' : 'Please select a date range!', isError: true);
       return;
     }
 
@@ -88,7 +109,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
 
       final transactions = await _reportExportService.fetchTransactions(range: range);
       if (transactions.isEmpty) {
-        _showSnackBar('Không có dữ liệu chi tiêu trong khoảng thời gian này.');
+        _showSnackBar(isVi ? 'Không có dữ liệu chi tiêu trong khoảng thời gian này.' : 'No expense data found in this time range.');
         return;
       }
 
@@ -106,10 +127,10 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
       final file = await _reportExportService.saveToTempFile(bytes: bytes, fileName: fileName);
 
       if (!mounted) return;
-      _showSnackBar('Đã lưu file: $savedPath');
+      _showSnackBar(isVi ? 'Đã lưu file: $savedPath' : 'File saved: $savedPath');
       await _showExportDoneSheet(file: file, bytes: bytes, isPdf: isPdf, savedPath: savedPath);
     } catch (e) {
-      _showSnackBar('Tạo báo cáo thất bại: $e', isError: true);
+      _showSnackBar(isVi ? 'Tạo báo cáo thất bại: $e' : 'Export report failed: $e', isError: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -122,6 +143,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     required String savedPath,
   }) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isVi = LanguageScope.of(context).isVietnamese;
     await showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -137,7 +159,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Đã tải file về máy thành công',
+                isVi ? 'Đã tải file về máy thành công' : 'File downloaded successfully',
                 style: TextStyle(
                   color: isDark ? Colors.white : const Color(0xFF0F172A),
                   fontSize: 18,
@@ -158,7 +180,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                   await SharePlus.instance.share(
                     ShareParams(
                       files: [XFile(file.path)],
-                      text: 'Báo cáo chi tiêu',
+                      text: isVi ? 'Báo cáo chi tiêu' : 'Expense Report',
                     ),
                   );
                 },
@@ -169,7 +191,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 icon: const Icon(Icons.share),
-                label: const Text('Chia sẻ file', style: TextStyle(fontWeight: FontWeight.w600)),
+                label: Text(isVi ? 'Chia sẻ file' : 'Share file', style: const TextStyle(fontWeight: FontWeight.w600)),
               ),
               if (isPdf) ...[
                 const SizedBox(height: 10),
@@ -183,7 +205,10 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                     side: const BorderSide(color: Color(0xFF438883)),
                   ),
                   icon: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFF438883)),
-                  label: const Text('Mở/Xem trước PDF', style: TextStyle(color: Color(0xFF438883), fontWeight: FontWeight.w600)),
+                  label: Text(
+                    isVi ? 'Mở/Xem trước PDF' : 'Open/Preview PDF',
+                    style: const TextStyle(color: Color(0xFF438883), fontWeight: FontWeight.w600),
+                  ),
                 ),
               ],
             ],
@@ -205,6 +230,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     final textPrimary = AppThemeColors.textPrimary(context);
     final textSecondary = AppThemeColors.textSecondary(context);
     final inputBg = AppThemeColors.inputBackground(context);
+    final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
       backgroundColor: primaryColor,
@@ -234,13 +260,18 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                       child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
                     ),
                   ),
-                  const Text(
-                    'Tải Báo Cáo Chi Tiêu',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.3,
+                  Expanded(
+                    child: Text(
+                      isVi ? 'Tải Báo Cáo Chi Tiêu' : 'Download Expense Report',
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 42),
@@ -272,7 +303,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                     children: [
                       // Tiêu đề
                       Text(
-                        'Tùy chọn tải xuống',
+                        isVi ? 'Tùy chọn tải xuống' : 'Download options',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -281,7 +312,9 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Chọn thời gian và định dạng file bạn muốn xuất để lưu trữ dữ liệu thống kê.',
+                        isVi
+                            ? 'Chọn thời gian và định dạng file bạn muốn xuất để lưu trữ dữ liệu thống kê.'
+                            : 'Select the date range and file format you want to export for your records.',
                         style: TextStyle(
                           color: textSecondary,
                           fontSize: 15,
@@ -292,7 +325,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                       const SizedBox(height: 30),
 
                       // CHỌN THỜI GIAN (Dropdown)
-                      _buildLabel('Thời gian xuất báo cáo', isDark),
+                      _buildLabel(isVi ? 'Thời gian xuất báo cáo' : 'Report time range', isDark),
                       DropdownButtonFormField<String>(
                         initialValue: _selectedDateRange,
                         dropdownColor: cardBg,
@@ -310,7 +343,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                           return DropdownMenuItem<String>(
                             value: value,
                             child: Text(
-                              value,
+                              _getDateRangeLabel(value, isVi),
                               style: TextStyle(fontSize: 16, color: textPrimary),
                             ),
                           );
@@ -349,7 +382,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                               children: [
                                 Text(
                                   _customDateRange == null
-                                      ? 'Bấm để chọn ngày...'
+                                      ? (isVi ? 'Bấm để chọn ngày...' : 'Tap to select date range...')
                                       : '${_customDateRange!.start.day.toString().padLeft(2, '0')}/${_customDateRange!.start.month.toString().padLeft(2, '0')}/${_customDateRange!.start.year}  -  ${_customDateRange!.end.day.toString().padLeft(2, '0')}/${_customDateRange!.end.month.toString().padLeft(2, '0')}/${_customDateRange!.end.year}',
                                   style: TextStyle(
                                     color: _customDateRange == null
@@ -374,7 +407,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                       const SizedBox(height: 30),
 
                       // CHỌN ĐỊNH DẠNG FILE
-                      _buildLabel('Định dạng tệp', isDark),
+                      _buildLabel(isVi ? 'Định dạng tệp' : 'File format', isDark),
                       Row(
                         children: [
                           _buildFormatCard(
@@ -425,8 +458,8 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: _isLoading
-                                ? const [
-                                    SizedBox(
+                                ? [
+                                    const SizedBox(
                                       width: 22,
                                       height: 22,
                                       child: CircularProgressIndicator(
@@ -434,26 +467,26 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                                         strokeWidth: 2.4,
                                       ),
                                     ),
-                                    SizedBox(width: 10),
+                                    const SizedBox(width: 10),
                                     Text(
-                                      'Đang tạo báo cáo...',
-                                      style: TextStyle(
+                                      isVi ? 'Đang tạo báo cáo...' : 'Generating report...',
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ]
-                                : const [
-                                    Icon(
+                                : [
+                                    const Icon(
                                       Icons.download,
                                       color: Colors.white,
                                       size: 20,
                                     ),
-                                    SizedBox(width: 8),
+                                    const SizedBox(width: 8),
                                     Text(
-                                      'Tải xuống ngay',
-                                      style: TextStyle(
+                                      isVi ? 'Tải xuống ngay' : 'Download now',
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,

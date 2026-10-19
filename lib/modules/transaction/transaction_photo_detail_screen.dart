@@ -1,3 +1,4 @@
+import '../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -81,6 +82,7 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
   Widget build(BuildContext context) {
     final heroTag = 'tx_photo_${widget.transaction.id}';
     final isIncome = widget.transaction.isIncome;
+    final isVi = LanguageScope.of(context).isVietnamese;
     final categoryColor = CategoryUtils.getVibrantColor(widget.transaction.category);
 
     return Scaffold(
@@ -139,14 +141,14 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.touch_app_rounded, color: Colors.white60, size: 14),
-                                    SizedBox(width: 6),
+                                    const Icon(Icons.touch_app_rounded, color: Colors.white60, size: 14),
+                                    const SizedBox(width: 6),
                                     Text(
-                                      'Chạm 2 lần để phóng to • Kéo để thu phóng',
-                                      style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
+                                      isVi ? 'Chạm 2 lần để phóng to • Kéo để thu phóng' : 'Double tap to zoom • Pinch to scale',
+                                      style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
                                     ),
                                   ],
                                 ),
@@ -217,8 +219,8 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                     ),
 
                     // Tiêu đề
-                    const Text(
-                      'Chi tiết hóa đơn',
+                    Text(
+                      isVi ? 'Chi tiết hóa đơn' : 'Receipt Details',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 17,
@@ -309,13 +311,13 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: Colors.white12),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.edit_note_rounded, color: Colors.white70, size: 20),
-                              SizedBox(width: 6),
+                              const Icon(Icons.edit_note_rounded, color: Colors.white70, size: 20),
+                              const SizedBox(width: 6),
                               Text(
-                                'Chỉnh sửa',
+                                context.tr('edit'),
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
@@ -358,13 +360,13 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                               ),
                             ],
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.receipt_rounded, color: Colors.white, size: 18),
-                              SizedBox(width: 6),
+                              const Icon(Icons.receipt_rounded, color: Colors.white, size: 18),
+                              const SizedBox(width: 6),
                               Text(
-                                'Chi tiết GD',
+                                isVi ? 'Chi tiết GD' : 'Tx Details',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
@@ -402,6 +404,7 @@ class _TransactionInfoGlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isVi = LanguageScope.of(context).isVietnamese;
     final amountText = CurrencyUtils.formatAmountWithSign(transaction.amount, isIncome);
     final statusColor = isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444);
 
@@ -446,7 +449,7 @@ class _TransactionInfoGlassCard extends StatelessWidget {
                   border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                 ),
                 child: Text(
-                  isIncome ? 'KHOẢN THU' : 'KHOẢN CHI',
+                  isIncome ? context.tr('income').toUpperCase() : context.tr('expense').toUpperCase(),
                   style: TextStyle(
                     color: statusColor,
                     fontSize: 11,
@@ -478,7 +481,7 @@ class _TransactionInfoGlassCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      transaction.category.isEmpty ? 'Chưa có danh mục' : transaction.category,
+                      transaction.category.isEmpty ? (isVi ? 'Chưa có danh mục' : 'Uncategorized') : context.trCat(transaction.category),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -513,7 +516,7 @@ class _TransactionInfoGlassCard extends StatelessWidget {
                   const Icon(Icons.event_outlined, color: Colors.white54, size: 16),
                   const SizedBox(width: 6),
                   Text(
-                    'Ngày giao dịch',
+                    isVi ? 'Ngày giao dịch' : 'Transaction Date',
                     style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
                   ),
                 ],
