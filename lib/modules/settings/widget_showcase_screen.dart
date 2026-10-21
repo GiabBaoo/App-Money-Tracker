@@ -1,8 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/app_widget_service.dart';
+import '../../services/widget_snapshot_builder.dart';
 import '../../services/language_service.dart';
 import '../../widgets/top_toast.dart';
+import '../../data/repositories/wallet_repository.dart';
+import '../../data/repositories/transaction_repository.dart';
+import '../../data/repositories/budget_repository.dart';
+import '../../data/repositories/goal_repository.dart';
 
 class WidgetShowcaseScreen extends StatefulWidget {
   const WidgetShowcaseScreen({super.key});
@@ -12,6 +18,70 @@ class WidgetShowcaseScreen extends StatefulWidget {
 }
 
 class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
+  WidgetSnapshotData? _snapshot;
+  bool _isLoadingData = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRealSnapshot();
+  }
+
+  Future<void> _loadRealSnapshot() async {
+    try {
+      final wallets = await WalletRepository().getWallets();
+      final transactions = await TransactionRepository().getAllTransactions();
+      final budgets = await BudgetRepository().getBudgetsWithSpent();
+      final goals = await GoalRepository().getAllGoals();
+      final snap = WidgetSnapshotBuilder.build(
+        wallets: wallets,
+        transactions: transactions,
+        budgets: budgets,
+        goals: goals,
+        isLoggedIn: true,
+      );
+      if (mounted) {
+        setState(() {
+          _snapshot = snap;
+          _isLoadingData = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingData = false);
+      }
+    }
+  }
+
+  double _parseAmount(dynamic val) {
+    if (val == null) return 0.0;
+    if (val is num) return val.toDouble();
+    if (val is String) {
+      final s = val.trim();
+      if (s.isEmpty) return 0.0;
+      if (s.contains('đ') || s.contains('₫') || RegExp(r'\d+\.\d{3}').hasMatch(s)) {
+        final clean = s.replaceAll(RegExp(r'[^0-9\-]'), '');
+        return double.tryParse(clean) ?? 0.0;
+      }
+      final direct = num.tryParse(s);
+      if (direct != null) return direct.toDouble();
+      final clean = s.replaceAll(RegExp(r'[^0-9\-]'), '');
+      return double.tryParse(clean) ?? 0.0;
+    }
+    return 0.0;
+  }
+
+  String _formatCompact(double amount) {
+    if (amount >= 1000000) {
+      final val = amount / 1000000;
+      return '${val.toStringAsFixed(val.truncateToDouble() == val ? 0 : 1)}M';
+    } else if (amount >= 1000) {
+      final val = amount / 1000;
+      return '${val.toStringAsFixed(val.truncateToDouble() == val ? 0 : 0)}k';
+    }
+    return amount.toStringAsFixed(0);
+  }
+
   Future<void> _pinWidget(String providerName, String widgetName) async {
     final isVi = LanguageScope.of(context).isVietnamese;
     HapticFeedback.mediumImpact();
@@ -363,9 +433,14 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
             isVi ? 'Tổng số dư' : 'Total Balance',
             style: const TextStyle(color: Color(0xFF64748B), fontSize: 9.5),
           ),
-          const Text('25.500.000đ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           Text(
-            isVi ? 'Hôm nay còn 250.000đ' : 'Today: 250,000đ left',
+            _snapshot?.totalBalance ?? (_isLoadingData ? '...' : '0đ'),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          Text(
+            isVi
+                ? 'Hôm nay còn ${_snapshot?.safeDailySpend ?? '0đ'}'
+                : 'Today: ${_snapshot?.safeDailySpend ?? '0đ'} left',
             style: const TextStyle(color: Color(0xFF059669), fontSize: 9.5, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
@@ -457,9 +532,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Text(
-                '45.280.000đ',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3),
+              Text(
+                _snapshot?.totalBalance ?? (_isLoadingData ? '...' : '0đ'),
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
@@ -471,7 +546,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                   ),
                 ),
                 child: Text(
-                  isVi ? 'Hôm nay còn 250.000đ' : 'Remaining today: 250,000đ',
+                  isVi
+                      ? 'Hôm nay còn ${_snapshot?.safeDailySpend ?? '0đ'}'
+                      : 'Remaining today: ${_snapshot?.safeDailySpend ?? '0đ'}',
                   style: const TextStyle(
                     color: Color(0xFF059669),
                     fontSize: 10.5,
@@ -540,6 +617,59 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
 
   // Preview Widget Vừa #2 (4x2 - Tiến độ Ngân sách)
   Widget _buildBudgetPreview(bool isDark, bool isVi) {
+    List<dynamic> budgetsList = [];
+    try {
+      if (_snapshot?.budgetsJson != null) {
+        final decoded = jsonDecode(_snapshot!.budgetsJson);
+        if (decoded is List) {
+          budgetsList = decoded;
+        }
+      }
+    } catch (_) {}
+
+    double totalSpent = 0;
+    double totalLimit = 0;
+    for (final b in budgetsList) {
+      totalSpent += _parseAmount(b['spent_raw'] ?? b['spent']);
+      totalLimit += _parseAmount(b['limit_raw'] ?? b['limit']);
+    }
+    final overallPercent = totalLimit > 0 ? (totalSpent / totalLimit * 100).round() : 0;
+    final progressVal = totalLimit > 0 ? (totalSpent / totalLimit).clamp(0.0, 1.0) : 0.0;
+
+    String spentDisplay = _formatCompact(totalSpent);
+    String limitDisplay = _formatCompact(totalLimit);
+    if (totalLimit == 0 && budgetsList.isEmpty) {
+      spentDisplay = '0';
+      limitDisplay = '0';
+    }
+
+    String cat1Name = isVi ? 'Ăn uống' : 'Dining';
+    String cat1Percent = '0%';
+    double cat1Ratio = 0.0;
+    String cat2Name = isVi ? 'Mua sắm' : 'Shopping';
+    String cat2Percent = '0%';
+    double cat2Ratio = 0.0;
+
+    if (budgetsList.isNotEmpty) {
+      final b1 = budgetsList[0];
+      cat1Name = (b1['category'] ?? b1['name'] ?? (isVi ? 'Ăn uống' : 'Dining')).toString();
+      final spent1 = _parseAmount(b1['spent_raw'] ?? b1['spent']);
+      final limit1 = _parseAmount(b1['limit_raw'] ?? b1['limit']);
+      final p1 = limit1 > 0 ? (spent1 / limit1 * 100).round() : 0;
+      cat1Percent = '$p1%';
+      cat1Ratio = limit1 > 0 ? (spent1 / limit1).clamp(0.0, 1.0) : 0.0;
+    }
+
+    if (budgetsList.length > 1) {
+      final b2 = budgetsList[1];
+      cat2Name = (b2['category'] ?? b2['name'] ?? (isVi ? 'Mua sắm' : 'Shopping')).toString();
+      final spent2 = _parseAmount(b2['spent_raw'] ?? b2['spent']);
+      final limit2 = _parseAmount(b2['limit_raw'] ?? b2['limit']);
+      final p2 = limit2 > 0 ? (spent2 / limit2 * 100).round() : 0;
+      cat2Percent = '$p2%';
+      cat2Ratio = limit2 > 0 ? (spent2 / limit2).clamp(0.0, 1.0) : 0.0;
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -565,22 +695,24 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                       isVi ? 'Ngân sách tháng' : 'Monthly budget',
                       style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
                     ),
-                    const Text('71%', style: TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold)),
+                    Text('$overallPercent%', style: const TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 const SizedBox(height: 2),
-                const Text('4.25M / 6.00M', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text('$spentDisplay / $limitDisplay', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 5),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
-                  child: const LinearProgressIndicator(value: 0.71, minHeight: 6, backgroundColor: Color(0xFFE2E8F0), valueColor: AlwaysStoppedAnimation(Color(0xFF10B981))),
+                  child: LinearProgressIndicator(value: progressVal, minHeight: 6, backgroundColor: const Color(0xFFE2E8F0), valueColor: const AlwaysStoppedAnimation(Color(0xFF10B981))),
                 ),
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(color: const Color(0xFFECFDF5), borderRadius: BorderRadius.circular(6), border: Border.all(color: const Color(0xFFA7F3D0))),
                   child: Text(
-                    isVi ? 'Hôm nay còn 250.000đ' : 'Today: 250,000đ left',
+                    isVi
+                        ? 'Hôm nay còn ${_snapshot?.safeDailySpend ?? '0đ'}'
+                        : 'Today: ${_snapshot?.safeDailySpend ?? '0đ'} left',
                     style: const TextStyle(color: Color(0xFF059669), fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -598,27 +730,27 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(isVi ? 'Ăn uống' : 'Dining', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                    const Text('85%', style: TextStyle(fontSize: 9.5, color: Color(0xFFF59E0B), fontWeight: FontWeight.bold)),
+                    Expanded(child: Text(cat1Name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))),
+                    Text(cat1Percent, style: const TextStyle(fontSize: 9.5, color: Color(0xFFF59E0B), fontWeight: FontWeight.bold)),
                   ],
                 ),
                 const SizedBox(height: 2),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(3),
-                  child: const LinearProgressIndicator(value: 0.85, minHeight: 4, backgroundColor: Color(0xFFE2E8F0), valueColor: AlwaysStoppedAnimation(Color(0xFFF59E0B))),
+                  child: LinearProgressIndicator(value: cat1Ratio, minHeight: 4, backgroundColor: const Color(0xFFE2E8F0), valueColor: const AlwaysStoppedAnimation(Color(0xFFF59E0B))),
                 ),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(isVi ? 'Mua sắm' : 'Shopping', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-                    const Text('45%', style: TextStyle(fontSize: 9.5, color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
+                    Expanded(child: Text(cat2Name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))),
+                    Text(cat2Percent, style: const TextStyle(fontSize: 9.5, color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
                   ],
                 ),
                 const SizedBox(height: 2),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(3),
-                  child: const LinearProgressIndicator(value: 0.45, minHeight: 4, backgroundColor: Color(0xFFE2E8F0), valueColor: AlwaysStoppedAnimation(Color(0xFF10B981))),
+                  child: LinearProgressIndicator(value: cat2Ratio, minHeight: 4, backgroundColor: const Color(0xFFE2E8F0), valueColor: const AlwaysStoppedAnimation(Color(0xFF10B981))),
                 ),
                 const SizedBox(height: 6),
                 Row(
@@ -660,6 +792,32 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
 
   // Preview Widget Lớn (4x4)
   Widget _buildLargePreview(bool isDark, bool isVi) {
+    List<dynamic> topCats = [];
+    try {
+      if (_snapshot?.topCategoriesJson != null) {
+        final decoded = jsonDecode(_snapshot!.topCategoriesJson);
+        if (decoded is List) {
+          topCats = decoded;
+        }
+      }
+    } catch (_) {}
+
+    List<dynamic> sevenDays = [];
+    try {
+      if (_snapshot?.sevenDaysChartJson != null) {
+        final decoded = jsonDecode(_snapshot!.sevenDaysChartJson);
+        if (decoded is List) {
+          sevenDays = decoded;
+        }
+      }
+    } catch (_) {}
+
+    double maxDayExpense = 1.0;
+    for (final day in sevenDays) {
+      final amt = _parseAmount(day['amount_raw'] ?? day['amount']);
+      if (amt > maxDayExpense) maxDayExpense = amt;
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
@@ -727,21 +885,35 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                         border: Border.all(color: const Color(0xFF10B981)),
                       ),
                       child: Text(
-                        isVi ? '↓ 12% so với tháng trước' : '↓ 12% vs last month',
-                        style: const TextStyle(color: Color(0xFF059669), fontSize: 9, fontWeight: FontWeight.bold),
+                        isVi
+                            ? '${_snapshot?.monthVsLastMonthStatus == 'negative' ? '↑' : '↓'} ${_snapshot?.monthVsLastMonthPercent ?? '0%'} so với tháng trước'
+                            : '${_snapshot?.monthVsLastMonthStatus == 'negative' ? '↑' : '↓'} ${_snapshot?.monthVsLastMonthPercent ?? '0%'} vs last month',
+                        style: TextStyle(
+                          color: _snapshot?.monthVsLastMonthStatus == 'negative' ? const Color(0xFFDC2626) : const Color(0xFF059669),
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const Text('45.280.000đ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(
+                  _snapshot?.totalBalance ?? (_isLoadingData ? '...' : '0đ'),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      isVi ? 'Tháng: +28tr • -15.5tr' : 'Month: +28M • -15.5M',
+                      isVi
+                          ? 'Tháng: +${_formatCompact(_snapshot?.monthIncomeRaw ?? 0)} • -${_formatCompact(_snapshot?.monthExpenseRaw ?? 0)}'
+                          : 'Month: +${_formatCompact(_snapshot?.monthIncomeRaw ?? 0)} • -${_formatCompact(_snapshot?.monthExpenseRaw ?? 0)}',
                       style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
                     ),
-                    const Text('+12.500.000đ', style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold)),
+                    Text(
+                      _snapshot?.monthDifference ?? '0đ',
+                      style: const TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
                   ],
                 ),
               ],
@@ -761,22 +933,33 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isVi ? 'Hạn mức hôm nay: 250k' : 'Today limit: 250k',
+                        isVi
+                            ? 'Hạn mức: ${_snapshot?.safeDailySpend ?? '0đ'}'
+                            : 'Daily limit: ${_snapshot?.safeDailySpend ?? '0đ'}',
                         style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 6),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          _buildMiniBar(isVi ? 'T2' : 'M', 10, false),
-                          _buildMiniBar(isVi ? 'T3' : 'T', 16, false),
-                          _buildMiniBar(isVi ? 'T4' : 'W', 8, false),
-                          _buildMiniBar(isVi ? 'T5' : 'T', 22, false),
-                          _buildMiniBar(isVi ? 'T6' : 'F', 12, false),
-                          _buildMiniBar(isVi ? 'T7' : 'S', 18, false),
-                          _buildMiniBar(isVi ? 'CN' : 'S', 15, true),
-                        ],
+                        children: sevenDays.length == 7
+                            ? List.generate(7, (i) {
+                                final day = sevenDays[i];
+                                final label = (day['label'] ?? day['day'] ?? '').toString();
+                                final amt = _parseAmount(day['amount_raw'] ?? day['amount']);
+                                final isToday = day['isToday'] == true || day['is_today'] == true;
+                                final h = maxDayExpense > 0 ? ((amt / maxDayExpense) * 22).clamp(4.0, 24.0) : 6.0;
+                                return _buildMiniBar(label, h, isToday);
+                              })
+                            : [
+                                _buildMiniBar(isVi ? 'T2' : 'M', 10, false),
+                                _buildMiniBar(isVi ? 'T3' : 'T', 16, false),
+                                _buildMiniBar(isVi ? 'T4' : 'W', 8, false),
+                                _buildMiniBar(isVi ? 'T5' : 'T', 22, false),
+                                _buildMiniBar(isVi ? 'T6' : 'F', 12, false),
+                                _buildMiniBar(isVi ? 'T7' : 'S', 18, false),
+                                _buildMiniBar(isVi ? 'CN' : 'S', 15, true),
+                              ],
                       ),
                     ],
                   ),
@@ -798,9 +981,15 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                         style: const TextStyle(color: Color(0xFF64748B), fontSize: 9, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 2),
-                      Text(isVi ? '• Ăn uống: 5.2tr' : '• Dining: 5.2M', style: const TextStyle(fontSize: 9)),
-                      Text(isVi ? '• Mua sắm: 3.8tr' : '• Shopping: 3.8M', style: const TextStyle(fontSize: 9)),
-                      Text(isVi ? '• Di chuyển: 1.5tr' : '• Transport: 1.5M', style: const TextStyle(fontSize: 9)),
+                      if (topCats.isNotEmpty)
+                        ...topCats.take(3).map((c) {
+                          final name = c['name'] ?? '';
+                          final amt = _parseAmount(c['amount_raw'] ?? c['amount']);
+                          return Text('• $name: ${_formatCompact(amt)}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 9));
+                        })
+                      else ...[
+                        Text(isVi ? '• Chưa có chi tiêu' : '• No spending yet', style: const TextStyle(fontSize: 9)),
+                      ],
                     ],
                   ),
                 ),

@@ -567,6 +567,7 @@ class AuthService {
         await FirestoreService().registerDeviceSession(
           deviceName: deviceInfo['name']!,
           deviceType: deviceInfo['type']!,
+          deviceId: deviceInfo['deviceId'],
         );
       } catch (_) {}
     } catch (e) {
@@ -580,8 +581,7 @@ class AuthService {
     if (user != null) {
       // XÓA THIẾT BỊ HIỆN TẠI KHỎI LIST HOẠT ĐỘNG KHI ĐĂNG XUẤT
       try {
-        final deviceInfo = await DeviceUtils.getDeviceInfo();
-        final sessionId = DeviceUtils.getSessionId(user.uid, deviceInfo['name']!);
+        final sessionId = await DeviceUtils.getSessionId(user.uid);
         await FirestoreService().removeDeviceSession(sessionId);
       } catch (_) {}
     }

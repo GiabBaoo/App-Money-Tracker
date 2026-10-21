@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -144,8 +145,8 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
   Widget build(BuildContext context) {
     super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final topPadding = MediaQuery.paddingOf(context).top;
-    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final topPadding = math.max(MediaQuery.paddingOf(context).top, MediaQuery.viewPaddingOf(context).top);
+    final bottomInset = math.max(MediaQuery.paddingOf(context).bottom, MediaQuery.viewPaddingOf(context).bottom);
     final headerHeight = topPadding + 58.0;
 
     return Scaffold(
@@ -2437,90 +2438,88 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: isDark ? const Color(0xFF141F1E) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final currentParsedBalance = CurrencyUtils.parseCurrency(balanceController.text);
-            final activeColor = Color(selectedColor);
+        return SafeArea(
+          top: true,
+          bottom: false,
+          child: StatefulBuilder(
+            builder: (context, setModalState) {
+              final currentParsedBalance = CurrencyUtils.parseCurrency(balanceController.text);
+              final activeColor = Color(selectedColor);
 
-            String typeDisplay = isVi ? 'Tiền mặt' : 'Cash';
-            if (selectedType == WalletType.bank) {
-              typeDisplay = isVi ? 'Tài khoản Ngân hàng' : 'Bank Account';
-            } else if (selectedType == WalletType.eWallet) {
-              typeDisplay = isVi ? 'Ví điện tử' : 'E-Wallet';
-            } else if (selectedType == WalletType.credit) {
-              typeDisplay = isVi ? 'Thẻ tín dụng' : 'Credit Card';
-            } else if (selectedType == WalletType.savings) {
-              typeDisplay = isVi ? 'Sổ tiết kiệm' : 'Savings';
-            }
+              String typeDisplay = isVi ? 'Tiền mặt' : 'Cash';
+              if (selectedType == WalletType.bank) {
+                typeDisplay = isVi ? 'Tài khoản Ngân hàng' : 'Bank Account';
+              } else if (selectedType == WalletType.eWallet) {
+                typeDisplay = isVi ? 'Ví điện tử' : 'E-Wallet';
+              } else if (selectedType == WalletType.credit) {
+                typeDisplay = isVi ? 'Thẻ tín dụng' : 'Credit Card';
+              } else if (selectedType == WalletType.savings) {
+                typeDisplay = isVi ? 'Sổ tiết kiệm' : 'Savings';
+              }
 
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.viewInsetsOf(ctx).bottom,
-                left: 20,
-                right: 20,
-                top: 12,
-              ),
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Thanh gạt modal
-                    Center(
-                      child: Container(
-                        width: 44,
-                        height: 4.5,
-                        margin: const EdgeInsets.only(bottom: 14),
-                        decoration: BoxDecoration(
-                          color: isDark ? Colors.white24 : Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
+              return Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.viewInsetsOf(ctx).bottom,
+                  left: 20,
+                  right: 20,
+                  top: 20,
+                ),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Tiêu đề & Nút đóng [X] (Đã xóa thanh gạch ngang drag handle theo Phương án 1)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: activeColor.withValues(alpha: isDark ? 0.25 : 0.12),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    IconData(selectedIconCode, fontFamily: 'MaterialIcons'),
+                                    color: activeColor,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    isEditing ? context.tr('edit_wallet') : context.tr('add_wallet'),
+                                    style: TextStyle(
+                                      fontSize: 18.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.close_rounded, color: isDark ? Colors.white60 : Colors.grey.shade600),
+                            onPressed: () => Navigator.pop(ctx),
+                            tooltip: isVi ? 'Đóng' : 'Close',
+                          ),
+                        ],
                       ),
-                    ),
 
-                    // Tiêu đề & Nút đóng
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: activeColor.withValues(alpha: isDark ? 0.25 : 0.12),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                IconData(selectedIconCode, fontFamily: 'MaterialIcons'),
-                                color: activeColor,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              isEditing ? context.tr('edit_wallet') : context.tr('add_wallet'),
-                              style: TextStyle(
-                                fontSize: 18.5,
-                                fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : const Color(0xFF1E293B),
-                              ),
-                            ),
-                          ],
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.close_rounded, color: isDark ? Colors.white60 : Colors.grey.shade600),
-                          onPressed: () => Navigator.pop(ctx),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 14),
+                      const SizedBox(height: 16),
 
                     // ════════════ 1. LIVE WALLET CARD PREVIEW (THẺ XEM TRƯỚC THỜI GIAN THỰC) ════════════
                     Container(
@@ -3090,25 +3089,34 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
 
                           // Nếu màu được chọn là màu tùy biến không có trong bảng _paletteColors thì hiển thị riêng ở đây
                           if (!_paletteColors.contains(selectedColor))
-                            GestureDetector(
-                              onTap: () {},
-                              child: Container(
-                                margin: const EdgeInsets.only(right: 10),
-                                width: 38,
-                                height: 38,
-                                decoration: BoxDecoration(
-                                  color: Color(selectedColor),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2.5),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Color(selectedColor).withValues(alpha: 0.65),
-                                      blurRadius: 8,
-                                      spreadRadius: 1,
-                                    ),
-                                  ],
+                            Tooltip(
+                              message: isVi ? 'Chạm để đổi màu tùy biến' : 'Tap to change custom color',
+                              child: GestureDetector(
+                                onTap: () async {
+                                  HapticFeedback.selectionClick();
+                                  final customColor = await _showCustomColorPickerDialog(context, selectedColor);
+                                  if (customColor != null) {
+                                    setModalState(() => selectedColor = customColor);
+                                  }
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.only(right: 10),
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: Color(selectedColor),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2.5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Color(selectedColor).withValues(alpha: 0.65),
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(Icons.check_rounded, color: Colors.white, size: 20),
                                 ),
-                                child: const Icon(Icons.check_rounded, color: Colors.white, size: 20),
                               ),
                             ),
 
@@ -3402,10 +3410,11 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
               ),
             );
           },
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   // === DIALOG CHUYỂN TIỀN GIỮA CÁC VÍ ===
   void _showTransferDialog(BuildContext context) async {
@@ -3436,19 +3445,34 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
       backgroundColor: isDark ? const Color(0xFF1E2827) : Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
       builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final fromW = wallets.firstWhere((w) => w.id == fromWalletId, orElse: () => wallets.first);
-            final toW = wallets.firstWhere((w) => w.id == toWalletId, orElse: () => wallets.last);
+        final topPunchHolePadding = math.max(
+          MediaQuery.viewPaddingOf(ctx).top,
+          math.max(
+            MediaQuery.paddingOf(context).top,
+            MediaQuery.viewPaddingOf(context).top,
+          ),
+        );
 
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.viewInsetsOf(ctx).bottom,
-                left: 20,
-                right: 20,
-                top: 20,
-              ),
-              child: SingleChildScrollView(
+        return SafeArea(
+          top: true,
+          bottom: false,
+          child: StatefulBuilder(
+            builder: (context, setModalState) {
+              final fromW = wallets.firstWhere((w) => w.id == fromWalletId, orElse: () => wallets.first);
+              final toW = wallets.firstWhere((w) => w.id == toWalletId, orElse: () => wallets.last);
+
+              final extraTopPadding = (MediaQuery.paddingOf(ctx).top == 0 && topPunchHolePadding > 0)
+                  ? topPunchHolePadding + 8
+                  : 20.0;
+
+              return Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.viewInsetsOf(ctx).bottom,
+                  left: 20,
+                  right: 20,
+                  top: extraTopPadding,
+                ),
+                child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -3715,10 +3739,11 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
               ),
             );
           },
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   // === XÁC NHẬN XÓA VÍ ===
   void _confirmDeleteWallet(BuildContext context, WalletModel wallet) {

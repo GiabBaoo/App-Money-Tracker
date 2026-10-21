@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -32,6 +33,7 @@ import 'services/auth_service.dart';
 import 'services/transaction_balance_service.dart';
 import 'services/app_widget_service.dart';
 import 'services/category_style_service.dart';
+import 'services/firestore_service.dart';
 import 'core/providers/app_providers.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
@@ -146,6 +148,7 @@ void main() async {
         syncService.initialDownload();
         if (connectivityService.isOnline) {
           syncService.startRealtimeListeners();
+          unawaited(FirestoreService().ensureCurrentDeviceRegistered());
         }
       }
     } catch (e) {

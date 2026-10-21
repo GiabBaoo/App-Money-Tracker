@@ -381,11 +381,12 @@ class FirestoreService {
   Future<void> registerDeviceSession({
     required String deviceName,
     required String deviceType,
+    String? deviceId,
   }) async {
     if (_uid == null) return;
     try {
-      String sanitizedId = deviceName.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_').toLowerCase();
-      String docId = '${_uid}_$sanitizedId';
+      final installId = deviceId ?? await DeviceUtils.getInstallationId();
+      final docId = '${_uid}_$installId';
       
       String realLocation = 'Thiết bị hiện hành';
       
@@ -402,6 +403,7 @@ class FirestoreService {
       
       await _db.collection('device_sessions').doc(docId).set({
         'uid': _uid,
+        'deviceId': installId,
         'deviceName': deviceName,
         'deviceType': deviceType,
         'location': realLocation,
@@ -413,11 +415,13 @@ class FirestoreService {
   }
 
   Future<void> ensureCurrentDeviceRegistered() async {
+    if (_uid == null) return;
     try {
       final deviceInfo = await DeviceUtils.getDeviceInfo();
       await registerDeviceSession(
         deviceName: deviceInfo['name']!,
         deviceType: deviceInfo['type']!,
+        deviceId: deviceInfo['deviceId'],
       );
     } catch (e) {
       debugPrint('ensureCurrentDeviceRegistered error: $e');
@@ -443,7 +447,30 @@ class FirestoreService {
   }
 
   Future<void> removeDeviceSession(String sessionId) async {
-    await _db.collection('device_sessions').doc(sessionId).delete();
+    try {
+      await _db.collection('device_sessions').doc(sessionId).delete();
+    } catch (e) {
+      debugPrint('Error removing device session: $e');
+    }
+  }
+
+  Future<void> removeOtherDeviceSessions(String currentSessionId) async {
+    if (_uid == null) return;
+    try {
+      final snapshot = await _db
+          .collection('device_sessions')
+          .where('uid', isEqualTo: _uid)
+          .get();
+      final batch = _db.batch();
+      for (var doc in snapshot.docs) {
+        if (doc.id != currentSessionId) {
+          batch.delete(doc.reference);
+        }
+      }
+      await batch.commit();
+    } catch (e) {
+      debugPrint('Lỗi khi xóa các phiên khác: $e');
+    }
   }
 
   // Cập nhật tùy chọn sử dụng dữ liệu

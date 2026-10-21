@@ -4,6 +4,8 @@ import '../../services/firestore_service.dart';
 import '../../services/language_service.dart';
 import '../../models/user_model.dart';
 import '../../services/voice_service.dart';
+import '../../services/device_contacts_service.dart';
+import '../../data/repositories/user_repository.dart';
 
 class DataUsageScreen extends StatefulWidget {
   const DataUsageScreen({super.key});
@@ -109,13 +111,25 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
   }
 
   Future<void> _updatePermission(UserModel user, String key, bool val) async {
-    if (val) {
-      Permission perm = key == 'location' ? Permission.location : (key == 'contacts' ? Permission.contacts : Permission.microphone);
-      final status = await perm.request();
-      if (!status.isGranted) return;
-      if (key == 'microphone') await VoiceService().init();
+    try {
+      if (val) {
+        if (key == 'contacts') {
+          final granted = await DeviceContactsService.instance.requestPermission();
+          if (!granted) return;
+        } else {
+          Permission perm = key == 'location' ? Permission.location : Permission.microphone;
+          final status = await perm.request();
+          if (!status.isGranted) return;
+          if (key == 'microphone') await VoiceService().init();
+        }
+      }
+      await _firestoreService.updateDataUsagePreference(key, val);
+      final updatedDataUsage = Map<String, dynamic>.from(user.dataUsage);
+      updatedDataUsage[key] = val;
+      await UserRepository().updateUserProfile({'dataUsage': updatedDataUsage});
+    } catch (e) {
+      debugPrint('DataUsageScreen _updatePermission error: $e');
     }
-    await _firestoreService.updateDataUsagePreference(key, val);
   }
 
   Widget _buildSectionTitle(BuildContext context, String title) {

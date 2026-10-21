@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../widgets/animated_scale_button.dart';
+import '../../../../services/device_contacts_service.dart';
+import '../../../../services/notification_service.dart';
 
 class InviteMemberScreen extends StatefulWidget {
   final String groupId;
@@ -30,6 +32,47 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
   void dispose() {
     _phoneController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickFromContacts() async {
+    HapticFeedback.selectionClick();
+    final hasPermission = await DeviceContactsService.instance.requestPermission();
+    if (!hasPermission) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isVi
+                  ? 'Ứng dụng cần quyền truy cập danh bạ để chọn người liên hệ'
+                  : 'Contacts permission is required to select contacts',
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    final selectedPhone = await _showContactPickerSheet(context);
+    if (selectedPhone != null && selectedPhone.isNotEmpty) {
+      _phoneController.text = selectedPhone;
+      _searchUser(selectedPhone);
+    }
+  }
+
+  Future<String?> _showContactPickerSheet(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).primaryColor;
+
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _ContactPickerModal(
+        isDark: isDark,
+        primaryColor: primaryColor,
+      ),
+    );
   }
 
   Future<void> _searchUser(String phone) async {
@@ -97,23 +140,13 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Tạo notification
-      final now = Timestamp.now();
-      final notificationData = {
-        'uid': _foundUserId,
-        'iconCode': Icons.account_balance_wallet.codePoint,
-        'title': isVi ? 'Lời mời tham gia quỹ' : 'Group Fund Invitation',
-        'description': isVi ? 'Bạn được mời tham gia quỹ "${widget.groupName}"' : 'You are invited to join fund "${widget.groupName}"',
-        'isRead': false,
-        'createdAt': now,
-        'type': 'group_invite',
-        'groupId': widget.groupId,
-        'groupName': widget.groupName,
-      };
-
-      await FirebaseFirestore.instance
-          .collection('notifications')
-          .add(notificationData);
+      // Gửi thông báo mời tham gia nhóm quỹ chi tiêu qua NotificationService
+      await NotificationService().notifyGroupInvitation(
+        groupName: widget.groupName,
+        inviterName: isVi ? 'Trưởng nhóm' : 'Group Admin',
+        targetUid: _foundUserId!,
+        groupId: widget.groupId,
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -268,19 +301,31 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                             Icons.phone_rounded,
                             color: primaryColor,
                           ),
-                          suffixIcon: _isSearching
-                              ? Padding(
-                                  padding: const EdgeInsets.all(12),
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_isSearching)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
                                   child: SizedBox(
-                                    width: 20,
-                                    height: 20,
+                                    width: 18,
+                                    height: 18,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
                                     ),
                                   ),
-                                )
-                              : null,
+                                ),
+                              IconButton(
+                                icon: Icon(
+                                  Icons.contacts_rounded,
+                                  color: primaryColor,
+                                ),
+                                tooltip: isVi ? 'Chọn từ danh bạ' : 'Pick from contacts',
+                                onPressed: _isLoading ? null : _pickFromContacts,
+                              ),
+                            ],
+                          ),
                           filled: true,
                           fillColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
                           border: OutlineInputBorder(
@@ -484,3 +529,239 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
     );
   }
 }
+
+class _ContactPickerModal extends StatefulWidget {
+  final bool isDark;
+  final Color primaryColor;
+
+  const _ContactPickerModal({
+    required this.isDark,
+    required this.primaryColor,
+  });
+
+  @override
+  State<_ContactPickerModal> createState() => _ContactPickerModalState();
+}
+
+class _ContactPickerModalState extends State<_ContactPickerModal> {
+  final TextEditingController _searchCtrl = TextEditingController();
+  List<DeviceContactItem> _allContacts = [];
+  List<DeviceContactItem> _filtered = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadContacts();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadContacts() async {
+    try {
+      final list = await DeviceContactsService.instance.getAllContacts();
+      if (mounted) {
+        setState(() {
+          _allContacts = list;
+          _filtered = list;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading contacts: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _onSearch(String query) {
+    final q = query.trim().toLowerCase();
+    setState(() {
+      if (q.isEmpty) {
+        _filtered = _allContacts;
+      } else {
+        _filtered = _allContacts.where((c) {
+          return c.name.toLowerCase().contains(q) ||
+              c.phone.contains(q) ||
+              c.rawPhone.contains(q);
+        }).toList();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final sheetHeight = mediaQuery.size.height * 0.75;
+    final bottomInset = mediaQuery.viewInsets.bottom;
+
+    return Container(
+      height: sheetHeight,
+      margin: EdgeInsets.only(bottom: bottomInset),
+      decoration: BoxDecoration(
+        color: widget.isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          // Drag handle
+          Container(
+            margin: const EdgeInsets.only(top: 12, bottom: 8),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.contacts_rounded, color: widget.primaryColor, size: 22),
+                    const SizedBox(width: 10),
+                    Text(
+                      isVi ? 'Chọn từ danh bạ' : 'Select from Contacts',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: widget.isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 22),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: TextField(
+              controller: _searchCtrl,
+              onChanged: _onSearch,
+              decoration: InputDecoration(
+                hintText: isVi ? 'Tìm kiếm tên hoặc số điện thoại...' : 'Search name or phone number...',
+                hintStyle: TextStyle(
+                  color: widget.isDark ? Colors.white38 : Colors.black38,
+                  fontSize: 14,
+                ),
+                prefixIcon: Icon(Icons.search_rounded, color: widget.primaryColor, size: 20),
+                suffixIcon: _searchCtrl.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear_rounded, size: 18),
+                        onPressed: () {
+                          _searchCtrl.clear();
+                          _onSearch('');
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: widget.isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF3F4F6),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+
+          // Contact List
+          Expanded(
+            child: _isLoading
+                ? Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(widget.primaryColor),
+                    ),
+                  )
+                : _filtered.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.person_search_rounded,
+                              size: 48,
+                              color: Colors.grey.withValues(alpha: 0.5),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              isVi ? 'Không tìm thấy liên hệ nào' : 'No contacts found',
+                              style: TextStyle(
+                                color: widget.isDark ? Colors.white60 : Colors.black54,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: _filtered.length,
+                        separatorBuilder: (context, index) => Divider(
+                          height: 1,
+                          indent: 68,
+                          color: widget.isDark ? Colors.white12 : Colors.black12,
+                        ),
+                        itemBuilder: (ctx, index) {
+                          final contact = _filtered[index];
+                          final initial = contact.name.isNotEmpty
+                              ? contact.name.characters.first.toUpperCase()
+                              : '?';
+
+                          return ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: widget.primaryColor.withValues(alpha: 0.15),
+                              foregroundColor: widget.primaryColor,
+                              child: Text(
+                                initial,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            title: Text(
+                              contact.name,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                                color: widget.isDark ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                            subtitle: Text(
+                              contact.phone,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: widget.isDark ? Colors.white60 : Colors.black54,
+                              ),
+                            ),
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 14,
+                              color: Colors.grey,
+                            ),
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              Navigator.pop(context, contact.phone);
+                            },
+                          );
+                        },
+                      ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

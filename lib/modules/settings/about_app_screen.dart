@@ -1,4 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+// ignore: depend_on_referenced_packages
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/top_toast.dart';
 import '../../widgets/app_logo.dart';
@@ -9,10 +15,32 @@ import '../../services/language_service.dart';
 class AboutAppScreen extends StatelessWidget {
   const AboutAppScreen({super.key});
 
+  Future<String> _getAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      final ver = info.version.trim().replaceAll('+', '.');
+      final build = info.buildNumber.trim();
+      if (ver.isNotEmpty && build.isNotEmpty) {
+        if (!ver.endsWith('.$build')) {
+          return '$ver.$build';
+        }
+        return ver;
+      } else if (ver.isNotEmpty) {
+        return ver;
+      }
+      return '1.0.0.1';
+    } catch (_) {
+      return '1.0.0.1';
+    }
+  }
+
   void _showRatingDialog(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isVi = LanguageScope.of(context).isVietnamese;
+    final commentController = TextEditingController();
     int selectedRating = 5;
+    bool isSubmitting = false;
+
     showDialog(
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
@@ -32,38 +60,84 @@ class AboutAppScreen extends StatelessWidget {
               color: isDark ? Colors.white : const Color(0xFF0F172A),
             ),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                isVi
-                    ? 'Bạn cảm thấy trải nghiệm sử dụng Mono như thế nào?'
-                    : 'How do you feel about your experience using Mono?',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? const Color(0xFFCBD5E1) : Colors.grey,
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isVi
+                      ? 'Bạn cảm thấy trải nghiệm sử dụng Mono như thế nào?'
+                      : 'How do you feel about your experience using Mono?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? const Color(0xFFCBD5E1) : Colors.grey,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  return IconButton(
-                    icon: Icon(
-                      index < selectedRating ? Icons.star_rounded : Icons.star_outline_rounded,
-                      color: const Color(0xFFFFB800),
-                      size: 34,
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    return IconButton(
+                      icon: Icon(
+                        index < selectedRating ? Icons.star_rounded : Icons.star_outline_rounded,
+                        color: const Color(0xFFFFB800),
+                        size: 34,
+                      ),
+                      onPressed: isSubmitting
+                          ? null
+                          : () => setDialogState(() => selectedRating = index + 1),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: commentController,
+                  maxLines: 3,
+                  minLines: 2,
+                  enabled: !isSubmitting,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                  decoration: InputDecoration(
+                    hintText: isVi
+                        ? 'Gửi thêm góp ý để nhóm phát triển cải thiện app nhé...'
+                        : 'Share your feedback to help us improve...',
+                    hintStyle: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white38 : Colors.grey.shade400,
                     ),
-                    onPressed: () => setDialogState(() => selectedRating = index + 1),
-                  );
-                }),
-              ),
-            ],
+                    filled: true,
+                    fillColor: isDark ? const Color(0xFF131D1C) : const Color(0xFFF8FAFC),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white12 : Colors.grey.shade300,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white12 : Colors.grey.shade300,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF438883),
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogCtx),
+              onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
               child: Text(isVi ? 'Để sau' : 'Later', style: TextStyle(color: isDark ? Colors.white60 : Colors.grey)),
             ),
             ElevatedButton(
@@ -73,16 +147,45 @@ class AboutAppScreen extends StatelessWidget {
                 elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              onPressed: () {
-                Navigator.pop(dialogCtx);
-                TopToast.show(
-                  context,
-                  isVi
-                      ? 'Cảm ơn bạn đã đánh giá $selectedRating sao cho Mono! ❤️'
-                      : 'Thank you for rating Mono $selectedRating stars! ❤️',
-                );
-              },
-              child: Text(isVi ? 'Gửi đánh giá' : 'Submit', style: const TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      setDialogState(() => isSubmitting = true);
+                      final comment = commentController.text.trim();
+                      try {
+                        final user = FirebaseAuth.instance.currentUser;
+                        final uid = user?.uid ?? 'anonymous';
+                        await FirebaseFirestore.instance.collection('app_reviews').add({
+                          'uid': uid,
+                          'rating': selectedRating,
+                          'comment': comment,
+                          'userEmail': user?.email ?? '',
+                          'platform': defaultTargetPlatform.name,
+                          'createdAt': FieldValue.serverTimestamp(),
+                        });
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setBool('has_rated_app', true);
+                      } catch (e) {
+                        debugPrint('Error recording app review: $e');
+                      }
+
+                      if (context.mounted) {
+                        Navigator.pop(dialogCtx);
+                        TopToast.show(
+                          context,
+                          isVi
+                              ? 'Cảm ơn bạn đã gửi đánh giá $selectedRating sao cho Mono! ❤️'
+                              : 'Thank you for rating Mono $selectedRating stars! ❤️',
+                        );
+                      }
+                    },
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : Text(isVi ? 'Gửi đánh giá' : 'Submit', style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -216,27 +319,33 @@ class AboutAppScreen extends StatelessWidget {
                       const SizedBox(height: 10),
 
                       // Version Badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF438883).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF438883)),
-                            const SizedBox(width: 6),
-                            Text(
-                              isVi ? 'Phiên bản 1.0.0 (Mới nhất)' : 'Version 1.0.0 (Latest)',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF438883),
-                              ),
+                      FutureBuilder<String>(
+                        future: _getAppVersion(),
+                        builder: (context, snapshot) {
+                          final versionStr = snapshot.data ?? '1.0.0.1';
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF438883).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(20),
                             ),
-                          ],
-                        ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF438883)),
+                                const SizedBox(width: 6),
+                                Text(
+                                  isVi ? 'Phiên bản $versionStr (Mới nhất)' : 'Version $versionStr (Latest)',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF438883),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 28),
 
