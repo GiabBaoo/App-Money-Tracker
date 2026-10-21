@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/budget_model.dart';
+import '../../models/category_model.dart';
 import '../../data/repositories/budget_repository.dart';
-import '../../data/repositories/user_repository.dart';
+import '../../data/repositories/category_repository.dart';
 import '../../utils/category_utils.dart';
 import '../../widgets/top_toast.dart';
 import '../../widgets/animated_scale_button.dart';
@@ -19,66 +20,61 @@ class AddBudgetDialog extends StatefulWidget {
 
 class _AddBudgetDialogState extends State<AddBudgetDialog> {
   final BudgetRepository _budgetRepo = BudgetRepository();
+  final CategoryRepository _categoryRepo = CategoryRepository();
   final TextEditingController _amountController = TextEditingController();
 
-  String _selectedCategory = 'Ăn uống';
+  String _selectedCategory = 'Tất cả';
   int _selectedMonth = DateTime.now().month;
   int _selectedYear = DateTime.now().year;
 
-  final List<String> _categories = [
-    'Tất cả',
-    'Ăn uống',
-    'Mua sắm',
-    'Di chuyển',
-    'Sức khỏe',
-    'Giải trí',
-    'Học tập',
-    'Tiền nhà',
-    'Tiền điện',
-    'Điện thoại',
-    'Du lịch',
-    'Làm đẹp',
-    'Chi khác',
-  ];
+  bool _isLoadingCategories = true;
+  List<CategoryModel> _categories = [];
 
   @override
   void initState() {
     super.initState();
     if (widget.existingBudget != null) {
       _selectedCategory = widget.existingBudget!.category;
-      if (!_categories.contains(_selectedCategory)) {
-        _categories.add(_selectedCategory);
-      }
       _amountController.text = NumberFormat.currency(locale: 'vi_VN', symbol: '')
           .format(widget.existingBudget!.limitAmount)
           .trim();
       _selectedMonth = widget.existingBudget!.month;
       _selectedYear = widget.existingBudget!.year;
     }
-    _loadCustomCategories();
+    _loadCategories();
   }
 
-  Future<void> _loadCustomCategories() async {
+  Future<void> _loadCategories() async {
     try {
-      final user = await UserRepository().getUser();
-      final customCats = user?.customCategories;
-      if (customCats != null && mounted) {
-        final customList = <String>[];
-        for (var c in customCats) {
-          if (c is Map && c['isIncome'] != true && c['name'] != null && c['isOverride'] != true) {
-            final name = c['name'] as String;
-            if (!_categories.contains(name)) {
-              customList.add(name);
-            }
-          }
-        }
-        if (customList.isNotEmpty && mounted) {
-          setState(() {
-            _categories.addAll(customList);
-          });
-        }
+      final list = await _categoryRepo.getExpenseCategories(includeAllOption: true);
+
+      // Nếu đang chỉnh sửa ngân sách cũ mà danh mục đó đã bị xóa hoặc chưa có trong danh sách
+      if (widget.existingBudget != null && !list.any((c) => c.name == widget.existingBudget!.category)) {
+        list.insert(
+          1,
+          CategoryModel(
+            id: 'legacy_${widget.existingBudget!.category}',
+            name: widget.existingBudget!.category,
+            iconCode: widget.existingBudget!.categoryIconCode,
+            isCustom: true,
+          ),
+        );
       }
-    } catch (_) {}
+
+      if (mounted) {
+        setState(() {
+          _categories = list;
+          _isLoadingCategories = false;
+          if (!_categories.any((c) => c.name == _selectedCategory)) {
+            _selectedCategory = _categories.isNotEmpty ? _categories.first.name : 'Tất cả';
+          }
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoadingCategories = false);
+      }
+    }
   }
 
   @override
@@ -97,9 +93,18 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
       return;
     }
 
+    final matchedCat = _categories.firstWhere(
+      (c) => c.name == _selectedCategory,
+      orElse: () => CategoryModel(
+        id: 'unknown',
+        name: _selectedCategory,
+        iconCode: CategoryUtils.getCategoryIcon(_selectedCategory).codePoint,
+      ),
+    );
+
     final iconData = _selectedCategory == 'Tất cả'
         ? Icons.account_balance_wallet_outlined
-        : CategoryUtils.getCategoryIcon(_selectedCategory);
+        : matchedCat.icon;
 
     final budget = BudgetModel(
       id: widget.existingBudget?.id ?? '',
@@ -165,36 +170,91 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
               ),
               const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF242424) : const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedCategory,
-                    isExpanded: true,
-                    items: _categories.map((c) {
-                      final icon = c == 'Tất cả' ? Icons.account_balance_wallet_outlined : CategoryUtils.getCategoryIcon(c);
-                      final displayName = c == 'Tất cả' ? (isVi ? 'Tất cả' : 'All') : context.trCat(c);
-                      return DropdownMenuItem(
-                        value: c,
-                        child: Row(
-                          children: [
-                            Icon(icon, size: 18, color: primaryColor),
-                            const SizedBox(width: 10),
-                            Text(displayName, style: const TextStyle(fontSize: 14)),
-                          ],
+
+              if (_isLoadingCategories)
+                Container(
+                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF242424) : const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: primaryColor,
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) setState(() => _selectedCategory = val);
-                    },
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        isVi ? 'Đang tải danh mục...' : 'Loading categories...',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.white60 : Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF242424) : const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: _categories.any((c) => c.name == _selectedCategory) ? _selectedCategory : null,
+                      isExpanded: true,
+                      items: _categories.map((c) {
+                        final isAll = c.name == 'Tất cả';
+                        final icon = isAll ? Icons.account_balance_wallet_outlined : c.icon;
+                        final iconColor = isAll ? primaryColor : (c.color ?? CategoryUtils.getVibrantColor(c.name));
+                        final displayName = isAll ? (isVi ? 'Tất cả (Tổng ngân sách)' : 'All (Total Budget)') : context.trCat(c.name);
+
+                        return DropdownMenuItem(
+                          value: c.name,
+                          child: Row(
+                            children: [
+                              Icon(icon, size: 18, color: iconColor),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  displayName,
+                                  style: const TextStyle(fontSize: 14),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (c.isCustom) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: primaryColor.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    isVi ? 'Tùy biến' : 'Custom',
+                                    style: TextStyle(fontSize: 10, color: primaryColor, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) setState(() => _selectedCategory = val);
+                      },
+                    ),
                   ),
                 ),
-              ),
 
               const SizedBox(height: 16),
 
