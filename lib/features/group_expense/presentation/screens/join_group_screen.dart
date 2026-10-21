@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../widgets/animated_scale_button.dart';
+import '../../../../widgets/mono_toast.dart';
 import '../providers/group_expense_providers.dart';
 import '../../../../models/notification_model.dart';
 import 'group_detail_screen.dart';
@@ -210,12 +211,9 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
           _isAccepted = true;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isVi ? '🎉 Đã tham gia quỹ "${group.name}" thành công!' : '🎉 Joined fund "${group.name}" successfully!'),
-            duration: const Duration(seconds: 3),
-            backgroundColor: Colors.green,
-          ),
+        MonoToast.success(
+          context,
+          isVi ? '🎉 Đã tham gia quỹ "${group.name}" thành công!' : '🎉 Joined fund "${group.name}" successfully!',
         );
 
         // Chuyển hướng vào trong quỹ sau 2 giây
@@ -271,24 +269,18 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
           _isRejected = true;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isVi ? '👋 Đã từ chối lời mời' : '👋 Invitation declined'),
-            duration: Duration(seconds: 2),
-            backgroundColor: Colors.orange,
-          ),
+        MonoToast.info(
+          context,
+          isVi ? '👋 Đã từ chối lời mời' : '👋 Invitation declined',
         );
       }
     } catch (e) {
       debugPrint('Error rejecting invitation: $e');
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isVi ? 'Đã từ chối lời mời' : 'Invitation declined'),
-            duration: Duration(seconds: 2),
-            backgroundColor: Colors.orange,
-          ),
+        MonoToast.info(
+          context,
+          isVi ? 'Đã từ chối lời mời' : 'Invitation declined',
         );
       }
     }

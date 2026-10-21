@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/app_logo.dart';
+import '../../widgets/mono_toast.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import '../../services/biometric_service.dart';
@@ -182,13 +183,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red.shade600 : const Color(0xFF438883),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
+    MonoToast.show(
+      context,
+      message,
+      type: isError ? MonoToastType.error : MonoToastType.success,
     );
   }
 
@@ -199,7 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final primaryColor = const Color(0xFF438883);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF091716) : const Color(0xFFF4F7F6),
+      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
       body: Stack(
         children: [
           // Nền Gradient & Hiệu ứng quầng sáng Aura mềm mại
@@ -248,13 +246,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const SizedBox(height: 10),
 
-                    // 1. BRAND HERO: Biểu tượng & Logo FinTech mono
-                    const AppLogo.badge(
-                      size: 74,
-                      borderRadius: BorderRadius.all(Radius.circular(37)),
+                    // 1. BRAND HERO: Biểu tượng & Logo FinTech mono Liquid Glass
+                    const MonoLiquidGlassLogo.badge(
+                      size: 76,
+                      isInteractive: true,
+                      animatedSheen: true,
+                      hasShadow: true,
+                      hasGlow: true,
+                      borderRadius: BorderRadius.all(Radius.circular(22)),
                     ),
                     const SizedBox(height: 14),
-                    AppLogo.wordmark(
+                    MonoLiquidGlassLogo.wordmark(
                       height: 32,
                       color: isDark ? Colors.white : const Color(0xFF0F2625),
                     ),
@@ -266,7 +268,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -278,10 +280,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF132220) : Colors.white,
+                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
                         borderRadius: BorderRadius.circular(28),
                         border: Border.all(
-                          color: isDark ? Colors.white.withValues(alpha: 0.12) : const Color(0xFFE2E8F0),
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                           width: 1.2,
                         ),
                         boxShadow: [
@@ -298,7 +300,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Text(
                             isVi ? 'Đăng Nhập' : 'Log In',
                             style: TextStyle(
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.3,
@@ -308,7 +310,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Text(
                             isVi ? 'Chào mừng bạn trở lại với Mono' : 'Welcome back to Mono',
                             style: TextStyle(
-                              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                               fontSize: 13.5,
                               fontWeight: FontWeight.w500,
                             ),
@@ -319,7 +321,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Text(
                             'Email',
                             style: TextStyle(
-                              color: isDark ? Colors.white70 : const Color(0xFF334155),
+                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF334155),
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
@@ -329,16 +331,16 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
                             style: TextStyle(
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor: isDark ? const Color(0xFF1B2E2C) : const Color(0xFFF8FAFC),
+                              fillColor: isDark ? const Color(0xFF141E2E) : const Color(0xFFF8FAFC),
                               hintText: isVi ? 'Nhập email của bạn' : 'Enter your email',
                               hintStyle: TextStyle(
-                                color: isDark ? Colors.white24 : const Color(0xFF94A3B8),
+                                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                                 fontSize: 14,
                                 fontWeight: FontWeight.normal,
                               ),
@@ -351,14 +353,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                                   width: 1,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: primaryColor,
+                                  color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
                                   width: 1.8,
                                 ),
                               ),
@@ -371,7 +373,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Text(
                             isVi ? 'Mật khẩu' : 'Password',
                             style: TextStyle(
-                              color: isDark ? Colors.white70 : const Color(0xFF334155),
+                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF334155),
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
@@ -381,16 +383,16 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: _passwordController,
                             obscureText: !_isPasswordVisible,
                             style: TextStyle(
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor: isDark ? const Color(0xFF1B2E2C) : const Color(0xFFF8FAFC),
+                              fillColor: isDark ? const Color(0xFF141E2E) : const Color(0xFFF8FAFC),
                               hintText: isVi ? 'Nhập mật khẩu của bạn' : 'Enter your password',
                               hintStyle: TextStyle(
-                                color: isDark ? Colors.white24 : const Color(0xFF94A3B8),
+                                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                                 fontSize: 14,
                                 fontWeight: FontWeight.normal,
                               ),
@@ -402,7 +404,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _isPasswordVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
-                                  color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                   size: 20,
                                 ),
                                 onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
@@ -411,14 +413,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                                   width: 1,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: primaryColor,
+                                  color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
                                   width: 1.8,
                                 ),
                               ),
@@ -426,6 +428,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
 
                           const SizedBox(height: 14),
+
 
                           // Ghi nhớ & Quên mật khẩu
                           Row(

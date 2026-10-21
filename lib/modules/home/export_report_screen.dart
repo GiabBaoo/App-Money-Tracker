@@ -9,6 +9,7 @@ import '../../services/report_export_service.dart';
 import '../../services/theme_service.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/top_toast.dart';
+import '../../widgets/mono_bottom_sheet.dart';
 import '../../services/language_service.dart';
 
 class ExportReportScreen extends StatefulWidget {
@@ -144,16 +145,11 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
   }) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isVi = LanguageScope.of(context).isVietnamese;
-    await showModalBottomSheet(
+    await MonoBottomSheet.show(
       context: context,
-      backgroundColor: Colors.transparent,
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -19,6 +19,7 @@ import 'notification_screen.dart';
 import '../../widgets/top_toast.dart';
 import '../budget/budget_and_goals_screen.dart';
 import '../ai_assistant/ai_assistant_screen.dart';
+import '../../widgets/mono_liquid_glass_logo.dart';
 
 import '../transaction/all_transactions_screen.dart';
 import '../../utils/currency_format_utils.dart';
@@ -72,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
     
     // MÀU SẮC FLOATING DOCK CHUẨN FINTECH
     final Color activeColor = isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883);
-    final Color inactiveColor = isDark ? Colors.white38 : const Color(0xFF94A3B8);
+    final Color inactiveColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return PopScope(
       canPop: false,
@@ -108,12 +109,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 64,
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xF5182221)
+                      ? const Color(0xF51E293B)
                       : const Color(0xF8FFFFFF),
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(
                     color: isDark
-                        ? Colors.white.withValues(alpha: 0.12)
+                        ? const Color(0xFF334155)
                         : const Color(0xFFE2E8F0),
                     width: 1.2,
                   ),
@@ -130,14 +131,60 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                child: Stack(
                   children: [
-                    _buildFloatingNavItem(0, Icons.home_rounded, 'nav_home', activeColor, inactiveColor),
-                    _buildFloatingNavItem(1, Icons.bar_chart_rounded, 'nav_stats', activeColor, inactiveColor),
-                    _buildCenterFabButton(context, isDark),
-                    _buildFloatingNavItem(2, Icons.account_balance_wallet_rounded, 'nav_wallets', activeColor, inactiveColor),
-                    _buildFloatingNavItem(3, Icons.person_rounded, 'nav_profile', activeColor, inactiveColor),
+                    // Viên thuốc chỉ báo trượt mượt mà giữa các tab (Sliding Pill Indicator)
+                    AnimatedAlign(
+                      alignment: _getTabAlignment(_selectedIndex),
+                      duration: const Duration(milliseconds: 280),
+                      curve: Curves.easeOutCubic,
+                      child: FractionallySizedBox(
+                        widthFactor: 0.2, // Chiếm đúng 1/5 chiều rộng thanh dock
+                        heightFactor: 1.0,
+                        child: Center(
+                          child: Container(
+                            width: 52,
+                            height: 46,
+                            decoration: BoxDecoration(
+                              color: activeColor.withValues(alpha: isDark ? 0.20 : 0.12),
+                              borderRadius: BorderRadius.circular(23),
+                              border: Border.all(
+                                color: activeColor.withValues(alpha: isDark ? 0.35 : 0.22),
+                                width: 1.0,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: activeColor.withValues(alpha: isDark ? 0.22 : 0.12),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Hàng 5 slot điều hướng
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildFloatingNavItem(0, Icons.home_rounded, 'nav_home', activeColor, inactiveColor),
+                        ),
+                        Expanded(
+                          child: _buildFloatingNavItem(1, Icons.bar_chart_rounded, 'nav_stats', activeColor, inactiveColor),
+                        ),
+                        Expanded(
+                          child: Center(child: _buildCenterFabButton(context, isDark)),
+                        ),
+                        Expanded(
+                          child: _buildFloatingNavItem(2, Icons.account_balance_wallet_rounded, 'nav_wallets', activeColor, inactiveColor),
+                        ),
+                        Expanded(
+                          child: _buildFloatingNavItem(3, Icons.person_rounded, 'nav_profile', activeColor, inactiveColor),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -148,39 +195,51 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Alignment _getTabAlignment(int index) {
+    switch (index) {
+      case 0:
+        return const Alignment(-1.0, 0.0);
+      case 1:
+        return const Alignment(-0.5, 0.0);
+      case 2:
+        return const Alignment(0.5, 0.0);
+      case 3:
+      default:
+        return const Alignment(1.0, 0.0);
+    }
+  }
+
   Widget _buildFloatingNavItem(int index, IconData icon, String labelKey, Color activeColor, Color inactiveColor) {
     final bool isSelected = _selectedIndex == index;
     return Tooltip(
       message: context.tr(labelKey),
       child: AnimatedScaleButton(
-        scaleDown: 0.88,
+        scaleDown: 0.90,
         onTap: () {
           HapticFeedback.selectionClick();
           _switchTab(index);
         },
         child: SizedBox(
-          width: 52,
-          height: 52,
+          width: double.infinity,
+          height: 64,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  color: isSelected ? activeColor.withValues(alpha: 0.15) : Colors.transparent,
-                  shape: BoxShape.circle,
-                ),
+              AnimatedScale(
+                scale: isSelected ? 1.15 : 1.0,
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutCubic,
                 child: Icon(
                   icon,
-                  size: 25,
+                  size: 24,
                   color: isSelected ? activeColor : inactiveColor,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 3),
               AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: isSelected ? 12 : 0,
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutCubic,
+                width: isSelected ? 14 : 0,
                 height: 3,
                 decoration: BoxDecoration(
                   color: isSelected ? activeColor : Colors.transparent,
@@ -390,15 +449,27 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text(
-                                        greeting,
-                                        style: const TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              greeting,
+                                              style: const TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          const MonoLiquidGlassLogo.compact(
+                                            size: 16,
+                                            isInteractive: true,
+                                          ),
+                                        ],
                                       ),
                                       Text(
                                         displayName,

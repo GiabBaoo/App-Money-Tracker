@@ -2,6 +2,7 @@ import '../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../widgets/animated_scale_button.dart';
+import '../../widgets/mono_toast.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import 'reset_password_screen.dart';
@@ -30,7 +31,7 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
     final password = _passwordController.text;
     if (password.isEmpty) {
       final isVi = LanguageScope.of(context).isVietnamese;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(isVi ? 'Vui lòng nhập mật khẩu!' : 'Please enter your password!'), backgroundColor: Colors.red));
+      MonoToast.error(context, isVi ? 'Vui lòng nhập mật khẩu!' : 'Please enter your password!');
       return;
     }
     setState(() => _isLoading = true);
@@ -41,7 +42,7 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
     if (result.success) {
       Navigator.push(context, PageTransitions.slideRight(const ResetPasswordScreen(isFromSecurity: true)));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message), backgroundColor: Colors.red));
+      MonoToast.error(context, result.message);
     }
   }
 

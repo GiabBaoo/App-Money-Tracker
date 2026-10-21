@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../widgets/animated_scale_button.dart';
+import '../../../../widgets/mono_toast.dart';
 import '../../data/models/settlement_model.dart';
 import '../providers/group_expense_providers.dart';
 
@@ -285,15 +286,17 @@ class SettlementConfirmScreen extends ConsumerWidget {
       await ref.read(settlementServiceProvider).confirmSettlement(settlementId, currentUserId);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(LanguageService.instance.isVietnamese ? 'Đã xác nhận thanh toán' : 'Payment confirmed')),
+        MonoToast.success(
+          context,
+          LanguageService.instance.isVietnamese ? 'Đã xác nhận thanh toán' : 'Payment confirmed',
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${LanguageService.instance.isVietnamese ? 'Lỗi' : 'Error'}: $e')),
+        MonoToast.error(
+          context,
+          '${LanguageService.instance.isVietnamese ? 'Lỗi' : 'Error'}: $e',
         );
       }
     }
@@ -307,15 +310,17 @@ class SettlementConfirmScreen extends ConsumerWidget {
       await ref.read(settlementServiceProvider).rejectSettlement(settlementId, currentUserId);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(LanguageService.instance.isVietnamese ? 'Đã từ chối thanh toán' : 'Payment declined')),
+        MonoToast.info(
+          context,
+          LanguageService.instance.isVietnamese ? 'Đã từ chối thanh toán' : 'Payment declined',
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${LanguageService.instance.isVietnamese ? 'Lỗi' : 'Error'}: $e')),
+        MonoToast.error(
+          context,
+          '${LanguageService.instance.isVietnamese ? 'Lỗi' : 'Error'}: $e',
         );
       }
     }

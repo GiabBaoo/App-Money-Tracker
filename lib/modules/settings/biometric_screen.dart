@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../services/biometric_service.dart';
 import '../../widgets/animated_scale_button.dart';
+import '../../widgets/mono_toast.dart';
 import '../../services/language_service.dart';
 
 class BiometricScreen extends StatefulWidget {
@@ -93,14 +94,10 @@ class _BiometricScreenState extends State<BiometricScreen> {
   }
 
   void _showSnackbar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, style: const TextStyle(fontWeight: FontWeight.w600)),
-        backgroundColor: isError ? const Color(0xFFEF4444) : const Color(0xFF438883),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        margin: const EdgeInsets.all(16),
-      ),
+    MonoToast.show(
+      context,
+      message,
+      type: isError ? MonoToastType.error : MonoToastType.success,
     );
   }
 

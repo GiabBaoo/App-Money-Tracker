@@ -16,6 +16,7 @@ import '../../services/connectivity_service.dart';
 import '../../services/receipt_storage_service.dart';
 import '../../services/biometric_service.dart';
 import '../../widgets/top_toast.dart';
+import '../../widgets/mono_dialog.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../models/transaction_model.dart';
 import '../../models/wallet_model.dart';
@@ -570,7 +571,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF142221) : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -587,7 +588,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white24 : Colors.grey.shade300,
+                      color: isDark ? const Color(0xFF334155) : Colors.grey.shade300,
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
@@ -598,7 +599,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B),
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -610,15 +611,16 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     decoration: BoxDecoration(
                       color: isSel
                           ? (isDark
-                              ? const Color(0xFF1A3331)
+                              ? const Color(0xFF1E293B)
                               : const Color(0xFFEDF7F6))
                           : (isDark
-                              ? const Color(0xFF1D2A29)
+                              ? const Color(0xFF141E2E)
                               : const Color(0xFFF8FAFC)),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color:
-                            isSel ? const Color(0xFF438883) : Colors.transparent,
+                        color: isSel
+                            ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
+                            : (isDark ? const Color(0xFF334155) : Colors.transparent),
                         width: 1.5,
                       ),
                     ),
@@ -676,15 +678,27 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   Future<void> _pickDate() async {
     _noteFocusNode.unfocus();
     HapticFeedback.lightImpact();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 1)),
       builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: Color(0xFF438883)),
-        ),
+        data: isDark
+            ? ThemeData.dark().copyWith(
+                colorScheme: const ColorScheme.dark(
+                  primary: Color(0xFF2DD4BF),
+                  surface: Color(0xFF1E293B),
+                  onSurface: Color(0xFFF8FAFC),
+                ),
+                dialogTheme: const DialogThemeData(
+                  backgroundColor: Color(0xFF1E293B),
+                ),
+              )
+            : Theme.of(context).copyWith(
+                colorScheme: const ColorScheme.light(primary: Color(0xFF438883)),
+              ),
         child: child!,
       ),
     );
@@ -694,13 +708,25 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   Future<void> _pickTime() async {
     _noteFocusNode.unfocus();
     HapticFeedback.lightImpact();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
       builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: Color(0xFF438883)),
-        ),
+        data: isDark
+            ? ThemeData.dark().copyWith(
+                colorScheme: const ColorScheme.dark(
+                  primary: Color(0xFF2DD4BF),
+                  surface: Color(0xFF1E293B),
+                  onSurface: Color(0xFFF8FAFC),
+                ),
+                dialogTheme: const DialogThemeData(
+                  backgroundColor: Color(0xFF1E293B),
+                ),
+              )
+            : Theme.of(context).copyWith(
+                colorScheme: const ColorScheme.light(primary: Color(0xFF438883)),
+              ),
         child: child!,
       ),
     );
@@ -809,33 +835,14 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     if (_amountRawNotifier.value.isNotEmpty ||
         _descriptionController.text.isNotEmpty ||
         _pickedPhoto != null) {
-      final shouldLeave = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(context.tr('discard_tx_title'),
-              style: const TextStyle(fontWeight: FontWeight.bold)),
-          content: Text(
-              context.tr('discard_tx_content')),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(context.tr('keep_editing')),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE63946),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(context.tr('discard')),
-            ),
-          ],
-        ),
+      final shouldLeave = await MonoDialog.confirm(
+        context,
+        title: context.tr('discard_tx_title'),
+        message: context.tr('discard_tx_content'),
+        cancelText: context.tr('keep_editing'),
+        confirmText: context.tr('discard'),
+        isDestructive: true,
+        icon: Icons.warning_amber_rounded,
       );
       return shouldLeave ?? false;
     }
@@ -965,12 +972,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                             padding: const EdgeInsets.all(3.5),
                             decoration: BoxDecoration(
                               color: isDark
-                                  ? const Color(0xFF142423)
+                                  ? const Color(0xFF1E293B)
                                   : Colors.white.withValues(alpha: 0.85),
                               borderRadius: BorderRadius.circular(24),
                               border: Border.all(
                                 color: isDark
-                                    ? Colors.white.withValues(alpha: 0.08)
+                                    ? const Color(0xFF334155)
                                     : const Color(0xFFE2E8F0),
                               ),
                               boxShadow: [
@@ -1058,7 +1065,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                 ),
                                 decoration: BoxDecoration(
                                   color: isDark
-                                      ? const Color(0xFF142423)
+                                      ? const Color(0xFF1E293B)
                                       : Colors.white,
                                   borderRadius: BorderRadius.circular(22),
                                   border: Border.all(
@@ -1193,9 +1200,15 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   builder: (context, isTypingNote, _) {
                     return Container(
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF0D1B1A) : Colors.white,
+                        color: isDark ? const Color(0xFF0F172A) : Colors.white,
                         borderRadius:
                             const BorderRadius.vertical(top: Radius.circular(24)),
+                        border: Border(
+                          top: BorderSide(
+                            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                            width: 1,
+                          ),
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color:
@@ -1565,11 +1578,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? const Color(0xFF142423)
+                          ? const Color(0xFF1E293B)
                           : const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: isDark ? Colors.white12 : const Color(0xFFCBD5E1),
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
                       ),
                     ),
                     child: Row(
@@ -1577,14 +1590,14 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       children: [
                         Icon(Icons.more_horiz_rounded,
                             size: 16,
-                            color: isDark ? Colors.white70 : const Color(0xFF475569)),
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
                         const SizedBox(width: 5),
                         Text(
                           '${context.tr('other')}...',
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white70 : const Color(0xFF475569),
+                            color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF475569),
                           ),
                         ),
                       ],
@@ -1610,13 +1623,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     color: isSel
                         ? vibrantColor.withValues(alpha: isDark ? 0.35 : 0.2)
                         : (isDark
-                            ? const Color(0xFF142423)
+                            ? const Color(0xFF1E293B)
                             : Colors.white),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: isSel
                           ? vibrantColor
-                          : (isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
+                          : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                       width: isSel ? 1.5 : 1.0,
                     ),
                   ),
@@ -1627,7 +1640,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                           size: 16,
                           color: isSel
                               ? vibrantColor
-                              : (isDark ? Colors.white70 : const Color(0xFF64748B))),
+                              : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
                       const SizedBox(width: 6),
                       Text(
                         context.trCat(catName),
@@ -1637,7 +1650,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                               isSel ? FontWeight.w700 : FontWeight.w600,
                           color: isSel
                               ? (isDark ? Colors.white : vibrantColor)
-                              : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                              : (isDark ? const Color(0xFFF8FAFC) : const Color(0xFF334155)),
                         ),
                       ),
                     ],
@@ -1660,13 +1673,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF142423) : Colors.white,
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: hasFocus
                   ? activeColor.withValues(alpha: 0.6)
                   : (isDark
-                      ? Colors.white.withValues(alpha: 0.08)
+                      ? const Color(0xFF334155)
                       : const Color(0xFFE2E8F0)),
               width: hasFocus ? 1.5 : 1.0,
             ),
@@ -1695,10 +1708,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               Container(
                 decoration: BoxDecoration(
                   color:
-                      isDark ? const Color(0xFF182A29) : const Color(0xFFF8FAFC),
+                      isDark ? const Color(0xFF141E2E) : const Color(0xFFF8FAFC),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                   ),
                 ),
                 child: Row(
@@ -1708,7 +1721,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       child: Icon(
                         Icons.edit_note_rounded,
                         size: 22,
-                        color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                       ),
                     ),
                     Expanded(
@@ -1720,7 +1733,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B),
                         ),
                         decoration: InputDecoration(
                           hintText: context.tr('note_hint'),
@@ -1728,7 +1741,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                             fontSize: 13.5,
                             fontWeight: FontWeight.normal,
                             color: isDark
-                                ? Colors.white38
+                                ? const Color(0xFF64748B)
                                 : const Color(0xFF94A3B8),
                           ),
                           border: InputBorder.none,
@@ -1747,7 +1760,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                         return IconButton(
                           icon: const Icon(Icons.clear_rounded, size: 18),
                           color:
-                              isDark ? Colors.white54 : Colors.grey.shade400,
+                              isDark ? const Color(0xFF94A3B8) : Colors.grey.shade400,
                           onPressed: () => _descriptionController.clear(),
                         );
                       },
@@ -1854,12 +1867,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         decoration: BoxDecoration(
           color: isHighlighted
               ? iconColor.withValues(alpha: isDark ? 0.25 : 0.15)
-              : (isDark ? const Color(0xFF142423) : Colors.white),
+              : (isDark ? const Color(0xFF1E293B) : Colors.white),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isHighlighted
                 ? iconColor
-                : (isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
+                : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
           ),
         ),
         child: Row(
@@ -1874,7 +1887,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF334155),
+                  color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF334155),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -2159,65 +2172,35 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     textController.dispose();
   }
 
-  void _showGpsDisabledDialog(bool isVi) {
-    showDialog(
-      context: context,
-      builder: (dCtx) => AlertDialog(
-        title: Text(isVi ? 'Dịch vụ vị trí đang tắt' : 'Location Services Disabled'),
-        content: Text(
-          isVi
-              ? 'Vui lòng bật GPS trên thiết bị để ứng dụng tự động lấy địa danh.'
-              : 'Please enable GPS on your device to automatically detect place names.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dCtx),
-            child: Text(isVi ? 'Đóng' : 'Close'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF438883),
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.pop(dCtx);
-              LocationService.instance.openLocationSettings();
-            },
-            child: Text(isVi ? 'Mở cài đặt' : 'Open Settings'),
-          ),
-        ],
-      ),
+  void _showGpsDisabledDialog(bool isVi) async {
+    final open = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Dịch vụ vị trí đang tắt' : 'Location Services Disabled',
+      message: isVi
+          ? 'Vui lòng bật GPS trên thiết bị để ứng dụng tự động lấy địa danh.'
+          : 'Please enable GPS on your device to automatically detect place names.',
+      cancelText: isVi ? 'Đóng' : 'Close',
+      confirmText: isVi ? 'Mở cài đặt' : 'Open Settings',
+      icon: Icons.location_off_rounded,
     );
+    if (open == true) {
+      LocationService.instance.openLocationSettings();
+    }
   }
 
-  void _showPermissionPermanentlyDeniedDialog(bool isVi) {
-    showDialog(
-      context: context,
-      builder: (dCtx) => AlertDialog(
-        title: Text(isVi ? 'Quyền vị trí bị chặn' : 'Location Permission Denied'),
-        content: Text(
-          isVi
-              ? 'Bạn đã từ chối quyền vị trí vĩnh viễn. Vui lòng vào Cài đặt để cấp quyền cho ứng dụng.'
-              : 'Location permission is permanently denied. Please grant permission in App Settings.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dCtx),
-            child: Text(isVi ? 'Để sau' : 'Later'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF438883),
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.pop(dCtx);
-              LocationService.instance.openAppSettings();
-            },
-            child: Text(isVi ? 'Mở Cài đặt' : 'Open Settings'),
-          ),
-        ],
-      ),
+  void _showPermissionPermanentlyDeniedDialog(bool isVi) async {
+    final open = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Quyền vị trí bị chặn' : 'Location Permission Denied',
+      message: isVi
+          ? 'Bạn đã từ chối quyền vị trí vĩnh viễn. Vui lòng vào Cài đặt để cấp quyền cho ứng dụng.'
+          : 'Location permission is permanently denied. Please grant permission in App Settings.',
+      cancelText: isVi ? 'Để sau' : 'Later',
+      confirmText: isVi ? 'Mở Cài đặt' : 'Open Settings',
+      icon: Icons.location_disabled_rounded,
     );
+    if (open == true) {
+      LocationService.instance.openAppSettings();
+    }
   }
 }

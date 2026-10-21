@@ -13,6 +13,7 @@ import '../../services/biometric_service.dart';
 import '../../data/repositories/wallet_repository.dart';
 import '../../services/transaction_balance_service.dart';
 import '../../widgets/top_toast.dart';
+import '../../widgets/mono_dialog.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../utils/currency_format_utils.dart';
 import '../../utils/page_transitions.dart';
@@ -244,28 +245,16 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   Future<bool> _confirmExit() async {
     if (!_hasUnsavedData) return true;
     final isVi = LanguageScope.of(context).isVietnamese;
-    final shouldLeave = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(isVi ? 'Hủy chỉnh sửa?' : 'Discard changes?', style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Text(isVi ? 'Các thay đổi của bạn chưa được lưu. Bạn có chắc muốn thoát?' : 'Your changes have not been saved. Are you sure you want to exit?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(isVi ? 'Tiếp tục sửa' : 'Keep editing'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE63946),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(isVi ? 'Thoát' : 'Discard'),
-          ),
-        ],
-      ),
+    final shouldLeave = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Hủy chỉnh sửa?' : 'Discard changes?',
+      message: isVi
+          ? 'Các thay đổi của bạn chưa được lưu. Bạn có chắc muốn thoát?'
+          : 'Your changes have not been saved. Are you sure you want to exit?',
+      cancelText: isVi ? 'Tiếp tục sửa' : 'Keep editing',
+      confirmText: isVi ? 'Thoát' : 'Discard',
+      isDestructive: true,
+      icon: Icons.warning_amber_rounded,
     );
     return shouldLeave ?? false;
   }
@@ -355,9 +344,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
           colorScheme: isDark
               ? const ColorScheme.dark(
                   primary: Color(0xFF2DD4BF),
-                  onPrimary: Color(0xFF0F2625),
-                  surface: Color(0xFF162523),
-                  onSurface: Colors.white,
+                  onPrimary: Color(0xFF0F172A),
+                  surface: Color(0xFF1E293B),
+                  onSurface: Color(0xFFF8FAFC),
                 )
               : const ColorScheme.light(
                   primary: appMainColor,
@@ -382,9 +371,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
           colorScheme: isDark
               ? const ColorScheme.dark(
                   primary: Color(0xFF2DD4BF),
-                  onPrimary: Color(0xFF0F2625),
-                  surface: Color(0xFF162523),
-                  onSurface: Colors.white,
+                  onPrimary: Color(0xFF0F172A),
+                  surface: Color(0xFF1E293B),
+                  onSurface: Color(0xFFF8FAFC),
                 )
               : const ColorScheme.light(
                   primary: appMainColor,
@@ -509,17 +498,16 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
 
   Future<void> _handleDelete() async {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(isVi ? 'Xác nhận xóa' : 'Confirm Delete'),
-        content: Text(isVi ? 'Bạn có chắc chắn muốn xóa giao dịch này không?' : 'Are you sure you want to delete this transaction?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(isVi ? 'Hủy' : 'Cancel', style: const TextStyle(color: Colors.grey))),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(isVi ? 'Xóa' : 'Delete', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
-        ],
-      ),
+    final confirm = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Xác nhận xóa' : 'Confirm Delete',
+      message: isVi
+          ? 'Bạn có chắc chắn muốn xóa giao dịch này không?'
+          : 'Are you sure you want to delete this transaction?',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      confirmText: isVi ? 'Xóa' : 'Delete',
+      isDestructive: true,
+      icon: Icons.delete_outline_rounded,
     );
 
     if (confirm != true) return;
@@ -904,7 +892,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                       child: _buildDateTimeTile(
                                         icon: Icons.calendar_today_rounded,
                                         iconColor: activeAccentColor,
-                                        label: context.tr('date'),
+                                        label: isVi ? 'Ngày' : 'Date',
                                         value: dateStr,
                                         isDark: isDark,
                                         onTap: _pickDate,
@@ -915,7 +903,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                       child: _buildDateTimeTile(
                                         icon: Icons.access_time_rounded,
                                         iconColor: activeAccentColor,
-                                        label: context.tr('time'),
+                                        label: isVi ? 'Giờ' : 'Time',
                                         value: timeStr,
                                         isDark: isDark,
                                         onTap: _pickTime,
@@ -1649,65 +1637,35 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     textController.dispose();
   }
 
-  void _showGpsDisabledDialog(bool isVi) {
-    showDialog(
-      context: context,
-      builder: (dCtx) => AlertDialog(
-        title: Text(isVi ? 'Dịch vụ vị trí đang tắt' : 'Location Services Disabled'),
-        content: Text(
-          isVi
-              ? 'Vui lòng bật GPS trên thiết bị để ứng dụng tự động lấy địa danh.'
-              : 'Please enable GPS on your device to automatically detect place names.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dCtx),
-            child: Text(isVi ? 'Đóng' : 'Close'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF438883),
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.pop(dCtx);
-              LocationService.instance.openLocationSettings();
-            },
-            child: Text(isVi ? 'Mở cài đặt' : 'Open Settings'),
-          ),
-        ],
-      ),
+  void _showGpsDisabledDialog(bool isVi) async {
+    final open = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Dịch vụ vị trí đang tắt' : 'Location Services Disabled',
+      message: isVi
+          ? 'Vui lòng bật GPS trên thiết bị để ứng dụng tự động lấy địa danh.'
+          : 'Please enable GPS on your device to automatically detect place names.',
+      cancelText: isVi ? 'Đóng' : 'Close',
+      confirmText: isVi ? 'Mở cài đặt' : 'Open Settings',
+      icon: Icons.location_off_rounded,
     );
+    if (open == true) {
+      LocationService.instance.openLocationSettings();
+    }
   }
 
-  void _showPermissionPermanentlyDeniedDialog(bool isVi) {
-    showDialog(
-      context: context,
-      builder: (dCtx) => AlertDialog(
-        title: Text(isVi ? 'Quyền vị trí bị chặn' : 'Location Permission Denied'),
-        content: Text(
-          isVi
-              ? 'Bạn đã từ chối quyền vị trí vĩnh viễn. Vui lòng vào Cài đặt để cấp quyền cho ứng dụng.'
-              : 'Location permission is permanently denied. Please grant permission in App Settings.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dCtx),
-            child: Text(isVi ? 'Để sau' : 'Later'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF438883),
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.pop(dCtx);
-              LocationService.instance.openAppSettings();
-            },
-            child: Text(isVi ? 'Mở Cài đặt' : 'Open Settings'),
-          ),
-        ],
-      ),
+  void _showPermissionPermanentlyDeniedDialog(bool isVi) async {
+    final open = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Quyền vị trí bị chặn' : 'Location Permission Denied',
+      message: isVi
+          ? 'Bạn đã từ chối quyền vị trí vĩnh viễn. Vui lòng vào Cài đặt để cấp quyền cho ứng dụng.'
+          : 'Location permission is permanently denied. Please grant permission in App Settings.',
+      cancelText: isVi ? 'Để sau' : 'Later',
+      confirmText: isVi ? 'Mở Cài đặt' : 'Open Settings',
+      icon: Icons.location_disabled_rounded,
     );
+    if (open == true) {
+      LocationService.instance.openAppSettings();
+    }
   }
 }

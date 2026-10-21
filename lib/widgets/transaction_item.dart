@@ -265,7 +265,7 @@ class TransactionItem extends ConsumerWidget {
                                     '•',
                                     style: TextStyle(
                                       fontSize: 10,
-                                      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.35),
+                                      color: isDark ? const Color(0xFF64748B) : Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.35),
                                     ),
                                   ),
                                 ),
@@ -274,7 +274,7 @@ class TransactionItem extends ConsumerWidget {
                                     contextText,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.55),
+                                      color: isDark ? const Color(0xFF94A3B8) : Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.65),
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -371,7 +371,7 @@ class TransactionItem extends ConsumerWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: isDark ? Colors.white54 : const Color(0xFF64748B),
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
             ),
           ),
           TextSpan(
@@ -379,7 +379,7 @@ class TransactionItem extends ConsumerWidget {
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF1E293B),
+              color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B),
               letterSpacing: -0.2,
             ),
           ),

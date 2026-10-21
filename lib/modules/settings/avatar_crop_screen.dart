@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../services/language_service.dart';
+import '../../widgets/mono_toast.dart';
 
 /// Màn hình căn chỉnh, thu phóng (Scale / Crop) và xoay ảnh đại diện trước khi lưu
 class AvatarCropScreen extends StatefulWidget {
@@ -99,13 +100,7 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isVi ? 'Lỗi cắt ảnh: $e' : 'Crop image error: $e'),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        MonoToast.error(context, isVi ? 'Lỗi cắt ảnh: $e' : 'Crop image error: $e');
       }
     }
   }

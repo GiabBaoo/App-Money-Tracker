@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/app_logo.dart';
+import '../../widgets/mono_toast.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import '../../services/language_service.dart';
@@ -68,12 +69,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: isError ? Colors.red.shade600 : const Color(0xFF438883),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    ));
+    MonoToast.show(
+      context,
+      message,
+      type: isError ? MonoToastType.error : MonoToastType.success,
+    );
   }
 
   @override
@@ -120,7 +120,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                   boxShadow: [BoxShadow(color: isDark ? Colors.black45 : Colors.black12, blurRadius: 20, offset: const Offset(0, -5))],
                 ),
@@ -131,37 +131,39 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     children: [
                       Text(
                         isVi ? 'Quên mật khẩu' : 'Forgot Password',
-                        style: TextStyle(color: isDark ? Colors.white : const Color(0xFF549B96), fontSize: 28, fontWeight: FontWeight.w700),
+                        style: TextStyle(color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF549B96), fontSize: 28, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         isVi
                             ? 'Vui lòng nhập email của bạn. Chúng tôi sẽ gửi link đặt lại mật khẩu.'
                             : 'Please enter your email. We will send you a password reset link.',
-                        style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF666666), fontSize: 14, height: 1.5),
+                        style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 14, height: 1.5),
                       ),
                       const SizedBox(height: 40),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8, left: 4),
-                        child: Text('Email', style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF666666), fontSize: 14, fontWeight: FontWeight.w500)),
+                        child: Text('Email', style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.w500)),
                       ),
                       TextFormField(
                         controller: _emailController,
-                        style: TextStyle(fontSize: 15, color: isDark ? Colors.white : Colors.black),
+                        style: TextStyle(fontSize: 15, color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A)),
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
+                          filled: true,
+                          fillColor: isDark ? const Color(0xFF141E2E) : const Color(0xFFF8FAFC),
                           hintText: isVi ? 'Nhập email của bạn' : 'Enter your email',
-                          hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black.withValues(alpha: 0.3), fontSize: 14),
+                          hintStyle: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), fontSize: 14),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: isDark ? Colors.white24 : const Color(0xFFDDDDDD)),
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5),
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883), width: 1.5),
                           ),
-                          suffixIcon: const Icon(Icons.mail_outline, color: Color(0xFFAAAAAA)),
+                          suffixIcon: Icon(Icons.mail_outline, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFFAAAAAA)),
                         ),
                       ),
                       const SizedBox(height: 50),
@@ -175,7 +177,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             child: Text(
                               isVi ? 'Quay lại Đăng nhập' : 'Back to Login',
-                              style: const TextStyle(color: Color(0xFF438883), fontSize: 15, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883), fontSize: 15, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ),

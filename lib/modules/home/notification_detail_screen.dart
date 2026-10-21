@@ -5,6 +5,7 @@ import '../../data/repositories/notification_repository.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/language_service.dart';
 import '../../widgets/animated_scale_button.dart';
+import '../../widgets/mono_dialog.dart';
 import '../budget/budget_and_goals_screen.dart';
 import 'statistics_screen.dart';
 import '../transaction/all_transactions_screen.dart';
@@ -120,20 +121,16 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
                   AnimatedScaleButton(
                     onTap: () async {
                       HapticFeedback.lightImpact();
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                          title: Text(isVi ? 'Xác nhận xóa' : 'Confirm Delete'),
-                          content: Text(isVi ? 'Bạn có chắc chắn muốn xóa thông báo này không?' : 'Are you sure you want to delete this notification?'),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(isVi ? 'Hủy' : 'Cancel')),
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx, true),
-                              child: Text(isVi ? 'Xóa' : 'Delete', style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                            ),
-                          ],
-                        ),
+                      final confirm = await MonoDialog.confirm(
+                        context,
+                        title: isVi ? 'Xác nhận xóa' : 'Confirm Delete',
+                        message: isVi
+                            ? 'Bạn có chắc chắn muốn xóa thông báo này không?'
+                            : 'Are you sure you want to delete this notification?',
+                        cancelText: isVi ? 'Hủy' : 'Cancel',
+                        confirmText: isVi ? 'Xóa' : 'Delete',
+                        isDestructive: true,
+                        icon: Icons.delete_outline_rounded,
                       );
                       if (confirm == true && context.mounted) {
                         Navigator.pop(context, 'deleted');

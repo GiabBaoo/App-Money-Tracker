@@ -22,6 +22,7 @@ import '../../utils/currency_format_utils.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/top_toast.dart';
+import '../../widgets/mono_dialog.dart';
 import '../../widgets/voice_waveform.dart';
 import '../../services/smart_notification_service.dart';
 import '../budget/budget_and_goals_screen.dart';
@@ -848,55 +849,33 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     TopToast.show(context, LanguageService.instance.isVietnamese ? 'Đã sao chép nội dung tin nhắn!' : 'Message copied to clipboard!');
   }
 
-  void _confirmClearChat() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E2928) : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent),
-            const SizedBox(width: 8),
-            Text(LanguageScope.of(context).isVietnamese ? 'Làm mới cuộc trò chuyện?' : 'Reset conversation?', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Text(
-          LanguageScope.of(context).isVietnamese ? 'Tất cả tin nhắn trong phiên chat này sẽ được xóa để bắt đầu phiên mới.' : 'All messages in this chat session will be cleared to start anew.',
-          style: const TextStyle(fontSize: 13.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(context.tr('cancel'), style: TextStyle(color: isDark ? Colors.white60 : Colors.black54)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              _aiService.clearHistory();
-              setState(() {
-                _messages.clear();
-                final isVi = LanguageService.instance.isVietnamese;
-                _messages.add(_ChatMessage(
-                  text: isVi
-                      ? 'Xin chào! Tôi là Trợ lý Mono 🤖.\nToàn bộ dữ liệu thu chi & số dư của bạn được bảo mật tuyệt đối 100% trên thiết bị!\n\nBạn có thể:\n• Nhập/nói tự nhiên (VD: "Ăn bún bò 35k ví MoMo", "Hôm nay được cộng thêm 36đ")\n• Điều khiển app & báo cáo: "Bật chế độ tối", "Báo cáo chi tiêu tháng này"\n• Chụp hóa đơn/biên lai để bóc tách tự động!'
-                      : 'Hello! I am Mono Assistant 🤖.\nAll your income, expense and balance data is 100% securely kept on your device!\n\nYou can:\n• Type or speak naturally (e.g. "Lunch \$15 Cash", "Salary \$3000")\n• App commands & reports: "Turn on dark mode", "Monthly spending report"\n• Scan receipts for automatic parsing!',
-                  isUser: false,
-                ));
-              });
-              TopToast.show(context, LanguageService.instance.isVietnamese ? 'Đã làm mới cuộc trò chuyện!' : 'Conversation reset successfully!');
-            },
-            child: Text(LanguageScope.of(context).isVietnamese ? 'Xóa ngay' : 'Clear Now'),
-          ),
-        ],
-      ),
+  void _confirmClearChat() async {
+    final isVi = LanguageScope.of(context).isVietnamese;
+    final confirm = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Làm mới cuộc trò chuyện?' : 'Reset conversation?',
+      message: isVi
+          ? 'Tất cả tin nhắn trong phiên chat này sẽ được xóa để bắt đầu phiên mới.'
+          : 'All messages in this chat session will be cleared to start anew.',
+      cancelText: context.tr('cancel'),
+      confirmText: isVi ? 'Xóa ngay' : 'Clear Now',
+      isDestructive: true,
+      icon: Icons.delete_sweep_rounded,
     );
+
+    if (confirm == true && mounted) {
+      _aiService.clearHistory();
+      setState(() {
+        _messages.clear();
+        _messages.add(_ChatMessage(
+          text: isVi
+              ? 'Xin chào! Tôi là Trợ lý Mono 🤖.\nToàn bộ dữ liệu thu chi & số dư của bạn được bảo mật tuyệt đối 100% trên thiết bị!\n\nBạn có thể:\n• Nhập/nói tự nhiên (VD: "Ăn bún bò 35k ví MoMo", "Hôm nay được cộng thêm 36đ")\n• Điều khiển app & báo cáo: "Bật chế độ tối", "Báo cáo chi tiêu tháng này"\n• Chụp hóa đơn/biên lai để bóc tách tự động!'
+              : 'Hello! I am Mono Assistant 🤖.\nAll your income, expense and balance data is 100% securely kept on your device!\n\nYou can:\n• Type or speak naturally (e.g. "Lunch \$15 Cash", "Salary \$3000")\n• App commands & reports: "Turn on dark mode", "Monthly spending report"\n• Scan receipts for automatic parsing!',
+          isUser: false,
+        ));
+      });
+      TopToast.show(context, isVi ? 'Đã làm mới cuộc trò chuyện!' : 'Conversation reset successfully!');
+    }
   }
 
   void _startContinuousCountdownTicker(int durationMs) {

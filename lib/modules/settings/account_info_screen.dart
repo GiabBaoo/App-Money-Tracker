@@ -16,6 +16,8 @@ import '../../data/repositories/user_repository.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/user_avatar.dart';
 import '../../widgets/top_toast.dart';
+import '../../widgets/mono_dialog.dart';
+import '../../widgets/mono_bottom_sheet.dart';
 import '../auth/login_screen.dart';
 import 'avatar_crop_screen.dart';
 import '../../widgets/animated_scale_button.dart';
@@ -321,101 +323,95 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
   void _showPresetPickerSheet() {
     final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    showModalBottomSheet(
+    MonoBottomSheet.show(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      isVi ? 'Chọn ảnh đại diện mẫu' : 'Choose Preset Avatar',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : const Color(0xFF1A1A1A),
-                      ),
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    isVi ? 'Chọn ảnh đại diện mẫu' : 'Choose Preset Avatar',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : const Color(0xFF1A1A1A),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: UserAvatar.presetAvatars.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    childAspectRatio: 0.85,
                   ),
-                  itemBuilder: (context, index) {
-                    final preset = UserAvatar.presetAvatars[index];
-                    final isSelected = _newAvatarUrl == preset.id;
-
-                    return GestureDetector(
-                      onTap: () async {
-                        Navigator.pop(context);
-                        await _updateAvatarDirectly(preset.id, localPath: '');
-                      },
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 56,
-                            height: 56,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: preset.gradient,
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              border: isSelected ? Border.all(color: const Color(0xFF438883), width: 3) : null,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: preset.gradient[0].withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: Icon(preset.icon, color: Colors.white, size: 28),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            preset.label,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                              color: isSelected
-                                  ? const Color(0xFF438883)
-                                  : (isDark ? Colors.white70 : Colors.black87),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: UserAvatar.presetAvatars.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: 0.85,
                 ),
-              ],
-            ),
+                itemBuilder: (context, index) {
+                  final preset = UserAvatar.presetAvatars[index];
+                  final isSelected = _newAvatarUrl == preset.id;
+
+                  return GestureDetector(
+                    onTap: () async {
+                      Navigator.pop(context);
+                      await _updateAvatarDirectly(preset.id, localPath: '');
+                    },
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: preset.gradient,
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            border: isSelected ? Border.all(color: const Color(0xFF438883), width: 3) : null,
+                            boxShadow: [
+                              BoxShadow(
+                                color: preset.gradient[0].withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Icon(preset.icon, color: Colors.white, size: 28),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          preset.label,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            color: isSelected
+                                ? const Color(0xFF438883)
+                                : (isDark ? Colors.white70 : Colors.black87),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         );
       },
@@ -456,80 +452,25 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
     }
   }
 
-  void _showLogoutDialog() {
+  void _showLogoutDialog() async {
     final nav = Navigator.of(context);
     final isVi = LanguageScope.of(context).isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E2827) : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
-          ),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF3E2020) : const Color(0xFFFDE8E8),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.logout_rounded, color: Color(0xFFE53935), size: 22),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              isVi ? 'Đăng xuất tài khoản' : 'Log Out Account',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: isDark ? Colors.white : const Color(0xFF0F172A),
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          isVi
-              ? 'Bạn có chắc chắn muốn đăng xuất khỏi Mono không? Dữ liệu chưa đồng bộ sẽ được lưu an toàn trên máy.'
-              : 'Are you sure you want to log out from Mono? Unsynced data will remain safely stored on your device.',
-          style: TextStyle(
-            fontSize: 14,
-            color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
-          ),
-        ),
-        actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: Text(
-              isVi ? 'Hủy' : 'Cancel',
-              style: TextStyle(
-                color: isDark ? Colors.white60 : Colors.grey,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE63946),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-            ),
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              await _authService.logout();
-              nav.pushAndRemoveUntil(PageTransitions.fade(const LoginScreen()), (route) => false);
-            },
-            child: Text(isVi ? 'Đăng xuất' : 'Log Out', style: const TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
+    final confirmed = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Đăng xuất tài khoản' : 'Log Out Account',
+      message: isVi
+          ? 'Bạn có chắc chắn muốn đăng xuất khỏi Mono không? Dữ liệu chưa đồng bộ sẽ được lưu an toàn trên máy.'
+          : 'Are you sure you want to log out from Mono? Unsynced data will remain safely stored on your device.',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      confirmText: isVi ? 'Đăng xuất' : 'Log Out',
+      isDestructive: true,
+      icon: Icons.logout_rounded,
     );
+
+    if (confirmed == true && mounted) {
+      await _authService.logout();
+      nav.pushAndRemoveUntil(PageTransitions.fade(const LoginScreen()), (route) => false);
+    }
   }
 
   @override

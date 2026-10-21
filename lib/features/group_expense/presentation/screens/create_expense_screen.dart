@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../widgets/animated_scale_button.dart';
+import '../../../../widgets/mono_toast.dart';
 import '../../../../utils/currency_format_utils.dart';
 import '../../data/dtos/create_expense_dto.dart';
 import '../../data/models/expense_model.dart';
@@ -43,15 +44,17 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedPayerId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(isVi ? 'Vui lòng chọn người trả tiền' : 'Please select a payer')),
+      MonoToast.warning(
+        context,
+        isVi ? 'Vui lòng chọn người trả tiền' : 'Please select a payer',
       );
       return;
     }
 
     if (_selectedParticipantIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(isVi ? 'Vui lòng chọn người tham gia' : 'Please select participants')),
+      MonoToast.warning(
+        context,
+        isVi ? 'Vui lòng chọn người tham gia' : 'Please select participants',
       );
       return;
     }
@@ -80,14 +83,16 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(isVi ? 'Tạo chi tiêu thành công' : 'Expense created successfully')),
+        MonoToast.success(
+          context,
+          isVi ? 'Tạo chi tiêu thành công' : 'Expense created successfully',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${isVi ? 'Lỗi' : 'Error'}: $e')),
+        MonoToast.error(
+          context,
+          '${isVi ? 'Lỗi' : 'Error'}: $e',
         );
       }
     } finally {

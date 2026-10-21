@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../widgets/animated_scale_button.dart';
+import '../../../../widgets/mono_dialog.dart';
+import '../../../../widgets/mono_bottom_sheet.dart';
 import '../providers/group_expense_providers.dart';
 import '../../data/models/fund_transaction_model.dart';
 
@@ -33,10 +35,9 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
 
   void _showMonthPicker() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    showModalBottomSheet(
+    MonoBottomSheet.show(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true, // Cho phép bottom sheet mở rộng theo nội dung
+      isScrollControlled: true,
       builder: (context) => _MonthPickerSheet(
         initialDate: _selectedDate,
         onDateSelected: (date) {
@@ -55,13 +56,20 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).primaryColor;
 
+    // Design Tokens
+    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
+    final cardBgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final textPrimary = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+    final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0);
+
     return Scaffold(
-      backgroundColor: primaryColor,
+      backgroundColor: bgColor,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            // Header
+            // ─── ERGONOMIC TOP APP BAR ───
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
@@ -76,12 +84,20 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                       height: 42,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.15),
-                        border: Border.all(color: Colors.white24, width: 1),
+                        color: cardBgColor,
+                        border: Border.all(color: borderColor, width: 1),
+                        boxShadow: [
+                          if (!isDark)
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                        ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
+                        color: textPrimary,
                         size: 18,
                       ),
                     ),
@@ -91,252 +107,409 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Lịch sử hoạt động',
+                        Text(
+                          isVi ? 'Lịch Sử Hoạt Động' : 'Transaction History',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: textPrimary,
                             fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: -0.3,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.4,
                           ),
                         ),
-                        const SizedBox(height: 2),
                         Text(
                           widget.groupName,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontSize: 13,
+                            color: textSecondary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
+                    ),
+                  ),
+                  // Month filter trigger button
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      _showMonthPicker();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: borderColor, width: 1),
+                        boxShadow: [
+                          if (!isDark)
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.calendar_month_rounded,
+                            size: 16,
+                            color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'T${_selectedDate.month}/${_selectedDate.year}',
+                            style: TextStyle(
+                              color: textPrimary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: textSecondary),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            
-            // Month Picker Header
-            AnimatedScaleButton(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                _showMonthPicker();
-              },
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 20),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: Colors.white24, width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.calendar_month_rounded, color: Colors.white, size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      isVi ? 'Tháng ${_selectedDate.month.toString().padLeft(2, '0')} / ${_selectedDate.year}' : 'Month ${_selectedDate.month.toString().padLeft(2, '0')} / ${_selectedDate.year}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 18),
-                  ],
-                ),
-              ),
-            ),
-            
-            // Content
+
+            // ─── MAIN CONTENT ───
             Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF121212) : Colors.white,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                ),
-                child: fundTransactionsAsync.when(
-                  data: (transactions) {
-                    // Filter transactions by selected month and year
-                    final filteredTransactions = transactions.where((tx) => 
-                      tx.createdAt.month == _selectedDate.month && 
-                      tx.createdAt.year == _selectedDate.year
-                    ).toList();
+              child: fundTransactionsAsync.when(
+                data: (transactions) {
+                  // Filter by month & year
+                  final filteredTransactions = transactions.where((tx) =>
+                    tx.createdAt.month == _selectedDate.month &&
+                    tx.createdAt.year == _selectedDate.year
+                  ).toList();
 
-                    if (filteredTransactions.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.receipt_long_outlined,
-                              size: 60,
-                              color: (isDark ? Colors.white : Colors.grey).withValues(alpha: 0.2),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              isVi ? 'Không có hoạt động nào trong tháng ${_selectedDate.month}/${_selectedDate.year}' : 'No activities in ${_selectedDate.month}/${_selectedDate.year}',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: isDark ? Colors.white60 : Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
+                  // Compute monthly totals
+                  double monthInflow = 0;
+                  double monthOutflow = 0;
+                  for (var tx in filteredTransactions) {
+                    if (tx.type == TransactionType.contribute) {
+                      monthInflow += tx.amount;
+                    } else {
+                      monthOutflow += tx.amount;
                     }
+                  }
 
-                    // Group transactions by date
-                    final Map<DateTime, List<FundTransactionModel>> groupedTransactions = {};
-                    for (final transaction in filteredTransactions) {
-                      final dateKey = DateTime(
-                        transaction.createdAt.year,
-                        transaction.createdAt.month,
-                        transaction.createdAt.day,
-                      );
-                      if (!groupedTransactions.containsKey(dateKey)) {
-                        groupedTransactions[dateKey] = [];
-                      }
-                      groupedTransactions[dateKey]!.add(transaction);
+                  // Group transactions by date
+                  final Map<DateTime, List<FundTransactionModel>> groupedTransactions = {};
+                  for (final transaction in filteredTransactions) {
+                    final dateKey = DateTime(
+                      transaction.createdAt.year,
+                      transaction.createdAt.month,
+                      transaction.createdAt.day,
+                    );
+                    if (!groupedTransactions.containsKey(dateKey)) {
+                      groupedTransactions[dateKey] = [];
                     }
+                    groupedTransactions[dateKey]!.add(transaction);
+                  }
 
-                    // Sort dates in descending order
-                    final sortedDates = groupedTransactions.keys.toList()
-                      ..sort((a, b) => b.compareTo(a));
+                  // Sort dates in descending order
+                  final sortedDates = groupedTransactions.keys.toList()
+                    ..sort((a, b) => b.compareTo(a));
 
-                    return ListView.builder(
-                      padding: const EdgeInsets.all(20),
-                      itemCount: sortedDates.length,
-                      itemBuilder: (context, dateIndex) {
-                        final date = sortedDates[dateIndex];
-                        final dayTransactions = groupedTransactions[date]!;
-                        
-                        // Format date header
-                        final now = DateTime.now();
-                        final todayKey = DateTime(now.year, now.month, now.day);
-                        final yesterdayKey = todayKey.subtract(const Duration(days: 1));
-                        
-                        String dateHeader = '${date.day}/${date.month}/${date.year}';
-                        if (date == todayKey) {
-                          dateHeader = '${isVi ? 'Hôm nay' : 'Today'} - $dateHeader';
-                        } else if (date == yesterdayKey) {
-                          dateHeader = '${isVi ? 'Hôm qua' : 'Yesterday'} - $dateHeader';
-                        }
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Date header
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              child: Text(
-                                dateHeader,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white70 : Colors.black54,
-                                ),
-                              ),
+                  return SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 1. Monthly Summary Card
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: isDark
+                                  ? [
+                                      const Color(0xFF1E293B),
+                                      const Color(0xFF16202E),
+                                    ]
+                                  : [
+                                      primaryColor,
+                                      Color.lerp(primaryColor, Colors.black, 0.12) ?? primaryColor,
+                                    ],
                             ),
-                            
-                            // Transactions for this date
-                            ...dayTransactions.map((transaction) {
-                              final isContribute = transaction.type == TransactionType.contribute;
-                              final color = isContribute ? Colors.green : Colors.red;
-                              
-                              return GestureDetector(
-                                onTap: () {
-                                  _showTransactionDetail(context, transaction, isDark);
-                                },
-                                child: Container(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  padding: const EdgeInsets.all(14),
-                                  decoration: BoxDecoration(
-                                    color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF8F9FA),
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(
-                                      color: color.withValues(alpha: 0.1),
-                                      width: 1.5,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.15),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: (isDark ? Colors.black : primaryColor).withValues(alpha: 0.22),
+                                blurRadius: 16,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    isVi
+                                        ? 'TỔNG KẾT THÁNG ${_selectedDate.month}/${_selectedDate.year}'
+                                        : 'MONTHLY SUMMARY ${_selectedDate.month}/${_selectedDate.year}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white.withValues(alpha: 0.8),
+                                      letterSpacing: 0.8,
                                     ),
                                   ),
+                                  Text(
+                                    '${filteredTransactions.length} ${isVi ? 'hoạt động' : 'records'}',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+                              Row(
+                                children: [
+                                  // Inflow
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          isVi ? 'Tổng góp quỹ' : 'Total Contributed',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.white.withValues(alpha: 0.75),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          '+${_formatMoney(monthInflow)}đ',
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.greenAccent,
+                                            letterSpacing: -0.3,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    height: 32,
+                                    width: 1,
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  // Outflow
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          isVi ? 'Tổng chi/rút quỹ' : 'Total Withdrawn',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.white.withValues(alpha: 0.75),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          '-${_formatMoney(monthOutflow)}đ',
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.redAccent,
+                                            letterSpacing: -0.3,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // 2. Transactions or Empty State
+                        if (filteredTransactions.isEmpty)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                            decoration: BoxDecoration(
+                              color: cardBgColor,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: borderColor, width: 1),
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.receipt_long_outlined,
+                                  size: 48,
+                                  color: textSecondary.withValues(alpha: 0.4),
+                                ),
+                                const SizedBox(height: 14),
+                                Text(
+                                  isVi
+                                      ? 'Không có hoạt động nào trong tháng ${_selectedDate.month}/${_selectedDate.year}'
+                                      : 'No activity in ${_selectedDate.month}/${_selectedDate.year}',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: textPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          ...sortedDates.map((date) {
+                            final dayTransactions = groupedTransactions[date]!;
+                            final now = DateTime.now();
+                            final todayKey = DateTime(now.year, now.month, now.day);
+                            final yesterdayKey = todayKey.subtract(const Duration(days: 1));
+
+                            String dateHeader = '${date.day}/${date.month}/${date.year}';
+                            if (date == todayKey) {
+                              dateHeader = '${isVi ? 'Hôm nay' : 'Today'} • $dateHeader';
+                            } else if (date == yesterdayKey) {
+                              dateHeader = '${isVi ? 'Hôm qua' : 'Yesterday'} • $dateHeader';
+                            }
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
                                   child: Row(
                                     children: [
                                       Container(
-                                        padding: const EdgeInsets.all(10),
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
-                                          color: color.withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(12),
+                                          color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
+                                          borderRadius: BorderRadius.circular(10),
                                         ),
-                                        child: Icon(
-                                          isContribute ? Icons.add_rounded : Icons.arrow_downward_rounded,
-                                          color: color,
-                                          size: 20,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              isContribute ? (isVi ? 'Góp quỹ' : 'Contribution') : (isVi ? 'Rút quỹ' : 'Withdrawal'),
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold,
-                                                color: isDark ? Colors.white : Colors.black87,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              transaction.userName,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: isDark ? Colors.white60 : Colors.black54,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            '${isContribute ? '+' : '-'}${_formatMoney(transaction.amount)}đ',
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.bold,
-                                              color: color,
-                                            ),
+                                        child: Text(
+                                          dateHeader,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: textSecondary,
                                           ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            '${transaction.createdAt.hour}:${transaction.createdAt.minute.toString().padLeft(2, '0')}',
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: isDark ? Colors.white60 : Colors.black45,
-                                            ),
-                                          ),
-                                        ],
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              );
-                            }),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                  error: (error, _) => Center(
-                    child: Text('${isVi ? 'Lỗi' : 'Error'}: $error'),
-                  ),
-                ),
+                                ...dayTransactions.map((transaction) {
+                                  final isContribute = transaction.type == TransactionType.contribute;
+                                  final color = isContribute
+                                      ? (isDark ? const Color(0xFF34D399) : const Color(0xFF10B981))
+                                      : (isDark ? const Color(0xFFF87171) : const Color(0xFFEF4444));
+
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 10),
+                                    decoration: BoxDecoration(
+                                      color: cardBgColor,
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(color: borderColor, width: 1),
+                                    ),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        onTap: () => _showTransactionDetail(context, transaction, isDark),
+                                        borderRadius: BorderRadius.circular(20),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(15),
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.all(10),
+                                                decoration: BoxDecoration(
+                                                  color: color.withValues(alpha: 0.12),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: Icon(
+                                                  isContribute ? Icons.add_rounded : Icons.arrow_outward_rounded,
+                                                  color: color,
+                                                  size: 18,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 14),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      isContribute ? (isVi ? 'Góp quỹ' : 'Contribution') : (isVi ? 'Rút quỹ' : 'Withdrawal'),
+                                                      style: TextStyle(
+                                                        fontSize: 15,
+                                                        fontWeight: FontWeight.w700,
+                                                        color: textPrimary,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 2),
+                                                    Text(
+                                                      transaction.userName,
+                                                      style: TextStyle(fontSize: 12, color: textSecondary),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.end,
+                                                children: [
+                                                  Text(
+                                                    '${isContribute ? '+' : '-'}${_formatMoney(transaction.amount)}đ',
+                                                    style: TextStyle(
+                                                      fontSize: 15,
+                                                      fontWeight: FontWeight.w800,
+                                                      color: color,
+                                                      letterSpacing: -0.2,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                    '${transaction.createdAt.hour}:${transaction.createdAt.minute.toString().padLeft(2, '0')}',
+                                                    style: TextStyle(fontSize: 11, color: textSecondary),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }),
+                              ],
+                            );
+                          }),
+                      ],
+                    ),
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
+                error: (error, _) => Center(child: Text('${isVi ? 'Lỗi' : 'Error'}: $error')),
               ),
             ),
           ],
@@ -347,37 +520,45 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
 
   void _showTransactionDetail(BuildContext context, FundTransactionModel transaction, bool isDark) {
     final isContribute = transaction.type == TransactionType.contribute;
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(isContribute ? (isVi ? 'Chi tiết góp quỹ' : 'Contribution Details') : (isVi ? 'Chi tiết rút quỹ' : 'Withdrawal Details')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildDetailRow(isVi ? 'Người thực hiện:' : 'By:', transaction.userName, isDark),
-            const SizedBox(height: 12),
-            _buildDetailRow(isVi ? 'Số tiền:' : 'Amount:', '${_formatMoney(transaction.amount)}đ', isDark),
-            const SizedBox(height: 12),
-            _buildDetailRow(
-              isVi ? 'Thời gian:' : 'Time:', 
-              '${transaction.createdAt.day}/${transaction.createdAt.month}/${transaction.createdAt.year} ${transaction.createdAt.hour}:${transaction.createdAt.minute.toString().padLeft(2, '0')}',
-              isDark,
-            ),
-            if (transaction.notes != null && transaction.notes!.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              _buildDetailRow(isVi ? 'Ghi chú:' : 'Notes:', transaction.notes!, isDark),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(isVi ? 'Đóng' : 'Close'),
+    final color = isContribute ? Colors.green : Colors.red;
+
+    MonoDialog.show(
+      context,
+      title: isContribute ? (isVi ? 'Chi tiết góp quỹ' : 'Contribution Details') : (isVi ? 'Chi tiết rút quỹ' : 'Withdrawal Details'),
+      icon: isContribute ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+      iconColor: color,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildDetailRow(isVi ? 'Người thực hiện:' : 'By:', transaction.userName, isDark),
+          const SizedBox(height: 12),
+          _buildDetailRow(isVi ? 'Số tiền:' : 'Amount:', '${_formatMoney(transaction.amount)}đ', isDark),
+          const SizedBox(height: 12),
+          _buildDetailRow(
+            isVi ? 'Thời gian:' : 'Time:',
+            '${transaction.createdAt.day}/${transaction.createdAt.month}/${transaction.createdAt.year} ${transaction.createdAt.hour}:${transaction.createdAt.minute.toString().padLeft(2, '0')}',
+            isDark,
           ),
+          if (transaction.notes != null && transaction.notes!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _buildDetailRow(isVi ? 'Ghi chú:' : 'Notes:', transaction.notes!, isDark),
+          ],
         ],
       ),
+      actions: [
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF2F2F7),
+            foregroundColor: isDark ? Colors.white : Colors.black87,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: Text(isVi ? 'Đóng' : 'Close'),
+        ),
+      ],
     );
   }
 
@@ -391,7 +572,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
             label,
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? Colors.white60 : Colors.black54,
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
             ),
           ),
         ),
@@ -401,7 +582,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : Colors.black87,
+              color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
             ),
           ),
         ),
@@ -438,126 +619,134 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final sheetBg = widget.isDark ? const Color(0xFF1E293B) : Colors.white;
+    final textP = widget.isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+    final textS = widget.isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final primaryColor = Theme.of(context).primaryColor;
+
     return Container(
       decoration: BoxDecoration(
-        color: widget.isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        color: sheetBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              isVi ? 'Lọc theo thời gian' : 'Filter by Time',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
-            
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  onPressed: () => setState(() => _selectedYear--),
-                  icon: const Icon(Icons.arrow_back_ios_rounded, size: 20),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: textS.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Text(
-                    isVi ? 'Năm $_selectedYear' : 'Year $_selectedYear',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF438883),
-                    ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                isVi ? 'Lọc Theo Thời Gian' : 'Filter by Month',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: textP,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    onPressed: () => setState(() => _selectedYear--),
+                    icon: Icon(Icons.arrow_back_ios_rounded, size: 18, color: textP),
                   ),
-                ),
-                IconButton(
-                  onPressed: () => setState(() => _selectedYear++),
-                  icon: const Icon(Icons.arrow_forward_ios_rounded, size: 20),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 2.2,
-              ),
-              itemCount: 12,
-              itemBuilder: (context, index) {
-                final month = index + 1;
-                final isSelected = month == _selectedMonth;
-                final now = DateTime.now();
-                final isFuture = (_selectedYear > now.year) || (_selectedYear == now.year && month > now.month);
-                
-                return GestureDetector(
-                  onTap: isFuture
-                      ? null
-                      : () {
-                          widget.onDateSelected(DateTime(_selectedYear, month));
-                          Navigator.pop(context);
-                        },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isSelected 
-                          ? const Color(0xFF438883) 
-                          : isFuture
-                              ? (widget.isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.shade100)
-                              : (widget.isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF5F5F5)),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    alignment: Alignment.center,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Text(
-                      isVi ? 'Tháng $month' : 'Month $month',
+                      isVi ? 'Năm $_selectedYear' : 'Year $_selectedYear',
                       style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected 
-                            ? Colors.white 
-                            : isFuture
-                                ? (widget.isDark ? Colors.white24 : Colors.grey.shade400)
-                                : (widget.isDark ? Colors.white70 : Colors.black87),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: widget.isDark ? const Color(0xFF2DD4BF) : primaryColor,
                       ),
                     ),
                   ),
-                );
-              },
-            ),
-            
-            const SizedBox(height: 24),
-            TextButton(
-              onPressed: () {
-                final now = DateTime.now();
-                widget.onDateSelected(DateTime(now.year, now.month));
-                Navigator.pop(context);
-              },
-              child: Text(
-                isVi ? 'Trở về hôm nay' : 'Back to Today',
-                style: TextStyle(
-                  color: Color(0xFF438883),
-                  fontWeight: FontWeight.w600,
+                  IconButton(
+                    onPressed: () => setState(() => _selectedYear++),
+                    icon: Icon(Icons.arrow_forward_ios_rounded, size: 18, color: textP),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 2.2,
+                ),
+                itemCount: 12,
+                itemBuilder: (context, index) {
+                  final month = index + 1;
+                  final isSelected = month == _selectedMonth;
+                  final now = DateTime.now();
+                  final isFuture = (_selectedYear > now.year) || (_selectedYear == now.year && month > now.month);
+
+                  return GestureDetector(
+                    onTap: isFuture
+                        ? null
+                        : () {
+                            widget.onDateSelected(DateTime(_selectedYear, month));
+                            Navigator.pop(context);
+                          },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? (widget.isDark ? const Color(0xFF2DD4BF) : primaryColor)
+                            : isFuture
+                                ? (widget.isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.shade100)
+                                : (widget.isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF1F5F9)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        isVi ? 'Tháng $month' : 'Month $month',
+                        style: TextStyle(
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          fontSize: 13,
+                          color: isSelected
+                              ? Colors.white
+                              : isFuture
+                                  ? textS.withValues(alpha: 0.4)
+                                  : textP,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: () {
+                  final now = DateTime.now();
+                  widget.onDateSelected(DateTime(now.year, now.month));
+                  Navigator.pop(context);
+                },
+                child: Text(
+                  isVi ? 'Trở về tháng hiện tại' : 'Back to current month',
+                  style: TextStyle(
+                    color: widget.isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-          ],
+            ],
+          ),
         ),
       ),
     );

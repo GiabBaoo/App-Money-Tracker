@@ -5,9 +5,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // ignore: depend_on_referenced_packages
 import 'package:package_info_plus/package_info_plus.dart';
+import '../../core/constants/app_constants.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/top_toast.dart';
-import '../../widgets/app_logo.dart';
+import '../../widgets/mono_dialog.dart';
+import '../../widgets/mono_liquid_glass_logo.dart';
 import 'privacy_policy_screen.dart';
 import 'support_request_screen.dart';
 import '../../services/language_service.dart';
@@ -28,9 +30,9 @@ class AboutAppScreen extends StatelessWidget {
       } else if (ver.isNotEmpty) {
         return ver;
       }
-      return '1.0.0.1';
+      return AppConstants.appVersionFull;
     } catch (_) {
-      return '1.0.0.1';
+      return AppConstants.appVersionFull;
     }
   }
 
@@ -41,209 +43,187 @@ class AboutAppScreen extends StatelessWidget {
     int selectedRating = 5;
     bool isSubmitting = false;
 
-    showDialog(
+    MonoDialog.showCustom(
       context: context,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: isDark ? const Color(0xFF1E2827) : Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(
-              color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
-            ),
-          ),
-          title: Text(
-            isVi ? 'Đánh giá Mono' : 'Rate Mono',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
-            ),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  isVi
-                      ? 'Bạn cảm thấy trải nghiệm sử dụng Mono như thế nào?'
-                      : 'How do you feel about your experience using Mono?',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? const Color(0xFFCBD5E1) : Colors.grey,
+      child: StatefulBuilder(
+        builder: (context, setDialogState) => MonoDialogContainer(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                isVi ? 'Đánh giá Mono' : 'Rate Mono',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                isVi
+                    ? 'Bạn cảm thấy trải nghiệm sử dụng Mono như thế nào?'
+                    : 'How do you feel about your experience using Mono?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? const Color(0xFFCBD5E1) : Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) {
+                  return IconButton(
+                    icon: Icon(
+                      index < selectedRating ? Icons.star_rounded : Icons.star_outline_rounded,
+                      color: const Color(0xFFFFB800),
+                      size: 34,
+                    ),
+                    onPressed: isSubmitting
+                        ? null
+                        : () => setDialogState(() => selectedRating = index + 1),
+                  );
+                }),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: commentController,
+                maxLines: 3,
+                minLines: 2,
+                enabled: !isSubmitting,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+                decoration: InputDecoration(
+                  hintText: isVi
+                      ? 'Gửi thêm góp ý để nhóm phát triển cải thiện app nhé...'
+                      : 'Share your feedback to help us improve...',
+                  hintStyle: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white38 : Colors.grey.shade400,
+                  ),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xFF131D1C) : const Color(0xFFF8FAFC),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.white12 : Colors.grey.shade300,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.white12 : Colors.grey.shade300,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF438883),
+                      width: 1.5,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (index) {
-                    return IconButton(
-                      icon: Icon(
-                        index < selectedRating ? Icons.star_rounded : Icons.star_outline_rounded,
-                        color: const Color(0xFFFFB800),
-                        size: 34,
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: isSubmitting ? null : () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        side: BorderSide(color: isDark ? Colors.white12 : const Color(0xFFCBD5E1)),
+                      ),
+                      child: Text(
+                        isVi ? 'Để sau' : 'Later',
+                        style: TextStyle(color: isDark ? Colors.white60 : const Color(0xFF475569)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883),
+                        foregroundColor: isDark ? const Color(0xFF0F2625) : Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
                       onPressed: isSubmitting
                           ? null
-                          : () => setDialogState(() => selectedRating = index + 1),
-                    );
-                  }),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: commentController,
-                  maxLines: 3,
-                  minLines: 2,
-                  enabled: !isSubmitting,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isDark ? Colors.white : const Color(0xFF0F172A),
-                  ),
-                  decoration: InputDecoration(
-                    hintText: isVi
-                        ? 'Gửi thêm góp ý để nhóm phát triển cải thiện app nhé...'
-                        : 'Share your feedback to help us improve...',
-                    hintStyle: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? Colors.white38 : Colors.grey.shade400,
-                    ),
-                    filled: true,
-                    fillColor: isDark ? const Color(0xFF131D1C) : const Color(0xFFF8FAFC),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: isDark ? Colors.white12 : Colors.grey.shade300,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: isDark ? Colors.white12 : Colors.grey.shade300,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF438883),
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
-              child: Text(isVi ? 'Để sau' : 'Later', style: TextStyle(color: isDark ? Colors.white60 : Colors.grey)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isDark ? const Color(0xFF00E5FF) : const Color(0xFF438883),
-                foregroundColor: isDark ? Colors.black : Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: isSubmitting
-                  ? null
-                  : () async {
-                      setDialogState(() => isSubmitting = true);
-                      final comment = commentController.text.trim();
-                      try {
-                        final user = FirebaseAuth.instance.currentUser;
-                        final uid = user?.uid ?? 'anonymous';
-                        await FirebaseFirestore.instance.collection('app_reviews').add({
-                          'uid': uid,
-                          'rating': selectedRating,
-                          'comment': comment,
-                          'userEmail': user?.email ?? '',
-                          'platform': defaultTargetPlatform.name,
-                          'createdAt': FieldValue.serverTimestamp(),
-                        });
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.setBool('has_rated_app', true);
-                      } catch (e) {
-                        debugPrint('Error recording app review: $e');
-                      }
+                          : () async {
+                              setDialogState(() => isSubmitting = true);
+                              final comment = commentController.text.trim();
+                              try {
+                                final user = FirebaseAuth.instance.currentUser;
+                                final uid = user?.uid ?? 'anonymous';
+                                await FirebaseFirestore.instance.collection('app_reviews').add({
+                                  'uid': uid,
+                                  'rating': selectedRating,
+                                  'comment': comment,
+                                  'userEmail': user?.email ?? '',
+                                  'platform': defaultTargetPlatform.name,
+                                  'createdAt': FieldValue.serverTimestamp(),
+                                });
+                                final prefs = await SharedPreferences.getInstance();
+                                await prefs.setBool('has_rated_app', true);
+                              } catch (e) {
+                                debugPrint('Error recording app review: $e');
+                              }
 
-                      if (context.mounted) {
-                        Navigator.pop(dialogCtx);
-                        TopToast.show(
-                          context,
-                          isVi
-                              ? 'Cảm ơn bạn đã gửi đánh giá $selectedRating sao cho Mono! ❤️'
-                              : 'Thank you for rating Mono $selectedRating stars! ❤️',
-                        );
-                      }
-                    },
-              child: isSubmitting
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : Text(isVi ? 'Gửi đánh giá' : 'Submit', style: const TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ],
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                TopToast.show(
+                                  context,
+                                  isVi
+                                      ? 'Cảm ơn bạn đã gửi đánh giá $selectedRating sao cho Mono! ❤️'
+                                      : 'Thank you for rating Mono $selectedRating stars! ❤️',
+                                );
+                              }
+                            },
+                      child: isSubmitting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : Text(isVi ? 'Gửi đánh giá' : 'Submit', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   void _showTermsDialog(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isVi = LanguageScope.of(context).isVietnamese;
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E2827) : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
-          ),
-        ),
-        title: Text(
-          isVi ? 'Điều khoản dịch vụ' : 'Terms of Service',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : const Color(0xFF0F172A),
-          ),
-        ),
-        content: SingleChildScrollView(
-          child: Text(
-            isVi
-                ? '1. Chấp thuận điều khoản: Bằng việc sử dụng Mono, bạn đồng ý với các quy định về lưu trữ và bảo mật dữ liệu.\n\n'
-                    '2. Quyền riêng tư: Mọi thông tin thu chi cá nhân thuộc quyền sở hữu riêng của bạn và được bảo vệ theo chuẩn mã hóa cao nhất.\n\n'
-                    '3. Tính sẵn sàng: Hệ thống hỗ trợ làm việc ngoại tuyến (Offline SQLite) và tự động đồng bộ khi có kết nối Internet.\n\n'
-                    '4. Trợ lý AI: Tính năng AI Gemini hỗ trợ phân tích và gợi ý quản lý chi tiêu mang tính chất tham khảo hữu ích cho kế hoạch tài chính của bạn.'
-                : '1. Acceptance of Terms: By using Mono, you agree to the provisions on data storage and security.\n\n'
-                    '2. Privacy: All personal financial data belongs solely to you and is protected under the highest encryption standards.\n\n'
-                    '3. Availability: The app supports offline operations (SQLite) and synchronizes seamlessly when Internet is restored.\n\n'
-                    '4. AI Assistant: AI insights provide helpful financial suggestions for reference in your personal financial planning.',
-            style: TextStyle(
-              fontSize: 13.5,
-              height: 1.45,
-              color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
-            ),
-          ),
-        ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isDark ? const Color(0xFF00E5FF) : const Color(0xFF438883),
-              foregroundColor: isDark ? Colors.black : Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: Text(isVi ? 'Đã hiểu' : 'Understood', style: const TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
+    final message = isVi
+        ? '1. Chấp thuận điều khoản: Bằng việc sử dụng Mono, bạn đồng ý với các quy định về lưu trữ và bảo mật dữ liệu.\n\n'
+            '2. Quyền riêng tư: Mọi thông tin thu chi cá nhân thuộc quyền sở hữu riêng của bạn và được bảo vệ theo chuẩn mã hóa cao nhất.\n\n'
+            '3. Tính sẵn sàng: Hệ thống hỗ trợ làm việc ngoại tuyến (Offline SQLite) và tự động đồng bộ khi có kết nối Internet.\n\n'
+            '4. Trợ lý AI: Tính năng AI Gemini hỗ trợ phân tích và gợi ý quản lý chi tiêu mang tính chất tham khảo hữu ích cho kế hoạch tài chính của bạn.'
+        : '1. Acceptance of Terms: By using Mono, you agree to the provisions on data storage and security.\n\n'
+            '2. Privacy: All personal financial data belongs solely to you and is protected under the highest encryption standards.\n\n'
+            '3. Availability: The app supports offline operations (SQLite) and synchronizes seamlessly when Internet is restored.\n\n'
+            '4. AI Assistant: AI insights provide helpful financial suggestions for reference in your personal financial planning.';
+
+    MonoDialog.alert(
+      context,
+      title: isVi ? 'Điều khoản dịch vụ' : 'Terms of Service',
+      message: message,
+      buttonText: isVi ? 'Đã hiểu' : 'Understood',
+      icon: Icons.description_outlined,
     );
   }
 
@@ -292,9 +272,13 @@ class AboutAppScreen extends StatelessWidget {
                     children: [
                       // App Identity Hero Box
                       const Center(
-                        child: AppLogo.badge(
-                          size: 88,
-                          borderRadius: BorderRadius.all(Radius.circular(24)),
+                        child: MonoLiquidGlassLogo.badge(
+                          size: 96,
+                          isInteractive: true,
+                          animatedSheen: true,
+                          hasShadow: true,
+                          hasGlow: true,
+                          borderRadius: BorderRadius.all(Radius.circular(26)),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -322,24 +306,29 @@ class AboutAppScreen extends StatelessWidget {
                       FutureBuilder<String>(
                         future: _getAppVersion(),
                         builder: (context, snapshot) {
-                          final versionStr = snapshot.data ?? '1.0.0.1';
+                          final versionStr = snapshot.data ?? AppConstants.appVersionFull;
                           return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF438883).withValues(alpha: 0.12),
+                              color: const Color(0xFF2DD4BF).withValues(alpha: isDark ? 0.16 : 0.12),
                               borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: const Color(0xFF2DD4BF).withValues(alpha: isDark ? 0.35 : 0.25),
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF438883)),
+                                const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF2DD4BF)),
                                 const SizedBox(width: 6),
                                 Text(
-                                  isVi ? 'Phiên bản $versionStr (Mới nhất)' : 'Version $versionStr (Latest)',
-                                  style: const TextStyle(
+                                  isVi
+                                      ? 'Phiên bản $versionStr (Mới nhất)'
+                                      : 'Version $versionStr (Latest)',
+                                  style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF438883),
+                                    color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0F766E),
                                   ),
                                 ),
                               ],
@@ -347,7 +336,11 @@ class AboutAppScreen extends StatelessWidget {
                           );
                         },
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 22),
+
+                      // Khối cập nhật Liquid Glass v2.0
+                      _buildVersion2ChangelogCard(isDark, isVi),
+                      const SizedBox(height: 22),
 
                       // Feature Highlights Grid
                       _buildFeaturesGrid(isDark, isVi),
@@ -506,6 +499,100 @@ class AboutAppScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildVersion2ChangelogCard(bool isDark, bool isVi) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF162523) : const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFF2DD4BF).withValues(alpha: isDark ? 0.35 : 0.4),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2DD4BF).withValues(alpha: isDark ? 0.12 : 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2DD4BF).withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: Color(0xFF2DD4BF),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  AppConstants.appReleaseName,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF0F2625),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            isVi ? AppConstants.appReleaseDescriptionVi : AppConstants.appReleaseDescriptionEn,
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.45,
+              color: isDark ? Colors.white70 : const Color(0xFF334155),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              _buildFeaturePill(isDark, '💎 Liquid Glass Logo'),
+              _buildFeaturePill(isDark, '⚡ 60fps Launch Sheen'),
+              _buildFeaturePill(isDark, '🌙 Deep OLED Dark Mode'),
+              _buildFeaturePill(isDark, '🚀 2.0 Engine'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeaturePill(bool isDark, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : const Color(0xFF2DD4BF).withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0F766E),
+        ),
+      ),
     );
   }
 

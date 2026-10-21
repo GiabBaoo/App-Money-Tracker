@@ -4,6 +4,7 @@ import 'package:money_tracker_app/widgets/app_logo.dart';
 import 'package:money_tracker_app/modules/onboarding/onboarding_screen.dart';
 import 'package:money_tracker_app/modules/transaction/edit_transaction_screen.dart';
 import 'package:money_tracker_app/models/transaction_model.dart';
+import 'package:money_tracker_app/services/language_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -106,8 +107,11 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: EditTransactionScreen(transaction: sampleTx),
+        LanguageScope(
+          service: LanguageService.instance,
+          child: MaterialApp(
+            home: EditTransactionScreen(transaction: sampleTx),
+          ),
         ),
       );
 

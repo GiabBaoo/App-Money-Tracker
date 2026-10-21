@@ -160,12 +160,17 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            color: _tabController.index == 0 ? Colors.white : Colors.transparent,
+                            color: _tabController.index == 0
+                                ? (isDark ? const Color(0xFF1E293B) : Colors.white)
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(16),
+                            border: _tabController.index == 0 && isDark
+                                ? Border.all(color: const Color(0xFF334155), width: 1)
+                                : null,
                             boxShadow: _tabController.index == 0
                                 ? [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.12),
+                                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
@@ -178,13 +183,17 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                               Icon(
                                 Icons.pie_chart_rounded,
                                 size: 17,
-                                color: _tabController.index == 0 ? const Color(0xFF438883) : Colors.white70,
+                                color: _tabController.index == 0
+                                    ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
+                                    : Colors.white70,
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 isVi ? 'Ngân Sách Chi' : 'Expense Budgets',
                                 style: TextStyle(
-                                  color: _tabController.index == 0 ? const Color(0xFF438883) : Colors.white70,
+                                  color: _tabController.index == 0
+                                      ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
+                                      : Colors.white70,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13.5,
                                 ),
@@ -204,12 +213,17 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                           duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            color: _tabController.index == 1 ? Colors.white : Colors.transparent,
+                            color: _tabController.index == 1
+                                ? (isDark ? const Color(0xFF1E293B) : Colors.white)
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(16),
+                            border: _tabController.index == 1 && isDark
+                                ? Border.all(color: const Color(0xFF334155), width: 1)
+                                : null,
                             boxShadow: _tabController.index == 1
                                 ? [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.12),
+                                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
@@ -222,13 +236,17 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                               Icon(
                                 Icons.savings_rounded,
                                 size: 17,
-                                color: _tabController.index == 1 ? const Color(0xFF438883) : Colors.white70,
+                                color: _tabController.index == 1
+                                    ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
+                                    : Colors.white70,
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 isVi ? 'Mục Tiêu Tích Lũy' : 'Savings Goals',
                                 style: TextStyle(
-                                  color: _tabController.index == 1 ? const Color(0xFF438883) : Colors.white70,
+                                  color: _tabController.index == 1
+                                      ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
+                                      : Colors.white70,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13.5,
                                 ),
@@ -451,11 +469,19 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
               children: [
                 Text(
                   isVi ? 'Hạn mức theo danh mục' : 'Category Limits',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                  ),
                 ),
                 Text(
                   isVi ? '${budgets.length} danh mục' : '${budgets.length} categories',
-                  style: TextStyle(fontSize: 12.5, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -490,12 +516,12 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
       decoration: BoxDecoration(
         color: isOver
             ? (isDark ? const Color(0xFF2D1515) : const Color(0xFFFEF2F2))
-            : (isDark ? const Color(0xFF1E2827) : Colors.white),
+            : (isDark ? const Color(0xFF182234) : Colors.white),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isOver
               ? const Color(0xFFEF4444).withValues(alpha: 0.6)
-              : (isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
+              : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
           width: isOver ? 1.5 : 1,
         ),
         boxShadow: [
@@ -628,17 +654,21 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2827) : const Color(0xFFF9FAFB),
+        color: isDark ? const Color(0xFF182234) : const Color(0xFFF9FAFB),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFE5E7EB)),
+        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB)),
       ),
       child: Column(
         children: [
-          Icon(Icons.pie_chart_outline_rounded, size: 56, color: Colors.grey.withValues(alpha: 0.3)),
+          Icon(Icons.pie_chart_outline_rounded, size: 56, color: isDark ? const Color(0xFF64748B) : Colors.grey.withValues(alpha: 0.3)),
           const SizedBox(height: 12),
           Text(
             LanguageScope.of(context).isVietnamese ? 'Chưa có ngân sách nào trong tháng' : 'No budgets set for this month',
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 16,
+              color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+            ),
           ),
           const SizedBox(height: 6),
           Text(
@@ -646,7 +676,7 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                 ? 'Hãy đặt hạn mức cho các khoản ăn uống, mua sắm để chi tiêu kỷ luật và tối ưu dòng tiền hơn.'
                 : 'Set spending limits for dining, shopping, etc., to stay disciplined and optimize cash flow.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade600, height: 1.4),
+            style: TextStyle(fontSize: 13, color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600, height: 1.4),
           ),
         ],
       ),
@@ -667,11 +697,15 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.savings_outlined, size: 64, color: Colors.grey.withValues(alpha: 0.3)),
+                  Icon(Icons.savings_outlined, size: 64, color: isDark ? const Color(0xFF64748B) : Colors.grey.withValues(alpha: 0.3)),
                   const SizedBox(height: 16),
                   Text(
                     LanguageScope.of(context).isVietnamese ? 'Chưa có mục tiêu tài chính nào' : 'No financial goals yet',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 17,
+                      color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -679,7 +713,7 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                         ? 'Đặt mục tiêu như mua xe máy, đi du lịch hoặc quỹ khẩn cấp để có thêm động lực tiết kiệm mỗi ngày!'
                         : 'Set goals like buying a bike, travel, or an emergency fund to motivate daily savings!',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 13.5, color: Colors.grey.shade600, height: 1.4),
+                    style: TextStyle(fontSize: 13.5, color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600, height: 1.4),
                   ),
                 ],
               ),
@@ -709,10 +743,10 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2827) : Colors.white,
+        color: isDark ? const Color(0xFF182234) : Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: isCompleted ? Colors.green.withValues(alpha: 0.5) : goalColor.withValues(alpha: 0.25),
+          color: isCompleted ? Colors.green.withValues(alpha: 0.5) : goalColor.withValues(alpha: isDark ? 0.45 : 0.25),
           width: 1.5,
         ),
         boxShadow: [

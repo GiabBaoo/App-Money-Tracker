@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/app_logo.dart';
+import '../../widgets/mono_toast.dart';
 import '../../services/auth_service.dart';
 import '../../services/language_service.dart';
 import '../home/home_screen.dart';
@@ -100,12 +101,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: isError ? Colors.red.shade600 : const Color(0xFF438883),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    ));
+    MonoToast.show(
+      context,
+      message,
+      type: isError ? MonoToastType.error : MonoToastType.success,
+    );
   }
 
   @override

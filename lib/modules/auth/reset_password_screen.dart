@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/app_logo.dart';
+import '../../widgets/mono_toast.dart';
 import '../../services/auth_service.dart';
 import '../../services/language_service.dart';
 import '../settings/success_screen.dart';
@@ -175,12 +176,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: isError ? Colors.red.shade600 : const Color(0xFF438883),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    ));
+    MonoToast.show(
+      context,
+      message,
+      type: isError ? MonoToastType.error : MonoToastType.success,
+    );
   }
 
   @override
@@ -218,9 +218,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -5))],
+                  boxShadow: [BoxShadow(color: isDark ? Colors.black45 : Colors.black12, blurRadius: 20, offset: const Offset(0, -5))],
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
@@ -232,7 +232,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? const Color(0xFF4A9B7F) : const Color(0xFF549B96),
+                          color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF549B96),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -241,7 +241,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             ? 'Vui lòng nhập mật khẩu mới của bạn để bảo mật tài khoản.'
                             : 'Please enter your new password to secure your account.',
                         style: TextStyle(
-                          color: isDark ? Colors.white70 : const Color(0xFF666666),
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                           fontSize: 14,
                           height: 1.4,
                         ),
@@ -256,7 +256,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         errorText: _passwordError,
                         onChanged: _updatePasswordValidation,
                         suffixIcon: IconButton(
-                          icon: Icon(_obscureNewPassword ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
+                          icon: Icon(_obscureNewPassword ? Icons.visibility_off : Icons.visibility, color: isDark ? const Color(0xFF94A3B8) : Colors.grey),
                           onPressed: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
                         ),
                       ),
@@ -265,8 +265,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF9FAFB), 
-                          borderRadius: BorderRadius.circular(8),
+                          color: isDark ? const Color(0xFF141E2E) : const Color(0xFFF9FAFB),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                         ),
                         child: Column(children: [
                           _buildPasswordRule(
@@ -297,7 +298,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         errorText: _confirmPasswordError,
                         onChanged: _onConfirmPasswordChanged,
                         suffixIcon: IconButton(
-                          icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
+                          icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility, color: isDark ? const Color(0xFF94A3B8) : Colors.grey),
                           onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                         ),
                       ),
@@ -352,7 +353,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 2),
-      child: Text(text, style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF666666), fontSize: 14, fontWeight: FontWeight.w500)),
+      child: Text(text, style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.w600)),
     );
   }
 
@@ -362,39 +363,40 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       controller: controller,
       obscureText: isObscure,
       onChanged: onChanged,
-      style: TextStyle(fontSize: 15, color: isDark ? Colors.white : Colors.black),
+      style: TextStyle(fontSize: 15, color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A)),
       decoration: InputDecoration(
         hintText: hintText,
         errorText: errorText,
-        hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black.withValues(alpha: 0.3), fontSize: 14),
+        hintStyle: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), fontSize: 14),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFDDDDDD))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5)),
-        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.red.shade400, width: 1.5)),
-        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.red.shade400, width: 2)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883), width: 1.5)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.red.shade400, width: 1.5)),
+        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.red.shade400, width: 2)),
         suffixIcon: suffixIcon,
-        filled: isDark,
-        fillColor: isDark ? const Color(0xFF2E2E2E) : null,
+        filled: true,
+        fillColor: isDark ? const Color(0xFF141E2E) : const Color(0xFFF8FAFC),
       ),
     );
   }
 
   Widget _buildPasswordRule(String text, bool isValid) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(children: [
         Icon(
           isValid ? Icons.check_circle : Icons.check_circle_outline,
-          color: isValid ? const Color(0xFF438883) : const Color(0xFF8B9098),
+          color: isValid ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)) : (isDark ? const Color(0xFF64748B) : const Color(0xFF8B9098)),
           size: 16,
         ),
         const SizedBox(width: 8),
         Text(
           text,
           style: TextStyle(
-            color: isValid ? const Color(0xFF438883) : const Color(0xFF8B9098),
+            color: isValid ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)) : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF8B9098)),
             fontSize: 13,
-            fontWeight: isValid ? FontWeight.w500 : FontWeight.normal,
+            fontWeight: isValid ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
       ]),

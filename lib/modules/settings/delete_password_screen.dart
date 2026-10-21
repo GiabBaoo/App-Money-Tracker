@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import '../../services/language_service.dart';
+import '../../widgets/mono_toast.dart';
 import 'success_screen.dart';
 import '../auth/login_screen.dart';
 
@@ -28,10 +29,7 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
     final isVi = LanguageScope.of(context).isVietnamese;
     final password = _passwordController.text;
     if (password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(isVi ? 'Vui lòng nhập mật khẩu!' : 'Please enter your password!'),
-        backgroundColor: Colors.red,
-      ));
+      MonoToast.error(context, isVi ? 'Vui lòng nhập mật khẩu!' : 'Please enter your password!');
       return;
     }
     setState(() => _isLoading = true);
@@ -52,7 +50,7 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
         },
       )));
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.message), backgroundColor: Colors.red));
+      MonoToast.error(context, result.message);
     }
   }
 

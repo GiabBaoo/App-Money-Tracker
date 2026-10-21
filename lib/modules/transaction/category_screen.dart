@@ -11,6 +11,7 @@ import '../../features/group_expense/presentation/screens/group_list_screen.dart
 import '../../utils/page_transitions.dart';
 import '../../services/language_service.dart';
 import '../../widgets/top_toast.dart';
+import '../../widgets/mono_dialog.dart';
 import '../../widgets/animated_scale_button.dart';
 
 class CategoryScreen extends StatefulWidget {
@@ -397,10 +398,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           child: Container(
                             height: 48,
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF162423) : const Color(0xFFF1F5F9),
+                              color: isDark ? const Color(0xFF141E2E) : const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(18),
                               border: Border.all(
-                                color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+                                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                               ),
                             ),
                             child: TextField(
@@ -408,26 +409,26 @@ class _CategoryScreenState extends State<CategoryScreen> {
                               focusNode: _searchFocusNode,
                               onChanged: (val) => setState(() => _searchQuery = val.toLowerCase().trim()),
                               style: TextStyle(
-                                color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                               ),
                               decoration: InputDecoration(
                                 hintText: isVi ? 'Tìm kiếm danh mục nhanh...' : 'Search categories quickly...',
                                 hintStyle: TextStyle(
-                                  color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF94A3B8),
                                   fontSize: 14,
                                 ),
                                 prefixIcon: Icon(
                                   Icons.search_rounded,
-                                  color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                   size: 20,
                                 ),
                                 border: InputBorder.none,
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                 suffixIcon: _searchQuery.isNotEmpty
                                     ? IconButton(
-                                        icon: Icon(Icons.close_rounded, color: isDark ? Colors.white54 : Colors.grey, size: 18),
+                                        icon: Icon(Icons.close_rounded, color: isDark ? const Color(0xFF94A3B8) : Colors.grey, size: 18),
                                         onPressed: () {
                                           _searchController.clear();
                                           setState(() => _searchQuery = '');
@@ -782,8 +783,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
             padding: const EdgeInsets.only(left: 24, right: 24, bottom: 8, top: 8),
             child: Text(
               _getGroupDisplay(title, isVi),
-              style: const TextStyle(
-                color: Colors.grey,
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.2,
@@ -800,7 +801,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
     final isCustom = cat['isCustom'] == true;
     final isOverridden = cat['isOverridden'] == true;
     final Color color = cat['color'] ?? CategoryUtils.getVibrantColor(cat['name']);
-    final Color bgColor = isDark ? color.withValues(alpha: 0.12) : color.withValues(alpha: 0.08);
+    final Color bgColor = isDark ? color.withValues(alpha: 0.18) : color.withValues(alpha: 0.08);
     final String desc = cat['desc'] ?? '';
 
     return Padding(
@@ -831,12 +832,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: (isCustom || isOverridden)
-                    ? color.withValues(alpha: 0.3)
-                    : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.12)),
+                    ? color.withValues(alpha: 0.45)
+                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                 width: (isCustom || isOverridden) ? 1.5 : 1,
               ),
             ),
@@ -864,7 +865,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             child: Text(
                               context.trCat(cat['name']),
                               style: TextStyle(
-                                color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                                color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1A1A1A),
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -893,7 +894,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         Text(
                           desc,
                           style: TextStyle(
-                            color: isDark ? Colors.white38 : Colors.grey.shade600,
+                            color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600,
                             fontSize: 12,
                           ),
                           maxLines: 1,
@@ -903,7 +904,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, color: isDark ? Colors.white24 : Colors.grey.shade400, size: 20),
+                Icon(Icons.chevron_right_rounded, color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade400, size: 20),
               ],
             ),
           ),
@@ -965,23 +966,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 title: Text(context.tr('delete_category'), style: const TextStyle(color: Colors.red)),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (dialogCtx) => AlertDialog(
-                      title: Text(context.tr('delete_category')),
-                      content: Text(context.tr('confirm_delete_category')),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(dialogCtx, false),
-                          child: Text(context.tr('cancel')),
-                        ),
-                        ElevatedButton(
-                          onPressed: () => Navigator.pop(dialogCtx, true),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                          child: Text(context.tr('delete'), style: const TextStyle(color: Colors.white)),
-                        ),
-                      ],
-                    ),
+                  final confirm = await MonoDialog.confirm(
+                    context,
+                    title: context.tr('delete_category'),
+                    message: context.tr('confirm_delete_category'),
+                    cancelText: context.tr('cancel'),
+                    confirmText: context.tr('delete'),
+                    isDestructive: true,
+                    icon: Icons.delete_outline_rounded,
                   );
 
                   if (confirm == true) {

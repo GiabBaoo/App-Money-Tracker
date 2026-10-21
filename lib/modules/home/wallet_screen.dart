@@ -10,11 +10,13 @@ import '../../utils/currency_format_utils.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/transaction_item.dart';
 import '../../widgets/top_toast.dart';
+import '../../widgets/mono_dialog.dart';
 import '../../services/language_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/transaction_balance_service.dart';
 import '../../utils/page_transitions.dart';
 import '../wallet/wallet_history_screen.dart';
+import '../../core/theme/app_colors.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -932,12 +934,12 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
         decoration: BoxDecoration(
           color: isSelected
               ? accentColor
-              : (isDark ? const Color(0xFF1E2827) : const Color(0xFFF1F5F9)),
+              : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
                 ? accentColor
-                : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+                : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
             width: 1.0,
           ),
           boxShadow: isSelected
@@ -958,7 +960,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
               size: 15,
               color: isSelected
                   ? Colors.white
-                  : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                  : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
             ),
             const SizedBox(width: 6),
             Text(
@@ -968,7 +970,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                 color: isSelected
                     ? Colors.white
-                    : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                    : (isDark ? const Color(0xFFF8FAFC) : const Color(0xFF334155)),
               ),
             ),
           ],
@@ -1011,10 +1013,10 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
           return Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF162523) : const Color(0xFFF8FAFB),
+              color: isDark ? const Color(0xFF182234) : const Color(0xFFF8FAFB),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
               ),
             ),
             child: Column(
@@ -1040,7 +1042,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w700,
-                                color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -1069,9 +1071,9 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _buildSummaryColumn(context.tr('income'), income, const Color(0xFF2E7D32), isDark),
-                    Container(height: 22, width: 1, color: isDark ? Colors.white12 : Colors.grey.shade300),
+                    Container(height: 22, width: 1, color: isDark ? const Color(0xFF334155) : Colors.grey.shade300),
                     _buildSummaryColumn(context.tr('expense'), expense, const Color(0xFFD32F2F), isDark),
-                    Container(height: 22, width: 1, color: isDark ? Colors.white12 : Colors.grey.shade300),
+                    Container(height: 22, width: 1, color: isDark ? const Color(0xFF334155) : Colors.grey.shade300),
                     _buildSummaryColumn(
                       context.tr('net_flow'),
                       net,
@@ -1850,7 +1852,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
     return showModalBottomSheet<int>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF141F1E) : Colors.white,
+      backgroundColor: isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceLight,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -1886,7 +1888,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                         height: 4.5,
                         margin: const EdgeInsets.only(bottom: 14),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white24 : Colors.grey.shade300,
+                          color: isDark ? AppColors.borderDark : AppColors.borderLight,
                           borderRadius: BorderRadius.circular(3),
                         ),
                       ),
@@ -1915,14 +1917,14 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                   style: TextStyle(
                                     fontSize: 17.5,
                                     fontWeight: FontWeight.bold,
-                                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                                   ),
                                 ),
                                 Text(
                                   isVi ? 'Chọn từ bảng màu hoặc tùy biến phổ quang' : 'Choose from palette or customize spectrum',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: isDark ? Colors.white60 : Colors.grey.shade600,
+                                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                                   ),
                                 ),
                               ],
@@ -1930,7 +1932,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                           ],
                         ),
                         IconButton(
-                          icon: Icon(Icons.close_rounded, color: isDark ? Colors.white60 : Colors.grey.shade600),
+                          icon: Icon(Icons.close_rounded, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
                           onPressed: () => Navigator.pop(dialogCtx),
                         ),
                       ],
@@ -2209,7 +2211,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white70 : Colors.grey.shade700,
+                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -2218,15 +2220,15 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                             height: 38,
                             padding: const EdgeInsets.symmetric(horizontal: 10),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF1E2B29) : const Color(0xFFF1F5F9),
+                              color: isDark ? AppColors.inputBgDark : AppColors.inputBgLight,
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: isDark ? const Color(0xFF324844) : const Color(0xFFCBD5E1),
+                                color: isDark ? AppColors.borderDark : AppColors.borderLight,
                               ),
                             ),
                             child: Row(
                               children: [
-                                const Text('#', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+                                Text('#', style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? AppColors.textMutedDark : Colors.grey)),
                                 const SizedBox(width: 4),
                                 Expanded(
                                   child: TextField(
@@ -2235,7 +2237,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
-                                      color: isDark ? Colors.white : Colors.black87,
+                                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                                     ),
                                     decoration: const InputDecoration(
                                       counterText: '',
@@ -2278,14 +2280,14 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 13),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                              side: BorderSide(color: isDark ? Colors.white24 : Colors.grey.shade300),
+                              side: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
                             ),
                             child: Text(
                               isVi ? 'Đóng' : 'Close',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white70 : Colors.grey.shade700,
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                               ),
                             ),
                           ),
@@ -2439,7 +2441,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: isDark ? const Color(0xFF141F1E) : Colors.white,
+      backgroundColor: isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceLight,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -2476,7 +2478,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Tiêu đề & Nút đóng [X] (Đã xóa thanh gạch ngang drag handle theo Phương án 1)
+                      // Tiêu đề & Nút đóng [X]
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -2502,7 +2504,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                     style: TextStyle(
                                       fontSize: 18.5,
                                       fontWeight: FontWeight.bold,
-                                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -2512,7 +2514,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                             ),
                           ),
                           IconButton(
-                            icon: Icon(Icons.close_rounded, color: isDark ? Colors.white60 : Colors.grey.shade600),
+                            icon: Icon(Icons.close_rounded, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
                             onPressed: () => Navigator.pop(ctx),
                             tooltip: isVi ? 'Đóng' : 'Close',
                           ),
@@ -2706,7 +2708,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white70 : Colors.grey.shade700,
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                             ),
                           ),
                         ],
@@ -2740,10 +2742,10 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                 decoration: BoxDecoration(
                                   color: isCur
                                       ? pColor.withValues(alpha: isDark ? 0.35 : 0.18)
-                                      : (isDark ? const Color(0xFF22302E) : const Color(0xFFF1F5F9)),
+                                      : (isDark ? AppColors.inputBgDark : AppColors.inputBgLight),
                                   borderRadius: BorderRadius.circular(18),
                                   border: Border.all(
-                                    color: isCur ? pColor : (isDark ? Colors.white12 : Colors.grey.shade300),
+                                    color: isCur ? pColor : (isDark ? AppColors.borderDark : AppColors.borderLight),
                                     width: isCur ? 1.5 : 1,
                                   ),
                                 ),
@@ -2754,7 +2756,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                     fontWeight: isCur ? FontWeight.bold : FontWeight.w500,
                                     color: isCur
                                         ? (isDark ? Colors.white : pColor)
-                                        : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                                        : (isDark ? AppColors.textPrimaryDark : AppColors.textSecondaryLight),
                                   ),
                                 ),
                               ),
@@ -2771,17 +2773,17 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white70 : Colors.grey.shade800,
+                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E2B29) : const Color(0xFFF8FAFC),
+                        color: isDark ? AppColors.inputBgDark : AppColors.inputBgLight,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: isDark ? const Color(0xFF324844) : const Color(0xFFCBD5E1),
+                          color: isDark ? AppColors.borderDark : AppColors.borderLight,
                           width: 1.2,
                         ),
                       ),
@@ -2812,8 +2814,13 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                 fontWeight: FontWeight.bold,
                                 color: activeColor,
                               ),
-                              decoration: const InputDecoration(
-                                hintText: '0 ₫',
+                              decoration: InputDecoration(
+                                hintText: '0',
+                                hintStyle: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                                ),
                                 border: InputBorder.none,
                                 isDense: true,
                               ),
@@ -2832,7 +2839,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                           ),
                           if (balanceController.text.isNotEmpty)
                             IconButton(
-                              icon: const Icon(Icons.cancel_rounded, size: 18, color: Colors.grey),
+                              icon: Icon(Icons.cancel_rounded, size: 18, color: isDark ? AppColors.textMutedDark : Colors.grey),
                               onPressed: () {
                                 setModalState(() {
                                   balanceController.clear();
@@ -2868,10 +2875,10 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF233532) : const Color(0xFFF1F5F9),
+                              color: isDark ? AppColors.cardDark : AppColors.inputBgLight,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isDark ? const Color(0xFF38524E) : const Color(0xFFCBD5E1),
+                                color: isDark ? AppColors.borderDark : AppColors.borderLight,
                                 width: 0.8,
                               ),
                             ),
@@ -2880,7 +2887,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                               style: TextStyle(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white70 : const Color(0xFF475569),
+                                color: isDark ? AppColors.textPrimaryDark : AppColors.textSecondaryLight,
                               ),
                             ),
                           ),
@@ -2896,30 +2903,29 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white70 : Colors.grey.shade800,
+                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                       ),
                     ),
                     const SizedBox(height: 6),
                     TextField(
                       controller: nameController,
-                      style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A), fontWeight: FontWeight.w600),
+                      style: TextStyle(color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight, fontWeight: FontWeight.w600),
                       decoration: InputDecoration(
-                        hintText: context.tr('wallet_name_hint'),
                         prefixIcon: Icon(Icons.account_balance_wallet_rounded, color: activeColor),
                         filled: true,
-                        fillColor: isDark ? const Color(0xFF1E2B29) : const Color(0xFFF8FAFC),
+                        fillColor: isDark ? AppColors.inputBgDark : AppColors.inputBgLight,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: BorderSide(
-                            color: isDark ? const Color(0xFF324844) : const Color(0xFFCBD5E1),
+                            color: isDark ? AppColors.borderDark : AppColors.borderLight,
                             width: 1.2,
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: BorderSide(
-                            color: isDark ? const Color(0xFF324844) : const Color(0xFFCBD5E1),
+                            color: isDark ? AppColors.borderDark : AppColors.borderLight,
                             width: 1.2,
                           ),
                         ),
@@ -2933,48 +2939,133 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
 
                     const SizedBox(height: 16),
 
-                    // ════════════ 5. LOẠI VÍ TIỀN ════════════
+                    // ════════════ 5. LOẠI VÍ TIỀN (BỘ THẺ CHỌN GRID 2 CỘT HIỆN ĐẠI) ════════════
                     Text(
                       context.tr('wallet_type_label'),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white70 : Colors.grey.shade800,
+                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedType,
-                      dropdownColor: isDark ? const Color(0xFF1E2B29) : Colors.white,
-                      style: TextStyle(color: isDark ? Colors.white : const Color(0xFF0F172A), fontSize: 14, fontWeight: FontWeight.w600),
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: isDark ? const Color(0xFF1E2B29) : const Color(0xFFF8FAFC),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(
-                            color: isDark ? const Color(0xFF324844) : const Color(0xFFCBD5E1),
-                            width: 1.2,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(
-                            color: isDark ? const Color(0xFF324844) : const Color(0xFFCBD5E1),
-                            width: 1.2,
-                          ),
-                        ),
-                      ),
-                      items: [
-                        DropdownMenuItem(value: WalletType.cash, child: Text('💵 ${context.tr('wallet_cash')}')),
-                        DropdownMenuItem(value: WalletType.bank, child: Text('🏦 ${context.tr('wallet_bank')}')),
-                        DropdownMenuItem(value: WalletType.eWallet, child: Text('👛 ${context.tr('wallet_e_wallet')}')),
-                        DropdownMenuItem(value: WalletType.credit, child: Text('💳 ${context.tr('wallet_credit')}')),
-                        DropdownMenuItem(value: WalletType.savings, child: Text('🐷 ${context.tr('wallet_savings')}')),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setModalState(() => selectedType = val);
+                    const SizedBox(height: 8),
+                    Builder(
+                      builder: (context) {
+                        final walletTypes = [
+                          {'type': WalletType.cash, 'name': context.tr('wallet_cash'), 'icon': Icons.payments_rounded},
+                          {'type': WalletType.bank, 'name': context.tr('wallet_bank'), 'icon': Icons.account_balance_rounded},
+                          {'type': WalletType.eWallet, 'name': context.tr('wallet_e_wallet'), 'icon': Icons.account_balance_wallet_rounded},
+                          {'type': WalletType.credit, 'name': context.tr('wallet_credit'), 'icon': Icons.credit_card_rounded},
+                          {'type': WalletType.savings, 'name': context.tr('wallet_savings'), 'icon': Icons.savings_rounded},
+                        ];
+                        if (!walletTypes.any((t) => t['type'] == selectedType)) {
+                          walletTypes.add({
+                            'type': selectedType,
+                            'name': WalletType.getDisplayName(selectedType, context),
+                            'icon': WalletType.getDefaultIcon(selectedType),
+                          });
+                        }
+
+                        return LayoutBuilder(
+                          builder: (context, constraints) {
+                            final double cardWidth = (constraints.maxWidth - 10) / 2;
+                            return Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: walletTypes.map((item) {
+                                final String typeVal = item['type'] as String;
+                                final String typeName = item['name'] as String;
+                                final IconData typeIcon = item['icon'] as IconData;
+                                final bool isSelected = selectedType == typeVal;
+
+                                return SizedBox(
+                                  width: cardWidth,
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(14),
+                                      onTap: () {
+                                        HapticFeedback.lightImpact();
+                                        setModalState(() {
+                                          selectedType = typeVal;
+                                        });
+                                      },
+                                      child: AnimatedContainer(
+                                        duration: const Duration(milliseconds: 200),
+                                        curve: Curves.easeInOut,
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? activeColor.withValues(alpha: 0.12)
+                                              : (isDark ? AppColors.inputBgDark : AppColors.inputBgLight),
+                                          borderRadius: BorderRadius.circular(14),
+                                          border: Border.all(
+                                            color: isSelected
+                                                ? activeColor
+                                                : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                                            width: isSelected ? 1.6 : 1.0,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            // Icon đặt trong khung tròn nhỏ có màu nền dịu
+                                            Container(
+                                              width: 32,
+                                              height: 32,
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                color: isSelected
+                                                    ? activeColor.withValues(alpha: 0.20)
+                                                    : (isDark ? AppColors.cardDark : Colors.white),
+                                                border: isSelected
+                                                    ? null
+                                                    : Border.all(
+                                                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                                        width: 0.8,
+                                                      ),
+                                              ),
+                                              child: Icon(
+                                                typeIcon,
+                                                size: 17,
+                                                color: isSelected
+                                                    ? activeColor
+                                                    : (isDark ? AppColors.textPrimaryDark : AppColors.textSecondaryLight),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            // Tên loại ví rõ ràng, cân đối
+                                            Expanded(
+                                              child: Text(
+                                                typeName,
+                                                style: TextStyle(
+                                                  fontSize: 12.5,
+                                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                                                  color: isSelected
+                                                      ? (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight)
+                                                      : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            if (isSelected) ...[
+                                              const SizedBox(width: 4),
+                                              Icon(
+                                                Icons.check_circle_rounded,
+                                                size: 14,
+                                                color: activeColor,
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            );
+                          },
+                        );
                       },
                     ),
 
@@ -2989,7 +3080,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white70 : Colors.grey.shade800,
+                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                           ),
                         ),
                         InkWell(
@@ -3074,13 +3165,13 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                   width: 22,
                                   height: 22,
                                   decoration: BoxDecoration(
-                                    color: isDark ? const Color(0xFF1E2B29) : Colors.white,
+                                    color: isDark ? AppColors.inputBgDark : Colors.white,
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
                                     Icons.colorize_rounded,
                                     size: 13,
-                                    color: isDark ? Colors.white70 : Colors.black87,
+                                    color: isDark ? AppColors.textPrimaryDark : Colors.black87,
                                   ),
                                 ),
                               ),
@@ -3165,7 +3256,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: isDark ? Colors.white70 : Colors.grey.shade800,
+                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -3188,16 +3279,16 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                               width: 48,
                               height: 48,
                               decoration: BoxDecoration(
-                                color: isSel ? activeColor.withValues(alpha: 0.22) : (isDark ? const Color(0xFF1E2B29) : const Color(0xFFF1F5F9)),
+                                color: isSel ? activeColor.withValues(alpha: 0.22) : (isDark ? AppColors.inputBgDark : AppColors.inputBgLight),
                                 border: Border.all(
-                                  color: isSel ? activeColor : (isDark ? Colors.white12 : Colors.grey.shade300),
+                                  color: isSel ? activeColor : (isDark ? AppColors.borderDark : AppColors.borderLight),
                                   width: isSel ? 2 : 1,
                                 ),
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: Icon(
                                 icon,
-                                color: isSel ? activeColor : (isDark ? Colors.white70 : Colors.grey.shade700),
+                                color: isSel ? activeColor : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
                                 size: 23,
                               ),
                             ),
@@ -3212,10 +3303,10 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E2B29) : const Color(0xFFF8FAFC),
+                        color: isDark ? AppColors.inputBgDark : AppColors.inputBgLight,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: isDark ? const Color(0xFF324844) : const Color(0xFFCBD5E1),
+                          color: isDark ? AppColors.borderDark : AppColors.borderLight,
                           width: 1,
                         ),
                       ),
@@ -3226,14 +3317,14 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                           ),
                         ),
                         subtitle: Text(
                           isVi ? 'Tự động chọn ví này khi ghi nhận thu chi mới' : 'Automatically select this wallet for new transactions',
                           style: TextStyle(
                             fontSize: 11.5,
-                            color: isDark ? Colors.white60 : Colors.grey.shade600,
+                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                           ),
                         ),
                         value: isDefault,
@@ -3246,24 +3337,25 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
 
                     TextField(
                       controller: noteController,
-                      style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 13.5),
+                      style: TextStyle(color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight, fontSize: 13.5),
                       decoration: InputDecoration(
                         labelText: context.tr('note_optional_label'),
-                        prefixIcon: const Icon(Icons.note_alt_outlined),
+                        labelStyle: TextStyle(color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                        prefixIcon: Icon(Icons.note_alt_outlined, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
                         filled: true,
-                        fillColor: isDark ? const Color(0xFF1E2B29) : const Color(0xFFF8FAFC),
+                        fillColor: isDark ? AppColors.inputBgDark : AppColors.inputBgLight,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: BorderSide(
-                            color: isDark ? const Color(0xFF324844) : const Color(0xFFCBD5E1),
+                            color: isDark ? AppColors.borderDark : AppColors.borderLight,
                             width: 1,
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: BorderSide(
-                            color: isDark ? const Color(0xFF324844) : const Color(0xFFCBD5E1),
+                            color: isDark ? AppColors.borderDark : AppColors.borderLight,
                             width: 1,
                           ),
                         ),
@@ -3282,14 +3374,14 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                              side: BorderSide(color: isDark ? Colors.white24 : Colors.grey.shade300),
+                              side: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
                             ),
                             child: Text(
                               context.tr('cancel'),
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white70 : Colors.grey.shade700,
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                               ),
                             ),
                           ),
@@ -3442,7 +3534,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF1E2827) : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
       builder: (ctx) {
         final topPunchHolePadding = math.max(
@@ -3482,7 +3574,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white24 : Colors.grey.shade300,
+                          color: isDark ? const Color(0xFF475569) : Colors.grey.shade300,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -3490,14 +3582,14 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        const Icon(Icons.swap_horiz_rounded, color: Color(0xFF438883), size: 24),
+                        Icon(Icons.swap_horiz_rounded, color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883), size: 24),
                         const SizedBox(width: 8),
                         Text(
                           context.tr('transfer_title'),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
                           ),
                         ),
                       ],
@@ -3514,7 +3606,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white70 : Colors.grey.shade700,
+                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -3522,8 +3614,8 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                 key: ValueKey('from_$fromWalletId'),
                                 initialValue: fromWalletId,
                                 isExpanded: true,
-                                dropdownColor: isDark ? const Color(0xFF222C2A) : Colors.white,
-                                style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 13),
+                                dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                style: TextStyle(color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A), fontSize: 13),
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -3549,7 +3641,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                 padding: const EdgeInsets.only(top: 2, left: 2),
                                 child: Text(
                                   '${context.tr('balance_prefix')}: ${CurrencyUtils.formatCurrency(fromW.balance)}',
-                                  style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey.shade600),
+                                  style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600),
                                 ),
                               ),
                             ],
@@ -3558,7 +3650,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: IconButton(
-                            icon: const Icon(Icons.swap_horiz, color: Color(0xFF438883)),
+                            icon: Icon(Icons.swap_horiz, color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)),
                             onPressed: () {
                               setModalState(() {
                                 final temp = fromWalletId;
@@ -3577,7 +3669,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white70 : Colors.grey.shade700,
+                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -3585,8 +3677,8 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                 key: ValueKey('to_$toWalletId'),
                                 initialValue: toWalletId,
                                 isExpanded: true,
-                                dropdownColor: isDark ? const Color(0xFF222C2A) : Colors.white,
-                                style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 13),
+                                dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                style: TextStyle(color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A), fontSize: 13),
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -3612,7 +3704,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                                 padding: const EdgeInsets.only(top: 2, left: 2),
                                 child: Text(
                                   '${context.tr('balance_prefix')}: ${CurrencyUtils.formatCurrency(toW.balance)}',
-                                  style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : Colors.grey.shade600),
+                                  style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600),
                                 ),
                               ),
                             ],
@@ -3624,11 +3716,11 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                     TextField(
                       controller: amountController,
                       keyboardType: TextInputType.number,
-                      style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                      style: TextStyle(color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A)),
                       decoration: InputDecoration(
                         labelText: context.tr('transfer_amount_label'),
                         hintText: isVi ? '0 đ' : '0',
-                        prefixIcon: const Icon(Icons.attach_money, color: Color(0xFF438883)),
+                        prefixIcon: Icon(Icons.attach_money, color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onChanged: (val) {
@@ -3646,11 +3738,11 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                     TextField(
                       controller: feeController,
                       keyboardType: TextInputType.number,
-                      style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                      style: TextStyle(color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A)),
                       decoration: InputDecoration(
                         labelText: context.tr('transfer_fee_label'),
                         hintText: isVi ? '0 đ' : '0',
-                        prefixIcon: const Icon(Icons.receipt_outlined, color: Colors.grey),
+                        prefixIcon: Icon(Icons.receipt_outlined, color: isDark ? const Color(0xFF94A3B8) : Colors.grey),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onChanged: (val) {
@@ -3665,7 +3757,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                     const SizedBox(height: 12),
                     TextField(
                       controller: noteController,
-                      style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                      style: TextStyle(color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A)),
                       decoration: InputDecoration(
                         labelText: context.tr('note_optional_label'),
                         prefixIcon: const Icon(Icons.notes),
@@ -3679,6 +3771,8 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                           child: OutlinedButton(
                             onPressed: () => Navigator.pop(ctx),
                             style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                              foregroundColor: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
@@ -3723,8 +3817,8 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF438883),
-                              foregroundColor: Colors.white,
+                              backgroundColor: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883),
+                              foregroundColor: isDark ? const Color(0xFF0F2625) : Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
@@ -3733,6 +3827,7 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
                         ),
                       ],
                     ),
+
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -3746,28 +3841,19 @@ class _WalletScreenState extends State<WalletScreen> with AutomaticKeepAliveClie
 }
 
   // === XÁC NHẬN XÓA VÍ ===
-  void _confirmDeleteWallet(BuildContext context, WalletModel wallet) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.tr('delete_wallet_title')),
-        content: Text(
-          context.tr('delete_wallet_confirm').replaceAll('{name}', wallet.name),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(context.tr('cancel')),
-          ),
-          TextButton(
-            onPressed: () async {
-              await _walletRepo.deleteWallet(wallet.id);
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-            child: Text(context.tr('delete'), style: const TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+  void _confirmDeleteWallet(BuildContext context, WalletModel wallet) async {
+    final confirm = await MonoDialog.confirm(
+      context,
+      title: context.tr('delete_wallet_title'),
+      message: context.tr('delete_wallet_confirm').replaceAll('{name}', wallet.name),
+      cancelText: context.tr('cancel'),
+      confirmText: context.tr('delete'),
+      isDestructive: true,
+      icon: Icons.delete_outline_rounded,
     );
+
+    if (confirm == true) {
+      await _walletRepo.deleteWallet(wallet.id);
+    }
   }
 }

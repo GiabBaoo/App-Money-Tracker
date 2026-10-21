@@ -35,6 +35,7 @@ class AppWidgetService {
   ];
 
   GlobalKey<NavigatorState>? _navigatorKey;
+  GlobalKey<NavigatorState>? get navigatorKey => _navigatorKey;
   WidgetNavigationAction? _pendingAction;
   bool _isNavigationReady = false;
 

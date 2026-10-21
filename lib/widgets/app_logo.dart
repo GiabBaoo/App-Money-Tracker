@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'mono_liquid_glass_logo.dart';
+
+export 'mono_liquid_glass_logo.dart';
 
 enum AppLogoVariant {
   /// Logo dạng chữ thương hiệu (wordmark) 'mono'
   wordmark,
 
-  /// Huy hiệu biểu tượng ứng dụng (bo tròn hoặc squircle) chứa logo 'mono' ở giữa tương tự app launcher icon
+  /// Huy hiệu biểu tượng ứng dụng chuẩn Subtle Modern Refresh 3D
   badge,
 }
 
 /// Widget hiển thị logo chuẩn thương hiệu của ứng dụng Mono Expense Tracker
+/// Tích hợp trực tiếp công nghệ Subtle Modern Refresh tràn viền full-bleed
 class AppLogo extends StatelessWidget {
   /// Kiểu hiển thị logo
   final AppLogoVariant variant;
@@ -16,13 +20,22 @@ class AppLogo extends StatelessWidget {
   /// Chiều cao của logo (đối với wordmark) hoặc kích thước đường kính (đối với badge)
   final double size;
 
-  /// Màu sắc áp dụng cho logo chữ (nếu null sẽ giữ màu gốc trắng hoặc tự thích ứng theo theme)
+  /// Màu sắc áp dụng cho logo chữ (nếu null sẽ tự thích ứng theo theme)
   final Color? color;
 
   /// Đổ bóng cho badge
   final bool hasShadow;
 
-  /// Bo góc cho badge (mặc định hình tròn nếu null)
+  /// Hiệu ứng vầng hào quang phát sáng (glow aura)
+  final bool hasGlow;
+
+  /// Tự động phát hiệu ứng tia sáng quét mặt kính
+  final bool animatedSheen;
+
+  /// Cho phép tương tác chạm để phát sáng mặt kính
+  final bool isInteractive;
+
+  /// Bo góc cho badge (mặc định squircle bo tròn 28% nếu null)
   final BorderRadius? borderRadius;
 
   const AppLogo({
@@ -31,6 +44,9 @@ class AppLogo extends StatelessWidget {
     this.size = 28,
     this.color,
     this.hasShadow = true,
+    this.hasGlow = true,
+    this.animatedSheen = false,
+    this.isInteractive = false,
     this.borderRadius,
   });
 
@@ -39,9 +55,12 @@ class AppLogo extends StatelessWidget {
     super.key,
     double height = 28,
     this.color,
+    this.hasGlow = false,
   }) : variant = AppLogoVariant.wordmark,
        size = height,
        hasShadow = false,
+       animatedSheen = false,
+       isInteractive = false,
        borderRadius = null;
 
   /// Factory tiện lợi hiển thị huy hiệu App Icon
@@ -49,6 +68,57 @@ class AppLogo extends StatelessWidget {
     super.key,
     this.size = 68,
     this.hasShadow = true,
+    this.hasGlow = true,
+    this.animatedSheen = false,
+    this.isInteractive = false,
+    this.borderRadius,
+  }) : variant = AppLogoVariant.badge,
+       color = null;
+
+  /// Factory tiện lợi cỡ nhỏ (40px)
+  const AppLogo.small({
+    super.key,
+    this.size = 40,
+    this.hasShadow = true,
+    this.hasGlow = true,
+    this.animatedSheen = false,
+    this.isInteractive = false,
+    this.borderRadius,
+  }) : variant = AppLogoVariant.badge,
+       color = null;
+
+  /// Factory tiện lợi cỡ vừa (72px)
+  const AppLogo.medium({
+    super.key,
+    this.size = 72,
+    this.hasShadow = true,
+    this.hasGlow = true,
+    this.animatedSheen = false,
+    this.isInteractive = false,
+    this.borderRadius,
+  }) : variant = AppLogoVariant.badge,
+       color = null;
+
+  /// Factory tiện lợi cỡ lớn (96px)
+  const AppLogo.large({
+    super.key,
+    this.size = 96,
+    this.hasShadow = true,
+    this.hasGlow = true,
+    this.animatedSheen = false,
+    this.isInteractive = false,
+    this.borderRadius,
+  }) : variant = AppLogoVariant.badge,
+       color = null;
+
+  /// Factory tiện lợi Hero cỡ đại (120px) cho Splash / Onboarding
+  const AppLogo.hero({
+    super.key,
+    this.size = 120,
+    this.hasShadow = true,
+    this.hasGlow = true,
+    this.animatedSheen = false,
+    this.isInteractive = false,
     this.borderRadius,
   }) : variant = AppLogoVariant.badge,
        color = null;
@@ -56,51 +126,20 @@ class AppLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (variant == AppLogoVariant.wordmark) {
-      return Image.asset(
-        'assets/images/logo.png',
+      return MonoLiquidGlassLogo.wordmark(
         height: size,
-        fit: BoxFit.contain,
         color: color,
-        filterQuality: FilterQuality.high,
+        hasGlow: hasGlow,
       );
     }
 
-    // Biến thể Badge (Huy hiệu biểu tượng app launcher)
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final r = borderRadius ?? BorderRadius.circular(size * 0.28);
-
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        borderRadius: r,
-        gradient: LinearGradient(
-          colors: isDark
-              ? const [Color(0xFF438883), Color(0xFF2DD4BF)]
-              : const [Color(0xFF5E9387), Color(0xFF3B7267)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: hasShadow
-            ? [
-                BoxShadow(
-                  color: const Color(0xFF438883).withValues(alpha: isDark ? 0.35 : 0.25),
-                  blurRadius: size * 0.25,
-                  offset: Offset(0, size * 0.08),
-                ),
-              ]
-            : null,
-      ),
-      padding: EdgeInsets.symmetric(horizontal: size * 0.16),
-      child: Center(
-        child: Image.asset(
-          'assets/images/logo.png',
-          width: size * 0.68,
-          fit: BoxFit.contain,
-          color: Colors.white,
-          filterQuality: FilterQuality.high,
-        ),
-      ),
+    return MonoLiquidGlassLogo.badge(
+      size: size,
+      hasShadow: hasShadow,
+      hasGlow: hasGlow,
+      animatedSheen: animatedSheen,
+      isInteractive: isInteractive,
+      borderRadius: borderRadius,
     );
   }
 }

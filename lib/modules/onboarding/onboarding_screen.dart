@@ -93,7 +93,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final primaryColor = isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : Colors.white,
+      backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
       body: Stack(
         children: [
           // ═══ LỚP 1: NỀN QUẦNG SÁNG VÀ VÒNG TRÒN ARTWORK ═══
@@ -142,9 +142,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const AppLogo.badge(
-                            size: 38,
-                            hasShadow: false,
-                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                            size: 40,
+                            hasShadow: true,
+                            hasGlow: true,
+                            isInteractive: true,
+                            borderRadius: BorderRadius.all(Radius.circular(13)),
                           ),
                           const SizedBox(width: 10),
                           AppLogo.wordmark(
@@ -388,7 +390,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             item.title,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isDark ? Colors.white : const Color(0xFF0F2625),
+              color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F2625),
               fontSize: 25,
               fontWeight: FontWeight.w800,
               height: 1.25,
@@ -431,10 +433,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       height: 240,
       margin: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF162523) : const Color(0xFFF1F8F6),
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F8F6),
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFDFEBE8),
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFDFEBE8),
         ),
         boxShadow: [
           BoxShadow(

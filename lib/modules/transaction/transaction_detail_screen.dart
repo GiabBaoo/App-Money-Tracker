@@ -7,6 +7,7 @@ import '../../services/transaction_balance_service.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../data/repositories/wallet_repository.dart';
 import '../../widgets/top_toast.dart';
+import '../../widgets/mono_dialog.dart';
 import '../../models/transaction_model.dart';
 import '../../models/wallet_model.dart';
 import '../../utils/category_utils.dart';
@@ -193,21 +194,16 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                           await _refreshTransaction();
                         }
                       } else if (value == 'delete') {
-                        final confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            title: const Text('Xác nhận xóa'),
-                            content: Text(
-                              _transaction.isTransfer
-                                  ? 'Đây là giao dịch chuyển tiền giữa các ví. Xóa giao dịch này sẽ tự động hoàn lại tiền cho cả 2 ví liên quan.'
-                                  : 'Bạn có chắc chắn muốn xóa giao dịch này không?',
-                            ),
-                            actions: [
-                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy', style: TextStyle(color: Colors.grey))),
-                              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Xóa', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
-                            ],
-                          ),
+                        final confirm = await MonoDialog.confirm(
+                          context,
+                          title: 'Xác nhận xóa',
+                          message: _transaction.isTransfer
+                              ? 'Đây là giao dịch chuyển tiền giữa các ví. Xóa giao dịch này sẽ tự động hoàn lại tiền cho cả 2 ví liên quan.'
+                              : 'Bạn có chắc chắn muốn xóa giao dịch này không?',
+                          cancelText: 'Hủy',
+                          confirmText: 'Xóa',
+                          isDestructive: true,
+                          icon: Icons.delete_outline_rounded,
                         );
                         if (confirm == true) {
                           try {

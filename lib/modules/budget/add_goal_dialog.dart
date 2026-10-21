@@ -4,6 +4,7 @@ import '../../models/goal_model.dart';
 import '../../data/repositories/goal_repository.dart';
 import '../../widgets/top_toast.dart';
 import '../../widgets/animated_scale_button.dart';
+import '../../widgets/mono_dialog.dart';
 import '../../services/language_service.dart';
 
 class AddGoalDialog extends StatefulWidget {
@@ -114,16 +115,13 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
     final primaryColor = Color(_selectedColor);
     final isVi = LanguageScope.of(context).isVietnamese;
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+    return MonoDialogContainer(
+      maxWidth: 440,
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -148,19 +146,35 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               // Tên mục tiêu
               Text(
                 isVi ? 'Tên mục tiêu' : 'Goal name',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                ),
               ),
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF242424) : const Color(0xFFF3F4F6),
+                  color: isDark ? const Color(0xFF141E2E) : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    width: 1,
+                  ),
                 ),
                 child: TextField(
                   controller: _titleController,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                  ),
                   decoration: InputDecoration(
                     hintText: isVi ? 'Ví dụ: Mua xe máy mới, Du lịch Đà Lạt...' : 'e.g. Buy new bike, Travel...',
+                    hintStyle: TextStyle(
+                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                    ),
                     border: InputBorder.none,
                   ),
                 ),
@@ -171,23 +185,42 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               // Số tiền mục tiêu
               Text(
                 isVi ? 'Số tiền cần tích lũy (VNĐ)' : 'Target amount (VND)',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                ),
               ),
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF242424) : const Color(0xFFF3F4F6),
+                  color: isDark ? const Color(0xFF141E2E) : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    width: 1,
+                  ),
                 ),
                 child: TextField(
                   controller: _targetAmountController,
                   keyboardType: TextInputType.number,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                  ),
                   decoration: InputDecoration(
                     hintText: isVi ? 'Ví dụ: 30.000.000' : 'e.g. 30,000,000',
+                    hintStyle: TextStyle(
+                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                    ),
                     border: InputBorder.none,
                     suffixText: 'đ',
+                    suffixStyle: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
                   ),
                 ),
               ),
@@ -197,22 +230,41 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               // Số tiền đã có sẵn (ban đầu)
               Text(
                 isVi ? 'Số tiền hiện có (VNĐ)' : 'Current saved amount (VND)',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                ),
               ),
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF242424) : const Color(0xFFF3F4F6),
+                  color: isDark ? const Color(0xFF141E2E) : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    width: 1,
+                  ),
                 ),
                 child: TextField(
                   controller: _currentAmountController,
                   keyboardType: TextInputType.number,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                  ),
                   decoration: InputDecoration(
                     hintText: isVi ? 'Ví dụ: 5.000.000 (mặc định 0đ)' : 'e.g. 5,000,000 (default 0)',
+                    hintStyle: TextStyle(
+                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                    ),
                     border: InputBorder.none,
                     suffixText: 'đ',
+                    suffixStyle: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
                   ),
                 ),
               ),
@@ -222,7 +274,11 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               // Ngày hết hạn (Deadline)
               Text(
                 isVi ? 'Thời hạn hoàn thành' : 'Target deadline',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                ),
               ),
               const SizedBox(height: 6),
               InkWell(
@@ -240,17 +296,29 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF242424) : const Color(0xFFF3F4F6),
+                    color: isDark ? const Color(0xFF141E2E) : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      width: 1,
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         DateFormat('dd/MM/yyyy').format(_deadline),
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                        ),
                       ),
-                      const Icon(Icons.calendar_month_rounded, size: 20, color: Colors.grey),
+                      Icon(
+                        Icons.calendar_month_rounded,
+                        size: 20,
+                        color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                      ),
                     ],
                   ),
                 ),
@@ -261,7 +329,11 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               // Chọn Icon
               Text(
                 isVi ? 'Biểu tượng' : 'Icon',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                ),
               ),
               const SizedBox(height: 8),
               SizedBox(
@@ -279,11 +351,22 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                       child: Container(
                         width: 44,
                         decoration: BoxDecoration(
-                          color: isSelected ? primaryColor.withValues(alpha: 0.2) : (isDark ? Colors.white10 : Colors.grey.shade200),
+                          color: isSelected
+                              ? primaryColor.withValues(alpha: 0.2)
+                              : (isDark ? const Color(0xFF141E2E) : Colors.grey.shade200),
                           borderRadius: BorderRadius.circular(10),
-                          border: isSelected ? Border.all(color: primaryColor, width: 2) : null,
+                          border: isSelected
+                              ? Border.all(color: primaryColor, width: 2)
+                              : Border.all(
+                                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                  width: 1,
+                                ),
                         ),
-                        child: Icon(icon, color: isSelected ? primaryColor : Colors.grey, size: 22),
+                        child: Icon(
+                          icon,
+                          color: isSelected ? primaryColor : (isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600),
+                          size: 22,
+                        ),
                       ),
                     );
                   },
@@ -295,7 +378,11 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               // Chọn Màu
               Text(
                 isVi ? 'Màu chủ đạo' : 'Color theme',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                ),
               ),
               const SizedBox(height: 8),
               SizedBox(
@@ -339,8 +426,8 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: primaryColor.withValues(alpha: 0.3),
-                        blurRadius: 8,
+                        color: primaryColor.withValues(alpha: 0.35),
+                        blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
                     ],
@@ -355,10 +442,9 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                   ),
                 ),
               ),
+
             ],
           ),
-        ),
-      ),
-    );
+        );
   }
 }

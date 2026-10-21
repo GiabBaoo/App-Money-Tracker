@@ -5,6 +5,7 @@ import '../../services/connectivity_service.dart';
 import '../../services/language_service.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../widgets/top_toast.dart';
+import '../../widgets/mono_dialog.dart';
 import '../../utils/page_transitions.dart';
 import 'data_usage_screen.dart';
 import 'delete_confirmation_screen.dart';
@@ -81,108 +82,59 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     }
   }
 
-  void _clearCache() {
+  void _clearCache() async {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: isDark ? Colors.white10 : Colors.transparent),
-        ),
-        title: Text(
-          isVi ? 'Xóa bộ nhớ đệm (Cache)' : 'Clear App Cache',
-          style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
-        ),
-        content: Text(
-          isVi
-              ? 'Thao tác này sẽ dọn dẹp các tệp hình ảnh tạm thời và bộ nhớ đệm hiển thị để giải phóng dung lượng. Dữ liệu thu chi của bạn hoàn toàn không bị ảnh hưởng.'
-              : 'This will clean up temporary image files and cache to free up storage. Your transaction records will not be affected.',
-          style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: Text(isVi ? 'Hủy' : 'Cancel', style: TextStyle(color: isDark ? Colors.white60 : Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF438883),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () {
-              PaintingBinding.instance.imageCache.clear();
-              PaintingBinding.instance.imageCache.clearLiveImages();
-              Navigator.pop(dialogCtx);
-              TopToast.show(
-                context,
-                isVi ? 'Đã dọn sạch bộ nhớ đệm ứng dụng!' : 'App cache cleared successfully!',
-              );
-            },
-            child: Text(isVi ? 'Dọn dẹp ngay' : 'Clear Now'),
-          ),
-        ],
-      ),
+    final confirmed = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Xóa bộ nhớ đệm (Cache)' : 'Clear App Cache',
+      message: isVi
+          ? 'Thao tác này sẽ dọn dẹp các tệp hình ảnh tạm thời và bộ nhớ đệm hiển thị để giải phóng dung lượng. Dữ liệu thu chi của bạn hoàn toàn không bị ảnh hưởng.'
+          : 'This will clean up temporary image files and cache to free up storage. Your transaction records will not be affected.',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      confirmText: isVi ? 'Dọn dẹp ngay' : 'Clear Now',
+      icon: Icons.cleaning_services_rounded,
     );
+
+    if (confirmed == true && mounted) {
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
+      TopToast.show(
+        context,
+        isVi ? 'Đã dọn sạch bộ nhớ đệm ứng dụng!' : 'App cache cleared successfully!',
+      );
+    }
   }
 
-  void _clearOldTransactions() {
+  void _clearOldTransactions() async {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: isDark ? Colors.white10 : Colors.transparent),
-        ),
-        title: Text(
-          isVi ? 'Dọn dẹp dữ liệu thu/chi cũ' : 'Purge Old Transactions',
-          style: TextStyle(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
-        ),
-        content: Text(
-          isVi
-              ? 'Hệ thống sẽ xóa toàn bộ các giao dịch thu/chi từ tháng 8 trở về trước đó trên máy và đồng bộ lên đám mây. Dữ liệu từ tháng 9 trở đi vẫn được giữ an toàn.'
-              : 'The system will purge transactions from August and earlier both locally and in cloud sync. Data from September onwards will remain safe.',
-          style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: Text(isVi ? 'Hủy' : 'Cancel', style: TextStyle(color: isDark ? Colors.white60 : Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              final count = await TransactionRepository().purgeHistoryBeforeSeptember2026();
-              await _loadPendingCount();
-              if (mounted) {
-                TopToast.show(
-                  context,
-                  count > 0
-                      ? (isVi
-                          ? 'Đã xóa thành công $count giao dịch từ tháng 8 trở về trước!'
-                          : 'Successfully deleted $count transactions from August and earlier!')
-                      : (isVi
-                          ? 'Không còn giao dịch nào từ tháng 8 trở về trước.'
-                          : 'No transactions found from August or earlier.'),
-                );
-              }
-            },
-            child: Text(isVi ? 'Xóa dữ liệu cũ' : 'Delete Old Data'),
-          ),
-        ],
-      ),
+    final confirmed = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Dọn dẹp dữ liệu thu/chi cũ' : 'Purge Old Transactions',
+      message: isVi
+          ? 'Hệ thống sẽ xóa toàn bộ các giao dịch thu/chi từ tháng 8 trở về trước đó trên máy và đồng bộ lên đám mây. Dữ liệu từ tháng 9 trở đi vẫn được giữ an toàn.'
+          : 'The system will purge transactions from August and earlier both locally and in cloud sync. Data from September onwards will remain safe.',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      confirmText: isVi ? 'Xóa dữ liệu cũ' : 'Delete Old Data',
+      isDestructive: true,
+      icon: Icons.auto_delete_rounded,
     );
+
+    if (confirmed == true && mounted) {
+      final count = await TransactionRepository().purgeHistoryBeforeSeptember2026();
+      await _loadPendingCount();
+      if (mounted) {
+        TopToast.show(
+          context,
+          count > 0
+              ? (isVi
+                  ? 'Đã xóa thành công $count giao dịch từ tháng 8 trở về trước!'
+                  : 'Successfully deleted $count transactions from August and earlier!')
+              : (isVi
+                  ? 'Không còn giao dịch nào từ tháng 8 trở về trước.'
+                  : 'No transactions found from August or earlier.'),
+        );
+      }
+    }
   }
 
   String _formatLastSyncTime(DateTime? time, bool isVi) {

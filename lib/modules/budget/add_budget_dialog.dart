@@ -7,6 +7,7 @@ import '../../data/repositories/category_repository.dart';
 import '../../utils/category_utils.dart';
 import '../../widgets/top_toast.dart';
 import '../../widgets/animated_scale_button.dart';
+import '../../widgets/mono_dialog.dart';
 import '../../services/language_service.dart';
 
 class AddBudgetDialog extends StatefulWidget {
@@ -133,16 +134,13 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
     final primaryColor = Theme.of(context).primaryColor;
     final isVi = LanguageScope.of(context).isVietnamese;
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+    return MonoDialogContainer(
+      maxWidth: 440,
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -167,7 +165,11 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
               // Chọn danh mục
               Text(
                 isVi ? 'Danh mục áp dụng' : 'Applicable category',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                ),
               ),
               const SizedBox(height: 8),
 
@@ -176,8 +178,12 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
                   height: 48,
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF242424) : const Color(0xFFF3F4F6),
+                    color: isDark ? const Color(0xFF141E2E) : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      width: 1,
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -186,7 +192,7 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
                         height: 16,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: primaryColor,
+                          color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -194,7 +200,7 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
                         isVi ? 'Đang tải danh mục...' : 'Loading categories...',
                         style: TextStyle(
                           fontSize: 13,
-                          color: isDark ? Colors.white60 : Colors.black54,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
                         ),
                       ),
                     ],
@@ -204,17 +210,24 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF242424) : const Color(0xFFF3F4F6),
+                    color: isDark ? const Color(0xFF141E2E) : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      width: 1,
+                    ),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: _categories.any((c) => c.name == _selectedCategory) ? _selectedCategory : null,
+                      dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
                       isExpanded: true,
                       items: _categories.map((c) {
                         final isAll = c.name == 'Tất cả';
                         final icon = isAll ? Icons.account_balance_wallet_outlined : c.icon;
-                        final iconColor = isAll ? primaryColor : (c.color ?? CategoryUtils.getVibrantColor(c.name));
+                        final iconColor = isAll
+                            ? (isDark ? const Color(0xFF2DD4BF) : primaryColor)
+                            : (c.color ?? CategoryUtils.getVibrantColor(c.name));
                         final displayName = isAll ? (isVi ? 'Tất cả (Tổng ngân sách)' : 'All (Total Budget)') : context.trCat(c.name);
 
                         return DropdownMenuItem(
@@ -226,7 +239,10 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
                               Expanded(
                                 child: Text(
                                   displayName,
-                                  style: const TextStyle(fontSize: 14),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -236,12 +252,16 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: primaryColor.withValues(alpha: 0.12),
+                                    color: (isDark ? const Color(0xFF2DD4BF) : primaryColor).withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
                                     isVi ? 'Tùy biến' : 'Custom',
-                                    style: TextStyle(fontSize: 10, color: primaryColor, fontWeight: FontWeight.w600),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -261,24 +281,42 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
               // Nhập số tiền hạn mức
               Text(
                 isVi ? 'Hạn mức chi tiêu (VNĐ)' : 'Spending limit (VND)',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                ),
               ),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF242424) : const Color(0xFFF3F4F6),
+                  color: isDark ? const Color(0xFF141E2E) : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    width: 1,
+                  ),
                 ),
                 child: TextField(
                   controller: _amountController,
                   keyboardType: TextInputType.number,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                  ),
                   decoration: InputDecoration(
                     hintText: isVi ? 'Ví dụ: 3.000.000' : 'e.g. 3,000,000',
+                    hintStyle: TextStyle(
+                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                    ),
                     border: InputBorder.none,
                     suffixText: 'đ',
-                    suffixStyle: const TextStyle(fontWeight: FontWeight.bold),
+                    suffixStyle: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                    ),
                   ),
                 ),
               ),
@@ -290,7 +328,10 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
                 isVi
                     ? 'Tháng áp dụng: Tháng $_selectedMonth/$_selectedYear'
                     : 'Applicable period: Month $_selectedMonth/$_selectedYear',
-                style: const TextStyle(fontSize: 13, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                ),
               ),
 
               const SizedBox(height: 24),
@@ -302,23 +343,33 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   decoration: BoxDecoration(
-                    color: primaryColor,
+                    color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
                     borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isDark ? const Color(0xFF2DD4BF) : primaryColor).withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Center(
                     child: Text(
                       widget.existingBudget != null
                           ? (isVi ? 'Cập Nhật' : 'Update')
                           : (isVi ? 'Tạo Ngân Sách' : 'Create Budget'),
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                      style: TextStyle(
+                        color: isDark ? const Color(0xFF0F2625) : Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
                     ),
                   ),
                 ),
               ),
             ],
           ),
-        ),
-      ),
-    );
+        );
+
   }
 }

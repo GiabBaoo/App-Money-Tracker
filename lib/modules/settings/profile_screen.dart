@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../utils/page_transitions.dart';
+import '../../core/constants/app_constants.dart';
 import '../../services/language_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/storage_service.dart';
@@ -15,6 +16,8 @@ import '../../data/repositories/user_repository.dart';
 import '../../widgets/user_avatar.dart';
 import '../../widgets/top_toast.dart';
 import '../../widgets/animated_scale_button.dart';
+import '../../widgets/mono_dialog.dart';
+import '../../widgets/mono_bottom_sheet.dart';
 import '../auth/login_screen.dart';
 
 // Screens
@@ -46,75 +49,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _handleLogout(BuildContext context) async {
     final languageService = LanguageService.instance;
     final isVi = languageService.isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E2827) : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.transparent,
-          ),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF3E2020) : const Color(0xFFFDE8E8),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.logout_rounded, color: Color(0xFFE53935), size: 22),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              isVi ? 'Đăng xuất' : 'Log out',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: isDark ? Colors.white : const Color(0xFF0F172A),
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          isVi
-              ? 'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này không?'
-              : 'Are you sure you want to log out of this account?',
-          style: TextStyle(
-            fontSize: 14,
-            color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
-          ),
-        ),
-        actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(
-              isVi ? 'Hủy' : 'Cancel',
-              style: TextStyle(
-                color: isDark ? Colors.white60 : Colors.grey,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE53935),
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-            ),
-            child: Text(
-              isVi ? 'Đăng xuất' : 'Log out',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
+    final confirmed = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Đăng xuất' : 'Log out',
+      message: isVi
+          ? 'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này không?'
+          : 'Are you sure you want to log out of this account?',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      confirmText: isVi ? 'Đăng xuất' : 'Log out',
+      isDestructive: true,
+      icon: Icons.logout_rounded,
     );
 
     if (confirmed == true && context.mounted) {
@@ -134,111 +79,97 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isVi = LanguageService.instance.isVietnamese;
 
-    showModalBottomSheet(
+    MonoBottomSheet.show(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1E2827) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetCtx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white24 : Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+      builder: (sheetCtx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isVi ? 'Thay đổi ảnh đại diện' : 'Change Profile Photo',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
               ),
-              Text(
-                isVi ? 'Thay đổi ảnh đại diện' : 'Change Profile Photo',
+            ),
+            const SizedBox(height: 16),
+
+            // Chọn ảnh mẫu preset
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF438883).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF438883)),
+              ),
+              title: Text(
+                isVi ? 'Chọn ảnh mẫu có sẵn (Preset)' : 'Choose Preset Avatar',
                 style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
                   color: isDark ? Colors.white : const Color(0xFF0F172A),
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Chọn ảnh mẫu preset
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF438883).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF438883)),
-                ),
-                title: Text(
-                  isVi ? 'Chọn ảnh mẫu có sẵn (Preset)' : 'Choose Preset Avatar',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF0F172A),
-                  ),
-                ),
-                subtitle: Text(
-                  isVi ? 'Bộ sưu tập avatar phong cách gradient' : 'Stylish gradient icons',
-                  style: TextStyle(color: isDark ? Colors.white60 : Colors.grey.shade600, fontSize: 12),
-                ),
-                onTap: () {
-                  Navigator.pop(sheetCtx);
-                  _showPresetPickerSheet(context);
-                },
+              subtitle: Text(
+                isVi ? 'Bộ sưu tập avatar phong cách gradient' : 'Stylish gradient icons',
+                style: TextStyle(color: isDark ? Colors.white60 : Colors.grey.shade600, fontSize: 12),
               ),
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _showPresetPickerSheet(context);
+              },
+            ),
 
-              // Chụp ảnh mới
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.camera_alt_rounded, color: Colors.blue),
+            // Chụp ảnh mới
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                title: Text(
-                  isVi ? 'Chụp ảnh mới' : 'Take a photo',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF0F172A),
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pop(sheetCtx);
-                  _pickAndUploadAvatar(ImageSource.camera);
-                },
+                child: const Icon(Icons.camera_alt_rounded, color: Colors.blue),
               ),
+              title: Text(
+                isVi ? 'Chụp ảnh mới' : 'Take a photo',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _pickAndUploadAvatar(ImageSource.camera);
+              },
+            ),
 
-              // Chọn từ thư viện ảnh
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.photo_library_rounded, color: Colors.orange),
+            // Chọn từ thư viện ảnh
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                title: Text(
-                  isVi ? 'Chọn từ thư viện ảnh' : 'Choose from gallery',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : const Color(0xFF0F172A),
-                  ),
-                ),
-                onTap: () {
-                  Navigator.pop(sheetCtx);
-                  _pickAndUploadAvatar(ImageSource.gallery);
-                },
+                child: const Icon(Icons.photo_library_rounded, color: Colors.orange),
               ),
-            ],
-          ),
+              title: Text(
+                isVi ? 'Chọn từ thư viện ảnh' : 'Choose from gallery',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(sheetCtx);
+                _pickAndUploadAvatar(ImageSource.gallery);
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -248,67 +179,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isVi = LanguageService.instance.isVietnamese;
 
-    showModalBottomSheet(
+    MonoBottomSheet.show(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1E2827) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetCtx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                isVi ? 'Chọn ảnh mẫu đại diện' : 'Select Preset Avatar',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
-                ),
+      builder: (sheetCtx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isVi ? 'Chọn ảnh mẫu đại diện' : 'Select Preset Avatar',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
               ),
-              const SizedBox(height: 16),
-              GridView.builder(
-                shrinkWrap: true,
-                itemCount: UserAvatar.presetAvatars.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                ),
-                itemBuilder: (context, index) {
-                  final preset = UserAvatar.presetAvatars[index];
-                  return InkWell(
-                    onTap: () async {
-                      Navigator.pop(sheetCtx);
-                      await _applyAvatarUrl(preset.id, localPath: '');
-                    },
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: preset.gradient,
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: preset.gradient.first.withValues(alpha: 0.3),
-                            blurRadius: 6,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
+            ),
+            const SizedBox(height: 16),
+            GridView.builder(
+              shrinkWrap: true,
+              itemCount: UserAvatar.presetAvatars.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemBuilder: (context, index) {
+                final preset = UserAvatar.presetAvatars[index];
+                return InkWell(
+                  onTap: () async {
+                    Navigator.pop(sheetCtx);
+                    await _applyAvatarUrl(preset.id, localPath: '');
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: preset.gradient,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      child: Icon(preset.icon, color: Colors.white, size: 28),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: preset.gradient.first.withValues(alpha: 0.3),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
-                  );
-                },
-              ),
-            ],
-          ),
+                    child: Icon(preset.icon, color: Colors.white, size: 28),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -816,8 +741,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 icon: Icons.info_outline_rounded,
                                 title: isVi ? 'Về ứng dụng Mono' : 'About Mono App',
                                 subtitle: isVi ? 'Thông tin phiên bản, điều khoản' : 'Version info, policy terms',
-                                badgeText: 'v1.0.0',
-                                badgeColor: Colors.grey.shade600,
+                                badgeText: 'v${AppConstants.appVersion}',
+                                badgeColor: const Color(0xFF2DD4BF),
                                 onTap: () => Navigator.push(context, PageTransitions.slideRight(const AboutAppScreen())),
                                 showDivider: false,
                               ),

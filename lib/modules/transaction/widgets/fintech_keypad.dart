@@ -25,9 +25,9 @@ class FintechKeypad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final keyBg = isDark ? const Color(0xFF132221) : const Color(0xFFF1F5F9);
-    final keyBorder = isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0);
-    final textNumberColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final keyBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
+    final keyBorder = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final textNumberColor = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
 import '../../models/message_model.dart';
 import 'success_screen.dart';
+import '../../widgets/mono_toast.dart';
 import '../../services/language_service.dart';
 
 class SupportRequestScreen extends StatefulWidget {
@@ -182,15 +183,11 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                       InkWell(
                         onTap: _isLoading ? null : () async {
                           if (_titleController.text.trim().isEmpty || _detailsController.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  isVi
-                                      ? 'Vui lòng nhập đầy đủ tiêu đề và nội dung!'
-                                      : 'Please enter both title and content!',
-                                ),
-                                backgroundColor: Colors.red.shade600,
-                              ),
+                            MonoToast.warning(
+                              context,
+                              isVi
+                                  ? 'Vui lòng nhập đầy đủ tiêu đề và nội dung!'
+                                  : 'Please enter both title and content!',
                             );
                             return;
                           }
@@ -240,11 +237,9 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                             );
                           } catch (e) {
                             if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(isVi ? 'Có lỗi xảy ra: $e' : 'An error occurred: $e'),
-                                backgroundColor: Colors.red.shade600,
-                              ),
+                            MonoToast.error(
+                              context,
+                              isVi ? 'Có lỗi xảy ra: $e' : 'An error occurred: $e',
                             );
                           } finally {
                             if (mounted) setState(() => _isLoading = false);

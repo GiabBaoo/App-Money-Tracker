@@ -228,11 +228,11 @@ class CategoryKeywordSuggestions extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF142423)
+                        ? const Color(0xFF141E2E)
                         : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                     ),
                   ),
                   child: Center(
@@ -242,7 +242,7 @@ class CategoryKeywordSuggestions extends StatelessWidget {
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: isDark
-                            ? Colors.white70
+                            ? const Color(0xFFF8FAFC)
                             : const Color(0xFF334155),
                       ),
                     ),

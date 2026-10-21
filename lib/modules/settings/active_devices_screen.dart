@@ -6,6 +6,8 @@ import '../../services/firestore_service.dart';
 import '../../services/language_service.dart';
 import '../../services/auth_service.dart';
 import '../../models/device_session_model.dart';
+import '../../widgets/mono_dialog.dart';
+import '../../widgets/mono_toast.dart';
 import '../auth/login_screen.dart';
 
 class ActiveDevicesScreen extends StatefulWidget {
@@ -92,83 +94,47 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
   }
 
   Future<void> _confirmRemoveSession(DeviceSessionModel session, bool isVi) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(isVi ? 'Hủy phiên đăng nhập?' : 'Revoke session?'),
-        content: Text(
-          isVi
-              ? 'Thiết bị "${session.deviceName}" sẽ bị đăng xuất khỏi tài khoản của bạn.'
-              : 'The device "${session.deviceName}" will be logged out from your account.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(isVi ? 'Hủy' : 'Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(isVi ? 'Đăng xuất' : 'Revoke'),
-          ),
-        ],
-      ),
+    final confirmed = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Hủy phiên đăng nhập?' : 'Revoke session?',
+      message: isVi
+          ? 'Thiết bị "${session.deviceName}" sẽ bị đăng xuất khỏi tài khoản của bạn.'
+          : 'The device "${session.deviceName}" will be logged out from your account.',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      confirmText: isVi ? 'Đăng xuất' : 'Revoke',
+      isDestructive: true,
+      icon: Icons.logout_rounded,
     );
 
     if (confirmed == true && mounted) {
       await _firestoreService.removeDeviceSession(session.id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isVi ? 'Đã gỡ phiên đăng nhập thành công.' : 'Session revoked successfully.'),
-          duration: const Duration(seconds: 2),
-        ),
+      MonoToast.success(
+        context,
+        isVi ? 'Đã gỡ phiên đăng nhập thành công.' : 'Session revoked successfully.',
       );
     }
   }
 
   Future<void> _confirmLogoutAllOtherDevices(String currentSessionId, bool isVi) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(isVi ? 'Đăng xuất tất cả thiết bị khác?' : 'Log out all other devices?'),
-        content: Text(
-          isVi
-              ? 'Tất cả các phiên đăng nhập khác ngoại trừ thiết bị hiện tại sẽ bị hủy bỏ.'
-              : 'All sessions on other devices except this current device will be terminated.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(isVi ? 'Hủy' : 'Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(isVi ? 'Đăng xuất tất cả' : 'Log out all'),
-          ),
-        ],
-      ),
+    final confirmed = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Đăng xuất tất cả thiết bị khác?' : 'Log out all other devices?',
+      message: isVi
+          ? 'Tất cả các phiên đăng nhập khác ngoại trừ thiết bị hiện tại sẽ bị hủy bỏ.'
+          : 'All sessions on other devices except this current device will be terminated.',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      confirmText: isVi ? 'Đăng xuất tất cả' : 'Log out all',
+      isDestructive: true,
+      icon: Icons.phonelink_erase_rounded,
     );
 
     if (confirmed == true && mounted) {
       await _firestoreService.removeOtherDeviceSessions(currentSessionId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isVi ? 'Đã đăng xuất khỏi tất cả thiết bị khác.' : 'Logged out of all other devices.'),
-          duration: const Duration(seconds: 2),
-        ),
+      MonoToast.success(
+        context,
+        isVi ? 'Đã đăng xuất khỏi tất cả thiết bị khác.' : 'Logged out of all other devices.',
       );
     }
   }

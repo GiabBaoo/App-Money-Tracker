@@ -331,10 +331,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                         child: Container(
                           padding: const EdgeInsets.all(18),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                            color: isDark ? const Color(0xFF1E293B) : Colors.white,
                             borderRadius: BorderRadius.circular(22),
                             border: Border.all(
-                              color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0),
+                              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                               width: 1.0,
                             ),
                             boxShadow: [
@@ -826,12 +826,17 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(vertical: 6.5),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected
+                ? (isDark ? const Color(0xFF1E293B) : Colors.white)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
+            border: isSelected && isDark
+                ? Border.all(color: const Color(0xFF334155), width: 1)
+                : null,
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
+                      color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.12),
                       blurRadius: 4,
                       offset: const Offset(0, 1),
                     ),
@@ -845,7 +850,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 label,
                 style: TextStyle(
                   color: isSelected
-                      ? (isDark ? const Color(0xFF0F2625) : const Color(0xFF2A6C67))
+                      ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF2A6C67))
                       : Colors.white.withValues(alpha: 0.8),
                   fontSize: 12.5,
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
@@ -865,11 +870,11 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     required bool isDark,
   }) {
     final activeTextColor = isExpensePill
-        ? const Color(0xFFE63946)
-        : const Color(0xFF0D9488);
+        ? (isDark ? const Color(0xFFF87171) : const Color(0xFFE63946))
+        : (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0D9488));
     final activeIconColor = isExpensePill
-        ? const Color(0xFFE63946)
-        : const Color(0xFF0D9488);
+        ? (isDark ? const Color(0xFFF87171) : const Color(0xFFE63946))
+        : (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0D9488));
 
     return Expanded(
       child: AnimatedScaleButton(
@@ -886,12 +891,17 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected
+                ? (isDark ? const Color(0xFF1E293B) : Colors.white)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(13),
+            border: isSelected && isDark
+                ? Border.all(color: const Color(0xFF334155), width: 1)
+                : null,
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
+                      color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.12),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -905,9 +915,13 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 padding: const EdgeInsets.all(3.5),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? (isExpensePill
-                          ? const Color(0xFFFEF2F2)
-                          : const Color(0xFFE8F5EE))
+                      ? (isDark
+                          ? (isExpensePill
+                              ? const Color(0xFFEF4444).withValues(alpha: 0.2)
+                              : const Color(0xFF14B8A6).withValues(alpha: 0.2))
+                          : (isExpensePill
+                              ? const Color(0xFFFEF2F2)
+                              : const Color(0xFFE8F5EE)))
                       : Colors.white.withValues(alpha: 0.18),
                   shape: BoxShape.circle,
                 ),
@@ -1000,9 +1014,17 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 children: [
                   Text(
                     context.tr(_isDescending ? 'highest' : 'lowest'),
-                    style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  Icon(_isDescending ? Icons.expand_more : Icons.expand_less, color: Colors.grey, size: 20),
+                  Icon(
+                    _isDescending ? Icons.expand_more : Icons.expand_less,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    size: 20,
+                  ),
                 ],
               ),
             ),
@@ -1034,8 +1056,12 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
                       borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        width: 1.0,
+                      ),
                       boxShadow: [
                         if (!isDark)
                           BoxShadow(
@@ -1044,7 +1070,6 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                             offset: const Offset(0, 5),
                           ),
                       ],
-                      border: isDark ? Border.all(color: Colors.white.withValues(alpha: 0.05)) : null,
                     ),
                     child: Column(
                       children: [
@@ -1845,10 +1870,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF1F5F9),
+        color: isDark ? const Color(0xFF182234) : const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
           width: 1.0,
         ),
       ),
@@ -1876,9 +1901,12 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           padding: const EdgeInsets.symmetric(vertical: 8.5, horizontal: 4),
           decoration: BoxDecoration(
             color: isSelected
-                ? (isDark ? const Color(0xFF263238) : Colors.white)
+                ? (isDark ? const Color(0xFF1E293B) : Colors.white)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
+            border: isSelected && isDark
+                ? Border.all(color: const Color(0xFF334155), width: 1)
+                : null,
             boxShadow: isSelected
                 ? [
                     BoxShadow(
@@ -1897,7 +1925,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 size: 15,
                 color: isSelected
                     ? (isDark ? const Color(0xFF2DD4BF) : primaryColor)
-                    : (isDark ? Colors.white54 : const Color(0xFF64748B)),
+                    : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
               ),
               const SizedBox(width: 5),
               Flexible(
@@ -1909,8 +1937,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                       fontSize: 12,
                       fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                       color: isSelected
-                          ? (isDark ? Colors.white : primaryColor)
-                          : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                          ? (isDark ? const Color(0xFFF8FAFC) : primaryColor)
+                          : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                     ),
                     maxLines: 1,
                   ),
@@ -2002,7 +2030,14 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               children: [
                 Container(width: 9, height: 9, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
                 const SizedBox(width: 4),
-                Text('${context.trCat(g.category)} ($percent%)', style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white70 : Colors.black87)),
+                Text(
+                  '${context.trCat(g.category)} ($percent%)',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             );
           }).toList(),
@@ -2122,7 +2157,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               maxY: maxY,
               barTouchData: BarTouchData(
                 touchTooltipData: BarTouchTooltipData(
-                  getTooltipColor: (_) => isDark ? const Color(0xFF2E2E2E) : Colors.white,
+                  getTooltipColor: (_) => isDark ? const Color(0xFF1E293B) : Colors.white,
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
                     final isInc = rodIndex == 0;
                     return BarTooltipItem(
@@ -2149,7 +2184,14 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                       if (i < 0 || i >= barData.length) return const SizedBox();
                       return Padding(
                         padding: const EdgeInsets.only(top: 6),
-                        child: Text(barData[i].label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                        child: Text(
+                          barData[i].label,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -2192,7 +2234,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: healthColor.withValues(alpha: isDark ? 0.35 : 0.25),
@@ -2240,7 +2282,13 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(context.tr('savings_rate'), style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600)),
+                    Text(
+                      context.tr('savings_rate'),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       '${savingsRate >= 0 ? "+" : ""}${savingsRate.toStringAsFixed(1)}%',
@@ -2249,13 +2297,19 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                   ],
                 ),
               ),
-              Container(width: 1, height: 28, color: isDark ? Colors.white12 : Colors.grey.shade200),
+              Container(width: 1, height: 28, color: isDark ? const Color(0xFF334155) : Colors.grey.shade200),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(context.tr('net_income_gap'), style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600)),
+                    Text(
+                      context.tr('net_income_gap'),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       CurrencyUtils.formatCurrency(income - expense),
@@ -2276,6 +2330,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
   }
 
   Widget _buildWaveChart(List<_ChartPoint> data, double total) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final chartColor = _isExpense ? const Color(0xFFE63946) : const Color(0xFF438883);
     if (data.isEmpty || total == 0) {
       return Container(
@@ -2283,12 +2338,15 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
         width: double.infinity,
         decoration: BoxDecoration(
           color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.white.withValues(alpha: 0.05)
+              ? const Color(0xFF1E293B)
               : const Color(0xFFF9FAFB),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
-          child: Text(context.tr('no_transactions_period'), style: const TextStyle(color: Color(0xFF999999))),
+          child: Text(
+            context.tr('no_transactions_period'),
+            style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF999999)),
+          ),
         ),
       );
     }
@@ -2318,7 +2376,14 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                   if (idx < 0 || idx >= data.length) return const SizedBox();
                   return Padding(
                     padding: const EdgeInsets.only(top: 10),
-                    child: Text(data[idx].label, style: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 10)),
+                    child: Text(
+                      data[idx].label,
+                      style: TextStyle(
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   );
                 },
               ),
@@ -2327,7 +2392,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
               getTooltipColor: (_) =>
-                  Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2E2E2E) : Colors.white,
+                  Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.white,
               getTooltipItems: (spots) => spots
                   .map((s) => LineTooltipItem(
                         CurrencyUtils.formatCurrency(s.y),

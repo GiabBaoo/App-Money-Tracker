@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Widget bọc `IndexedStack` với hiệu ứng Fade mượt mà khi chuyển đổi giữa các tab.
-/// Giữ nguyên toàn bộ State của các tab bên trong (zero reload) đồng thời
-/// loại bỏ hiện tượng giật cục thị giác khi chuyển tab.
+/// Widget bọc `IndexedStack` với hiệu ứng Fade kết hợp Slide ngang nhẹ mượt mà khi chuyển đổi giữa các tab.
+/// Giữ nguyên 100% State của các tab bên trong (zero reload) đồng thời
+/// mang lại trải nghiệm thị giác mượt mà 60fps chuẩn native app.
 class FadeIndexedStack extends StatefulWidget {
   final int index;
   final List<Widget> children;
@@ -12,7 +12,7 @@ class FadeIndexedStack extends StatefulWidget {
     super.key,
     required this.index,
     required this.children,
-    this.duration = const Duration(milliseconds: 120),
+    this.duration = const Duration(milliseconds: 280),
   });
 
   @override
@@ -22,7 +22,8 @@ class FadeIndexedStack extends StatefulWidget {
 class _FadeIndexedStackState extends State<FadeIndexedStack>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _animation;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
@@ -31,10 +32,17 @@ class _FadeIndexedStackState extends State<FadeIndexedStack>
       vsync: this,
       duration: widget.duration,
     );
-    _animation = CurvedAnimation(
+    _fadeAnimation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOutQuad,
+      curve: Curves.easeOutCubic,
     );
+    _slideAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    ));
     _controller.value = 1.0;
   }
 
@@ -42,7 +50,22 @@ class _FadeIndexedStackState extends State<FadeIndexedStack>
   void didUpdateWidget(FadeIndexedStack oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.index != oldWidget.index) {
-      _controller.forward(from: 0.65);
+      final bool movingRight = widget.index > oldWidget.index;
+      _slideAnimation = Tween<Offset>(
+        begin: Offset(movingRight ? 0.045 : -0.045, 0.0),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOutCubic,
+      ));
+      _fadeAnimation = Tween<double>(
+        begin: 0.35,
+        end: 1.0,
+      ).animate(CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOutCubic,
+      ));
+      _controller.forward(from: 0.0);
     }
   }
 
@@ -56,10 +79,13 @@ class _FadeIndexedStackState extends State<FadeIndexedStack>
   Widget build(BuildContext context) {
     return RepaintBoundary(
       child: FadeTransition(
-        opacity: _animation,
-        child: IndexedStack(
-          index: widget.index,
-          children: widget.children,
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: IndexedStack(
+            index: widget.index,
+            children: widget.children,
+          ),
         ),
       ),
     );

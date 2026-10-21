@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../widgets/animated_scale_button.dart';
+import '../../../../widgets/mono_dialog.dart';
+import '../../../../widgets/mono_toast.dart';
 import '../providers/group_expense_providers.dart';
 
 class GroupMembersScreen extends ConsumerWidget {
@@ -23,13 +25,20 @@ class GroupMembersScreen extends ConsumerWidget {
     final primaryColor = Theme.of(context).primaryColor;
     final currentUserId = ref.watch(currentUserIdProvider);
 
+    // Design Tokens
+    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
+    final cardBgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final textPrimary = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+    final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0);
+
     return Scaffold(
-      backgroundColor: primaryColor,
+      backgroundColor: bgColor,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            // Header
+            // ─── ERGONOMIC TOP APP BAR ───
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
@@ -44,12 +53,20 @@ class GroupMembersScreen extends ConsumerWidget {
                       height: 42,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.15),
-                        border: Border.all(color: Colors.white24, width: 1),
+                        color: cardBgColor,
+                        border: Border.all(color: borderColor, width: 1),
+                        boxShadow: [
+                          if (!isDark)
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                        ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
+                        color: textPrimary,
                         size: 18,
                       ),
                     ),
@@ -60,19 +77,20 @@ class GroupMembersScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isVi ? 'Thành Viên' : 'Members',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          isVi ? 'Thành Viên' : 'Group Members',
+                          style: TextStyle(
+                            color: textPrimary,
                             fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: -0.3,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.4,
                           ),
                         ),
                         Text(
                           groupName,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color: textSecondary,
                             fontSize: 12,
+                            fontWeight: FontWeight.w500,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -83,44 +101,56 @@ class GroupMembersScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            
-            // Content
+
+            // ─── MEMBERS LIST ───
             Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF121212) : Colors.white,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                ),
-                child: groupAsync.when(
-                  data: (group) {
-                    if (group == null) {
-                      return Center(child: Text(isVi ? 'Không tìm thấy dữ liệu nhóm' : 'Group data not found'));
-                    }
-                    return ListView.builder(
-                      padding: const EdgeInsets.all(24),
-                      itemCount: group.memberIds.length,
-                      itemBuilder: (context, index) {
-                        final memberId = group.memberIds[index];
-                        final isOwner = group.adminId == memberId;
-                        final isCurrentUser = currentUserId == memberId;
-                        return _buildMemberItem(
-                          context,
-                          ref,
-                          memberId,
-                          isOwner,
-                          isDark,
-                          groupId,
-                          group.adminId,
-                          isCurrentUser,
-                          group.memberIds.length,
-                        );
-                      },
+              child: groupAsync.when(
+                data: (group) {
+                  if (group == null) {
+                    return Center(
+                      child: Text(
+                        isVi ? 'Không tìm thấy dữ liệu nhóm' : 'Group data not found',
+                        style: TextStyle(color: textSecondary),
+                      ),
                     );
-                  },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (error, stack) => Center(
-                    child: Text('${isVi ? 'Lỗi' : 'Error'}: $error'),
+                  }
+                  return ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    itemCount: group.memberIds.length,
+                    itemBuilder: (context, index) {
+                      final memberId = group.memberIds[index];
+                      final isOwner = group.adminId == memberId;
+                      final isCurrentUser = currentUserId == memberId;
+                      return _buildMemberItem(
+                        context,
+                        ref,
+                        memberId,
+                        isOwner,
+                        isDark,
+                        groupId,
+                        group.adminId,
+                        isCurrentUser,
+                        group.memberIds.length,
+                        cardBgColor,
+                        textPrimary,
+                        textSecondary,
+                        borderColor,
+                        primaryColor,
+                      );
+                    },
+                  );
+                },
+                loading: () => Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                  ),
+                ),
+                error: (error, _) => Center(
+                  child: Text(
+                    '${isVi ? 'Lỗi' : 'Error'}: $error',
+                    style: TextStyle(color: textSecondary),
                   ),
                 ),
               ),
@@ -141,14 +171,25 @@ class GroupMembersScreen extends ConsumerWidget {
     String adminId,
     bool isCurrentUser,
     int totalMembers,
+    Color cardBgColor,
+    Color textPrimary,
+    Color textSecondary,
+    Color borderColor,
+    Color primaryColor,
   ) {
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance.collection('users').doc(memberId).get(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SizedBox(
-            height: 80,
-            child: Center(child: CircularProgressIndicator()),
+          return Container(
+            height: 76,
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: cardBgColor,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: borderColor, width: 1),
+            ),
+            child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
           );
         }
 
@@ -163,33 +204,41 @@ class GroupMembersScreen extends ConsumerWidget {
         final avatarUrl = userData['avatarUrl'] as String?;
 
         return Container(
-          margin: const EdgeInsets.only(bottom: 16),
+          margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
-            borderRadius: BorderRadius.circular(16),
-            border: isDark ? Border.all(color: Colors.white.withValues(alpha: 0.05)) : null,
+            color: cardBgColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: borderColor, width: 1),
+            boxShadow: [
+              if (!isDark)
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+            ],
           ),
           child: Row(
             children: [
               // Avatar
               CircleAvatar(
-                radius: 28,
-                backgroundColor: const Color(0xFF438883),
+                radius: 24,
+                backgroundColor: (isDark ? const Color(0xFF2DD4BF) : primaryColor).withValues(alpha: 0.15),
                 backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
                 child: avatarUrl == null
                     ? Text(
                         name.isNotEmpty ? name[0].toUpperCase() : 'U',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
+                        style: TextStyle(
+                          color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       )
                     : null,
               ),
-              const SizedBox(width: 16),
-              
+              const SizedBox(width: 14),
+
               // Info
               Expanded(
                 child: Column(
@@ -201,50 +250,57 @@ class GroupMembersScreen extends ConsumerWidget {
                           child: Text(
                             name,
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black87,
+                              color: textPrimary,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (isCurrentUser) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            isVi ? '(Bạn)' : '(You)',
+                            style: TextStyle(fontSize: 12, color: textSecondary, fontWeight: FontWeight.w600),
+                          ),
+                        ],
                         if (isOwner) ...[
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF438883).withValues(alpha: 0.15) : const Color(0xFF438883).withValues(alpha: 0.2),
+                              color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.12),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Text(
-                              isVi ? 'Chủ quỹ' : 'Owner',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: isDark ? const Color(0xFF00E5FF) : const Color(0xFF438883),
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.star_rounded, size: 12, color: Colors.amber[700]),
+                                const SizedBox(width: 2),
+                                Text(
+                                  isVi ? 'Chủ quỹ' : 'Admin',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.amber[300] : Colors.amber[900],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ],
                     ),
                     if (email.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Row(
                         children: [
-                          Icon(
-                            Icons.email_outlined,
-                            size: 14,
-                            color: isDark ? Colors.white54 : Colors.black54,
-                          ),
-                          const SizedBox(width: 6),
+                          Icon(Icons.email_outlined, size: 13, color: textSecondary),
+                          const SizedBox(width: 5),
                           Expanded(
                             child: Text(
                               email,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: isDark ? Colors.white54 : Colors.black54,
-                              ),
+                              style: TextStyle(fontSize: 12, color: textSecondary),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -252,21 +308,14 @@ class GroupMembersScreen extends ConsumerWidget {
                       ),
                     ],
                     if (phone.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Row(
                         children: [
-                          Icon(
-                            Icons.phone_outlined,
-                            size: 14,
-                            color: isDark ? Colors.white54 : Colors.black54,
-                          ),
-                          const SizedBox(width: 6),
+                          Icon(Icons.phone_outlined, size: 13, color: textSecondary),
+                          const SizedBox(width: 5),
                           Text(
                             phone,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isDark ? Colors.white54 : Colors.black54,
-                            ),
+                            style: TextStyle(fontSize: 12, color: textSecondary),
                           ),
                         ],
                       ),
@@ -274,8 +323,8 @@ class GroupMembersScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              
-              // Action buttons
+
+              // Actions Popup
               if (isCurrentUser && !isOwner)
                 PopupMenuButton<String>(
                   onSelected: (value) {
@@ -288,17 +337,20 @@ class GroupMembersScreen extends ConsumerWidget {
                       value: 'leave',
                       child: Row(
                         children: [
-                          Icon(Icons.exit_to_app, color: Colors.red, size: 18),
+                          const Icon(Icons.exit_to_app_rounded, color: Colors.redAccent, size: 18),
                           const SizedBox(width: 8),
-                          Text(isVi ? 'Rời nhóm' : 'Leave Group'),
+                          Text(isVi ? 'Rời nhóm' : 'Leave Group', style: const TextStyle(color: Colors.redAccent)),
                         ],
                       ),
                     ),
                   ],
-                  child: Icon(
-                    Icons.more_vert,
-                    color: isDark ? Colors.white54 : Colors.black54,
-                    size: 20,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: textSecondary.withValues(alpha: 0.1),
+                    ),
+                    child: Icon(Icons.more_vert, color: textSecondary, size: 18),
                   ),
                 )
               else if (!isCurrentUser && ref.watch(currentUserIdProvider) == adminId && !isOwner)
@@ -313,17 +365,20 @@ class GroupMembersScreen extends ConsumerWidget {
                       value: 'remove',
                       child: Row(
                         children: [
-                          Icon(Icons.person_remove, color: Colors.red, size: 18),
+                          const Icon(Icons.person_remove_rounded, color: Colors.redAccent, size: 18),
                           const SizedBox(width: 8),
-                          Text(isVi ? 'Xóa khỏi nhóm' : 'Remove from Group'),
+                          Text(isVi ? 'Xóa khỏi nhóm' : 'Remove from Group', style: const TextStyle(color: Colors.redAccent)),
                         ],
                       ),
                     ),
                   ],
-                  child: Icon(
-                    Icons.more_vert,
-                    color: isDark ? Colors.white54 : Colors.black54,
-                    size: 20,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: textSecondary.withValues(alpha: 0.1),
+                    ),
+                    child: Icon(Icons.more_vert, color: textSecondary, size: 18),
                   ),
                 ),
             ],
@@ -333,78 +388,45 @@ class GroupMembersScreen extends ConsumerWidget {
     );
   }
 
-  static void _showLeaveConfirmDialog(BuildContext context, WidgetRef ref, String groupId, String memberName) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF2E2E2E) : Colors.white,
-        title: Text(
-          isVi ? 'Rời Nhóm' : 'Leave Group',
-          style: TextStyle(
-            color: isDark ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          isVi
-              ? 'Bạn có chắc muốn rời nhóm này không? Bạn sẽ không thể xem các giao dịch cũ và sẽ cần được mời lại để tham gia.'
-              : 'Are you sure you want to leave this group? You will not be able to view old transactions and will need to be re-invited to join.',
-          style: TextStyle(
-            color: isDark ? Colors.white70 : Colors.black87,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              isVi ? 'Hủy' : 'Cancel',
-              style: TextStyle(
-                color: isDark ? Colors.white70 : Colors.black87,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              final currentUserId = ref.read(currentUserIdProvider);
-              if (currentUserId != null) {
-                try {
-                  await ref.read(groupServiceProvider).removeMember(
-                    groupId,
-                    currentUserId,
-                    currentUserId,
-                  );
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(isVi ? 'Đã rời khỏi nhóm' : 'Left the group successfully'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${isVi ? 'Lỗi' : 'Error'}: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              }
-            },
-            child: Text(
-              isVi ? 'Rời' : 'Leave',
-              style: const TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
+  static void _showLeaveConfirmDialog(BuildContext context, WidgetRef ref, String groupId, String memberName) async {
+    final confirmed = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Rời Nhóm' : 'Leave Group',
+      message: isVi
+          ? 'Bạn có chắc muốn rời nhóm này không? Bạn sẽ không thể xem các giao dịch cũ và sẽ cần được mời lại để tham gia.'
+          : 'Are you sure you want to leave this group? You will not be able to view old transactions and will need to be re-invited to join.',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      confirmText: isVi ? 'Rời nhóm' : 'Leave Group',
+      isDestructive: true,
+      icon: Icons.exit_to_app_rounded,
     );
+
+    if (confirmed == true && context.mounted) {
+      final currentUserId = ref.read(currentUserIdProvider);
+      if (currentUserId != null) {
+        try {
+          await ref.read(groupServiceProvider).removeMember(
+            groupId,
+            currentUserId,
+            currentUserId,
+          );
+          if (context.mounted) {
+            Navigator.pop(context);
+            MonoToast.success(
+              context,
+              isVi ? 'Đã rời khỏi nhóm' : 'Left the group successfully',
+            );
+          }
+        } catch (e) {
+          if (context.mounted) {
+            MonoToast.error(
+              context,
+              '${isVi ? 'Lỗi' : 'Error'}: $e',
+            );
+          }
+        }
+      }
+    }
   }
 
   static void _showRemoveConfirmDialog(
@@ -413,76 +435,43 @@ class GroupMembersScreen extends ConsumerWidget {
     String groupId,
     String memberId,
     String memberName,
-  ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF2E2E2E) : Colors.white,
-        title: Text(
-          isVi ? 'Xóa Thành Viên' : 'Remove Member',
-          style: TextStyle(
-            color: isDark ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Text(
-          isVi
-              ? 'Bạn có chắc muốn xóa $memberName khỏi nhóm không?'
-              : 'Are you sure you want to remove $memberName from the group?',
-          style: TextStyle(
-            color: isDark ? Colors.white70 : Colors.black87,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              isVi ? 'Hủy' : 'Cancel',
-              style: TextStyle(
-                color: isDark ? Colors.white70 : Colors.black87,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              final currentUserId = ref.read(currentUserIdProvider);
-              if (currentUserId != null) {
-                try {
-                  await ref.read(groupServiceProvider).removeMember(
-                    groupId,
-                    memberId,
-                    currentUserId,
-                  );
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(isVi ? 'Đã xóa $memberName khỏi nhóm' : 'Removed $memberName from group'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${isVi ? 'Lỗi' : 'Error'}: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              }
-            },
-            child: Text(
-              isVi ? 'Xóa' : 'Remove',
-              style: const TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
+  ) async {
+    final confirmed = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Xóa Thành Viên' : 'Remove Member',
+      message: isVi
+          ? 'Bạn có chắc muốn xóa $memberName khỏi nhóm không?'
+          : 'Are you sure you want to remove $memberName from the group?',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      confirmText: isVi ? 'Xóa' : 'Remove',
+      isDestructive: true,
+      icon: Icons.person_remove_rounded,
     );
+
+    if (confirmed == true && context.mounted) {
+      final currentUserId = ref.read(currentUserIdProvider);
+      if (currentUserId != null) {
+        try {
+          await ref.read(groupServiceProvider).removeMember(
+            groupId,
+            memberId,
+            currentUserId,
+          );
+          if (context.mounted) {
+            MonoToast.success(
+              context,
+              isVi ? 'Đã xóa $memberName khỏi nhóm' : 'Removed $memberName from group',
+            );
+          }
+        } catch (e) {
+          if (context.mounted) {
+            MonoToast.error(
+              context,
+              '${isVi ? 'Lỗi' : 'Error'}: $e',
+            );
+          }
+        }
+      }
+    }
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../widgets/animated_scale_button.dart';
+import '../../../../widgets/mono_toast.dart';
 import '../../../../services/device_contacts_service.dart';
 import '../../../../services/notification_service.dart';
 
@@ -39,14 +40,11 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
     final hasPermission = await DeviceContactsService.instance.requestPermission();
     if (!hasPermission) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isVi
-                  ? 'Ứng dụng cần quyền truy cập danh bạ để chọn người liên hệ'
-                  : 'Contacts permission is required to select contacts',
-            ),
-          ),
+        MonoToast.warning(
+          context,
+          isVi
+              ? 'Ứng dụng cần quyền truy cập danh bạ để chọn người liên hệ'
+              : 'Contacts permission is required to select contacts',
         );
       }
       return;
@@ -92,7 +90,6 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
     });
 
     try {
-      // Tìm user theo số điện thoại
       final usersSnapshot = await FirebaseFirestore.instance
           .collection('users')
           .where('phone', isEqualTo: phone)
@@ -103,7 +100,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
         setState(() {
           _foundUserName = null;
           _foundUserId = null;
-          _searchError = isVi ? 'Không tìm thấy người dùng' : 'User not found';
+          _searchError = isVi ? 'Không tìm thấy người dùng với số này' : 'User not found with this phone';
           _isSearching = false;
         });
         return;
@@ -131,8 +128,9 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
 
   void _inviteByPhone(String phone) async {
     if (_foundUserId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(isVi ? 'Vui lòng chọn người dùng hợp lệ' : 'Please select a valid user')),
+      MonoToast.warning(
+        context,
+        isVi ? 'Vui lòng chọn người dùng hợp lệ' : 'Please select a valid user',
       );
       return;
     }
@@ -140,7 +138,6 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Gửi thông báo mời tham gia nhóm quỹ chi tiêu qua NotificationService
       await NotificationService().notifyGroupInvitation(
         groupName: widget.groupName,
         inviterName: isVi ? 'Trưởng nhóm' : 'Group Admin',
@@ -149,12 +146,9 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isVi ? '✓ Đã gửi lời mời đến $_foundUserName' : '✓ Invitation sent to $_foundUserName'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
+        MonoToast.success(
+          context,
+          isVi ? 'Đã gửi lời mời đến $_foundUserName' : 'Invitation sent to $_foundUserName',
         );
         _phoneController.clear();
         setState(() {
@@ -165,8 +159,9 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${isVi ? 'Lỗi' : 'Error'}: $e')),
+        MonoToast.error(
+          context,
+          '${isVi ? 'Lỗi' : 'Error'}: $e',
         );
       }
     } finally {
@@ -181,13 +176,20 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).primaryColor;
 
+    // Design Tokens
+    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
+    final cardBgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final textPrimary = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+    final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0);
+
     return Scaffold(
-      backgroundColor: primaryColor,
+      backgroundColor: bgColor,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            // Header
+            // ─── ERGONOMIC TOP APP BAR ───
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Row(
@@ -202,104 +204,156 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                       height: 42,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.15),
-                        border: Border.all(color: Colors.white24, width: 1),
+                        color: cardBgColor,
+                        border: Border.all(color: borderColor, width: 1),
+                        boxShadow: [
+                          if (!isDark)
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                        ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
+                        color: textPrimary,
                         size: 18,
                       ),
                     ),
                   ),
                   const SizedBox(width: 14),
-                  const Expanded(
-                    child: Text(
-                      'Mời Thành Viên',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.3,
-                      ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isVi ? 'Mời Thành Viên' : 'Invite Member',
+                          style: TextStyle(
+                            color: textPrimary,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                        Text(
+                          widget.groupName,
+                          style: TextStyle(
+                            color: textSecondary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            
-            // Content
+
+            // ─── CONTENT BODY ───
             Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF121212) : Colors.white,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 16),
-                      
-                      // Icon và tiêu đề
-                      Center(
-                        child: Column(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: primaryColor.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Icon(
-                                Icons.person_add_rounded,
-                                size: 50,
-                                color: primaryColor,
-                              ),
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header Card
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(22),
+                      decoration: BoxDecoration(
+                        color: cardBgColor,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: borderColor, width: 1),
+                        boxShadow: [
+                          if (!isDark)
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
-                            const SizedBox(height: 20),
-                            Text(
-                              isVi ? 'Mời thành viên vào ${widget.groupName}' : 'Invite members to ${widget.groupName}',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              isVi ? 'Nhập số điện thoại để gửi lời mời' : 'Enter phone number to invite',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: isDark ? Colors.white60 : Colors.black54,
-                              ),
-                            ),
-                          ],
-                        ),
+                        ],
                       ),
-                      
-                      const SizedBox(height: 40),
-                      
-                      // Phone input
-                      TextField(
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: (isDark ? const Color(0xFF2DD4BF) : primaryColor).withValues(alpha: 0.12),
+                            ),
+                            child: Icon(
+                              Icons.person_add_rounded,
+                              size: 28,
+                              color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            isVi ? 'Mời tham gia quỹ nhóm' : 'Invite to Group Fund',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            isVi
+                                ? 'Nhập số điện thoại đã đăng ký để tìm kiếm và gửi lời mời tham gia.'
+                                : 'Enter registered phone number to search and invite.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: textSecondary,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Phone input header
+                    Text(
+                      isVi ? 'SỐ ĐIỆN THOẠI THÀNH VIÊN' : 'MEMBER PHONE NUMBER',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: textSecondary,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    Container(
+                      decoration: BoxDecoration(
+                        color: cardBgColor,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: borderColor, width: 1),
+                      ),
+                      child: TextField(
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
                         enabled: !_isLoading,
+                        style: TextStyle(color: textPrimary, fontSize: 15, fontWeight: FontWeight.w600),
                         onChanged: (phone) {
                           _searchUser(phone.trim());
                         },
                         decoration: InputDecoration(
                           hintText: isVi ? 'Ví dụ: 0912345678' : 'e.g. 0912345678',
-                          hintStyle: TextStyle(
-                            color: isDark ? Colors.white38 : Colors.black38,
-                          ),
+                          hintStyle: TextStyle(color: textSecondary.withValues(alpha: 0.6), fontSize: 14),
                           prefixIcon: Icon(
                             Icons.phone_rounded,
-                            color: primaryColor,
+                            color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                            size: 20,
                           ),
                           suffixIcon: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -312,213 +366,224 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                                     height: 18,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                                      ),
                                     ),
                                   ),
                                 ),
                               IconButton(
                                 icon: Icon(
                                   Icons.contacts_rounded,
-                                  color: primaryColor,
+                                  color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
                                 ),
                                 tooltip: isVi ? 'Chọn từ danh bạ' : 'Pick from contacts',
                                 onPressed: _isLoading ? null : _pickFromContacts,
                               ),
                             ],
                           ),
-                          filled: true,
-                          fillColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F4F6),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: isDark ? BorderSide(color: Colors.white.withValues(alpha: 0.08)) : BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: isDark ? BorderSide(color: Colors.white.withValues(alpha: 0.08)) : BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                         ),
                       ),
-                      
-                      // Display found user name or error
-                      if (_phoneController.text.isNotEmpty)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 12),
-                            if (_searchError != null)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.info_outline,
-                                      size: 18,
-                                      color: Colors.orange,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      _searchError!,
-                                      style: const TextStyle(
-                                        color: Colors.orange,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            if (_foundUserName != null)
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.green.withValues(alpha: 0.3),
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 44,
-                                      height: 44,
-                                      decoration: BoxDecoration(
-                                        color: Colors.green.withValues(alpha: 0.2),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(
-                                        Icons.person_outline,
-                                        color: Colors.green,
-                                        size: 22,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            isVi ? 'Sẽ mời' : 'Invite',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.green,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            _foundUserName!,
-                                            style: const TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.green,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const Icon(
-                                      Icons.check_circle,
-                                      color: Colors.green,
-                                      size: 24,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                        ),
-                      
-                      const SizedBox(height: 24),
-                      
-                      // Submit button
-                      AnimatedScaleButton(
-                        onTap: (_isLoading || _foundUserId == null)
-                            ? null
-                            : () {
-                                HapticFeedback.mediumImpact();
-                                _inviteByPhone(_phoneController.text.trim());
-                              },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+
+                    // Search Feedback (Error or Found user)
+                    if (_phoneController.text.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      if (_searchError != null)
+                        Container(
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: (_isLoading || _foundUserId == null)
-                                ? primaryColor.withValues(alpha: 0.4)
-                                : primaryColor,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: (_isLoading || _foundUserId == null)
-                                ? null
-                                : [
-                                    BoxShadow(
-                                      color: primaryColor.withValues(alpha: 0.35),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
+                            color: Colors.orange.withValues(alpha: isDark ? 0.15 : 0.08),
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                          child: Center(
-                            child: _isLoading
-                                ? SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        isDark ? Colors.black : Colors.white,
-                                      ),
-                                    ),
-                                  )
-                                : const Text(
-                                    'Gửi Lời Mời',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 32),
-                      
-                      // Info box
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: primaryColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: primaryColor.withValues(alpha: 0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.info_outline_rounded,
-                              color: primaryColor,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Người được mời sẽ nhận thông báo lời mời',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isDark ? Colors.white70 : Colors.black54,
+                          child: Row(
+                            children: [
+                              const Icon(Icons.info_outline, size: 16, color: Colors.orange),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _searchError!,
+                                  style: const TextStyle(color: Colors.orange, fontSize: 13, fontWeight: FontWeight.w500),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
+                      if (_foundUserName != null)
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: (isDark ? const Color(0xFF34D399) : const Color(0xFF10B981)).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: (isDark ? const Color(0xFF34D399) : const Color(0xFF10B981)).withValues(alpha: 0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: (isDark ? const Color(0xFF34D399) : const Color(0xFF10B981)).withValues(alpha: 0.2),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.person_rounded,
+                                  color: isDark ? const Color(0xFF34D399) : const Color(0xFF10B981),
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      isVi ? 'Người nhận lời mời' : 'Invitee',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: isDark ? const Color(0xFF34D399) : const Color(0xFF10B981),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      _foundUserName!,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.check_circle_rounded,
+                                color: isDark ? const Color(0xFF34D399) : const Color(0xFF10B981),
+                                size: 24,
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
+
+                    const SizedBox(height: 24),
+
+                    // Info note
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: cardBgColor,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: borderColor, width: 1),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.notifications_active_outlined,
+                            color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              isVi
+                                  ? 'Lời mời sẽ gửi tức thì qua thông báo đến tài khoản của người nhận.'
+                                  : 'Invitation will be dispatched instantly via in-app notification.',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: textSecondary,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ─── ERGONOMIC THUMB-FRIENDLY BOTTOM ACTION BAR ───
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+              decoration: BoxDecoration(
+                color: cardBgColor,
+                border: Border(top: BorderSide(color: borderColor, width: 1)),
+              ),
+              child: SafeArea(
+                top: false,
+                child: AnimatedScaleButton(
+                  onTap: (_isLoading || _foundUserId == null)
+                      ? null
+                      : () {
+                          HapticFeedback.mediumImpact();
+                          _inviteByPhone(_phoneController.text.trim());
+                        },
+                  child: Container(
+                    height: 54,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: (_isLoading || _foundUserId == null)
+                          ? null
+                          : LinearGradient(
+                              colors: [
+                                primaryColor,
+                                primaryColor.withValues(alpha: 0.85),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                      color: (_isLoading || _foundUserId == null)
+                          ? (isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9))
+                          : null,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: (_isLoading || _foundUserId == null)
+                          ? []
+                          : [
+                              BoxShadow(
+                                color: primaryColor.withValues(alpha: 0.35),
+                                blurRadius: 14,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                    ),
+                    child: Center(
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.send_rounded,
+                                  color: (_isLoading || _foundUserId == null) ? textSecondary : Colors.white,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  isVi ? 'Gửi Lời Mời Ngay' : 'Send Invitation Now',
+                                  style: TextStyle(
+                                    color: (_isLoading || _foundUserId == null) ? textSecondary : Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
                   ),
                 ),
               ),
@@ -598,12 +663,17 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
     final sheetHeight = mediaQuery.size.height * 0.75;
     final bottomInset = mediaQuery.viewInsets.bottom;
 
+    final sheetBg = widget.isDark ? const Color(0xFF1E293B) : Colors.white;
+    final textP = widget.isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+    final textS = widget.isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final dividerColor = widget.isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0);
+
     return Container(
       height: sheetHeight,
       margin: EdgeInsets.only(bottom: bottomInset),
       decoration: BoxDecoration(
-        color: widget.isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        color: sheetBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
         children: [
@@ -613,7 +683,7 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey.withValues(alpha: 0.3),
+              color: textS.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -626,20 +696,20 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.contacts_rounded, color: widget.primaryColor, size: 22),
+                    Icon(Icons.contacts_rounded, color: widget.isDark ? const Color(0xFF2DD4BF) : widget.primaryColor, size: 22),
                     const SizedBox(width: 10),
                     Text(
                       isVi ? 'Chọn từ danh bạ' : 'Select from Contacts',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: widget.isDark ? Colors.white : Colors.black87,
+                        color: textP,
                       ),
                     ),
                   ],
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 22),
+                  icon: Icon(Icons.close_rounded, size: 22, color: textS),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -652,13 +722,14 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
             child: TextField(
               controller: _searchCtrl,
               onChanged: _onSearch,
+              style: TextStyle(color: textP, fontSize: 14),
               decoration: InputDecoration(
                 hintText: isVi ? 'Tìm kiếm tên hoặc số điện thoại...' : 'Search name or phone number...',
                 hintStyle: TextStyle(
-                  color: widget.isDark ? Colors.white38 : Colors.black38,
+                  color: textS.withValues(alpha: 0.6),
                   fontSize: 14,
                 ),
-                prefixIcon: Icon(Icons.search_rounded, color: widget.primaryColor, size: 20),
+                prefixIcon: Icon(Icons.search_rounded, color: textS, size: 20),
                 suffixIcon: _searchCtrl.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear_rounded, size: 18),
@@ -669,10 +740,10 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
                       )
                     : null,
                 filled: true,
-                fillColor: widget.isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF3F4F6),
+                fillColor: widget.isDark ? const Color(0xFF141E2E) : const Color(0xFFF1F5F9),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -685,7 +756,7 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
                 ? Center(
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(widget.primaryColor),
+                      valueColor: AlwaysStoppedAnimation<Color>(widget.isDark ? const Color(0xFF2DD4BF) : widget.primaryColor),
                     ),
                   )
                 : _filtered.isEmpty
@@ -695,16 +766,13 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
                           children: [
                             Icon(
                               Icons.person_search_rounded,
-                              size: 48,
-                              color: Colors.grey.withValues(alpha: 0.5),
+                              size: 44,
+                              color: textS.withValues(alpha: 0.4),
                             ),
                             const SizedBox(height: 12),
                             Text(
                               isVi ? 'Không tìm thấy liên hệ nào' : 'No contacts found',
-                              style: TextStyle(
-                                color: widget.isDark ? Colors.white60 : Colors.black54,
-                                fontSize: 14,
-                              ),
+                              style: TextStyle(color: textS, fontSize: 14),
                             ),
                           ],
                         ),
@@ -714,7 +782,7 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
                         separatorBuilder: (context, index) => Divider(
                           height: 1,
                           indent: 68,
-                          color: widget.isDark ? Colors.white12 : Colors.black12,
+                          color: dividerColor,
                         ),
                         itemBuilder: (ctx, index) {
                           final contact = _filtered[index];
@@ -724,8 +792,8 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
 
                           return ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: widget.primaryColor.withValues(alpha: 0.15),
-                              foregroundColor: widget.primaryColor,
+                              backgroundColor: (widget.isDark ? const Color(0xFF2DD4BF) : widget.primaryColor).withValues(alpha: 0.15),
+                              foregroundColor: widget.isDark ? const Color(0xFF2DD4BF) : widget.primaryColor,
                               child: Text(
                                 initial,
                                 style: const TextStyle(fontWeight: FontWeight.bold),
@@ -736,20 +804,20 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
                               style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15,
-                                color: widget.isDark ? Colors.white : Colors.black87,
+                                color: textP,
                               ),
                             ),
                             subtitle: Text(
                               contact.phone,
                               style: TextStyle(
                                 fontSize: 13,
-                                color: widget.isDark ? Colors.white60 : Colors.black54,
+                                color: textS,
                               ),
                             ),
-                            trailing: const Icon(
+                            trailing: Icon(
                               Icons.arrow_forward_ios_rounded,
                               size: 14,
-                              color: Colors.grey,
+                              color: textS.withValues(alpha: 0.6),
                             ),
                             onTap: () {
                               HapticFeedback.selectionClick();
@@ -764,4 +832,3 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
     );
   }
 }
-
