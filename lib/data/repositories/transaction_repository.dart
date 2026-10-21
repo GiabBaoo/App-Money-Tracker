@@ -75,6 +75,9 @@ class TransactionRepository {
       source: transaction.source,
       walletId: transaction.walletId,
       syncStatus: 'pending',
+      location: transaction.location,
+      latitude: transaction.latitude,
+      longitude: transaction.longitude,
     );
 
     await db.insert('transactions', tx.toSqlite());
@@ -115,6 +118,9 @@ class TransactionRepository {
       source: transaction.source,
       walletId: transaction.walletId,
       syncStatus: 'pending',
+      location: transaction.location,
+      latitude: transaction.latitude,
+      longitude: transaction.longitude,
     );
 
     await txn.insert('transactions', tx.toSqlite());

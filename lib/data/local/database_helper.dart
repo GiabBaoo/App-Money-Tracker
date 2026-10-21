@@ -10,7 +10,7 @@ class DatabaseHelper {
   DatabaseHelper._internal();
 
   static Database? _database;
-  static const int _dbVersion = 4;
+  static const int _dbVersion = 5;
   static const String _dbName = 'money_tracker.db';
 
   Future<Database> get database async {
@@ -65,7 +65,10 @@ class DatabaseHelper {
         groupIconCode INTEGER,
         source TEXT DEFAULT 'personal',
         syncStatus TEXT DEFAULT 'synced',
-        walletId TEXT DEFAULT ''
+        walletId TEXT DEFAULT '',
+        location TEXT DEFAULT '',
+        latitude REAL,
+        longitude REAL
       )
     ''');
 
@@ -336,6 +339,17 @@ class DatabaseHelper {
         'CREATE INDEX IF NOT EXISTS idx_transactions_wallet ON transactions(uid, walletId)',
       );
       debugPrint('SQLite: v4 migration completed (idx_transactions_wallet added)');
+    }
+
+    if (oldVersion < 5) {
+      try {
+        await db.execute('ALTER TABLE transactions ADD COLUMN location TEXT DEFAULT ""');
+        await db.execute('ALTER TABLE transactions ADD COLUMN latitude REAL');
+        await db.execute('ALTER TABLE transactions ADD COLUMN longitude REAL');
+        debugPrint('SQLite: v5 migration completed (location, latitude, longitude added to transactions)');
+      } catch (e) {
+        debugPrint('SQLite: v5 migration error: $e');
+      }
     }
   }
 

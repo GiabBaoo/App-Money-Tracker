@@ -18,6 +18,8 @@ import '../../utils/currency_format_utils.dart';
 import '../../utils/page_transitions.dart';
 import '../../utils/category_utils.dart';
 import '../../services/category_style_service.dart';
+import '../../services/location_service.dart';
+import 'package:geolocator/geolocator.dart';
 import 'category_screen.dart';
 
 class EditTransactionScreen extends StatefulWidget {
@@ -54,6 +56,12 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   List<WalletModel> _wallets = [];
   bool _isLoading = false;
 
+  // Quản lý vị trí địa danh
+  String? _locationName;
+  double? _latitude;
+  double? _longitude;
+  bool _isLocating = false;
+
   static const Color appMainColor = Color(0xFF438883); 
 
   @override
@@ -89,6 +97,10 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     _currentPhotoLocalPath = widget.transaction.photoLocalPath;
     _currentPhotoStoragePath = widget.transaction.photoStoragePath;
     _hasPhoto = widget.transaction.hasPhoto;
+
+    _locationName = widget.transaction.location;
+    _latitude = widget.transaction.latitude;
+    _longitude = widget.transaction.longitude;
 
     CategoryStyleService.instance.addListener(_onCategoryStyleChanged);
     _loadWallets();
@@ -466,6 +478,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         groupIconCode: widget.transaction.groupIconCode,
         source: widget.transaction.source,
         walletId: newWalletId,
+        location: _locationName,
+        latitude: _latitude,
+        longitude: _longitude,
       );
 
       // 2. Cập nhật giao dịch và cân đối số dư ví trong 1 transaction nguyên tử
@@ -1061,6 +1076,79 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                           ),
                                         ),
                                 ),
+                                _buildFieldDivider(isDark),
+
+                                // Vị trí địa danh GPS
+                                _buildFieldRow(
+                                  icon: Icons.location_on_rounded,
+                                  iconColor: const Color(0xFFF59E0B),
+                                  label: isVi ? 'Vị trí địa danh' : 'Location',
+                                  isDark: isDark,
+                                  child: InkWell(
+                                    onTap: _handleLocationTap,
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF7F8FA),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            _locationName != null && _locationName!.isNotEmpty
+                                                ? Icons.place_rounded
+                                                : Icons.add_location_alt_outlined,
+                                            color: _locationName != null && _locationName!.isNotEmpty
+                                                ? const Color(0xFFF59E0B)
+                                                : (isDark ? Colors.white54 : Colors.grey.shade500),
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Text(
+                                              _locationName != null && _locationName!.isNotEmpty
+                                                  ? _locationName!
+                                                  : (isVi ? 'Thêm vị trí địa danh...' : 'Add location...'),
+                                              style: TextStyle(
+                                                fontSize: 13.5,
+                                                fontWeight: _locationName != null && _locationName!.isNotEmpty
+                                                    ? FontWeight.w600
+                                                    : FontWeight.normal,
+                                                color: _locationName != null && _locationName!.isNotEmpty
+                                                    ? (isDark ? Colors.white : const Color(0xFF1A1A1A))
+                                                    : (isDark ? Colors.white54 : Colors.grey.shade500),
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          if (_locationName != null && _locationName!.isNotEmpty)
+                                            IconButton(
+                                              icon: const Icon(Icons.clear_rounded, size: 18),
+                                              color: isDark ? Colors.white54 : Colors.grey.shade500,
+                                              visualDensity: VisualDensity.compact,
+                                              padding: EdgeInsets.zero,
+                                              constraints: const BoxConstraints(),
+                                              onPressed: () {
+                                                setState(() {
+                                                  _locationName = null;
+                                                  _latitude = null;
+                                                  _longitude = null;
+                                                });
+                                              },
+                                            )
+                                          else
+                                            Icon(
+                                              Icons.chevron_right_rounded,
+                                              color: isDark ? Colors.white38 : Colors.grey.shade400,
+                                              size: 20,
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
 
@@ -1329,6 +1417,296 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _handleLocationTap() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textController = TextEditingController(text: _locationName ?? '');
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (modalContext, setModalState) {
+            return Container(
+              padding: EdgeInsets.only(
+                top: 20,
+                left: 20,
+                right: 20,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+              ),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E2827) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white24 : Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        isVi ? 'Vị trí giao dịch' : 'Transaction Location',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : const Color(0xFF111827),
+                        ),
+                      ),
+                      if (_locationName != null && _locationName!.isNotEmpty)
+                        TextButton.icon(
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.redAccent,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                          icon: const Icon(Icons.delete_outline, size: 18),
+                          label: Text(isVi ? 'Xóa' : 'Remove'),
+                          onPressed: () {
+                            setState(() {
+                              _locationName = null;
+                              _latitude = null;
+                              _longitude = null;
+                            });
+                            Navigator.pop(ctx);
+                          },
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Ô nhập địa danh thủ công
+                  TextField(
+                    controller: textController,
+                    decoration: InputDecoration(
+                      hintText: isVi ? 'Nhập tên quán / địa danh...' : 'Enter place name...',
+                      prefixIcon: const Icon(Icons.place_outlined, color: Color(0xFF438883)),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF142423) : const Color(0xFFF8FAFC),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: isDark ? Colors.white12 : const Color(0xFFCBD5E1),
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                          color: isDark ? Colors.white12 : const Color(0xFFCBD5E1),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5),
+                      ),
+                    ),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  // Nút lấy tọa độ GPS tự động
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF438883),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    icon: _isLocating
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Icon(Icons.my_location_rounded, size: 20),
+                    label: Text(
+                      _isLocating
+                          ? (isVi ? 'Đang xác định GPS...' : 'Locating GPS...')
+                          : (isVi ? 'Lấy vị trí GPS hiện tại' : 'Get current GPS location'),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    onPressed: _isLocating
+                        ? null
+                        : () async {
+                            setModalState(() {});
+                            setState(() => _isLocating = true);
+
+                            final isServiceEnabled = await LocationService.instance.isLocationServiceEnabled();
+                            if (!isServiceEnabled) {
+                              setState(() => _isLocating = false);
+                              if (mounted) _showGpsDisabledDialog(isVi);
+                              return;
+                            }
+
+                            var perm = await LocationService.instance.checkPermission();
+                            if (perm == LocationPermission.denied) {
+                              perm = await LocationService.instance.requestPermission();
+                            }
+
+                            if (perm == LocationPermission.deniedForever) {
+                              setState(() => _isLocating = false);
+                              if (mounted) _showPermissionPermanentlyDeniedDialog(isVi);
+                              return;
+                            }
+
+                            if (perm == LocationPermission.denied) {
+                              setState(() => _isLocating = false);
+                              if (mounted) {
+                                TopToast.show(
+                                  context,
+                                  isVi ? 'Chưa cấp quyền vị trí' : 'Location permission denied',
+                                  isError: true,
+                                );
+                              }
+                              return;
+                            }
+
+                            final res = await LocationService.instance.getCurrentPlaceName(
+                              timeout: const Duration(seconds: 5),
+                            );
+
+                            setState(() => _isLocating = false);
+
+                            if (res != null) {
+                              setState(() {
+                                _locationName = res.placeName;
+                                _latitude = res.latitude;
+                                _longitude = res.longitude;
+                              });
+                              if (ctx.mounted) {
+                                Navigator.pop(ctx);
+                              }
+                              if (mounted) {
+                                TopToast.show(
+                                  context,
+                                  isVi ? 'Đã định vị: ${res.placeName}' : 'Located: ${res.placeName}',
+                                );
+                              }
+                            } else {
+                              if (mounted) {
+                                TopToast.show(
+                                  context,
+                                  isVi ? 'Không thể lấy vị trí. Vui lòng nhập tay.' : 'Could not locate. Please enter manually.',
+                                  isError: true,
+                                );
+                              }
+                            }
+                          },
+                  ),
+                  const SizedBox(height: 10),
+                  // Nút Lưu tên địa danh thủ công
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: isDark ? Colors.white : const Color(0xFF1E293B),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: BorderSide(
+                        color: isDark ? Colors.white24 : const Color(0xFFCBD5E1),
+                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onPressed: () {
+                      final customName = textController.text.trim();
+                      setState(() {
+                        if (customName.isNotEmpty) {
+                          _locationName = customName;
+                        } else {
+                          _locationName = null;
+                          _latitude = null;
+                          _longitude = null;
+                        }
+                      });
+                      Navigator.pop(ctx);
+                    },
+                    child: Text(
+                      isVi ? 'Áp dụng tên này' : 'Apply this name',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+    textController.dispose();
+  }
+
+  void _showGpsDisabledDialog(bool isVi) {
+    showDialog(
+      context: context,
+      builder: (dCtx) => AlertDialog(
+        title: Text(isVi ? 'Dịch vụ vị trí đang tắt' : 'Location Services Disabled'),
+        content: Text(
+          isVi
+              ? 'Vui lòng bật GPS trên thiết bị để ứng dụng tự động lấy địa danh.'
+              : 'Please enable GPS on your device to automatically detect place names.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dCtx),
+            child: Text(isVi ? 'Đóng' : 'Close'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF438883),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(dCtx);
+              LocationService.instance.openLocationSettings();
+            },
+            child: Text(isVi ? 'Mở cài đặt' : 'Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPermissionPermanentlyDeniedDialog(bool isVi) {
+    showDialog(
+      context: context,
+      builder: (dCtx) => AlertDialog(
+        title: Text(isVi ? 'Quyền vị trí bị chặn' : 'Location Permission Denied'),
+        content: Text(
+          isVi
+              ? 'Bạn đã từ chối quyền vị trí vĩnh viễn. Vui lòng vào Cài đặt để cấp quyền cho ứng dụng.'
+              : 'Location permission is permanently denied. Please grant permission in App Settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dCtx),
+            child: Text(isVi ? 'Để sau' : 'Later'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF438883),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(dCtx);
+              LocationService.instance.openAppSettings();
+            },
+            child: Text(isVi ? 'Mở Cài đặt' : 'Open Settings'),
+          ),
+        ],
       ),
     );
   }

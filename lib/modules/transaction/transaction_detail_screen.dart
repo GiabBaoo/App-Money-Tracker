@@ -422,6 +422,12 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       _buildDetailRow('Nội dung', description.isEmpty ? 'Không có nội dung' : description),
                       _buildDetailRow('Thời gian', time.isEmpty ? '--:--' : time),
                       _buildDetailRow('Ngày', date),
+                      if (_transaction.location != null && _transaction.location!.isNotEmpty)
+                        _buildDetailRow(
+                          LanguageService.instance.isVietnamese ? 'Vị trí' : 'Location',
+                          _transaction.location!,
+                          valueColor: const Color(0xFFF59E0B),
+                        ),
                       _buildDetailRow(
                         'Phân loại nguồn', 
                         _transaction.isTransfer

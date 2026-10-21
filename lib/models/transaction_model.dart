@@ -30,6 +30,11 @@ class TransactionModel {
   // Trạng thái đồng bộ: 'synced', 'pending', 'failed'
   final String syncStatus;
 
+  // Định danh vị trí GPS (Tên địa danh & Tọa độ)
+  final String? location;
+  final double? latitude;
+  final double? longitude;
+
   TransactionModel({
     this.id = '',
     required this.uid,
@@ -51,6 +56,9 @@ class TransactionModel {
     this.source = 'personal', // Default là personal
     this.walletId = '',
     this.syncStatus = 'synced',
+    this.location,
+    this.latitude,
+    this.longitude,
   })  : createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 
@@ -103,6 +111,9 @@ class TransactionModel {
       source: data['source'] ?? 'personal', // Backward compatibility
       walletId: data['walletId'] as String? ?? '',
       syncStatus: 'synced',
+      location: data['location'] as String?,
+      latitude: (data['latitude'] as num?)?.toDouble(),
+      longitude: (data['longitude'] as num?)?.toDouble(),
     );
   }
 
@@ -126,6 +137,9 @@ class TransactionModel {
       'hasPhoto': hasPhoto,
       'photoUrl': photoUrl,
       'photoStoragePath': photoStoragePath,
+      if (location != null) 'location': location,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
     };
   }
 
@@ -154,6 +168,9 @@ class TransactionModel {
       source: map['source'] as String? ?? 'personal',
       walletId: map['walletId'] as String? ?? '',
       syncStatus: map['syncStatus'] as String? ?? 'synced',
+      location: map['location'] as String?,
+      latitude: (map['latitude'] as num?)?.toDouble(),
+      longitude: (map['longitude'] as num?)?.toDouble(),
     );
   }
 
@@ -180,6 +197,9 @@ class TransactionModel {
       'source': source,
       'walletId': walletId,
       'syncStatus': syncStatus,
+      'location': location ?? '',
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 
@@ -206,6 +226,10 @@ class TransactionModel {
     String? source,
     String? walletId,
     String? syncStatus,
+    String? location,
+    double? latitude,
+    double? longitude,
+    bool clearLocation = false,
   }) {
     return TransactionModel(
       id: id ?? this.id,
@@ -228,6 +252,9 @@ class TransactionModel {
       source: source ?? this.source,
       walletId: walletId ?? this.walletId,
       syncStatus: syncStatus ?? this.syncStatus,
+      location: clearLocation ? null : (location ?? this.location),
+      latitude: clearLocation ? null : (latitude ?? this.latitude),
+      longitude: clearLocation ? null : (longitude ?? this.longitude),
     );
   }
 }
