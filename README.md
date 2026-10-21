@@ -113,13 +113,21 @@ lib/
    - Obtain an API key from [Google AI Studio](https://aistudio.google.com/).
    - Populate `defaultGeminiApiKey` in `lib/core/constants/api_keys.dart`.
 
-4. **Verify codebase**:
+4. **Configure SMTP for OTP emails (`.env`)** — required, `.env` is bundled as an asset so the build fails if it is missing:
+   ```bash
+   cp .env.example .env
+   ```
+   - Fill `SMTP_SENDER_EMAIL` and `SMTP_APP_PASSWORD` (a Gmail [App Password](https://myaccount.google.com/apppasswords), preferably from a dedicated account).
+   - Values left empty → app still runs, OTP sending reports "not configured".
+   - Note: `.env` ships inside the APK and can be extracted; never put high-value secrets there.
+
+5. **Verify codebase**:
    ```bash
    flutter analyze
    flutter test
    ```
 
-5. **Run the application**:
+6. **Run the application**:
    ```bash
    flutter run
    ```

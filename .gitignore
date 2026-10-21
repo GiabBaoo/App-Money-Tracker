@@ -48,6 +48,7 @@ app.*.map.json
 .env
 .env.*
 *.env
+!.env.example
 lib/core/constants/api_keys.dart
 assets/config/api_keys.json
 

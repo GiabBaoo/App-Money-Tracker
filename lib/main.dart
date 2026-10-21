@@ -35,9 +35,13 @@ import 'services/category_style_service.dart';
 import 'core/providers/app_providers.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Biến môi trường runtime (SMTP...). Thiếu .env thì app vẫn chạy, OTP báo chưa cấu hình.
+  await dotenv.load(fileName: '.env', isOptional: true);
 
   // ═══ 1. Khởi động song song các dịch vụ cục bộ tốc độ cao (0-100ms) ═══
   final themeService = ThemeService();
