@@ -1,131 +1,131 @@
-# Money Tracker App (Quản Lý Thu Chi Cá Nhân & Nhóm)
+# Money Tracker App (Personal & Group Expense Manager)
 
-Ứng dụng di động theo dõi và quản lý tài chính thông minh trên nền tảng **Flutter**, tích hợp trợ lý AI, quản lý ngân sách, phân bổ chi tiêu nhóm và đồng bộ hóa đám mây đa thiết bị.
-
----
-
-## Tính Năng Nổi Bật
-
-### 1. Quản lý Thu/Chi & Đa Ví
-- Quản lý nhiều nguồn tiền: Tiền mặt, Tài khoản ngân hàng, Ví điện tử (Momo, ZaloPay,...).
-- Ghi chép giao dịch nhanh chóng với đầy đủ thông tin: số tiền, danh mục, thời gian, hình ảnh hóa đơn, địa điểm và ghi chú.
-- Chuyển tiền qua lại giữa các ví (Transfer) với kiểm tra biến động số dư chặt chẽ.
-- Tự động theo dõi giao dịch định kỳ (lương hàng tháng, tiền trọ, hóa đơn tiện ích,...).
-
-### 2. Ngân Sách (Budget) & Mục Tiêu Tiết Kiệm (Savings Goals)
-- Thiết lập ngân sách chi tiêu theo danh mục (Ăn uống, Mua sắm, Di chuyển,...) theo tháng hoặc tùy chọn kỳ hạn.
-- Hệ thống theo dõi trực quan và cảnh báo mức chi tiêu vượt ngưỡng (80%, 100%).
-- Tạo mục tiêu tiết kiệm, theo dõi tiến độ nạp tiền và ngày hoàn thành dự kiến.
-
-### 3. Chia Sẻ Chi Tiêu Nhóm (Group Expenses)
-- Tạo nhóm chi tiêu cho gia đình, chuyến du lịch hoặc bạn cùng phòng.
-- Tự động tính toán chia đều (split bill) hoặc theo phần trăm/số tiền thực tế.
-- Báo cáo số dư nợ và đề xuất chuyển khoản quyết toán tối ưu số lượt giao dịch.
-
-### 4. Báo Cáo & Phân Tích Thống Kê
-- Biểu đồ trực quan: hình tròn (Pie chart), cột (Bar chart), đường xu hướng (Trend line) hỗ trợ bởi `fl_chart`.
-- Xem phân tích theo tuần, tháng, quý, năm hoặc khoảng thời gian tùy chỉnh.
-- Xuất báo cáo tài chính chuyên nghiệp định dạng **PDF**, **Excel (.xlsx)** hoặc **CSV**.
-
-### 5. Tiện Ích Thông Minh & AI
-- **Tự động điền theo thói quen (Smart Habit Autofill)**: Phân tích tần suất và lịch sử chi tiêu, tự động gợi ý/điền danh mục và ghi chú khi người dùng nhập số tiền quen thuộc mà không cần thao tác thủ công.
-- **Hệ thống thông báo tinh gọn & Nhận diện Mono**:
-  - Biểu tượng thông báo đơn sắc chuẩn Android mang chữ **mono** đặc trưng trên thanh trạng thái (status bar / taskbar) kèm tint màu thương hiệu.
-  - Lọc bỏ thông báo spam/rác, sao lưu ngầm không quấy rầy người dùng, duy trì cảnh báo tài chính quan trọng (vượt ngân sách 80%/100%, chạm trần chi tiêu ngày/tháng, giao dịch định kỳ đến hạn).
-- **Trợ lý tài chính AI (Google Gemini & Local Qwen)**: Phân tích thói quen tiêu dùng, gợi ý tối ưu ngân sách và giải đáp thắc mắc tài chính.
-- **Nhập liệu bằng giọng nói (Voice Input)**: Nói câu lệnh tự nhiên để tạo giao dịch (ví dụ: *"Ăn trưa 45 nghìn ví tiền mặt"*).
-- **Quét hóa đơn (Receipt OCR)**: Tự động trích xuất số tiền, ngày tháng và nội dung từ ảnh chụp hóa đơn.
-- **Đọc SMS biến động số dư ngân hàng (Bank SMS Parser)**: Hỗ trợ cú pháp SMS của các ngân hàng phổ biến tại Việt Nam (Vietcombank, Techcombank, MB, BIDV, VPBank, ACB,...).
-
-### 6. Bảo Mật & Dữ Liệu
-- Khóa bảo mật bằng sinh trắc học: Vân tay / Face ID qua `local_auth`.
-- Lưu trữ an toàn thông tin đăng nhập với `flutter_secure_storage`.
-- Hoạt động mượt mà cả khi offline qua SQLite / Hive, tự động đồng bộ lên Firebase Cloud Firestore khi có mạng.
-- Sao lưu nửa đêm định kỳ chạy ngầm (Midnight Sync) an toàn và hoàn toàn không làm gián đoạn người dùng.
+A smart, modern personal and group financial management mobile application built on **Flutter**, featuring AI financial assistance, budget controls, split-expense calculations, and cross-device cloud synchronization.
 
 ---
 
-## Công Nghệ Sử Dụng
+## Key Features
+
+### 1. Income/Expense & Multi-Wallet Management
+- **Multiple Wallet Types**: Manage Cash, Bank Accounts, E-wallets (Momo, ZaloPay, etc.), Credit Cards, and Savings.
+- **Fast Transaction Logging**: Record amount, category, date & time, receipt photos, location, and notes.
+- **Inter-wallet Transfers**: Easily transfer funds between accounts with strict balance verification and audit history.
+- **Recurring Transactions**: Automatically manage scheduled payments such as salary, rent, subscriptions, and utilities.
+
+### 2. Budgets & Savings Goals
+- **Category-based Budgets**: Set spending limits by category (Food & Dining, Shopping, Transport, etc.) on monthly or custom cycles.
+- **Visual Progress & Proactive Alerts**: Track expenses in real time with automated alerts when reaching 80% and 100% of limits.
+- **Savings Goals**: Set goals, log deposits, and monitor progress toward targets with estimated completion dates.
+
+### 3. Group Expenses & Bill Splitting
+- **Shared Group Finances**: Create expense groups for families, room-mates, trips, or events.
+- **Flexible Bill Splitting**: Split equally or customize amounts and percentages per participant.
+- **Debt Resolution & Settlement**: Real-time balance reports and optimized debt settlements to minimize transfer transactions.
+
+### 4. Financial Reports & Analytics
+- **Interactive Visualizations**: Clean charts (Pie charts, Bar charts, Trend lines) powered by `fl_chart`.
+- **Multi-Period Filtering**: Filter transactions and spending patterns by week, month, quarter, year, or custom date ranges.
+- **Data Exporting**: Export reports in **PDF**, **Excel (.xlsx)**, or **CSV** formats.
+
+### 5. Smart Utilities & AI Integration
+- **Smart Habit Autofill**: Learns spending frequency and habits to auto-suggest and autofill categories and notes when common amounts are entered.
+- **Streamlined Status Notifications & Mono Brand Icon**:
+  - Android-compliant monochrome **mono** icon on the status bar and taskbar with brand tinting.
+  - Distraction-free background syncs while preserving high-priority financial notices (budget alerts, daily/monthly ceilings, recurring bill deadlines).
+- **AI Financial Assistant (Google Gemini & Local LLM)**: Analyzes spending patterns, provides financial health tips, and answers budgeting questions.
+- **Natural Voice Input**: Create transactions using natural speech (e.g., *"Lunch 45 thousand cash wallet"*).
+- **Receipt OCR Scanner**: Automatically extracts amounts, dates, and merchant information from receipt snapshots.
+- **Bank SMS Parser**: Automatically parses balance change SMS messages from popular Vietnamese banks (Vietcombank, Techcombank, MB, BIDV, VPBank, ACB, etc.).
+
+### 6. Security & Offline-First Architecture
+- **Biometric Security**: Protect sensitive financial information with Fingerprint / Face ID via `local_auth`.
+- **Encrypted Local Storage**: Sensitive credentials and preferences stored using `flutter_secure_storage`.
+- **Offline-First Sync**: Seamlessly works offline via local SQLite / Hive storage, automatically synchronizing to Firebase Cloud Firestore upon reconnecting.
+- **Quiet Midnight Backup**: Safe scheduled background sync without user interruption.
+
+---
+
+## Tech Stack
 
 - **Framework**: Flutter (Dart SDK ^3.10.7)
 - **State Management**: Flutter Riverpod & Provider
 - **Backend & Cloud**: Firebase Core, Firebase Auth, Cloud Firestore, Firebase Storage, Firebase Messaging (FCM)
-- **Cơ sở dữ liệu cục bộ**: SQLite (`sqflite`), Hive
-- **Biểu đồ & Giao diện**: `fl_chart`, Custom Micro-animations, Dark/Light Theme
-- **Bảo mật**: `local_auth`, `flutter_secure_storage`, `crypto`
-- **Xử lý tập tin & Báo cáo**: `excel`, `pdf`, `csv`, `printing`, `share_plus`
-- **Trí tuệ nhân tạo**: Google Gemini AI API, Local LLM integration
+- **Local Storage**: SQLite (`sqflite`), Hive
+- **Charts & UI**: `fl_chart`, Custom Micro-animations, Dark/Light Theme modes
+- **Security & Crypto**: `local_auth`, `flutter_secure_storage`, `crypto`
+- **File Processing & Reporting**: `excel`, `pdf`, `csv`, `printing`, `share_plus`
+- **AI & Integrations**: Google Gemini API, Local LLM Integration
 
 ---
 
-## Cấu Trúc Dự Án
+## Project Structure
 
 ```text
 lib/
-├── core/                  # Cấu hình cốt lõi, constants, theme, api keys template
+├── core/                  # Core configurations, constants, theme, API key templates
 ├── data/
-│   ├── local/             # Cơ sở dữ liệu SQLite & bảng cục bộ
-│   ├── models/            # Model dữ liệu chuyển đổi
-│   └── repositories/      # Các Repository xử lý logic nghiệp vụ & truy xuất dữ liệu
+│   ├── local/             # SQLite local database & data tables
+│   ├── models/            # Data transfer objects & entity converters
+│   └── repositories/      # Repositories handling business logic & data access
 ├── features/
-│   └── group_expense/     # Tính năng quản lý chi tiêu nhóm
-├── models/                # Thực thể dữ liệu (Wallet, Transaction, Budget, Goal,...)
-├── modules/               # Màn hình theo phân hệ chức năng
-│   ├── ai_assistant/      # Trợ lý AI và hội thoại tài chính
-│   ├── auth/              # Đăng ký, đăng nhập, quên mật khẩu
-│   ├── budget/            # Quản lý ngân sách & mục tiêu
-│   ├── calendar/          # Theo dõi giao dịch theo lịch
-│   ├── home/              # Màn hình chính, ví, báo cáo thống kê
-│   ├── settings/          # Cài đặt cá nhân, bảo mật, thiết bị, giao diện
-│   └── transaction/       # Thêm, sửa, xoá, chi tiết giao dịch
-├── services/              # Dịch vụ nền tảng (AI, SMS, Sync, Notification, Voice,...)
-├── utils/                 # Tiện ích định dạng tiền tệ, ngày tháng, danh mục
-└── widgets/               # Thành phần UI tái sử dụng
+│   └── group_expense/     # Shared group expense feature
+├── models/                # Domain models (Wallet, Transaction, Budget, Goal, etc.)
+├── modules/               # Feature-based presentation modules & screens
+│   ├── ai_assistant/      # AI assistant & financial conversations
+│   ├── auth/              # Sign up, Sign in, Password recovery
+│   ├── budget/            # Budget & savings management
+│   ├── calendar/          # Calendar view for daily transactions
+│   ├── home/              # Dashboard, wallets, summary & reports
+│   ├── settings/          # User preferences, security, devices, themes
+│   └── transaction/       # Create, edit, delete, view transaction details
+├── services/              # Infrastructure services (AI, SMS, Sync, Notification, Voice)
+├── utils/                 # Formatting utilities (currency, date-time, categories)
+└── widgets/               # Reusable UI widgets and custom components
 ```
 
 ---
 
-## Hướng Dẫn Cài Đặt & Chạy Ứng Dụng
+## Getting Started
 
-### Yêu Cầu Môi Trường
-- Flutter SDK 3.10 trở lên.
-- Android Studio / VS Code với Dart & Flutter extensions.
-- Máy ảo Android / iOS hoặc thiết bị thật kết nối qua USB Debugging.
+### Prerequisites
+- Flutter SDK (>= 3.10)
+- Android Studio / VS Code with Dart & Flutter extensions
+- Android/iOS emulator or a physical test device with USB debugging enabled
 
-### Các Bước Thực Hiện
+### Installation & Setup
 
-1. **Clone repository về máy**:
+1. **Clone the repository**:
    ```bash
-   git clone <URL_REPOSITORY>
+   git clone https://github.com/GiabBaoo/App-Money-Tracker.git
    cd money_tracker_app
    ```
 
-2. **Cài đặt các thư viện phụ thuộc**:
+2. **Install dependencies**:
    ```bash
    flutter pub get
    ```
 
-3. **Cấu hình API Key (Google Gemini AI)**:
-   - Tạo file `lib/core/constants/api_keys.dart` bằng cách sao chép từ file mẫu `lib/core/constants/api_keys.example.dart`:
+3. **Configure API Keys (Google Gemini AI)**:
+   - Copy the template file `lib/core/constants/api_keys.example.dart` to `lib/core/constants/api_keys.dart`:
      ```bash
      cp lib/core/constants/api_keys.example.dart lib/core/constants/api_keys.dart
      ```
-   - Lấy API Key miễn phí tại [Google AI Studio](https://aistudio.google.com/).
-   - Điền key vào biến `defaultGeminiApiKey` trong file `lib/core/constants/api_keys.dart`.
+   - Obtain an API key from [Google AI Studio](https://aistudio.google.com/).
+   - Populate `defaultGeminiApiKey` in `lib/core/constants/api_keys.dart`.
 
-4. **Chạy kiểm tra dự án (Analyze & Tests)**:
+4. **Verify codebase**:
    ```bash
    flutter analyze
    flutter test
    ```
 
-5. **Chạy ứng dụng**:
+5. **Run the application**:
    ```bash
    flutter run
    ```
 
 ---
 
-## Chính Sách Bảo Mật & Đóng Góp
-- Tuyệt đối không commit các file chứa secret: `.env`, `api_keys.dart`, `google-services.json` cá nhân lên Git.
-- Mọi đóng góp xin vui lòng tạo branch riêng và gửi Pull Request để được review.
+## Security & Contributing Guidelines
+- **Confidentiality**: Never commit secrets such as `.env`, `api_keys.dart`, or personal `google-services.json` files.
+- **Contributions**: Please create a separate feature branch and submit a Pull Request for review.

@@ -1,0 +1,49 @@
+# ==========================================
+# 1. TOOL OUTPUTS & LOCAL PACKS (Bắt buộc)
+# ==========================================
+repomix-output.*
+token-optimizer/
+*.log
+*.tmp
+
+# ==========================================
+# 2. FLUTTER & DART BUILD ARTIFACTS
+# ==========================================
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+ephemeral/
+
+# ==========================================
+# 3. NODE / WEB / NATIVE BUILDS
+# ==========================================
+node_modules/
+dist/
+bin/
+obj/
+*.lock
+package-lock.json
+
+# ==========================================
+# 4. DATABASE & MIGRATIONS NẶNG
+# ==========================================
+*.db
+*.sqlite
+*.sqlite3
+migrations/
+
+# ==========================================
+# 5. ASSETS NHỊ PHÂN & MEDIA
+# ==========================================
+assets/videos/
+assets/raw/
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.ttf
+*.otf
+*.zip
+*.tar.gz
