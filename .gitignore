@@ -75,3 +75,4 @@ assets/config/api_keys.json
 .gitignore.tokenade-original
 token-optimizer/
 repomix-output.*
+scratch_screens.csv

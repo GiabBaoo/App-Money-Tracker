@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../core/theme/app_colors.dart';
 
 enum MonoLogoVariant {
   /// Huy hiệu biểu tượng app (Khối 3D Soft Tactile Radial với chữ 'mono' đặc trưng tràn viền)
@@ -258,7 +259,7 @@ class _MonoLiquidGlassLogoState extends State<MonoLiquidGlassLogo>
                         // 1. Ambient Glow (Aura xanh Sage thương hiệu MONO)
                         if (widget.hasGlow)
                           BoxShadow(
-                            color: const Color(0xFF5E8C83).withValues(
+                            color: AppColors.logoAura.withValues(
                               alpha: isDark ? 0.40 : 0.24,
                             ),
                             blurRadius: s * 0.35,
@@ -289,11 +290,11 @@ class _MonoLiquidGlassLogoState extends State<MonoLiquidGlassLogo>
                           center: Alignment(-0.15, -0.22),
                           radius: 0.96,
                           colors: [
-                            Color(0xFF6E9E94), // Tâm sáng dịu (soft luminous sage)
-                            Color(0xFF5E8C83), // Màu xanh sage đặc trưng thương hiệu gốc
-                            Color(0xFF55857C), // Chuyển sắc mượt mà
-                            Color(0xFF4D776E), // Rìa đổ bóng chiều sâu 3D
-                            Color(0xFF3F675F), // Góc sâu
+                            AppColors.logoRadialCenter, // Tâm sáng dịu (soft luminous sage)
+                            AppColors.logoRadialBase,   // Màu xanh sage đặc trưng thương hiệu gốc
+                            AppColors.logoRadialMid,    // Chuyển sắc mượt mà
+                            AppColors.logoRadialShade,  // Rìa đổ bóng chiều sâu 3D
+                            AppColors.logoRadialDark,   // Góc sâu
                           ],
                           stops: [0.0, 0.40, 0.65, 0.88, 1.0],
                         ),
@@ -339,7 +340,7 @@ class _MonoLiquidGlassLogoState extends State<MonoLiquidGlassLogo>
                         decoration: BoxDecoration(
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF0F2D27).withValues(alpha: 0.35),
+                              color: AppColors.logoTextShadow.withValues(alpha: 0.35),
                               blurRadius: math.max(2.0, s * 0.035),
                               offset: Offset(0, math.max(1.0, s * 0.016)),
                             ),
@@ -367,7 +368,7 @@ class _MonoLiquidGlassLogoState extends State<MonoLiquidGlassLogo>
 
   Widget _buildWordmark(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final defaultColor = widget.color ?? (isDark ? Colors.white : const Color(0xFF0F2625));
+    final defaultColor = widget.color ?? (isDark ? Colors.white : AppColors.primaryTealDark);
 
     return RepaintBoundary(
       child: Image.asset(

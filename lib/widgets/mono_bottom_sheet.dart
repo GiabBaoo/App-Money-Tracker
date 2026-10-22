@@ -1,8 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../core/theme/app_theme.dart';
 
-/// Modal Bottom Sheet phong cách Mono v2.0
-/// Bo góc trên 24px, tích hợp thanh kéo Drag Handle Pill, viền sáng Specular Highlight và nền kính mờ thích ứng
+/// Modal Bottom Sheet phong cách Mono v2.0 - Fintech Modern UI
+/// Bo góc trên 24px (AppRadius.bottomSheet), tích hợp thanh kéo Drag Handle Pill,
+/// viền phản quang Specular Highlight và nền kính mờ thích ứng
 class MonoBottomSheet {
   /// Hiển thị Modal Bottom Sheet chuẩn hóa
   static Future<T?> show<T>({
@@ -47,31 +49,27 @@ class MonoBottomSheetContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF1A2625) : Colors.white;
+    final isDark = context.isDarkMode;
+    final sheetTheme = Theme.of(context).bottomSheetTheme;
+    final baseBg = sheetTheme.backgroundColor ??
+        (isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceLight);
+    final bgColor = baseBg.withValues(alpha: isDark ? 0.96 : 0.98);
     final topBorderColor = isDark
-        ? Colors.white.withValues(alpha: 0.14)
-        : const Color(0xFFE2E8F0);
-    final dragHandleColor = isDark
-        ? Colors.white.withValues(alpha: 0.25)
-        : const Color(0xFFCBD5E1);
+        ? AppColors.borderDarkHighlight
+        : context.borderColor;
+    final dragHandleColor = sheetTheme.dragHandleColor ??
+        (isDark ? Colors.white.withValues(alpha: 0.28) : const Color(0xFFCBD5E1));
 
     Widget content = Container(
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: AppRadius.bottomSheet,
         border: Border(
           top: BorderSide(color: topBorderColor, width: 1.2),
-          left: BorderSide(color: topBorderColor.withValues(alpha: 0.5), width: 0.5),
-          right: BorderSide(color: topBorderColor.withValues(alpha: 0.5), width: 0.5),
+          left: BorderSide(color: topBorderColor.withValues(alpha: 0.4), width: 0.6),
+          right: BorderSide(color: topBorderColor.withValues(alpha: 0.4), width: 0.6),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.12),
-            blurRadius: 28,
-            offset: const Offset(0, -6),
-          ),
-        ],
+        boxShadow: AppShadows.modal(isDark),
       ),
       child: SafeArea(
         top: false,
@@ -89,7 +87,7 @@ class MonoBottomSheetContainer extends StatelessWidget {
                     height: 4.5,
                     decoration: BoxDecoration(
                       color: dragHandleColor,
-                      borderRadius: BorderRadius.circular(3),
+                      borderRadius: AppRadius.pill,
                     ),
                   ),
                 ),
@@ -103,9 +101,9 @@ class MonoBottomSheetContainer extends StatelessWidget {
     );
 
     return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      borderRadius: AppRadius.bottomSheet,
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
         child: maxHeightFactor != null
             ? FractionallySizedBox(
                 heightFactor: null,

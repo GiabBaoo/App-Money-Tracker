@@ -1,9 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../core/theme/app_theme.dart';
 import '../services/language_service.dart';
 
-/// Hộp thoại Dialog phong cách Mono v2.0
-/// Bo góc 24px, hiệu ứng kính mờ nhẹ (Frosted Glass), bóng đổ tinh tế và animation mượt mà (Scale + Fade)
+/// Hộp thoại Dialog phong cách Mono v2.0 - Fintech Modern UI
+/// Bo góc 24px (AppRadius.dialog), hiệu ứng kính mờ tinh tế (Frosted Glass), đổ bóng đa lớp mềm (AppShadows.modal),
+/// nút thao tác chuẩn 12px (AppRadius.button) và animation chuyển cảnh mượt mà 220ms.
 class MonoDialog {
   /// Hiển thị Dialog tùy biến với animation mở mượt mà chuẩn 220ms
   static Future<T?> showCustom<T>({
@@ -129,13 +131,13 @@ class MonoDialogContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDarkMode;
     final bgColor = isDark
-        ? const Color(0xFF1E2827).withValues(alpha: 0.95)
-        : Colors.white.withValues(alpha: 0.98);
+        ? context.colors.surface.withValues(alpha: 0.95)
+        : context.colors.surface.withValues(alpha: 0.98);
     final borderColor = isDark
-        ? Colors.white.withValues(alpha: 0.12)
-        : const Color(0xFFE2E8F0);
+        ? AppColors.borderDarkHighlight
+        : context.borderColor;
 
     return Center(
       child: SingleChildScrollView(
@@ -146,22 +148,16 @@ class MonoDialogContainer extends StatelessWidget {
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxWidth),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: AppRadius.dialog,
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
                 child: Container(
                   padding: padding,
                   decoration: BoxDecoration(
                     color: bgColor,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: AppRadius.dialog,
                     border: Border.all(color: borderColor, width: 1.2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.12),
-                        blurRadius: 28,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
+                    boxShadow: AppShadows.modal(isDark),
                   ),
                   child: Material(
                     color: Colors.transparent,
@@ -198,9 +194,8 @@ class _MonoConfirmationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final effectiveColor = iconColor ??
-        (isDestructive ? const Color(0xFFEF4444) : const Color(0xFF438883));
+        (isDestructive ? context.expense : context.colors.primary);
 
     return MonoDialogContainer(
       child: Column(
@@ -219,21 +214,18 @@ class _MonoConfirmationDialog extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
+            style: context.textTheme.titleLarge?.copyWith(
+              color: context.colors.onSurface,
               fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
-              letterSpacing: -0.2,
             ),
           ),
           const SizedBox(height: 10),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14.5,
+            style: context.textTheme.bodyMedium?.copyWith(
+              color: context.colors.onSurfaceVariant,
               height: 1.45,
-              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
             ),
           ),
           const SizedBox(height: 24),
@@ -245,20 +237,16 @@ class _MonoConfirmationDialog extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     side: BorderSide(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.15)
-                          : const Color(0xFFCBD5E1),
+                      color: context.borderColor,
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: AppRadius.button,
                     ),
                   ),
                   child: Text(
                     cancelText,
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                    style: context.textTheme.labelLarge?.copyWith(
+                      color: context.colors.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -269,22 +257,24 @@ class _MonoConfirmationDialog extends StatelessWidget {
                   onPressed: () => Navigator.of(context).pop(true),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isDestructive
-                        ? const Color(0xFFDC2626)
-                        : (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)),
+                        ? context.expense
+                        : context.colors.primary,
                     foregroundColor: isDestructive
-                        ? Colors.white
-                        : (isDark ? const Color(0xFF0F2625) : Colors.white),
+                        ? context.colors.onError
+                        : context.colors.onPrimary,
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: AppRadius.button,
                     ),
                   ),
                   child: Text(
                     confirmText,
-                    style: const TextStyle(
-                      fontSize: 14.5,
+                    style: context.textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: isDestructive
+                          ? context.colors.onError
+                          : context.colors.onPrimary,
                     ),
                   ),
                 ),
@@ -314,9 +304,7 @@ class _MonoAlertDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = Theme.of(context).primaryColor;
-    final effectiveColor = iconColor ?? primary;
+    final effectiveColor = iconColor ?? context.colors.primary;
 
     return MonoDialogContainer(
       child: Column(
@@ -335,21 +323,18 @@ class _MonoAlertDialog extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 18,
+            style: context.textTheme.titleLarge?.copyWith(
+              color: context.colors.onSurface,
               fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
-              letterSpacing: -0.2,
             ),
           ),
           const SizedBox(height: 10),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14.5,
+            style: context.textTheme.bodyMedium?.copyWith(
+              color: context.colors.onSurfaceVariant,
               height: 1.45,
-              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
             ),
           ),
           const SizedBox(height: 24),
@@ -358,19 +343,19 @@ class _MonoAlertDialog extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () => Navigator.of(context).pop(),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883),
-                foregroundColor: isDark ? const Color(0xFF0F2625) : Colors.white,
+                backgroundColor: context.colors.primary,
+                foregroundColor: context.colors.onPrimary,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 13),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: AppRadius.button,
                 ),
               ),
               child: Text(
                 buttonText,
-                style: const TextStyle(
-                  fontSize: 14.5,
+                style: context.textTheme.labelLarge?.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: context.colors.onPrimary,
                 ),
               ),
             ),
@@ -402,9 +387,7 @@ class _MonoStandardDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = Theme.of(context).primaryColor;
-    final effectiveColor = iconColor ?? primary;
+    final effectiveColor = iconColor ?? context.colors.primary;
 
     return MonoDialogContainer(
       child: Column(
@@ -431,10 +414,9 @@ class _MonoStandardDialog extends StatelessWidget {
             Text(
               title!,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
+              style: context.textTheme.titleLarge?.copyWith(
+                color: context.colors.onSurface,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF0F172A),
               ),
             ),
           if (message != null || content != null) const SizedBox(height: 12),
@@ -444,10 +426,9 @@ class _MonoStandardDialog extends StatelessWidget {
             Text(
               message!,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14.5,
+              style: context.textTheme.bodyMedium?.copyWith(
+                color: context.colors.onSurfaceVariant,
                 height: 1.45,
-                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
               ),
             ),
           if (actions != null && actions!.isNotEmpty) ...[

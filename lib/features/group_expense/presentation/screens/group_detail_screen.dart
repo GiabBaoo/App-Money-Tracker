@@ -1,3 +1,4 @@
+import '../../../../core/theme/app_theme.dart';
 import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -35,15 +36,15 @@ class GroupDetailScreen extends ConsumerWidget {
     final debtsAsync = ref.watch(groupDebtsProvider(groupId));
     final fundTransactionsAsync = ref.watch(groupFundTransactionsProvider(groupId));
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+    final isDark = context.isDarkMode;
+    final primaryColor = context.colors.primary;
 
     // Design Tokens
-    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-    final cardBgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textPrimary = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-    final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0);
+    final bgColor = isDark ? AppColors.bgDark : AppColors.bgLight;
+    final cardBgColor = context.cardBg;
+    final textPrimary = context.colors.onSurface;
+    final textSecondary = context.colors.onSurfaceVariant;
+    final borderColor = context.borderColor;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -135,7 +136,7 @@ class GroupDetailScreen extends ConsumerWidget {
                           children: [
                             Text(
                               group.name,
-                              style: TextStyle(
+                              style: context.textTheme.titleLarge?.copyWith(
                                 color: textPrimary,
                                 fontSize: 19,
                                 fontWeight: FontWeight.w800,
@@ -161,8 +162,8 @@ class GroupDetailScreen extends ConsumerWidget {
                                 group.groupType == 'personal'
                                     ? (isVi ? 'Quỹ cá nhân' : 'Personal fund')
                                     : (isVi ? '${group.memberIds.length} thành viên • Chi tiết >' : '${group.memberIds.length} members • Details >'),
-                                style: TextStyle(
-                                  color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                                style: context.textTheme.bodySmall?.copyWith(
+                                  color: primaryColor,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -290,7 +291,7 @@ class GroupDetailScreen extends ConsumerWidget {
                                   _buildSectionTitle(
                                     title: isVi ? 'Hoạt động gần đây' : 'Recent Activities',
                                     icon: Icons.history_rounded,
-                                    iconColor: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                                    iconColor: primaryColor,
                                     textPrimary: textPrimary,
                                   ),
                                   if (transactions.length > 5)
@@ -309,7 +310,7 @@ class GroupDetailScreen extends ConsumerWidget {
                                       child: Text(
                                         isVi ? 'Tất cả >' : 'See all >',
                                         style: TextStyle(
-                                          color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                                          color: primaryColor,
                                           fontSize: 13,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -397,15 +398,15 @@ class GroupDetailScreen extends ConsumerWidget {
           end: Alignment.bottomRight,
           colors: isDark
               ? [
-                  const Color(0xFF1E293B),
-                  const Color(0xFF16202E),
+                  AppColors.surfaceElevatedDark,
+                  AppColors.surfaceDark,
                 ]
               : [
                   primaryColor,
                   Color.lerp(primaryColor, Colors.black, 0.12) ?? primaryColor,
                 ],
         ),
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.15),
           width: 1,
@@ -490,12 +491,12 @@ class GroupDetailScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
-                          color: Colors.greenAccent.withValues(alpha: 0.2),
+                          color: context.income.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_downward_rounded,
-                          color: Colors.greenAccent,
+                          color: context.income,
                           size: 14,
                         ),
                       ),
@@ -543,12 +544,12 @@ class GroupDetailScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
-                          color: Colors.redAccent.withValues(alpha: 0.2),
+                          color: context.expense.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_upward_rounded,
-                          color: Colors.redAccent,
+                          color: context.expense,
                           size: 14,
                         ),
                       ),
@@ -595,7 +596,7 @@ class GroupDetailScreen extends ConsumerWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: cardBgColor,
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: borderColor, width: 1),
       ),
       child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
@@ -643,15 +644,16 @@ class GroupDetailScreen extends ConsumerWidget {
     Color borderColor,
   ) {
     final isOwed = debt.amount > 0;
-    final color = isOwed ? Colors.redAccent : (isDark ? const Color(0xFF34D399) : Colors.green);
+    final color = isOwed ? const Color(0xFFEF4444) : (isDark ? const Color(0xFF34D399) : const Color(0xFF10B981));
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cardBgColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: borderColor, width: 1),
+        boxShadow: AppShadows.card(isDark),
       ),
       child: Row(
         children: [
@@ -716,14 +718,15 @@ class GroupDetailScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: cardBgColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: borderColor, width: 1),
+        boxShadow: AppShadows.card(isDark),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => _detailRefactorTransactionDetail(context, ref, tx, isDark),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
           child: Padding(
             padding: const EdgeInsets.all(15),
             child: Row(
@@ -801,7 +804,7 @@ class GroupDetailScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
       decoration: BoxDecoration(
         color: cardBgColor,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: borderColor, width: 1),
       ),
       child: Column(
@@ -969,7 +972,7 @@ class GroupDetailScreen extends ConsumerWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                     boxShadow: [
                       BoxShadow(
                         color: primaryColor.withValues(alpha: 0.35),
@@ -1013,13 +1016,11 @@ class GroupDetailScreen extends ConsumerWidget {
     FundTransactionModel transaction,
     bool isDark,
   ) {
-    final sheetBg = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textP = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-    final textS = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final sheetBg = context.cardBg;
+    final textP = context.colors.onSurface;
+    final textS = context.colors.onSurfaceVariant;
     final isContribute = transaction.type == TransactionType.contribute;
-    final color = isContribute
-        ? (isDark ? const Color(0xFF34D399) : const Color(0xFF10B981))
-        : (isDark ? const Color(0xFFF87171) : const Color(0xFFEF4444));
+    final color = isContribute ? context.income : context.expense;
 
     showModalBottomSheet(
       context: context,
@@ -1030,7 +1031,7 @@ class GroupDetailScreen extends ConsumerWidget {
           color: sheetBg,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           border: Border.all(
-            color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+            color: context.borderColor,
             width: 1,
           ),
         ),
@@ -1137,13 +1138,13 @@ class GroupDetailScreen extends ConsumerWidget {
                         }
                       },
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.redAccent),
+                        side: BorderSide(color: context.colors.error),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                       ),
                       child: Text(
                         isVi ? 'Xóa' : 'Delete',
-                        style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: context.colors.error, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -1152,11 +1153,11 @@ class GroupDetailScreen extends ConsumerWidget {
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFF1F5F9),
+                        backgroundColor: context.inputBgColor,
                         foregroundColor: textP,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                       ),
                       child: Text(isVi ? 'Đóng' : 'Close', style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),

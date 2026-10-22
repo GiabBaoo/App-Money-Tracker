@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../core/theme/app_colors.dart';
 
 /// Widget sóng âm thanh cao cấp với hiệu ứng sóng uốn lượn mượt mà & phản hồi theo âm lượng
 class VoiceWaveform extends StatefulWidget {
@@ -109,8 +110,8 @@ class SmoothWaveformPainter extends CustomPainter {
           end: Alignment.bottomCenter,
           colors: [
             const Color(0xFF5EEAD4).withValues(alpha: alpha), // Mint
-            const Color(0xFF14B8A6).withValues(alpha: alpha * 0.9), // Teal
-            const Color(0xFF0F766E).withValues(alpha: alpha * 0.8), // Dark Emerald
+            AppColors.primaryTealVibrant.withValues(alpha: alpha * 0.9), // Vibrant Teal
+            AppColors.incomeEmeraldDark.withValues(alpha: alpha * 0.8), // Dark Emerald
           ],
         ).createShader(rect)
         ..style = PaintingStyle.fill;

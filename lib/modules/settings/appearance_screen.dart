@@ -12,10 +12,10 @@ class AppearanceScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeService = ref.watch(themeServiceProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
+      backgroundColor: isDark ? AppColors.bgDark : Theme.of(context).primaryColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -73,6 +73,7 @@ class AppearanceScreen extends ConsumerWidget {
                     children: [
                       // 1. THẺ XEM TRƯỚC ĐỘNG THỜI GIAN THỰC (HERO LIVE MOCKUP)
                       _buildSectionHeader(
+                        context,
                         icon: Icons.preview_rounded,
                         title: context.tr('preview_section'),
                         subtitle: context.tr('preview_sub'),
@@ -83,6 +84,7 @@ class AppearanceScreen extends ConsumerWidget {
 
                       // 2. CHẾ ĐỘ MÀU SẮC (VISUAL CARD GRID)
                       _buildSectionHeader(
+                        context,
                         icon: Icons.palette_rounded,
                         title: context.tr('theme_mode_section'),
                         subtitle: context.tr('theme_mode_sub'),
@@ -93,6 +95,7 @@ class AppearanceScreen extends ConsumerWidget {
 
                       // 3. KÍCH THƯỚC CHỮ HIỂN THỊ (SEGMENTED PILLS)
                       _buildSectionHeader(
+                        context,
                         icon: Icons.format_size_rounded,
                         title: context.tr('font_scale_section'),
                         subtitle: context.tr('font_scale_sub'),
@@ -113,7 +116,8 @@ class AppearanceScreen extends ConsumerWidget {
   }
 
   // === TIÊU ĐỀ PHÂN ĐOẠN ===
-  Widget _buildSectionHeader({
+  Widget _buildSectionHeader(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String subtitle,
@@ -123,15 +127,15 @@ class AppearanceScreen extends ConsumerWidget {
       children: [
         Row(
           children: [
-            Icon(icon, size: 18, color: const Color(0xFF438883)),
+            Icon(icon, size: 18, color: context.brandColor),
             const SizedBox(width: 8),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.8,
-                color: Color(0xFF438883),
+                color: context.brandColor,
               ),
             ),
           ],
@@ -139,7 +143,9 @@ class AppearanceScreen extends ConsumerWidget {
         const SizedBox(height: 3),
         Text(
           subtitle,
-          style: const TextStyle(fontSize: 12.5, color: Colors.grey),
+          style: context.textTheme.bodySmall?.copyWith(
+            color: context.colors.onSurfaceVariant,
+          ) ?? const TextStyle(fontSize: 12.5, color: Colors.grey),
         ),
       ],
     );
@@ -405,7 +411,7 @@ class AppearanceScreen extends ConsumerWidget {
     required VoidCallback onTap,
     required bool isDark,
   }) {
-    final activeColor = const Color(0xFF438883);
+    final activeColor = context.brandColor;
 
     return InkWell(
       onTap: onTap,
@@ -414,10 +420,10 @@ class AppearanceScreen extends ConsumerWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF222C2A) : Colors.white,
+          color: isDark ? context.surfaceElevatedColor : context.cardBg,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? activeColor : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+            color: isSelected ? activeColor : context.borderColor,
             width: isSelected ? 2.2 : 1.0,
           ),
           boxShadow: [
@@ -450,25 +456,31 @@ class AppearanceScreen extends ConsumerWidget {
             const SizedBox(height: 10),
             Text(
               title,
-              style: TextStyle(
+              style: context.textTheme.labelLarge?.copyWith(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                color: isSelected ? activeColor : context.colors.onSurface,
+              ) ?? TextStyle(
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                color: isSelected ? activeColor : (isDark ? Colors.white : const Color(0xFF1E293B)),
+                color: isSelected ? activeColor : context.colors.onSurface,
               ),
             ),
             const SizedBox(height: 2),
             Text(
               subtitle,
-              style: TextStyle(
+              style: context.textTheme.bodySmall?.copyWith(
                 fontSize: 11,
-                color: isDark ? Colors.white54 : Colors.grey.shade600,
+                color: context.colors.onSurfaceVariant,
+              ) ?? TextStyle(
+                fontSize: 11,
+                color: context.colors.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 8),
             Icon(
               isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
               size: 18,
-              color: isSelected ? activeColor : (isDark ? Colors.white24 : Colors.grey.shade400),
+              color: isSelected ? activeColor : context.colors.onSurfaceVariant.withValues(alpha: 0.4),
             ),
           ],
         ),
@@ -489,7 +501,7 @@ class AppearanceScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF222C2A) : const Color(0xFFEAEFEF),
+        color: isDark ? context.surfaceElevatedColor : AppColors.inputBgLight,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
@@ -508,7 +520,7 @@ class AppearanceScreen extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? (isDark ? const Color(0xFF438883) : Colors.white)
+                      ? (isDark ? context.brandColor : context.colors.surface)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: isSelected
@@ -529,8 +541,8 @@ class AppearanceScreen extends ConsumerWidget {
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: isSelected
-                            ? (isDark ? Colors.white : const Color(0xFF438883))
-                            : (isDark ? Colors.white60 : Colors.grey.shade700),
+                            ? (isDark ? Colors.white : context.brandColor)
+                            : context.colors.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -540,8 +552,8 @@ class AppearanceScreen extends ConsumerWidget {
                         fontSize: 11,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                         color: isSelected
-                            ? (isDark ? Colors.white : const Color(0xFF1E293B))
-                            : (isDark ? Colors.white54 : Colors.grey.shade600),
+                            ? (isDark ? Colors.white : context.colors.onSurface)
+                            : context.colors.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -579,16 +591,16 @@ class AppearanceScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E2625) : const Color(0xFFE8F5F1),
+        color: isDark ? context.surfaceElevatedColor : context.brandColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF438883).withValues(alpha: 0.25),
+          color: context.brandColor.withValues(alpha: 0.25),
         ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFF438883)),
+          Icon(Icons.info_outline_rounded, size: 16, color: context.brandColor),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -596,7 +608,7 @@ class AppearanceScreen extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 12,
                 height: 1.4,
-                color: isDark ? Colors.white70 : const Color(0xFF2E615D),
+                color: isDark ? context.colors.onSurfaceVariant : context.brandColor.withValues(alpha: 0.9),
               ),
             ),
           ),

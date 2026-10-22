@@ -13,6 +13,7 @@ import '../features/group_expense/presentation/providers/group_expense_providers
 import 'animated_scale_button.dart';
 import 'colored_amount_text.dart';
 import '../services/language_service.dart';
+import '../core/theme/app_theme.dart';
 
 class TransactionItem extends ConsumerWidget {
   final TransactionModel transaction;
@@ -34,7 +35,7 @@ class TransactionItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(categoryStyleProvider);
     final bool isIncome = transaction.isIncome;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDarkMode;
 
     // Kiểm tra xem đây có phải là giao dịch quỹ không
     final bool isGroupTransaction = transaction.groupId != null;
@@ -121,13 +122,13 @@ class TransactionItem extends ConsumerWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // 1. Icon Hạng mục (48x48 cân đối, hiện đại)
+              // 1. Icon Hạng mục (48x48 cân đối, bo góc chuẩn Fintech 14px)
               Container(
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
                   color: bgColor,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: AppRadius.iconContainer,
                 ),
                 child: Icon(displayIcon, color: iconColor, size: 24),
               ),
@@ -150,10 +151,9 @@ class TransactionItem extends ConsumerWidget {
                               Flexible(
                                 child: Text(
                                   context.trCat(transaction.category),
-                                  style: TextStyle(
-                                    fontSize: 15.5,
+                                  style: context.textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w700,
-                                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                                    color: context.colors.onSurface,
                                     letterSpacing: -0.3,
                                   ),
                                   maxLines: 1,
@@ -163,21 +163,29 @@ class TransactionItem extends ConsumerWidget {
                               if (transaction.isTransfer) ...[
                                 const SizedBox(width: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: (isDark ? Colors.blueGrey.shade700 : const Color(0xFF0284C7)).withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(6),
+                                    color: (isDark ? AppColors.transferIndigoLight : AppColors.transferIndigo).withValues(alpha: 0.15),
+                                    borderRadius: AppRadius.badge,
+                                    border: Border.all(
+                                      color: (isDark ? AppColors.transferIndigoLight : AppColors.transferIndigo).withValues(alpha: 0.3),
+                                      width: 0.6,
+                                    ),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.swap_horiz_rounded, size: 11, color: isDark ? Colors.lightBlueAccent : const Color(0xFF0284C7)),
-                                      const SizedBox(width: 2),
+                                      Icon(
+                                        Icons.swap_horiz_rounded,
+                                        size: 11,
+                                        color: isDark ? AppColors.transferIndigoLight : AppColors.transferIndigoDark,
+                                      ),
+                                      const SizedBox(width: 2.5),
                                       Text(
                                         context.trCat('Chuyển ví'),
-                                        style: TextStyle(
+                                        style: context.textTheme.labelSmall?.copyWith(
                                           fontSize: 10,
-                                          color: isDark ? Colors.lightBlueAccent : const Color(0xFF0284C7),
+                                          color: isDark ? AppColors.transferIndigoLight : AppColors.transferIndigoDark,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -188,19 +196,31 @@ class TransactionItem extends ConsumerWidget {
                               if (transaction.hasPhoto) ...[
                                 const SizedBox(width: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF438883).withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(6),
+                                    color: context.colors.primary.withValues(alpha: 0.12),
+                                    borderRadius: AppRadius.badge,
+                                    border: Border.all(
+                                      color: context.colors.primary.withValues(alpha: 0.25),
+                                      width: 0.6,
+                                    ),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.receipt_long_rounded, size: 11, color: Color(0xFF438883)),
-                                      const SizedBox(width: 2),
+                                      Icon(
+                                        Icons.receipt_long_rounded,
+                                        size: 11,
+                                        color: context.colors.primary,
+                                      ),
+                                      const SizedBox(width: 2.5),
                                       Text(
                                         context.trCat('Hóa đơn'),
-                                        style: const TextStyle(fontSize: 10, color: Color(0xFF438883), fontWeight: FontWeight.w600),
+                                        style: context.textTheme.labelSmall?.copyWith(
+                                          fontSize: 10,
+                                          color: context.colors.primary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -209,21 +229,29 @@ class TransactionItem extends ConsumerWidget {
                               if (transaction.location != null && transaction.location!.trim().isNotEmpty) ...[
                                 const SizedBox(width: 4),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(6),
+                                    color: context.warning.withValues(alpha: 0.12),
+                                    borderRadius: AppRadius.badge,
+                                    border: Border.all(
+                                      color: context.warning.withValues(alpha: 0.25),
+                                      width: 0.6,
+                                    ),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.location_on_rounded, size: 10, color: Color(0xFFF59E0B)),
+                                      Icon(Icons.location_on_rounded, size: 10, color: context.warning),
                                       const SizedBox(width: 2),
                                       ConstrainedBox(
                                         constraints: const BoxConstraints(maxWidth: 80),
                                         child: Text(
                                           transaction.location!.trim(),
-                                          style: const TextStyle(fontSize: 10, color: Color(0xFFF59E0B), fontWeight: FontWeight.w600),
+                                          style: context.textTheme.labelSmall?.copyWith(
+                                            fontSize: 10,
+                                            color: context.warning,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -241,7 +269,8 @@ class TransactionItem extends ConsumerWidget {
                           child: ColoredAmountText(
                             amount: transaction.amount,
                             isIncome: isIncome,
-                            fontSize: 16,
+                            isTransfer: transaction.isTransfer,
+                            fontSize: 16.5,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -263,18 +292,18 @@ class TransactionItem extends ConsumerWidget {
                                   padding: const EdgeInsets.symmetric(horizontal: 5),
                                   child: Text(
                                     '•',
-                                    style: TextStyle(
+                                    style: context.textTheme.bodySmall?.copyWith(
                                       fontSize: 10,
-                                      color: isDark ? const Color(0xFF64748B) : Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.35),
+                                      color: context.colors.onSurfaceVariant.withValues(alpha: 0.6),
                                     ),
                                   ),
                                 ),
                                 Expanded(
                                   child: Text(
                                     contextText,
-                                    style: TextStyle(
+                                    style: context.textTheme.bodySmall?.copyWith(
                                       fontSize: 12,
-                                      color: isDark ? const Color(0xFF94A3B8) : Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.65),
+                                      color: context.colors.onSurfaceVariant,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -306,7 +335,7 @@ class TransactionItem extends ConsumerWidget {
   Widget _buildWalletChip(BuildContext context, bool isDark, WalletModel? wallet) {
     final Color themeColor = (wallet != null && wallet.colorValue != 0)
         ? Color(wallet.colorValue)
-        : const Color(0xFF438883);
+        : context.colors.primary;
 
     final IconData icon = (wallet != null && wallet.iconCode != 0)
         ? wallet.icon
@@ -321,8 +350,8 @@ class TransactionItem extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: themeColor.withValues(alpha: isDark ? 0.18 : 0.08),
-        borderRadius: BorderRadius.circular(6),
+        color: themeColor.withValues(alpha: isDark ? 0.20 : 0.08),
+        borderRadius: AppRadius.badge,
         border: Border.all(
           color: themeColor.withValues(alpha: isDark ? 0.35 : 0.2),
           width: 0.7,
@@ -342,7 +371,7 @@ class TransactionItem extends ConsumerWidget {
             constraints: const BoxConstraints(maxWidth: 85),
             child: Text(
               name,
-              style: TextStyle(
+              style: context.textTheme.labelSmall?.copyWith(
                 fontSize: 10.5,
                 fontWeight: FontWeight.w600,
                 color: isDark ? Colors.white.withValues(alpha: 0.9) : themeColor,
@@ -368,18 +397,18 @@ class TransactionItem extends ConsumerWidget {
         children: [
           TextSpan(
             text: '$label: ',
-            style: TextStyle(
+            style: context.textTheme.labelSmall?.copyWith(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+              color: context.colors.onSurfaceVariant,
             ),
           ),
           TextSpan(
             text: formattedAmount,
-            style: TextStyle(
+            style: context.textTheme.labelSmall?.copyWith(
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
-              color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B),
+              color: context.colors.onSurface,
               letterSpacing: -0.2,
             ),
           ),

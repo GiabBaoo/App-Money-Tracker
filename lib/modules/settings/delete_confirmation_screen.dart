@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/language_service.dart';
 import 'delete_password_screen.dart'; // Gọi trang nhập mật khẩu ở Bước 2
@@ -9,11 +10,10 @@ class DeleteConfirmationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
+    final isDark = context.isDark;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).brightness == Brightness.dark 
-        ? const Color(0xFF1E1E1E) 
-        : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -61,17 +61,15 @@ class DeleteConfirmationScreen extends StatelessWidget {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark 
-                          ? const Color(0xFF3E2E2E) 
-                          : const Color(0xFFFEE2E2),
+                        color: context.expense.withValues(alpha: isDark ? 0.2 : 0.12),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
                         child: Container(
                           width: 72,
                           height: 72,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFE63946),
+                          decoration: BoxDecoration(
+                            color: context.expense,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -89,7 +87,7 @@ class DeleteConfirmationScreen extends StatelessWidget {
                       isVi ? 'Bạn có chắc chắn muốn xóa?' : 'Are you sure you want to delete?',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                        color: context.colors.onSurface,
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                       ),
@@ -103,7 +101,7 @@ class DeleteConfirmationScreen extends StatelessWidget {
                           : 'Once deleted, all your data, transactions, and account information will be permanently lost. This action cannot be undone.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                        color: context.colors.onSurfaceVariant,
                         fontSize: 15,
                         height: 1.5,
                       ),
@@ -121,12 +119,13 @@ class DeleteConfirmationScreen extends StatelessWidget {
                           ),
                         );
                       },
+                      borderRadius: BorderRadius.circular(14),
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE63946),
-                          borderRadius: BorderRadius.circular(12),
+                          color: context.expense,
+                          borderRadius: BorderRadius.circular(14),
                         ),
                         child: Center(
                           child: Text(
@@ -145,20 +144,20 @@ class DeleteConfirmationScreen extends StatelessWidget {
 
                     InkWell(
                       onTap: () => Navigator.pop(context), // Hủy bỏ, quay lại
+                      borderRadius: BorderRadius.circular(14),
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.dark 
-                            ? const Color(0xFF2E2E2E) 
-                            : const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(12),
+                          color: context.cardBg,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: context.borderColor),
                         ),
                         child: Center(
                           child: Text(
                             isVi ? 'Hủy bỏ' : 'Cancel',
                             style: TextStyle(
-                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                              color: context.colors.onSurface,
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),

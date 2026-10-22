@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../widgets/animated_scale_button.dart';
 
 /// Bàn phím số công thái học phong cách Fintech
@@ -25,26 +26,27 @@ class FintechKeypad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final keyBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
-    final keyBorder = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
-    final textNumberColor = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+    final keyBg = isDark ? context.colors.surfaceContainerHighest : context.inputBgColor;
+    final keyBorder = context.borderColor;
+    final textNumberColor = context.textPrimaryColor;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildRow(['1', '2', '3'], keyBg, keyBorder, textNumberColor),
+          _buildRow(context, ['1', '2', '3'], keyBg, keyBorder, textNumberColor),
           const SizedBox(height: 8),
-          _buildRow(['4', '5', '6'], keyBg, keyBorder, textNumberColor),
+          _buildRow(context, ['4', '5', '6'], keyBg, keyBorder, textNumberColor),
           const SizedBox(height: 8),
-          _buildRow(['7', '8', '9'], keyBg, keyBorder, textNumberColor),
+          _buildRow(context, ['7', '8', '9'], keyBg, keyBorder, textNumberColor),
           const SizedBox(height: 8),
           Row(
             children: [
               // Phím .000 (Nhân nghìn nhanh)
               Expanded(
                 child: _buildSpecialKey(
+                  context: context,
                   label: '.000',
                   onTap: () {
                     HapticFeedback.lightImpact();
@@ -59,7 +61,7 @@ class FintechKeypad extends StatelessWidget {
               const SizedBox(width: 8),
               // Phím 0
               Expanded(
-                child: _buildNumberKey('0', keyBg, keyBorder, textNumberColor),
+                child: _buildNumberKey(context, '0', keyBg, keyBorder, textNumberColor),
               ),
               const SizedBox(width: 8),
               // Phím Xóa từng số (Backspace) & Giữ để xóa hết (Clear)
@@ -76,7 +78,7 @@ class FintechKeypad extends StatelessWidget {
                   },
                   bgColor: keyBg,
                   borderColor: keyBorder,
-                  iconColor: isDark ? Colors.white70 : const Color(0xFF475569),
+                  iconColor: context.textSecondaryColor,
                 ),
               ),
             ],
@@ -87,6 +89,7 @@ class FintechKeypad extends StatelessWidget {
   }
 
   Widget _buildRow(
+    BuildContext context,
     List<String> keys,
     Color keyBg,
     Color keyBorder,
@@ -97,7 +100,7 @@ class FintechKeypad extends StatelessWidget {
         for (int i = 0; i < keys.length; i++) ...[
           if (i > 0) const SizedBox(width: 8),
           Expanded(
-            child: _buildNumberKey(keys[i], keyBg, keyBorder, textNumberColor),
+            child: _buildNumberKey(context, keys[i], keyBg, keyBorder, textNumberColor),
           ),
         ],
       ],
@@ -105,6 +108,7 @@ class FintechKeypad extends StatelessWidget {
   }
 
   Widget _buildNumberKey(
+    BuildContext context,
     String digit,
     Color keyBg,
     Color keyBorder,
@@ -133,7 +137,7 @@ class FintechKeypad extends StatelessWidget {
         child: Center(
           child: Text(
             digit,
-            style: TextStyle(
+            style: (context.textTheme.titleLarge ?? const TextStyle()).copyWith(
               fontSize: 22,
               fontWeight: FontWeight.w700,
               color: textColor,
@@ -146,6 +150,7 @@ class FintechKeypad extends StatelessWidget {
   }
 
   Widget _buildSpecialKey({
+    required BuildContext context,
     required String label,
     required VoidCallback onTap,
     required Color bgColor,
@@ -166,7 +171,7 @@ class FintechKeypad extends StatelessWidget {
         child: Center(
           child: Text(
             label,
-            style: TextStyle(
+            style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
               fontSize: 18,
               fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
               color: textColor,

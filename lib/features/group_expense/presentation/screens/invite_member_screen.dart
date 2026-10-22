@@ -2,6 +2,7 @@ import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../widgets/animated_scale_button.dart';
 import '../../../../widgets/mono_toast.dart';
 import '../../../../services/device_contacts_service.dart';
@@ -173,15 +174,15 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+    final isDark = context.isDarkMode;
+    final primaryColor = context.colors.primary;
 
     // Design Tokens
-    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-    final cardBgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textPrimary = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-    final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0);
+    final bgColor = isDark ? AppColors.bgDark : AppColors.bgLight;
+    final cardBgColor = context.cardBg;
+    final textPrimary = context.colors.onSurface;
+    final textSecondary = context.colors.onSurfaceVariant;
+    final borderColor = context.borderColor;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -267,7 +268,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                       padding: const EdgeInsets.all(22),
                       decoration: BoxDecoration(
                         color: cardBgColor,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(18),
                         border: Border.all(color: borderColor, width: 1),
                         boxShadow: [
                           if (!isDark)
@@ -285,12 +286,12 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                             height: 60,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: (isDark ? const Color(0xFF2DD4BF) : primaryColor).withValues(alpha: 0.12),
+                              color: primaryColor.withValues(alpha: 0.12),
                             ),
                             child: Icon(
                               Icons.person_add_rounded,
                               size: 28,
-                              color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                              color: primaryColor,
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -336,7 +337,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                     Container(
                       decoration: BoxDecoration(
                         color: cardBgColor,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(18),
                         border: Border.all(color: borderColor, width: 1),
                       ),
                       child: TextField(
@@ -352,7 +353,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                           hintStyle: TextStyle(color: textSecondary.withValues(alpha: 0.6), fontSize: 14),
                           prefixIcon: Icon(
                             Icons.phone_rounded,
-                            color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                            color: primaryColor,
                             size: 20,
                           ),
                           suffixIcon: Row(
@@ -367,7 +368,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                        isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                                        primaryColor,
                                       ),
                                     ),
                                   ),
@@ -375,7 +376,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                               IconButton(
                                 icon: Icon(
                                   Icons.contacts_rounded,
-                                  color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                                  color: primaryColor,
                                 ),
                                 tooltip: isVi ? 'Chọn từ danh bạ' : 'Pick from contacts',
                                 onPressed: _isLoading ? null : _pickFromContacts,
@@ -395,17 +396,17 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withValues(alpha: isDark ? 0.15 : 0.08),
+                            color: context.warning.withValues(alpha: isDark ? 0.15 : 0.08),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.info_outline, size: 16, color: Colors.orange),
+                              Icon(Icons.info_outline, size: 16, color: context.warning),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _searchError!,
-                                  style: const TextStyle(color: Colors.orange, fontSize: 13, fontWeight: FontWeight.w500),
+                                  style: TextStyle(color: context.warning, fontSize: 13, fontWeight: FontWeight.w500),
                                 ),
                               ),
                             ],
@@ -415,10 +416,10 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: (isDark ? const Color(0xFF34D399) : const Color(0xFF10B981)).withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(20),
+                            color: context.income.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(18),
                             border: Border.all(
-                              color: (isDark ? const Color(0xFF34D399) : const Color(0xFF10B981)).withValues(alpha: 0.3),
+                              color: context.income.withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),
@@ -428,12 +429,12 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                                 width: 44,
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: (isDark ? const Color(0xFF34D399) : const Color(0xFF10B981)).withValues(alpha: 0.2),
+                                  color: context.income.withValues(alpha: 0.2),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
                                   Icons.person_rounded,
-                                  color: isDark ? const Color(0xFF34D399) : const Color(0xFF10B981),
+                                  color: context.income,
                                   size: 22,
                                 ),
                               ),
@@ -446,7 +447,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                                       isVi ? 'Người nhận lời mời' : 'Invitee',
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: isDark ? const Color(0xFF34D399) : const Color(0xFF10B981),
+                                        color: context.income,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -464,7 +465,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                               ),
                               Icon(
                                 Icons.check_circle_rounded,
-                                color: isDark ? const Color(0xFF34D399) : const Color(0xFF10B981),
+                                color: context.income,
                                 size: 24,
                               ),
                             ],
@@ -479,14 +480,14 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: cardBgColor,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(18),
                         border: Border.all(color: borderColor, width: 1),
                       ),
                       child: Row(
                         children: [
                           Icon(
                             Icons.notifications_active_outlined,
-                            color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                            color: primaryColor,
                             size: 20,
                           ),
                           const SizedBox(width: 12),
@@ -663,17 +664,19 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
     final sheetHeight = mediaQuery.size.height * 0.75;
     final bottomInset = mediaQuery.viewInsets.bottom;
 
-    final sheetBg = widget.isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textP = widget.isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-    final textS = widget.isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final dividerColor = widget.isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0);
+    final sheetBg = context.cardBg;
+    final textP = context.colors.onSurface;
+    final textS = context.colors.onSurfaceVariant;
+    final dividerColor = context.borderColor;
+    final primaryColor = context.colors.primary;
 
     return Container(
       height: sheetHeight,
       margin: EdgeInsets.only(bottom: bottomInset),
       decoration: BoxDecoration(
         color: sheetBg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(color: context.borderColor, width: 1),
       ),
       child: Column(
         children: [
@@ -696,7 +699,7 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.contacts_rounded, color: widget.isDark ? const Color(0xFF2DD4BF) : widget.primaryColor, size: 22),
+                    Icon(Icons.contacts_rounded, color: primaryColor, size: 22),
                     const SizedBox(width: 10),
                     Text(
                       isVi ? 'Chọn từ danh bạ' : 'Select from Contacts',
@@ -740,7 +743,7 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
                       )
                     : null,
                 filled: true,
-                fillColor: widget.isDark ? const Color(0xFF141E2E) : const Color(0xFFF1F5F9),
+                fillColor: context.inputBgColor,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -756,7 +759,7 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
                 ? Center(
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(widget.isDark ? const Color(0xFF2DD4BF) : widget.primaryColor),
+                      valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
                     ),
                   )
                 : _filtered.isEmpty
@@ -792,8 +795,8 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
 
                           return ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: (widget.isDark ? const Color(0xFF2DD4BF) : widget.primaryColor).withValues(alpha: 0.15),
-                              foregroundColor: widget.isDark ? const Color(0xFF2DD4BF) : widget.primaryColor,
+                              backgroundColor: primaryColor.withValues(alpha: 0.15),
+                              foregroundColor: primaryColor,
                               child: Text(
                                 initial,
                                 style: const TextStyle(fontWeight: FontWeight.bold),

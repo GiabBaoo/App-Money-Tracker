@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../core/theme/app_theme.dart';
 import '../../services/firestore_service.dart';
 import '../../services/language_service.dart';
 import '../../models/user_model.dart';
@@ -20,9 +21,10 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
   @override
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
+    final isDark = context.isDark;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -138,22 +140,21 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
       child: Text(
         title,
         style: TextStyle(
-          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
+          color: context.colors.onSurfaceVariant,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.6,
         ),
       ),
     );
   }
 
   Widget _buildInfoBox(BuildContext context, List<Widget> children) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
+        color: context.cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: isDark ? null : Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: context.borderColor),
       ),
       child: Column(children: children),
     );
@@ -168,7 +169,7 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
     required ValueChanged<bool> onChanged,
     required bool showDivider,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     return Column(
       children: [
         Padding(
@@ -178,33 +179,45 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE8F5F0),
+                  color: context.brandColor.withValues(alpha: isDark ? 0.2 : 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: const Color(0xFF438883), size: 24),
+                child: Icon(icon, color: context.brandColor, size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87)),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: context.colors.onSurface,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: context.colors.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              Switch(
+              Switch.adaptive(
                 value: value,
                 onChanged: onChanged,
-                activeThumbColor: const Color(0xFF438883),
-                activeTrackColor: const Color(0xFF438883).withValues(alpha: 0.3),
+                activeTrackColor: context.brandColor,
               ),
             ],
           ),
         ),
         if (showDivider)
-          Divider(height: 1, color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFF0F0F0), indent: 70, endIndent: 16),
+          Divider(height: 1, color: context.dividerColor, indent: 70, endIndent: 16),
       ],
     );
   }

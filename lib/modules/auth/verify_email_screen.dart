@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/app_logo.dart';
 import '../../widgets/mono_toast.dart';
@@ -111,10 +112,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   @override
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -123,14 +124,14 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Row(children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                  icon: Icon(Icons.arrow_back_ios, color: context.colors.onPrimary, size: 20),
                   onPressed: () {
                     _authService.logout();
                     Navigator.pop(context);
                   },
                 ),
                 const Spacer(),
-                const AppLogo.wordmark(height: 32, color: Colors.white),
+                AppLogo.wordmark(height: 32, color: context.colors.onPrimary),
                 const Spacer(flex: 2),
               ]),
             ),
@@ -139,9 +140,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  color: context.colors.surface,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [BoxShadow(color: isDark ? Colors.black45 : Colors.black12, blurRadius: 20, offset: const Offset(0, -5))],
+                  boxShadow: AppShadows.modal(isDark),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
@@ -153,17 +154,20 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF2E4E4C) : const Color(0xFFE8F5F0),
-                          borderRadius: BorderRadius.circular(20),
+                          color: context.colors.primary.withValues(alpha: isDark ? 0.2 : 0.1),
+                          borderRadius: BorderRadius.circular(18),
                         ),
-                        child: Icon(Icons.mail_outline, color: isDark ? const Color(0xFF68AEA9) : const Color(0xFF438883), size: 40),
+                        child: Icon(Icons.mail_outline_rounded, color: context.colors.primary, size: 40),
                       ),
                       const SizedBox(height: 24),
 
                       // Title
                       Text(
                         isVi ? 'Xác nhận email của bạn' : 'Verify your email',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isDark ? Colors.white : const Color(0xFF333333)),
+                        style: context.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: context.colors.onSurface,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 12),
@@ -171,13 +175,18 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                       // Description
                       Text(
                         isVi ? 'Chúng tôi đã gửi email xác nhận tới\n${widget.email}' : 'We sent a verification email to\n${widget.email}',
-                        style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF666666), fontSize: 14, height: 1.5),
+                        style: context.textTheme.bodyMedium?.copyWith(
+                          color: context.colors.onSurfaceVariant,
+                          height: 1.5,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         isVi ? 'Vui lòng kiểm tra hộp thư và nhấp vào link để xác nhận.' : 'Please check your inbox and click the link to verify.',
-                        style: TextStyle(color: isDark ? Colors.white54 : const Color(0xFF999999), fontSize: 13),
+                        style: context.textTheme.bodySmall?.copyWith(
+                          color: context.colors.onSurfaceVariant.withValues(alpha: 0.8),
+                        ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 40),
@@ -196,17 +205,28 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: _isLoading ? [Colors.grey, Colors.grey.shade600] : [const Color(0xFF68AEA9), const Color(0xFF3E8681)],
+                              colors: _isLoading
+                                  ? [context.colors.surfaceContainerHighest, context.colors.surfaceContainerHighest]
+                                  : [AppColors.primaryTealLight, AppColors.primaryTeal],
                             ),
-                            borderRadius: BorderRadius.circular(40),
-                            boxShadow: [BoxShadow(color: const Color(0xFF3E8681).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))],
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: context.colors.primary.withValues(alpha: 0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
                           child: Center(
                             child: _isLoading
-                                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                                ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: context.colors.onPrimary, strokeWidth: 2.5))
                                 : Text(
                                     isVi ? 'Đã xác nhận email' : 'I have verified my email',
-                                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+                                    style: context.textTheme.titleMedium?.copyWith(
+                                      color: context.colors.onPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                           ),
                         ),
@@ -220,13 +240,16 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           decoration: BoxDecoration(
-                            border: Border.all(color: const Color(0xFF438883), width: 1.5),
-                            borderRadius: BorderRadius.circular(40),
+                            border: Border.all(color: context.colors.primary, width: 1.5),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           child: Center(
                             child: Text(
                               isVi ? 'Gửi lại email xác nhận' : 'Resend verification email',
-                              style: const TextStyle(color: Color(0xFF438883), fontSize: 16, fontWeight: FontWeight.w600),
+                              style: context.textTheme.titleSmall?.copyWith(
+                                color: context.colors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
@@ -241,7 +264,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                         },
                         child: Text(
                           isVi ? 'Quay lại Đăng nhập' : 'Back to Login',
-                          style: const TextStyle(color: Color(0xFF438883), fontSize: 14, fontWeight: FontWeight.w500),
+                          style: context.textTheme.bodyMedium?.copyWith(
+                            color: context.colors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -256,7 +282,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   }
 
   Widget _buildStep(BuildContext context, int number, String text) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
@@ -266,13 +292,16 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF2E4E4C) : const Color(0xFF438883),
+              color: isDark ? context.colors.primaryContainer : context.colors.primary,
               borderRadius: BorderRadius.circular(50),
             ),
             child: Center(
               child: Text(
                 '$number',
-                style: TextStyle(color: isDark ? const Color(0xFF68AEA9) : Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                style: context.textTheme.labelMedium?.copyWith(
+                  color: isDark ? context.colors.onPrimaryContainer : context.colors.onPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -282,7 +311,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
               padding: const EdgeInsets.only(top: 6),
               child: Text(
                 text,
-                style: TextStyle(color: isDark ? Colors.white70 : const Color(0xFF666666), fontSize: 14, height: 1.4),
+                style: context.textTheme.bodyMedium?.copyWith(
+                  color: context.colors.onSurfaceVariant,
+                  height: 1.4,
+                ),
               ),
             ),
           ),

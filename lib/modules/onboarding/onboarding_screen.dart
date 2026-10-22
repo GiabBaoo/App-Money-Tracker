@@ -1,6 +1,7 @@
-import '../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_theme.dart';
+import '../../services/language_service.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/app_logo.dart';
 import '../../utils/page_transitions.dart';
@@ -89,11 +90,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     final items = _items;
     final size = MediaQuery.of(context).size;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883);
+    final isDark = context.isDark;
+    final primaryColor = context.brandColor;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+      backgroundColor: context.colors.surface,
       body: Stack(
         children: [
           // ═══ LỚP 1: NỀN QUẦNG SÁNG VÀ VÒNG TRÒN ARTWORK ═══
@@ -151,7 +152,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           const SizedBox(width: 10),
                           AppLogo.wordmark(
                             height: 24,
-                            color: isDark ? Colors.white : const Color(0xFF0F2625),
+                            color: context.colors.onSurface,
                           ),
                         ],
                       ),
@@ -168,7 +169,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             );
                           },
                           style: TextButton.styleFrom(
-                            foregroundColor: isDark ? Colors.white70 : const Color(0xFF64748B),
+                            foregroundColor: context.colors.onSurfaceVariant,
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
@@ -225,7 +226,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? primaryColor
-                              : (isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
+                              : context.borderColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       );
@@ -247,15 +248,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           width: double.infinity,
                           height: 54,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF68AEA9), Color(0xFF387A75)],
+                            gradient: LinearGradient(
+                              colors: isDark
+                                  ? [AppColors.primaryTealLight, AppColors.primaryTeal]
+                                  : [const Color(0xFF68AEA9), const Color(0xFF387A75)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF438883).withValues(alpha: 0.35),
+                                color: primaryColor.withValues(alpha: 0.35),
                                 blurRadius: 14,
                                 offset: const Offset(0, 6),
                               ),
@@ -301,7 +304,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 TextSpan(
                                   text: isVi ? 'Đã có tài khoản? ' : 'Already have an account? ',
                                   style: TextStyle(
-                                    color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                                    color: context.colors.onSurfaceVariant,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -389,8 +392,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             item.title,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F2625),
+            style: context.textTheme.headlineSmall?.copyWith(
+              color: context.colors.onSurface,
+              fontWeight: FontWeight.w800,
+              height: 1.25,
+              letterSpacing: -0.5,
+            ) ?? TextStyle(
+              color: context.colors.onSurface,
               fontSize: 25,
               fontWeight: FontWeight.w800,
               height: 1.25,
@@ -406,8 +414,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Text(
               item.description,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+              style: context.textTheme.bodyMedium?.copyWith(
+                color: context.colors.onSurfaceVariant,
+                fontSize: 13.5,
+                height: 1.45,
+                fontWeight: FontWeight.w500,
+              ) ?? TextStyle(
+                color: context.colors.onSurfaceVariant,
                 fontSize: 13.5,
                 height: 1.45,
                 fontWeight: FontWeight.w500,
@@ -433,10 +446,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       height: 240,
       margin: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F8F6),
+        color: context.cardBg,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFDFEBE8),
+          color: context.borderColor,
         ),
         boxShadow: [
           BoxShadow(
@@ -469,8 +482,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: isAi
-                        ? const [Color(0xFF00E5FF), Color(0xFF438883)]
-                        : const [Color(0xFF438883), Color(0xFF2DD4BF)],
+                        ? [const Color(0xFF00E5FF), const Color(0xFF438883)]
+                        : [const Color(0xFF438883), const Color(0xFF2DD4BF)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -520,10 +533,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F3330) : Colors.white,
+        color: isDark ? context.surfaceElevatedColor : context.colors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.white12 : const Color(0xFFCBD5E1),
+          color: context.borderColor,
         ),
       ),
       child: Text(
@@ -531,7 +544,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: isDark ? Colors.white70 : const Color(0xFF475569),
+          color: context.colors.onSurfaceVariant,
         ),
       ),
     );

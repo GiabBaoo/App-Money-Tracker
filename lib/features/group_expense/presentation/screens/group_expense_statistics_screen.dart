@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../widgets/animated_scale_button.dart';
 import '../providers/group_expense_providers.dart';
 import '../../data/models/expense_model.dart';
@@ -50,8 +51,8 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
     final expensesAsync = ref.watch(groupExpensesStreamProvider(widget.groupId));
     final fundTransactionsAsync = ref.watch(groupFundTransactionsProvider(widget.groupId));
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+    final isDark = context.isDarkMode;
+    final primaryColor = context.colors.primary;
     final expenses = expensesAsync.asData?.value ?? [];
     final transactions = fundTransactionsAsync.asData?.value ?? [];
     
@@ -146,7 +147,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                               isVi ? 'Tổng thu' : 'Total Income',
                               totalIncome,
                               Icons.arrow_circle_down_rounded,
-                              Colors.greenAccent,
+                              context.income,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -155,7 +156,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                               isVi ? 'Tổng chi' : 'Total Expense',
                               totalExpense,
                               Icons.arrow_circle_up_rounded,
-                              Colors.redAccent,
+                              context.expense,
                             ),
                           ),
                         ],
@@ -206,7 +207,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF121212) : Colors.white,
+                color: isDark ? AppColors.bgDark : AppColors.bgLight,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
               ),
               child: Column(
@@ -226,10 +227,10 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                           height: 58,
                           padding: EdgeInsets.all(innerPadding),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F3F5),
-                            borderRadius: BorderRadius.circular(22),
+                            color: context.inputBgColor,
+                            borderRadius: BorderRadius.circular(18),
                             border: Border.all(
-                              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                              color: context.borderColor,
                             ),
                           ),
                           child: Stack(
@@ -252,7 +253,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                                         primaryColor.withValues(alpha: 0.85),
                                       ],
                                     ),
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(14),
                                     boxShadow: [
                                       BoxShadow(
                                         color: primaryColor.withValues(alpha: 0.35),
@@ -266,8 +267,8 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                               // Foreground Items
                               Row(
                                 children: [
-                                  _buildToggleItem(isVi ? 'Chi phí' : 'Expense', 0, Icons.arrow_circle_up_rounded, isDark),
-                                  _buildToggleItem(isVi ? 'Thu nhập' : 'Income', 1, Icons.arrow_circle_down_rounded, isDark),
+                                  _buildToggleItem(context, isVi ? 'Chi phí' : 'Expense', 0, Icons.arrow_circle_up_rounded, isDark),
+                                  _buildToggleItem(context, isVi ? 'Thu nhập' : 'Income', 1, Icons.arrow_circle_down_rounded, isDark),
                                 ],
                               ),
                             ],
@@ -310,7 +311,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08), width: 1),
         boxShadow: [
           BoxShadow(
@@ -352,7 +353,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
     );
   }
 
-  Widget _buildToggleItem(String label, int tabIndex, IconData icon, bool isDark) {
+  Widget _buildToggleItem(BuildContext context, String label, int tabIndex, IconData icon, bool isDark) {
     final isSelected = selectedTab == tabIndex;
     return Expanded(
       child: InkWell(
@@ -360,7 +361,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
           HapticFeedback.selectionClick();
           setState(() => selectedTab = tabIndex);
         },
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
         child: Center(
@@ -370,13 +371,13 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
               Icon(
                 icon,
                 size: 20,
-                color: isSelected ? Colors.white : (isDark ? Colors.white30 : Colors.black26),
+                color: isSelected ? Colors.white : context.colors.onSurfaceVariant,
               ),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : (isDark ? Colors.white60 : Colors.black54),
+                  color: isSelected ? Colors.white : context.colors.onSurfaceVariant,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w700,
                   fontSize: 14,
                   letterSpacing: 0.2,
@@ -548,7 +549,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                   children: [
                     Text(
                       '${isVi ? "Tổng" : "Total"} ${selectedTab == 0 ? (isVi ? "chi" : "expense") : (isVi ? "thu" : "income")}',
-                      style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                      style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 13),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -556,12 +557,12 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 22,
-                        color: isDark ? Colors.white : Colors.black87,
+                        color: context.colors.onSurface,
                       ),
                     ),
                     Text(
                       isVi ? 'VNĐ' : 'VND',
-                      style: TextStyle(color: Colors.grey.shade500, fontSize: 11, letterSpacing: 1),
+                      style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 11, letterSpacing: 1),
                     ),
                   ],
                 ),
@@ -595,13 +596,13 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white38 : Colors.black38,
+                color: context.colors.onSurfaceVariant,
                 letterSpacing: 1.2,
               ),
             ),
           ),
           ...filteredTransactions.map((tx) {
-            final color = tx.type == TransactionType.contribute ? Colors.greenAccent : Colors.redAccent;
+            final color = tx.type == TransactionType.contribute ? context.income : context.expense;
             final icon = tx.type == TransactionType.contribute ? Icons.person_add_rounded : Icons.person_remove_rounded;
             final timeStr = '${tx.createdAt.day}/${tx.createdAt.month} • ${tx.createdAt.hour}:${tx.createdAt.minute.toString().padLeft(2, '0')}';
             
@@ -609,9 +610,9 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: isDark ? Border.all(color: Colors.white.withValues(alpha: 0.05)) : null,
+                color: context.cardBg,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: context.borderColor, width: 1),
                 boxShadow: [
                   if (!isDark) BoxShadow(
                     color: Colors.black.withValues(alpha: 0.03),
@@ -641,7 +642,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black87,
+                            color: context.colors.onSurface,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -649,7 +650,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                           tx.type == TransactionType.contribute ? (isVi ? 'Đã góp quỹ' : 'Contributed') : (isVi ? 'Đã rút quỹ' : 'Withdrawn'),
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? Colors.white.withValues(alpha: 0.7) : Colors.black54,
+                            color: context.colors.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -671,7 +672,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                         timeStr,
                         style: TextStyle(
                           fontSize: 11,
-                          color: isDark ? Colors.white30 : Colors.black26,
+                          color: context.colors.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -693,7 +694,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
         children: [
           Icon(Icons.pie_chart_outline, size: 80, color: Colors.grey.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
-          Text(isVi ? 'Không có $type nào' : 'No $type recorded', style: TextStyle(color: isDark ? Colors.white60 : Colors.grey)),
+          Text(isVi ? 'Không có $type nào' : 'No $type recorded', style: TextStyle(color: context.colors.onSurfaceVariant)),
         ],
       ),
     );

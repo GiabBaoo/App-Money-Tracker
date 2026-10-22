@@ -1,6 +1,7 @@
 import '../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../widgets/animated_scale_button.dart';
 
 /// Dải gợi ý từ khóa nội dung nhanh theo từng Danh mục (Smart Note Chips)
@@ -197,10 +198,10 @@ class CategoryKeywordSuggestions extends StatelessWidget {
               const SizedBox(width: 5),
               Text(
                 isVi ? 'Gợi ý nội dung nhanh (${context.trCat(categoryName)}):' : 'Quick note suggestions (${context.trCat(categoryName)}):',
-                style: TextStyle(
+                style: (context.textTheme.labelSmall ?? const TextStyle()).copyWith(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                  color: context.textSecondaryColor,
                 ),
               ),
             ],
@@ -228,22 +229,20 @@ class CategoryKeywordSuggestions extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF141E2E)
-                        : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(10),
+                        ? context.colors.surfaceContainerHighest
+                        : context.inputBgColor,
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                      color: context.borderColor,
                     ),
                   ),
                   child: Center(
                     child: Text(
                       keyword,
-                      style: TextStyle(
+                      style: (context.textTheme.labelMedium ?? const TextStyle()).copyWith(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: isDark
-                            ? const Color(0xFFF8FAFC)
-                            : const Color(0xFF334155),
+                        color: context.textPrimaryColor,
                       ),
                     ),
                   ),

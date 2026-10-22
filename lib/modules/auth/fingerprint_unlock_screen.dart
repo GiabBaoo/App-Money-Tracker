@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/biometric_service.dart';
 import '../../services/auth_service.dart';
@@ -115,16 +116,13 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
   @override
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    const primaryColor = Color(0xFF438883);
-    final bgColor = isDark ? const Color(0xFF0D1B1A) : const Color(0xFFF8FAFC);
-    final textPrimary = isDark ? Colors.white : const Color(0xFF1E293B);
-    final textSecondary = isDark ? Colors.white60 : const Color(0xFF64748B);
+    final isDark = context.isDark;
+    final primaryColor = context.colors.primary;
 
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: bgColor,
+        backgroundColor: context.colors.surface,
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
@@ -142,15 +140,15 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
                       shape: BoxShape.circle,
                       gradient: LinearGradient(
                         colors: _errorMessage != null
-                            ? [const Color(0xFFEF4444), const Color(0xFFDC2626)]
-                            : [const Color(0xFF438883), const Color(0xFF2DD4BF)],
+                            ? [context.colors.error, context.colors.error.withValues(alpha: 0.8)]
+                            : [primaryColor, AppColors.primaryTealVibrant],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       boxShadow: [
                         BoxShadow(
                           color: (_errorMessage != null
-                                  ? const Color(0xFFEF4444)
+                                  ? context.colors.error
                                   : primaryColor)
                               .withValues(alpha: isDark ? 0.35 : 0.22),
                           blurRadius: 24,
@@ -164,7 +162,7 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
                             ? Icons.fingerprint_outlined
                             : Icons.fingerprint_rounded,
                         size: 58,
-                        color: Colors.white,
+                        color: context.colors.onPrimary,
                       ),
                     ),
                   ),
@@ -175,23 +173,21 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
                 // 2. TIÊU ĐỀ & HƯỚNG DẪN NGẮN GỌN
                 Text(
                   isVi ? 'Xác thực sinh trắc học' : 'Biometric Authentication',
-                  style: TextStyle(
-                    fontSize: 22,
+                  style: context.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.3,
-                    color: textPrimary,
+                    color: context.colors.onSurface,
                   ),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   _errorMessage ?? (isVi ? 'Chạm vào cảm biến vân tay để mở khóa ứng dụng' : 'Touch the fingerprint sensor to unlock the app'),
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: context.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w500,
                     color: _errorMessage != null
-                        ? const Color(0xFFEF4444)
-                        : textSecondary,
+                        ? context.colors.error
+                        : context.colors.onSurfaceVariant,
                     height: 1.4,
                   ),
                 ),
@@ -207,7 +203,10 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
                     icon: const Icon(Icons.refresh_rounded, size: 18),
                     label: Text(
                       isVi ? 'Chạm để quét lại' : 'Tap to scan again',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      style: context.textTheme.labelLarge?.copyWith(
+                        color: primaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -221,18 +220,12 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF162524) : Colors.white,
+                      color: context.cardBg,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                        color: context.borderColor,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      boxShadow: AppShadows.card(isDark),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -240,15 +233,14 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
                         Icon(
                           Icons.lock_outline_rounded,
                           size: 18,
-                          color: textPrimary,
+                          color: context.colors.onSurface,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           isVi ? 'Đăng nhập bằng mật khẩu' : 'Log in with password',
-                          style: TextStyle(
-                            fontSize: 14.5,
+                          style: context.textTheme.labelLarge?.copyWith(
+                            color: context.colors.onSurface,
                             fontWeight: FontWeight.w600,
-                            color: textPrimary,
                           ),
                         ),
                       ],

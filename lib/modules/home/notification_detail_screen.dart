@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_theme.dart';
 import '../../models/notification_model.dart';
 import '../../data/repositories/notification_repository.dart';
 import '../../utils/page_transitions.dart';
@@ -65,24 +66,24 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
 
   Color _getTypeColor(String? type, Color primaryColor) {
     if (type == null) return primaryColor;
-    if (type.contains('spike')) return const Color(0xFFEA580C);
-    if (type.contains('high') || type.contains('limit') || type.contains('low_balance')) return const Color(0xFFEF4444);
-    if (type.contains('warning')) return const Color(0xFFF59E0B);
-    if (type.contains('saved') || type.contains('transaction')) return const Color(0xFF10B981);
-    if (type.contains('advice') || type.contains('budget')) return const Color(0xFFF59E0B);
-    if (type.contains('offline_sync')) return Colors.blueGrey;
+    if (type.contains('spike')) return AppColors.warningAmber;
+    if (type.contains('high') || type.contains('limit') || type.contains('low_balance')) return AppColors.expenseRose;
+    if (type.contains('warning')) return AppColors.warningAmber;
+    if (type.contains('saved') || type.contains('transaction')) return AppColors.incomeEmerald;
+    if (type.contains('advice') || type.contains('budget')) return AppColors.infoAzure;
+    if (type.contains('offline_sync')) return AppColors.textSecondaryDark;
     return primaryColor;
   }
 
   @override
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+    final isDark = context.isDark;
+    final primaryColor = context.colors.primary;
     final typeColor = _getTypeColor(_notification.type, primaryColor);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -111,7 +112,7 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
                   ),
                   Text(
                     isVi ? 'Chi tiết thông báo' : 'Notification Details',
-                    style: TextStyle(
+                    style: context.textTheme.titleMedium?.copyWith(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -191,7 +192,7 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
                                   ),
                                   child: Text(
                                     _getTypeDisplayName(_notification.type, isVi),
-                                    style: TextStyle(
+                                    style: context.textTheme.labelSmall?.copyWith(
                                       color: typeColor,
                                       fontWeight: FontWeight.w700,
                                       fontSize: 12,
@@ -201,9 +202,9 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
                                 const SizedBox(height: 4),
                                 Text(
                                   _formatDateTime(_notification.createdAt),
-                                  style: TextStyle(
+                                  style: context.textTheme.bodySmall?.copyWith(
                                     fontSize: 12,
-                                    color: isDark ? Colors.white54 : Colors.black45,
+                                    color: context.textMutedColor,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -217,32 +218,32 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
                       // TITLE
                       Text(
                         _notification.title,
-                        style: TextStyle(
+                        style: context.textTheme.titleLarge?.copyWith(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
-                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          color: context.textPrimaryColor,
                           height: 1.3,
                         ),
                       ),
                       const SizedBox(height: 16),
 
-                      // DESCRIPTION CONTAINER
+                      // DESCRIPTION CONTAINER - 18px Card Radius
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E2928) : const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(18),
+                          color: context.cardBg,
+                          borderRadius: AppRadius.card,
                           border: Border.all(
-                            color: isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+                            color: context.borderColor,
                           ),
                         ),
                         child: Text(
                           _notification.description,
-                          style: TextStyle(
+                          style: context.textTheme.bodyMedium?.copyWith(
                             fontSize: 15,
                             height: 1.6,
-                            color: isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF334155),
+                            color: context.textSecondaryColor,
                           ),
                         ),
                       ),
@@ -274,8 +275,8 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [primaryColor, const Color(0xFF2F7E79)]),
-            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(colors: [primaryColor, AppColors.primaryTealDark]),
+            borderRadius: AppRadius.button,
             boxShadow: [
               BoxShadow(color: primaryColor.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
             ],
@@ -287,7 +288,7 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
               const SizedBox(width: 8),
               Text(
                 isVi ? 'Xem Báo Cáo Thống Kê' : 'View Statistics Report',
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                style: context.textTheme.labelLarge?.copyWith(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -305,10 +306,10 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFF438883), Color(0xFF326E69)]),
-            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(colors: [primaryColor, AppColors.primaryTealDark]),
+            borderRadius: AppRadius.button,
             boxShadow: [
-              BoxShadow(color: const Color(0xFF438883).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
+              BoxShadow(color: primaryColor.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
             ],
           ),
           child: Row(
@@ -318,7 +319,7 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
               const SizedBox(width: 8),
               Text(
                 isVi ? 'Quản Lý Ngân Sách & Mục Tiêu' : 'Manage Budgets & Goals',
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                style: context.textTheme.labelLarge?.copyWith(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -343,8 +344,8 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: const Color(0xFF438883),
-            borderRadius: BorderRadius.circular(16),
+            color: primaryColor,
+            borderRadius: AppRadius.button,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -353,7 +354,7 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
               const SizedBox(width: 8),
               Text(
                 isVi ? 'Xem Chi Tiết Nhóm' : 'View Group Details',
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                style: context.textTheme.labelLarge?.copyWith(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -370,8 +371,8 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFF438883),
-          borderRadius: BorderRadius.circular(16),
+          color: primaryColor,
+          borderRadius: AppRadius.button,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -380,7 +381,7 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen> {
             const SizedBox(width: 8),
             Text(
               isVi ? 'Xem Lịch Sử Giao Dịch' : 'View Transaction History',
-              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+              style: context.textTheme.labelLarge?.copyWith(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
             ),
           ],
         ),

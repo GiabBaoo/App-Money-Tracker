@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_theme.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/app_logo.dart';
 import '../../widgets/animated_scale_button.dart';
@@ -63,7 +64,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       lastDate: DateTime.now(),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: Color(0xFF438883)),
+          colorScheme: Theme.of(context).colorScheme.copyWith(
+            primary: context.colors.primary,
+          ),
         ),
         child: child!,
       ),
@@ -270,10 +273,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -292,20 +295,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       height: 42,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.15),
-                        border: Border.all(color: Colors.white24, width: 1),
+                        color: context.colors.onPrimary.withValues(alpha: 0.15),
+                        border: Border.all(color: context.colors.onPrimary.withValues(alpha: 0.24), width: 1),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
+                        color: context.colors.onPrimary,
                         size: 18,
                       ),
                     ),
                   ),
                   const Spacer(),
-                  const AppLogo.wordmark(
+                  AppLogo.wordmark(
                     height: 32,
-                    color: Colors.white,
+                    color: context.colors.onPrimary,
                   ),
                   const Spacer(flex: 2),
                 ],
@@ -316,15 +319,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  color: context.colors.surface,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isDark ? Colors.black45 : Colors.black12,
-                      blurRadius: 20,
-                      offset: const Offset(0, -5),
-                    ),
-                  ],
+                  boxShadow: AppShadows.modal(isDark),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(
@@ -336,10 +333,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     children: [
                       Text(
                         isVi ? 'Đăng ký tài khoản' : 'Create Account',
-                        style: TextStyle(
-                          fontSize: 24,
+                        style: context.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                          color: context.colors.onSurface,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -347,9 +343,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         isVi
                             ? 'Vui lòng điền đầy đủ thông tin bên dưới.'
                             : 'Please fill in the information below.',
-                        style: TextStyle(
-                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                          fontSize: 14,
+                        style: context.textTheme.bodyMedium?.copyWith(
+                          color: context.colors.onSurfaceVariant,
                           height: 1.4,
                         ),
                       ),
@@ -415,11 +410,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     decoration: BoxDecoration(
                                       border: Border.all(
                                         color: _dateError != null
-                                            ? Colors.red
-                                            : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                                            ? context.colors.error
+                                            : context.borderColor,
                                       ),
-                                      borderRadius: BorderRadius.circular(12),
-                                      color: isDark ? const Color(0xFF141E2E) : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(16),
+                                      color: context.inputBgColor,
                                     ),
                                     child: Row(
                                       mainAxisAlignment:
@@ -429,16 +424,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           _selectedDate == null
                                               ? 'DD/MM/YYYY'
                                               : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
-                                          style: TextStyle(
+                                          style: context.textTheme.bodyMedium?.copyWith(
                                             color: _selectedDate == null
-                                                ? (isDark ? const Color(0xFF64748B) : Colors.grey.shade400)
-                                                : (isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A)),
-                                            fontSize: 14,
+                                                ? context.colors.onSurfaceVariant.withValues(alpha: 0.7)
+                                                : context.colors.onSurface,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                         Icon(
-                                          Icons.calendar_today,
-                                          color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883),
+                                          Icons.calendar_today_rounded,
+                                          color: context.colors.primary,
                                           size: 18,
                                         ),
                                       ],
@@ -453,8 +448,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     ),
                                     child: Text(
                                       _dateError!,
-                                      style: const TextStyle(
-                                        color: Colors.red,
+                                      style: context.textTheme.bodySmall?.copyWith(
+                                        color: context.colors.error,
                                         fontSize: 12,
                                       ),
                                     ),
@@ -475,9 +470,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: Colors.grey,
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
+                            color: context.colors.onSurfaceVariant,
+                            size: 20,
                           ),
                           onPressed: () => setState(
                             () => _obscurePassword = !_obscurePassword,
@@ -488,8 +484,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF9FAFB),
-                          borderRadius: BorderRadius.circular(8),
+                          color: context.inputBgColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: context.borderColor),
                         ),
                         child: Column(
                           children: [
@@ -526,9 +523,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscureConfirmPassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: Colors.grey,
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
+                            color: context.colors.onSurfaceVariant,
+                            size: 20,
                           ),
                           onPressed: () => setState(
                             () => _obscureConfirmPassword =
@@ -550,16 +548,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: _isLoading
-                                  ? [Colors.grey, Colors.grey.shade600]
+                                  ? [context.colors.surfaceContainerHighest, context.colors.surfaceContainerHighest]
                                   : [
-                                      const Color(0xFF68AEA9),
-                                      const Color(0xFF3E8681),
+                                      AppColors.primaryTealLight,
+                                      AppColors.primaryTeal,
                                     ],
                             ),
-                            borderRadius: BorderRadius.circular(40),
+                            borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF3E8681).withValues(alpha: 0.3),
+                                color: context.colors.primary.withValues(alpha: 0.3),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -567,19 +565,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           child: Center(
                             child: _isLoading
-                                ? const SizedBox(
+                                ? SizedBox(
                                     width: 24,
                                     height: 24,
                                     child: CircularProgressIndicator(
-                                      color: Colors.white,
+                                      color: context.colors.onPrimary,
                                       strokeWidth: 2.5,
                                     ),
                                   )
                                 : Text(
                                     isVi ? 'Đăng ký' : 'Sign Up',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
+                                    style: context.textTheme.titleMedium?.copyWith(
+                                      color: context.colors.onPrimary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -599,14 +596,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildLabel(String t, {String? error}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 2, top: 16),
       child: Text(
         t,
-        style: TextStyle(
-          color: error != null ? const Color(0xFFEF4444) : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF334155)),
-          fontSize: 14,
+        style: context.textTheme.labelMedium?.copyWith(
+          color: error != null ? context.colors.error : context.colors.onSurfaceVariant,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -625,7 +620,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     List<TextInputFormatter>? inputFormatters,
   }) {
     bool hasError = errorText != null && errorText.isNotEmpty;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -637,14 +631,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
           onChanged: onChanged,
           maxLength: maxLength,
           inputFormatters: inputFormatters,
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A)),
+          style: context.textTheme.bodyMedium?.copyWith(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: context.colors.onSurface,
+          ),
           decoration: InputDecoration(
             filled: true,
-            fillColor: isDark ? const Color(0xFF141E2E) : const Color(0xFFF8FAFC),
+            fillColor: context.inputBgColor,
             hintText: hintText,
-            hintStyle: TextStyle(
-              color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-              fontSize: 14,
+            hintStyle: context.textTheme.bodyMedium?.copyWith(
+              color: context.colors.onSurfaceVariant.withValues(alpha: 0.7),
               fontWeight: FontWeight.normal,
             ),
             contentPadding: const EdgeInsets.symmetric(
@@ -655,14 +652,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(
-                color: hasError ? const Color(0xFFEF4444) : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                color: hasError ? context.colors.error : context.borderColor,
                 width: 1,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(
-                color: hasError ? const Color(0xFFEF4444) : (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)),
+                color: hasError ? context.colors.error : context.colors.primary,
                 width: 1.8,
               ),
             ),
@@ -675,7 +672,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
             padding: const EdgeInsets.only(top: 6, left: 12),
             child: Text(
               errorText,
-              style: const TextStyle(color: Color(0xFFEF4444), fontSize: 12.5, fontWeight: FontWeight.w500),
+              style: context.textTheme.bodySmall?.copyWith(
+                color: context.colors.error,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
       ],
@@ -683,7 +683,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildGenderOption(String genderKey, String displayLabel) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     bool s = _selectedGender == genderKey;
     return Expanded(
       child: AnimatedScaleButton(
@@ -695,10 +695,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           height: 50,
           decoration: BoxDecoration(
             color: s
-                ? const Color(0xFF438883).withValues(alpha: isDark ? 0.25 : 0.12)
-                : (isDark ? const Color(0xFF141E2E) : const Color(0xFFF8FAFC)),
+                ? context.colors.primary.withValues(alpha: isDark ? 0.25 : 0.12)
+                : context.inputBgColor,
             border: Border.all(
-              color: s ? const Color(0xFF438883) : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+              color: s ? context.colors.primary : context.borderColor,
               width: s ? 1.5 : 1.0,
             ),
             borderRadius: BorderRadius.circular(16),
@@ -708,15 +708,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (s) ...[
-                  const Icon(Icons.check_circle_rounded, color: Color(0xFF438883), size: 16),
+                  Icon(Icons.check_circle_rounded, color: context.colors.primary, size: 16),
                   const SizedBox(width: 6),
                 ],
                 Text(
                   displayLabel,
-                  style: TextStyle(
+                  style: context.textTheme.labelLarge?.copyWith(
                     color: s
-                        ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
-                        : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                        ? context.colors.primary
+                        : context.colors.onSurfaceVariant,
                     fontWeight: s ? FontWeight.w700 : FontWeight.w500,
                     fontSize: 14.5,
                   ),
@@ -736,14 +736,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         children: [
           Icon(
             isValid ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-            color: isValid ? const Color(0xFF2ECC71) : const Color(0xFF94A3B8),
+            color: isValid ? context.income : context.colors.onSurfaceVariant.withValues(alpha: 0.6),
             size: 16,
           ),
           const SizedBox(width: 8),
           Text(
             text,
-            style: TextStyle(
-              color: isValid ? const Color(0xFF2ECC71) : const Color(0xFF94A3B8),
+            style: context.textTheme.bodySmall?.copyWith(
+              color: isValid ? context.income : context.colors.onSurfaceVariant.withValues(alpha: 0.8),
               fontSize: 13,
               fontWeight: isValid ? FontWeight.w600 : FontWeight.w500,
             ),

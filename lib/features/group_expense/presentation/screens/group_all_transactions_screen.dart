@@ -2,6 +2,7 @@ import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../widgets/animated_scale_button.dart';
 import '../../../../widgets/mono_dialog.dart';
 import '../../../../widgets/mono_bottom_sheet.dart';
@@ -53,15 +54,15 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
   @override
   Widget build(BuildContext context) {
     final fundTransactionsAsync = ref.watch(groupFundTransactionsProvider(widget.groupId));
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+    final isDark = context.isDarkMode;
+    final primaryColor = context.colors.primary;
 
     // Design Tokens
-    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-    final cardBgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textPrimary = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-    final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0);
+    final bgColor = isDark ? AppColors.bgDark : AppColors.bgLight;
+    final cardBgColor = context.cardBg;
+    final textPrimary = context.colors.onSurface;
+    final textSecondary = context.colors.onSurfaceVariant;
+    final borderColor = context.borderColor;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -138,8 +139,8 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        color: cardBgColor,
+                        borderRadius: BorderRadius.circular(18),
                         border: Border.all(color: borderColor, width: 1),
                         boxShadow: [
                           if (!isDark)
@@ -156,7 +157,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                           Icon(
                             Icons.calendar_month_rounded,
                             size: 16,
-                            color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                            color: primaryColor,
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -240,7 +241,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                                       Color.lerp(primaryColor, Colors.black, 0.12) ?? primaryColor,
                                     ],
                             ),
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(18),
                             border: Border.all(
                               color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.15),
                               width: 1,
@@ -298,10 +299,10 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                                         const SizedBox(height: 3),
                                         Text(
                                           '+${_formatMoney(monthInflow)}đ',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.w800,
-                                            color: Colors.greenAccent,
+                                            color: context.income,
                                             letterSpacing: -0.3,
                                           ),
                                         ),
@@ -329,10 +330,10 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                                         const SizedBox(height: 3),
                                         Text(
                                           '-${_formatMoney(monthOutflow)}đ',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.w800,
-                                            color: Colors.redAccent,
+                                            color: context.expense,
                                             letterSpacing: -0.3,
                                           ),
                                         ),
@@ -354,7 +355,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
                             decoration: BoxDecoration(
                               color: cardBgColor,
-                              borderRadius: BorderRadius.circular(24),
+                              borderRadius: BorderRadius.circular(18),
                               border: Border.all(color: borderColor, width: 1),
                             ),
                             child: Column(
@@ -403,7 +404,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
-                                          color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
+                                          color: context.inputBgColor,
                                           borderRadius: BorderRadius.circular(10),
                                         ),
                                         child: Text(
@@ -420,22 +421,20 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                                 ),
                                 ...dayTransactions.map((transaction) {
                                   final isContribute = transaction.type == TransactionType.contribute;
-                                  final color = isContribute
-                                      ? (isDark ? const Color(0xFF34D399) : const Color(0xFF10B981))
-                                      : (isDark ? const Color(0xFFF87171) : const Color(0xFFEF4444));
+                                  final color = isContribute ? context.income : context.expense;
 
                                   return Container(
                                     margin: const EdgeInsets.only(bottom: 10),
                                     decoration: BoxDecoration(
                                       color: cardBgColor,
-                                      borderRadius: BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(18),
                                       border: Border.all(color: borderColor, width: 1),
                                     ),
                                     child: Material(
                                       color: Colors.transparent,
                                       child: InkWell(
                                         onTap: () => _showTransactionDetail(context, transaction, isDark),
-                                        borderRadius: BorderRadius.circular(20),
+                                        borderRadius: BorderRadius.circular(18),
                                         child: Padding(
                                           padding: const EdgeInsets.all(15),
                                           child: Row(
@@ -520,7 +519,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
 
   void _showTransactionDetail(BuildContext context, FundTransactionModel transaction, bool isDark) {
     final isContribute = transaction.type == TransactionType.contribute;
-    final color = isContribute ? Colors.green : Colors.red;
+    final color = isContribute ? context.income : context.expense;
 
     MonoDialog.show(
       context,
@@ -531,18 +530,18 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildDetailRow(isVi ? 'Người thực hiện:' : 'By:', transaction.userName, isDark),
+          _buildDetailRow(context, isVi ? 'Người thực hiện:' : 'By:', transaction.userName),
           const SizedBox(height: 12),
-          _buildDetailRow(isVi ? 'Số tiền:' : 'Amount:', '${_formatMoney(transaction.amount)}đ', isDark),
+          _buildDetailRow(context, isVi ? 'Số tiền:' : 'Amount:', '${_formatMoney(transaction.amount)}đ'),
           const SizedBox(height: 12),
           _buildDetailRow(
+            context,
             isVi ? 'Thời gian:' : 'Time:',
             '${transaction.createdAt.day}/${transaction.createdAt.month}/${transaction.createdAt.year} ${transaction.createdAt.hour}:${transaction.createdAt.minute.toString().padLeft(2, '0')}',
-            isDark,
           ),
           if (transaction.notes != null && transaction.notes!.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _buildDetailRow(isVi ? 'Ghi chú:' : 'Notes:', transaction.notes!, isDark),
+            _buildDetailRow(context, isVi ? 'Ghi chú:' : 'Notes:', transaction.notes!),
           ],
         ],
       ),
@@ -550,11 +549,11 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
         ElevatedButton(
           onPressed: () => Navigator.pop(context),
           style: ElevatedButton.styleFrom(
-            backgroundColor: isDark ? const Color(0xFF2C2C2E) : const Color(0xFFF2F2F7),
-            foregroundColor: isDark ? Colors.white : Colors.black87,
+            backgroundColor: context.inputBgColor,
+            foregroundColor: context.colors.onSurface,
             elevation: 0,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
           child: Text(isVi ? 'Đóng' : 'Close'),
         ),
@@ -562,7 +561,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
     );
   }
 
-  Widget _buildDetailRow(String label, String value, bool isDark) {
+  Widget _buildDetailRow(BuildContext context, String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -572,7 +571,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
             label,
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+              color: context.colors.onSurfaceVariant,
             ),
           ),
         ),
@@ -582,7 +581,7 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+              color: context.colors.onSurface,
             ),
           ),
         ),
@@ -619,15 +618,19 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final sheetBg = widget.isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textP = widget.isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-    final textS = widget.isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final primaryColor = Theme.of(context).primaryColor;
+    final sheetBg = context.cardBg;
+    final textP = context.colors.onSurface;
+    final textS = context.colors.onSurfaceVariant;
+    final primaryColor = context.colors.primary;
 
     return Container(
       decoration: BoxDecoration(
         color: sheetBg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border.all(
+          color: context.borderColor,
+          width: 1,
+        ),
       ),
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
       child: SafeArea(
@@ -668,7 +671,7 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: widget.isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                        color: primaryColor,
                       ),
                     ),
                   ),
@@ -706,10 +709,10 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? (widget.isDark ? const Color(0xFF2DD4BF) : primaryColor)
+                            ? primaryColor
                             : isFuture
                                 ? (widget.isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.shade100)
-                                : (widget.isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF1F5F9)),
+                                : context.inputBgColor,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       alignment: Alignment.center,
@@ -740,7 +743,7 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                 child: Text(
                   isVi ? 'Trở về tháng hiện tại' : 'Back to current month',
                   style: TextStyle(
-                    color: widget.isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                    color: primaryColor,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

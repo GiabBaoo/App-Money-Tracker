@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../core/theme/app_theme.dart';
 
 /// Danh sách các Preset Avatar minh họa có sẵn để người dùng lựa chọn nhanh
 class PresetAvatar {
@@ -172,7 +173,7 @@ class UserAvatar extends StatelessWidget {
           fit: BoxFit.cover,
           cacheWidth: (size * 2.5).round(),
           cacheHeight: (size * 2.5).round(),
-          errorBuilder: (context, error, stackTrace) => _buildInitialsFallback(size, gradient),
+          errorBuilder: (context, error, stackTrace) => _buildInitialsFallback(context, size, gradient),
         ),
       );
     } else if (avatarUrl != null && avatarUrl!.trim().isNotEmpty && avatarUrl!.startsWith('data:image')) {
@@ -187,11 +188,11 @@ class UserAvatar extends StatelessWidget {
             width: size,
             height: size,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => _buildInitialsFallback(size, gradient),
+            errorBuilder: (context, error, stackTrace) => _buildInitialsFallback(context, size, gradient),
           ),
         );
       } catch (e) {
-        innerContent = _buildInitialsFallback(size, gradient);
+        innerContent = _buildInitialsFallback(context, size, gradient);
       }
     } else if (avatarUrl != null && avatarUrl!.trim().isNotEmpty && avatarUrl!.startsWith('http')) {
       // Ảnh từ URL mạng qua CachedNetworkImage với disk cache và fallback tức thì (0ms)
@@ -204,23 +205,24 @@ class UserAvatar extends StatelessWidget {
           memCacheWidth: (size * 2).toInt(),
           memCacheHeight: (size * 2).toInt(),
           fadeInDuration: const Duration(milliseconds: 150),
-          placeholder: (context, url) => _buildInitialsFallback(size, gradient),
-          errorWidget: (context, url, error) => _buildInitialsFallback(size, gradient),
+          placeholder: (context, url) => _buildInitialsFallback(context, size, gradient),
+          errorWidget: (context, url, error) => _buildInitialsFallback(context, size, gradient),
         ),
       );
     } else {
       // Mặc định: Initials Avatar thời thượng trên nền Gradient
-      innerContent = _buildInitialsFallback(size, gradient);
+      innerContent = _buildInitialsFallback(context, size, gradient);
     }
 
     Widget avatarWidget = innerContent;
+    final isDark = context.isDarkMode;
 
     if (showBorder) {
       avatarWidget = Container(
         padding: EdgeInsets.all(borderWidth),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: borderColor ?? Colors.white.withValues(alpha: 0.3),
+          color: borderColor ?? (isDark ? AppColors.borderDarkHighlight : context.borderColor),
         ),
         child: avatarWidget,
       );
@@ -236,7 +238,7 @@ class UserAvatar extends StatelessWidget {
     return avatarWidget;
   }
 
-  Widget _buildInitialsFallback(double size, List<Color> gradient) {
+  Widget _buildInitialsFallback(BuildContext context, double size, List<Color> gradient) {
     final initials = getInitials(name);
     final calculatedFontSize = fontSize ?? (radius * 0.85);
 
@@ -250,18 +252,17 @@ class UserAvatar extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: gradient[0].withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: AppShadows.glow(gradient[0], alpha: 0.28, blur: 8),
       ),
       child: Center(
         child: Text(
           initials,
-          style: TextStyle(
+          style: context.textTheme.titleMedium?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: calculatedFontSize,
+            letterSpacing: 0.5,
+          ) ?? TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w700,
             fontSize: calculatedFontSize,

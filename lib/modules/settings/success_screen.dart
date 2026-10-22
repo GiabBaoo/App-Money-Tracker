@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 
 class SuccessScreen extends StatelessWidget {
   final String appBarTitle;
@@ -18,10 +19,10 @@ class SuccessScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -75,15 +76,15 @@ class SuccessScreen extends StatelessWidget {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFE8F7F0),
+                        color: context.income.withValues(alpha: isDark ? 0.2 : 0.12),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
                         child: Container(
                           width: 72,
                           height: 72,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF2EAF7D),
+                          decoration: BoxDecoration(
+                            color: context.income,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -101,7 +102,7 @@ class SuccessScreen extends StatelessWidget {
                       successTitle,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                        color: context.colors.onSurface,
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                       ),
@@ -113,9 +114,9 @@ class SuccessScreen extends StatelessWidget {
                       successMessage,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
-                        fontSize: 16,
-                        height: 1.4,
+                        color: context.colors.onSurfaceVariant,
+                        fontSize: 15,
+                        height: 1.5,
                       ),
                     ),
 
@@ -124,12 +125,13 @@ class SuccessScreen extends StatelessWidget {
                     // Nút bấm dưới cùng
                     InkWell(
                       onTap: onButtonPressed,
+                      borderRadius: BorderRadius.circular(14),
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2EAF7D),
-                          borderRadius: BorderRadius.circular(12),
+                          color: context.brandColor,
+                          borderRadius: BorderRadius.circular(14),
                         ),
                         child: Center(
                           child: Text(

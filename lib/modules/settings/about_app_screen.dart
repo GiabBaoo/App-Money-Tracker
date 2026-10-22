@@ -13,6 +13,7 @@ import '../../widgets/mono_liquid_glass_logo.dart';
 import 'privacy_policy_screen.dart';
 import 'support_request_screen.dart';
 import '../../services/language_service.dart';
+import '../../core/theme/app_theme.dart';
 
 class AboutAppScreen extends StatelessWidget {
   const AboutAppScreen({super.key});
@@ -37,7 +38,6 @@ class AboutAppScreen extends StatelessWidget {
   }
 
   void _showRatingDialog(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isVi = LanguageScope.of(context).isVietnamese;
     final commentController = TextEditingController();
     int selectedRating = 5;
@@ -57,7 +57,7 @@ class AboutAppScreen extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  color: context.colors.onSurface,
                 ),
               ),
               const SizedBox(height: 12),
@@ -68,7 +68,7 @@ class AboutAppScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: isDark ? const Color(0xFFCBD5E1) : Colors.grey,
+                  color: context.colors.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 16),
@@ -95,7 +95,7 @@ class AboutAppScreen extends StatelessWidget {
                 enabled: !isSubmitting,
                 style: TextStyle(
                   fontSize: 13,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  color: context.colors.onSurface,
                 ),
                 decoration: InputDecoration(
                   hintText: isVi
@@ -103,27 +103,27 @@ class AboutAppScreen extends StatelessWidget {
                       : 'Share your feedback to help us improve...',
                   hintStyle: TextStyle(
                     fontSize: 12,
-                    color: isDark ? Colors.white38 : Colors.grey.shade400,
+                    color: context.colors.onSurfaceVariant.withValues(alpha: 0.6),
                   ),
                   filled: true,
-                  fillColor: isDark ? const Color(0xFF131D1C) : const Color(0xFFF8FAFC),
+                  fillColor: context.cardBg,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(
-                      color: isDark ? Colors.white12 : Colors.grey.shade300,
+                      color: context.borderColor,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(
-                      color: isDark ? Colors.white12 : Colors.grey.shade300,
+                      color: context.borderColor,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(
-                      color: Color(0xFF438883),
+                    borderSide: BorderSide(
+                      color: context.brandColor,
                       width: 1.5,
                     ),
                   ),
@@ -138,11 +138,11 @@ class AboutAppScreen extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        side: BorderSide(color: isDark ? Colors.white12 : const Color(0xFFCBD5E1)),
+                        side: BorderSide(color: context.borderColor),
                       ),
                       child: Text(
                         isVi ? 'Để sau' : 'Later',
-                        style: TextStyle(color: isDark ? Colors.white60 : const Color(0xFF475569)),
+                        style: TextStyle(color: context.colors.onSurfaceVariant),
                       ),
                     ),
                   ),
@@ -150,8 +150,8 @@ class AboutAppScreen extends StatelessWidget {
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883),
-                        foregroundColor: isDark ? const Color(0xFF0F2625) : Colors.white,
+                        backgroundColor: context.brandColor,
+                        foregroundColor: Colors.white,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -213,7 +213,7 @@ class AboutAppScreen extends StatelessWidget {
             '2. Quyền riêng tư: Mọi thông tin thu chi cá nhân thuộc quyền sở hữu riêng của bạn và được bảo vệ theo chuẩn mã hóa cao nhất.\n\n'
             '3. Tính sẵn sàng: Hệ thống hỗ trợ làm việc ngoại tuyến (Offline SQLite) và tự động đồng bộ khi có kết nối Internet.\n\n'
             '4. Trợ lý AI: Tính năng AI Gemini hỗ trợ phân tích và gợi ý quản lý chi tiêu mang tính chất tham khảo hữu ích cho kế hoạch tài chính của bạn.'
-        : '1. Acceptance of Terms: By using Mono, you agree to the provisions on data storage and security.\n\n'
+        : '1. Acceptance of Terms: By using Mono, agree to the provisions on data storage and security.\n\n'
             '2. Privacy: All personal financial data belongs solely to you and is protected under the highest encryption standards.\n\n'
             '3. Availability: The app supports offline operations (SQLite) and synchronizes seamlessly when Internet is restored.\n\n'
             '4. AI Assistant: AI insights provide helpful financial suggestions for reference in your personal financial planning.';
@@ -233,7 +233,7 @@ class AboutAppScreen extends StatelessWidget {
     final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -285,7 +285,7 @@ class AboutAppScreen extends StatelessWidget {
                       Text(
                         'Mono Expense Tracker',
                         style: TextStyle(
-                          color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                          color: context.colors.onSurface,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
@@ -296,7 +296,7 @@ class AboutAppScreen extends StatelessWidget {
                             ? 'Quản lý chi tiêu thông minh & cá nhân hóa'
                             : 'Smart & personalized expense management',
                         style: TextStyle(
-                          color: isDark ? Colors.white70 : Colors.grey.shade600,
+                          color: context.colors.onSurfaceVariant,
                           fontSize: 13,
                         ),
                       ),
@@ -310,16 +310,16 @@ class AboutAppScreen extends StatelessWidget {
                           return Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2DD4BF).withValues(alpha: isDark ? 0.16 : 0.12),
+                              color: context.brandColor.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: const Color(0xFF2DD4BF).withValues(alpha: isDark ? 0.35 : 0.25),
+                                color: context.brandColor.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF2DD4BF)),
+                                Icon(Icons.verified_rounded, size: 14, color: context.brandColor),
                                 const SizedBox(width: 6),
                                 Text(
                                   isVi
@@ -328,7 +328,7 @@ class AboutAppScreen extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
-                                    color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0F766E),
+                                    color: context.brandColor,
                                   ),
                                 ),
                               ],
@@ -339,19 +339,19 @@ class AboutAppScreen extends StatelessWidget {
                       const SizedBox(height: 22),
 
                       // Khối cập nhật Liquid Glass v2.0
-                      _buildVersion2ChangelogCard(isDark, isVi),
+                      _buildVersion2ChangelogCard(context, isDark, isVi),
                       const SizedBox(height: 22),
 
                       // Feature Highlights Grid
-                      _buildFeaturesGrid(isDark, isVi),
+                      _buildFeaturesGrid(context, isDark, isVi),
                       const SizedBox(height: 24),
 
                       // Information & Links
                       _buildCardContainer(
-                        isDark: isDark,
+                        context,
                         children: [
                           _buildAboutRow(
-                            isDark: isDark,
+                            context,
                             icon: Icons.privacy_tip_outlined,
                             title: isVi ? 'Chính sách bảo mật' : 'Privacy Policy',
                             onTap: () => Navigator.push(
@@ -359,23 +359,23 @@ class AboutAppScreen extends StatelessWidget {
                               PageTransitions.slideRight(const PrivacyPolicyScreen()),
                             ),
                           ),
-                          _buildDivider(isDark),
+                          _buildDivider(context),
                           _buildAboutRow(
-                            isDark: isDark,
+                            context,
                             icon: Icons.description_outlined,
                             title: isVi ? 'Điều khoản dịch vụ' : 'Terms of Service',
                             onTap: () => _showTermsDialog(context),
                           ),
-                          _buildDivider(isDark),
+                          _buildDivider(context),
                           _buildAboutRow(
-                            isDark: isDark,
+                            context,
                             icon: Icons.star_outline_rounded,
                             title: isVi ? 'Đánh giá ứng dụng' : 'Rate Application',
                             onTap: () => _showRatingDialog(context),
                           ),
-                          _buildDivider(isDark),
+                          _buildDivider(context),
                           _buildAboutRow(
-                            isDark: isDark,
+                            context,
                             icon: Icons.support_agent_rounded,
                             title: isVi ? 'Liên hệ & Phản hồi hỗ trợ' : 'Contact & Support',
                             onTap: () => Navigator.push(
@@ -394,7 +394,7 @@ class AboutAppScreen extends StatelessWidget {
                             : 'Developed with ❤️ by Mono Team\nCopyright © 2024 - 2026. All rights reserved.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: isDark ? Colors.white38 : Colors.grey.shade500,
+                          color: context.colors.onSurfaceVariant,
                           fontSize: 11.5,
                           height: 1.5,
                         ),
@@ -411,7 +411,7 @@ class AboutAppScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFeaturesGrid(bool isDark, bool isVi) {
+  Widget _buildFeaturesGrid(BuildContext context, bool isDark, bool isVi) {
     final features = [
       {
         'icon': Icons.sync_rounded,
@@ -450,10 +450,10 @@ class AboutAppScreen extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            color: context.cardBg,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE5E7EB),
+              color: context.borderColor,
             ),
           ),
           child: Row(
@@ -461,10 +461,10 @@ class AboutAppScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF438883).withValues(alpha: 0.12),
+                  color: context.brandColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(f['icon'] as IconData, size: 18, color: const Color(0xFF438883)),
+                child: Icon(f['icon'] as IconData, size: 18, color: context.brandColor),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -477,7 +477,7 @@ class AboutAppScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                        color: context.colors.onSurface,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -487,7 +487,7 @@ class AboutAppScreen extends StatelessWidget {
                       f['desc'] as String,
                       style: TextStyle(
                         fontSize: 10.5,
-                        color: isDark ? Colors.white60 : Colors.grey.shade600,
+                        color: context.colors.onSurfaceVariant,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -502,20 +502,20 @@ class AboutAppScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildVersion2ChangelogCard(bool isDark, bool isVi) {
+  Widget _buildVersion2ChangelogCard(BuildContext context, bool isDark, bool isVi) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF162523) : const Color(0xFFF0FDF4),
+        color: isDark ? context.cardBg : const Color(0xFFF0FDF4),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF2DD4BF).withValues(alpha: isDark ? 0.35 : 0.4),
+          color: context.brandColor.withValues(alpha: isDark ? 0.35 : 0.4),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2DD4BF).withValues(alpha: isDark ? 0.12 : 0.08),
+            color: context.brandColor.withValues(alpha: isDark ? 0.12 : 0.08),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -529,12 +529,12 @@ class AboutAppScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2DD4BF).withValues(alpha: 0.2),
+                  color: context.brandColor.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.auto_awesome_rounded,
-                  color: Color(0xFF2DD4BF),
+                  color: context.brandColor,
                   size: 18,
                 ),
               ),
@@ -545,7 +545,7 @@ class AboutAppScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF0F2625),
+                    color: context.colors.onSurface,
                   ),
                 ),
               ),
@@ -557,7 +557,7 @@ class AboutAppScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               height: 1.45,
-              color: isDark ? Colors.white70 : const Color(0xFF334155),
+              color: context.colors.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 12),
@@ -565,10 +565,10 @@ class AboutAppScreen extends StatelessWidget {
             spacing: 8,
             runSpacing: 6,
             children: [
-              _buildFeaturePill(isDark, '💎 Liquid Glass Logo'),
-              _buildFeaturePill(isDark, '⚡ 60fps Launch Sheen'),
-              _buildFeaturePill(isDark, '🌙 Deep OLED Dark Mode'),
-              _buildFeaturePill(isDark, '🚀 2.0 Engine'),
+              _buildFeaturePill(context, isDark, '💎 Liquid Glass Logo'),
+              _buildFeaturePill(context, isDark, '⚡ 60fps Launch Sheen'),
+              _buildFeaturePill(context, isDark, '🌙 Deep OLED Dark Mode'),
+              _buildFeaturePill(context, isDark, '🚀 2.0 Engine'),
             ],
           ),
         ],
@@ -576,13 +576,11 @@ class AboutAppScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFeaturePill(bool isDark, String label) {
+  Widget _buildFeaturePill(BuildContext context, bool isDark, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.08)
-            : const Color(0xFF2DD4BF).withValues(alpha: 0.15),
+        color: context.brandColor.withValues(alpha: isDark ? 0.15 : 0.12),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -590,23 +588,23 @@ class AboutAppScreen extends StatelessWidget {
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0F766E),
+          color: context.brandColor,
         ),
       ),
     );
   }
 
-  Widget _buildCardContainer({required bool isDark, required List<Widget> children}) {
+  Widget _buildCardContainer(BuildContext context, {required List<Widget> children}) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: context.cardBg,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE5E7EB),
+          color: context.borderColor,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.02),
+            color: Colors.black.withValues(alpha: context.isDarkMode ? 0.3 : 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -616,8 +614,8 @@ class AboutAppScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAboutRow({
-    required bool isDark,
+  Widget _buildAboutRow(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
@@ -632,10 +630,10 @@ class AboutAppScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE8F5F0),
+                color: context.brandColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: const Color(0xFF438883), size: 22),
+              child: Icon(icon, color: context.brandColor, size: 22),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -644,24 +642,24 @@ class AboutAppScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                  color: context.colors.onSurface,
                 ),
               ),
             ),
-            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey.shade400),
+            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: context.colors.onSurfaceVariant),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDivider(bool isDark) {
+  Widget _buildDivider(BuildContext context) {
     return Divider(
       height: 1,
       thickness: 1,
       indent: 62,
       endIndent: 16,
-      color: isDark ? const Color(0xFF3A3A3A) : const Color(0xFFF3F4F6),
+      color: context.dividerColor,
     );
   }
 }

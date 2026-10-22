@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../services/biometric_service.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/mono_toast.dart';
@@ -104,12 +105,12 @@ class _BiometricScreenState extends State<BiometricScreen> {
   @override
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBgColor = isDark ? const Color(0xFF1E2827) : Colors.white;
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0);
+    final isDark = context.isDark;
+    final cardBgColor = context.cardBg;
+    final borderColor = context.borderColor;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -182,7 +183,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
                               height: 130,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: (_isFingerprintEnabled ? const Color(0xFF10B981) : const Color(0xFF438883))
+                                color: (_isFingerprintEnabled ? context.income : context.brandColor)
                                     .withValues(alpha: 0.12),
                               ),
                             ),
@@ -191,7 +192,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
                               height: 104,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: (_isFingerprintEnabled ? const Color(0xFF10B981) : const Color(0xFF438883))
+                                color: (_isFingerprintEnabled ? context.income : context.brandColor)
                                     .withValues(alpha: 0.2),
                               ),
                             ),
@@ -202,14 +203,14 @@ class _BiometricScreenState extends State<BiometricScreen> {
                                 shape: BoxShape.circle,
                                 gradient: LinearGradient(
                                   colors: _isFingerprintEnabled
-                                      ? [const Color(0xFF10B981), const Color(0xFF059669)]
-                                      : [const Color(0xFF438883), const Color(0xFF2F6360)],
+                                      ? [context.income, const Color(0xFF059669)]
+                                      : [context.brandColor, const Color(0xFF2F6360)],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: (_isFingerprintEnabled ? const Color(0xFF10B981) : const Color(0xFF438883))
+                                    color: (_isFingerprintEnabled ? context.income : context.brandColor)
                                         .withValues(alpha: 0.4),
                                     blurRadius: 18,
                                     offset: const Offset(0, 8),
@@ -235,7 +236,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
-                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          color: context.colors.onSurface,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -252,7 +253,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 13.5,
-                            color: isDark ? Colors.white60 : Colors.grey.shade600,
+                            color: context.colors.onSurfaceVariant,
                             height: 1.45,
                           ),
                         ),
@@ -281,12 +282,12 @@ class _BiometricScreenState extends State<BiometricScreen> {
                                 width: 44,
                                 height: 44,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF438883).withValues(alpha: 0.12),
+                                  color: context.brandColor.withValues(alpha: isDark ? 0.2 : 0.12),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.fingerprint_rounded,
-                                  color: Color(0xFF438883),
+                                  color: context.brandColor,
                                   size: 24,
                                 ),
                               ),
@@ -300,7 +301,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
-                                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                        color: context.colors.onSurface,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
@@ -312,7 +313,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
                                               : (isVi ? 'Đã vô hiệu hóa' : 'Disabled')),
                                       style: TextStyle(
                                         fontSize: 12.5,
-                                        color: _isFingerprintEnabled ? const Color(0xFF10B981) : Colors.grey.shade500,
+                                        color: _isFingerprintEnabled ? context.income : context.colors.onSurfaceVariant,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -320,15 +321,15 @@ class _BiometricScreenState extends State<BiometricScreen> {
                                 ),
                               ),
                               if (_isSaving)
-                                const SizedBox(
+                                SizedBox(
                                   width: 24,
                                   height: 24,
-                                  child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF438883)),
+                                  child: CircularProgressIndicator(strokeWidth: 2.5, color: context.brandColor),
                                 )
                               else
                                 Switch.adaptive(
                                   value: _isFingerprintEnabled,
-                                  activeTrackColor: const Color(0xFF438883),
+                                  activeTrackColor: context.brandColor,
                                   onChanged: (val) async {
                                     setState(() => _isSaving = true);
                                     try {
@@ -354,10 +355,10 @@ class _BiometricScreenState extends State<BiometricScreen> {
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF162524) : const Color(0xFFF1F8F6),
+                          color: isDark ? context.surfaceElevatedColor : context.brandColor.withValues(alpha: 0.06),
                           borderRadius: BorderRadius.circular(22),
                           border: Border.all(
-                            color: isDark ? const Color(0xFF254B48) : const Color(0xFF438883).withValues(alpha: 0.2),
+                            color: context.brandColor.withValues(alpha: isDark ? 0.25 : 0.15),
                           ),
                         ),
                         child: Column(
@@ -365,14 +366,14 @@ class _BiometricScreenState extends State<BiometricScreen> {
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.verified_user_rounded, color: Color(0xFF438883), size: 20),
+                                Icon(Icons.verified_user_rounded, color: context.brandColor, size: 20),
                                 const SizedBox(width: 8),
                                 Text(
                                   isVi ? 'Cam kết bảo mật FinTech' : 'FinTech Security Guarantee',
                                   style: TextStyle(
                                     fontSize: 14.5,
                                     fontWeight: FontWeight.w800,
-                                    color: isDark ? Colors.white : const Color(0xFF133633),
+                                    color: context.colors.onSurface,
                                   ),
                                 ),
                               ],
@@ -384,7 +385,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
                               desc: isVi
                                   ? 'Dữ liệu vân tay được lưu trữ an toàn trong chip bảo mật riêng của thiết bị và không bao giờ tải lên máy chủ.'
                                   : 'Biometric data is securely stored on your device\'s dedicated security chip and never uploaded to servers.',
-                              isDark: isDark,
+                              context: context,
                             ),
                             const SizedBox(height: 12),
                             _buildInfoBullet(
@@ -393,7 +394,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
                               desc: isVi
                                   ? 'Mở ứng dụng chỉ mất 0.2 giây mà vẫn đảm bảo riêng tư số dư cá nhân khi ở nơi công cộng.'
                                   : 'Open the app in just 0.2 seconds while keeping your balances private in public spaces.',
-                              isDark: isDark,
+                              context: context,
                             ),
                             const SizedBox(height: 12),
                             _buildInfoBullet(
@@ -402,7 +403,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
                               desc: isVi
                                   ? 'Ngay khi bạn chuyển app sang màn hình khác, Mono sẽ tự động kích hoạt lại lớp khóa bảo vệ.'
                                   : 'As soon as you switch apps or minimize Mono, the security lock is automatically re-engaged.',
-                              isDark: isDark,
+                              context: context,
                             ),
                           ],
                         ),
@@ -422,8 +423,9 @@ class _BiometricScreenState extends State<BiometricScreen> {
     required IconData icon,
     required String title,
     required String desc,
-    required bool isDark,
+    required BuildContext context,
   }) {
+    final isDark = context.isDark;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -431,10 +433,10 @@ class _BiometricScreenState extends State<BiometricScreen> {
           margin: const EdgeInsets.only(top: 2),
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: const Color(0xFF438883).withValues(alpha: 0.15),
+            color: context.brandColor.withValues(alpha: isDark ? 0.2 : 0.12),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, size: 14, color: const Color(0xFF438883)),
+          child: Icon(icon, size: 14, color: context.brandColor),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -446,7 +448,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  color: context.colors.onSurface,
                 ),
               ),
               const SizedBox(height: 2),
@@ -454,7 +456,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
                 desc,
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark ? Colors.white60 : Colors.grey.shade600,
+                  color: context.colors.onSurfaceVariant,
                   height: 1.4,
                 ),
               ),

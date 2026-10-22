@@ -1,6 +1,7 @@
 import '../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_theme.dart';
 import '../../widgets/animated_scale_button.dart';
 
 class MessageDetailScreen extends StatelessWidget {
@@ -22,10 +23,10 @@ class MessageDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final isVi = LanguageScope.of(context).isVietnamese;
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -54,7 +55,7 @@ class MessageDetailScreen extends StatelessWidget {
                   ),
                   Text(
                     isVi ? 'Chi tiết tin nhắn' : 'Message Details',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -111,7 +112,7 @@ class MessageDetailScreen extends StatelessWidget {
                                       Text(
                                         title,
                                         style: TextStyle(
-                                          color: isDark ? Colors.white : const Color(0xFF212121),
+                                          color: context.colors.onSurface,
                                           fontSize: 20,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -122,13 +123,13 @@ class MessageDetailScreen extends StatelessWidget {
                                           Icon(
                                             Icons.access_time,
                                             size: 14,
-                                            color: isDark ? Colors.white54 : const Color(0xFFAAAAAA),
+                                            color: context.colors.onSurfaceVariant,
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
                                             time,
                                             style: TextStyle(
-                                              color: isDark ? Colors.white54 : const Color(0xFFAAAAAA),
+                                              color: context.colors.onSurfaceVariant,
                                               fontSize: 13,
                                             ),
                                           ),
@@ -142,7 +143,7 @@ class MessageDetailScreen extends StatelessWidget {
 
                             const SizedBox(height: 24),
                             Divider(
-                              color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFEEEEEE),
+                              color: context.dividerColor,
                               height: 1,
                             ),
                             const SizedBox(height: 24),
@@ -151,7 +152,7 @@ class MessageDetailScreen extends StatelessWidget {
                             Text(
                               fullMessage,
                               style: TextStyle(
-                                color: isDark ? Colors.white : const Color(0xFF444444),
+                                color: context.colors.onSurface,
                                 fontSize: 16,
                                 height: 1.6, // Giãn dòng cho dễ đọc
                               ),
@@ -174,18 +175,19 @@ class MessageDetailScreen extends StatelessWidget {
                       ),
                       child: InkWell(
                         onTap: () => Navigator.pop(context), // Đóng trang
+                        borderRadius: BorderRadius.circular(14),
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1A3635) : const Color(0xFFE8F5F0),
-                            borderRadius: BorderRadius.circular(12),
+                            color: context.brandColor,
+                            borderRadius: BorderRadius.circular(14),
                           ),
                           child: Center(
                             child: Text(
                               isVi ? 'Đã hiểu' : 'Got it',
-                              style: TextStyle(
-                                color: isDark ? const Color(0xFF80CBC4) : const Color(0xFF4A9B7F),
+                              style: const TextStyle(
+                                color: Colors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                               ),

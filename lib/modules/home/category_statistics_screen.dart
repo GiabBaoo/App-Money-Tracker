@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fl_chart/fl_chart.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../models/transaction_model.dart';
 import '../../services/firestore_service.dart';
 import '../../utils/currency_format_utils.dart';
@@ -43,8 +44,8 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final headerColor = isDark ? const Color(0xFF0F2625) : const Color(0xFF438883);
+    final bool isDark = context.isDark;
+    final headerColor = isDark ? AppColors.primaryTealDark : AppColors.primaryTeal;
     final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
@@ -81,7 +82,11 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: context.textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.3,
+                      ) ?? const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
@@ -101,7 +106,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: AppRadius.card,
                   border: Border.all(color: Colors.white12),
                 ),
                 child: Row(
@@ -111,7 +116,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                         label: isVi ? 'Khoản Chi' : 'Expense',
                         type: 'expense',
                         icon: Icons.trending_down_rounded,
-                        activeColor: const Color(0xFFEF4444),
+                        activeColor: context.expenseColor,
                       ),
                     ),
                     Expanded(
@@ -119,7 +124,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                         label: isVi ? 'Khoản Thu' : 'Income',
                         type: 'income',
                         icon: Icons.trending_up_rounded,
-                        activeColor: const Color(0xFF10B981),
+                        activeColor: context.incomeColor,
                       ),
                     ),
                   ],
@@ -132,11 +137,11 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
+                  color: context.colors.surface,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
+                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
                       blurRadius: 20,
                       offset: const Offset(0, -6),
                     ),
@@ -146,14 +151,14 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                   stream: _firestoreService.getTransactionsStream(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
+                      return Center(child: CircularProgressIndicator(color: context.colors.primary));
                     }
 
                     if (!snapshot.hasData || snapshot.data!.isEmpty) {
                       return Center(
                         child: Text(
                           isVi ? 'Chưa có dữ liệu giao dịch' : 'No transaction data yet',
-                          style: const TextStyle(color: Colors.grey),
+                          style: context.textTheme.bodyMedium?.copyWith(color: context.textMutedColor),
                         ),
                       );
                     }
@@ -170,13 +175,16 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.pie_chart_outline_rounded, size: 70, color: Colors.grey.withValues(alpha: 0.3)),
+                            Icon(Icons.pie_chart_outline_rounded, size: 70, color: context.textMutedColor.withValues(alpha: 0.3)),
                             const SizedBox(height: 16),
                             Text(
                               isVi
                                   ? 'Không có ${_currentType == 'income' ? 'khoản thu' : 'khoản chi'} nào trong tháng ${now.month}'
                                   : 'No ${_currentType == 'income' ? 'income' : 'expense'} recorded in month ${now.month}',
-                              style: const TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.w500),
+                              style: context.textTheme.bodyMedium?.copyWith(
+                                color: context.textMutedColor,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ],
                         ),
@@ -215,7 +223,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                             color: Colors.white,
                           ),
                           borderSide: BorderSide(
-                            color: isDark ? const Color(0xFF1E2827) : Colors.white,
+                            color: context.cardBg,
                             width: 2,
                           ),
                         ),
@@ -231,16 +239,10 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF1E2827) : Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-                                  blurRadius: 14,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
+                              color: context.cardBg,
+                              borderRadius: AppRadius.card,
+                              border: Border.all(color: context.borderColor),
+                              boxShadow: AppShadows.card(isDark),
                             ),
                             child: SizedBox(
                               height: 230,
@@ -277,29 +279,27 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                                         isVi
                                             ? 'Tổng ${_currentType == 'income' ? 'thu' : 'chi'}'
                                             : 'Total ${_currentType == 'income' ? 'Income' : 'Expense'}',
-                                        style: TextStyle(
-                                          color: isDark ? Colors.white60 : Colors.grey.shade600,
-                                          fontSize: 12.5,
+                                        style: context.textTheme.bodySmall?.copyWith(
+                                          color: context.textSecondaryColor,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         CurrencyUtils.formatCurrency(totalSum).replaceAll(' ₫', ''),
-                                        style: TextStyle(
+                                        style: context.textTheme.titleLarge?.copyWith(
                                           fontWeight: FontWeight.w900,
                                           fontSize: 20,
                                           color: _currentType == 'income'
-                                              ? const Color(0xFF10B981)
-                                              : const Color(0xFFEF4444),
+                                              ? context.incomeColor
+                                              : context.expenseColor,
                                         ),
                                       ),
                                       Text(
                                         'VND',
-                                        style: TextStyle(
-                                          fontSize: 11,
+                                        style: context.textTheme.labelSmall?.copyWith(
                                           fontWeight: FontWeight.w600,
-                                          color: isDark ? Colors.white38 : Colors.grey.shade400,
+                                          color: context.textMutedColor,
                                         ),
                                       ),
                                     ],
@@ -317,11 +317,14 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                             children: [
                               Text(
                                 isVi ? 'Chi tiết theo danh mục' : 'Category breakdown',
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                                style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
                               ),
                               Text(
                                 isVi ? '${categories.length} danh mục' : '${categories.length} categories',
-                                style: TextStyle(fontSize: 12.5, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
+                                style: context.textTheme.bodySmall?.copyWith(
+                                  color: context.textMutedColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ],
                           ),
@@ -338,16 +341,10 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                               margin: const EdgeInsets.only(bottom: 10),
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1E2827) : Colors.white,
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.02),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
+                                color: context.cardBg,
+                                borderRadius: AppRadius.card,
+                                border: Border.all(color: context.borderColor),
+                                boxShadow: AppShadows.card(isDark),
                               ),
                               child: Column(
                                 children: [
@@ -373,15 +370,17 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                                           children: [
                                             Text(
                                               context.trCat(category),
-                                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14.5),
+                                              style: context.textTheme.bodyMedium?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                                color: context.textPrimaryColor,
+                                              ),
                                             ),
                                             const SizedBox(height: 2),
                                             Text(
                                               CurrencyUtils.formatCurrency(amount),
-                                              style: TextStyle(
-                                                fontSize: 12.5,
+                                              style: context.textTheme.bodySmall?.copyWith(
                                                 fontWeight: FontWeight.w600,
-                                                color: isDark ? Colors.white70 : Colors.grey.shade700,
+                                                color: context.textSecondaryColor,
                                               ),
                                             ),
                                           ],
@@ -410,7 +409,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                                     child: LinearProgressIndicator(
                                       value: (percentage / 100).clamp(0.0, 1.0),
                                       minHeight: 6,
-                                      backgroundColor: isDark ? Colors.white10 : const Color(0xFFF1F5F9),
+                                      backgroundColor: isDark ? context.colors.surface.withValues(alpha: 0.3) : AppColors.inputBgLight,
                                       valueColor: AlwaysStoppedAnimation<Color>(color),
                                     ),
                                   ),
@@ -451,7 +450,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 9),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
+          color: isSelected ? (context.isDark ? context.cardBg : Colors.white) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           boxShadow: isSelected
               ? [
@@ -474,8 +473,11 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
             const SizedBox(width: 6),
             Text(
               label,
-              style: TextStyle(
-                color: isSelected ? const Color(0xFF1E293B) : Colors.white70,
+              style: context.textTheme.labelMedium?.copyWith(
+                color: isSelected ? context.textPrimaryColor : Colors.white70,
+                fontWeight: FontWeight.w700,
+              ) ?? TextStyle(
+                color: isSelected ? context.textPrimaryColor : Colors.white70,
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
               ),

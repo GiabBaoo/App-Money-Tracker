@@ -9,6 +9,7 @@ import '../../data/repositories/wallet_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../data/repositories/budget_repository.dart';
 import '../../data/repositories/goal_repository.dart';
+import '../../core/theme/app_theme.dart';
 
 class WidgetShowcaseScreen extends StatefulWidget {
   const WidgetShowcaseScreen({super.key});
@@ -110,22 +111,26 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF2F7E79);
-    final cardBg = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
-    final textPrimary = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-    final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final primaryColor = context.brandColor;
+    final cardBg = context.cardBg;
+    final borderColor = context.borderColor;
+    final textPrimary = context.colors.onSurface;
+    final textSecondary = context.colors.onSurfaceVariant;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           isVi ? 'Tiện ích Màn hình chính' : 'Home Screen Widgets',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: context.colors.onSurface),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.colors.onSurface, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -136,8 +141,8 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: isDark
-                    ? [const Color(0xFF134E4A), const Color(0xFF0F2625)]
-                    : [const Color(0xFFE6F4F1), const Color(0xFFCCECE6)],
+                    ? [context.brandColor.withValues(alpha: 0.35), const Color(0xFF0F2625)]
+                    : [context.brandColor.withValues(alpha: 0.12), context.brandColor.withValues(alpha: 0.05)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -164,7 +169,7 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF0F2625),
+                          color: textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -174,7 +179,7 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                             : 'Track cash flow, balance, and record expenses quickly right from your home screen!',
                         style: TextStyle(
                           fontSize: 12.5,
-                          color: isDark ? Colors.white70 : const Color(0xFF285E5A),
+                          color: textSecondary,
                         ),
                       ),
                     ],
@@ -393,7 +398,7 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2F7E79),
+                backgroundColor: context.brandColor,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 11),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

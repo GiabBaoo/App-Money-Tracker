@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../services/language_service.dart';
 import '../../widgets/mono_toast.dart';
+import '../../core/theme/app_theme.dart';
 
 /// Màn hình căn chỉnh, thu phóng (Scale / Crop) và xoay ảnh đại diện trước khi lưu
 class AvatarCropScreen extends StatefulWidget {
@@ -126,19 +127,19 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: _isProcessing
-                ? const Center(
+                ? Center(
                     child: SizedBox(
                       width: 22,
                       height: 22,
-                      child: CircularProgressIndicator(color: Color(0xFF438883), strokeWidth: 2.5),
+                      child: CircularProgressIndicator(color: context.brandColor, strokeWidth: 2.5),
                     ),
                   )
                 : TextButton.icon(
                     onPressed: _handleApplyCrop,
-                    icon: const Icon(Icons.check_rounded, color: Color(0xFF68AEA9), size: 20),
+                    icon: Icon(Icons.check_rounded, color: context.brandColor, size: 20),
                     label: Text(
                       isVi ? 'Áp dụng' : 'Apply',
-                      style: const TextStyle(color: Color(0xFF68AEA9), fontWeight: FontWeight.bold, fontSize: 15),
+                      style: TextStyle(color: context.brandColor, fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                   ),
           ),
@@ -158,7 +159,7 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.pinch_rounded, color: Color(0xFF68AEA9), size: 16),
+                  Icon(Icons.pinch_rounded, color: context.brandColor, size: 16),
                   const SizedBox(width: 8),
                   Text(
                     isVi ? 'Dùng 2 ngón tay thu phóng hoặc kéo để căn mặt' : 'Pinch or drag to reposition face',
@@ -222,12 +223,12 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: const Color(0xFF438883),
+                            color: context.brandColor,
                             width: 2.5,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF438883).withValues(alpha: 0.35),
+                              color: context.brandColor.withValues(alpha: 0.35),
                               blurRadius: 16,
                               spreadRadius: 2,
                             ),
@@ -270,10 +271,10 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                             trackHeight: 4,
                             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
                             overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
-                            activeTrackColor: const Color(0xFF438883),
+                            activeTrackColor: context.brandColor,
                             inactiveTrackColor: Colors.white12,
-                            thumbColor: const Color(0xFF68AEA9),
-                            overlayColor: const Color(0xFF438883).withValues(alpha: 0.2),
+                            thumbColor: context.brandColor,
+                            overlayColor: context.brandColor.withValues(alpha: 0.2),
                           ),
                           child: Slider(
                             value: _currentScale.clamp(1.0, 5.0),
@@ -287,7 +288,7 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                       const SizedBox(width: 8),
                       Text(
                         '${_currentScale.toStringAsFixed(1)}x',
-                        style: const TextStyle(color: Color(0xFF68AEA9), fontWeight: FontWeight.bold, fontSize: 13),
+                        style: TextStyle(color: context.brandColor, fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                     ],
                   ),

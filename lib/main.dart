@@ -218,6 +218,9 @@ class _MyAppState extends ConsumerState<MyApp> {
         themeMode: themeService.themeMode,
         themeAnimationDuration: const Duration(milliseconds: 250),
         themeAnimationCurve: Curves.easeInOut,
+        scrollBehavior: const MaterialScrollBehavior().copyWith(
+          physics: const BouncingScrollPhysics(),
+        ),
         locale: Locale(languageService.currentLanguage),
         home: _groupIdToJoin != null 
             ? JoinGroupScreen(groupId: _groupIdToJoin!)

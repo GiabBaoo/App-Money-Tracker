@@ -1,6 +1,7 @@
 import '../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_theme.dart';
 
 import '../../models/transaction_model.dart';
 import '../../services/receipt_storage_service.dart';
@@ -256,11 +257,11 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                               width: 42,
                               height: 42,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF438883).withValues(alpha: 0.3),
+                                color: context.brandColor.withValues(alpha: 0.3),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: const Color(0xFF5EEAD4), width: 0.8),
+                                border: Border.all(color: context.colors.primary, width: 0.8),
                               ),
-                              child: const Icon(Icons.restart_alt_rounded, color: Color(0xFF5EEAD4), size: 20),
+                              child: Icon(Icons.restart_alt_rounded, color: context.colors.primary, size: 20),
                             ),
                           ),
                         ],
@@ -318,7 +319,7 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                               const SizedBox(width: 6),
                               Text(
                                 context.tr('edit'),
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
@@ -346,15 +347,15 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF438883), Color(0xFF2F6360)],
+                            gradient: LinearGradient(
+                              colors: [context.colors.primary, context.brandColor],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF438883).withValues(alpha: 0.4),
+                                color: context.colors.primary.withValues(alpha: 0.4),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -406,13 +407,13 @@ class _TransactionInfoGlassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
     final amountText = CurrencyUtils.formatAmountWithSign(transaction.amount, isIncome);
-    final statusColor = isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final statusColor = isIncome ? context.income : context.expense;
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF131D1C),
-        borderRadius: BorderRadius.circular(24),
+        color: context.isDarkMode ? context.cardBgColor : const Color(0xFF131D1C),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
         boxShadow: [
           BoxShadow(
@@ -433,7 +434,7 @@ class _TransactionInfoGlassCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   amountText,
-                  style: TextStyle(
+                  style: (context.textTheme.headlineMedium ?? const TextStyle()).copyWith(
                     color: statusColor,
                     fontSize: 26,
                     fontWeight: FontWeight.w900,
@@ -445,12 +446,12 @@ class _TransactionInfoGlassCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                 ),
                 child: Text(
                   isIncome ? context.tr('income').toUpperCase() : context.tr('expense').toUpperCase(),
-                  style: TextStyle(
+                  style: (context.textTheme.labelSmall ?? const TextStyle()).copyWith(
                     color: statusColor,
                     fontSize: 11,
                     fontWeight: FontWeight.w800,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../utils/currency_format_utils.dart';
 import '../../../widgets/animated_scale_button.dart';
 import '../../../services/language_service.dart';
@@ -89,10 +90,10 @@ class AmountSuggestionBar extends StatelessWidget {
                 isDefault
                     ? context.tr('quick_suggestions_label')
                     : context.tr('matching_suggestions_label'),
-                style: TextStyle(
+                style: (context.textTheme.labelSmall ?? const TextStyle()).copyWith(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                  color: context.textSecondaryColor,
                 ),
               ),
             ],
@@ -123,13 +124,13 @@ class AmountSuggestionBar extends StatelessWidget {
                     color: isFrequent
                         ? activeColor.withValues(alpha: isDark ? 0.22 : 0.12)
                         : (isDark
-                            ? const Color(0xFF152625)
-                            : const Color(0xFFF1F5F9)),
+                            ? context.colors.surfaceContainerHighest
+                            : context.inputBgColor),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isFrequent
                           ? activeColor.withValues(alpha: isDark ? 0.6 : 0.45)
-                          : activeColor.withValues(alpha: isDark ? 0.35 : 0.25),
+                          : context.colors.outline.withValues(alpha: isDark ? 0.35 : 0.25),
                       width: isFrequent ? 1.3 : 1.0,
                     ),
                   ),
@@ -146,12 +147,12 @@ class AmountSuggestionBar extends StatelessWidget {
                       ],
                       Text(
                         label,
-                        style: TextStyle(
+                        style: (context.textTheme.labelMedium ?? const TextStyle()).copyWith(
                           fontSize: 12.5,
                           fontWeight: isFrequent ? FontWeight.w800 : FontWeight.w700,
                           color: isFrequent
-                              ? (isDark ? Colors.white : activeColor)
-                              : (isDark ? Colors.white : const Color(0xFF1E293B)),
+                              ? (isDark ? context.colors.onSurface : activeColor)
+                              : context.textPrimaryColor,
                           letterSpacing: -0.2,
                         ),
                       ),

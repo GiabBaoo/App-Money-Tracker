@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../core/theme/app_theme.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/app_logo.dart';
 import '../../widgets/mono_toast.dart';
@@ -193,11 +194,11 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF438883);
+    final isDark = context.isDark;
+    final primaryColor = context.colors.primary;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: context.colors.surface,
       body: Stack(
         children: [
           // Nền Gradient & Hiệu ứng quầng sáng Aura mềm mại
@@ -211,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    primaryColor.withValues(alpha: isDark ? 0.35 : 0.25),
+                    primaryColor.withValues(alpha: isDark ? 0.35 : 0.2),
                     primaryColor.withValues(alpha: 0.0),
                   ],
                 ),
@@ -228,8 +229,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF2DD4BF).withValues(alpha: isDark ? 0.2 : 0.15),
-                    const Color(0xFF2DD4BF).withValues(alpha: 0.0),
+                    AppColors.primaryTealVibrant.withValues(alpha: isDark ? 0.2 : 0.15),
+                    AppColors.primaryTealVibrant.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -258,17 +259,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 14),
                     MonoLiquidGlassLogo.wordmark(
                       height: 32,
-                      color: isDark ? Colors.white : const Color(0xFF0F2625),
+                      color: context.colors.onSurface,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       isVi
                           ? 'Quản lý tài chính cá nhân thông minh'
                           : 'Smart personal financial management',
-                      style: TextStyle(
-                        fontSize: 14,
+                      style: context.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        color: context.colors.onSurfaceVariant,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -280,28 +280,21 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                        borderRadius: BorderRadius.circular(28),
+                        color: context.cardBg,
+                        borderRadius: BorderRadius.circular(18),
                         border: Border.all(
-                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          color: context.borderColor,
                           width: 1.2,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.06),
-                            blurRadius: 30,
-                            offset: const Offset(0, 14),
-                          ),
-                        ],
+                        boxShadow: AppShadows.card(isDark),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             isVi ? 'Đăng Nhập' : 'Log In',
-                            style: TextStyle(
-                              color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
-                              fontSize: 22,
+                            style: context.textTheme.headlineSmall?.copyWith(
+                              color: context.colors.onSurface,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.3,
                             ),
@@ -309,9 +302,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 4),
                           Text(
                             isVi ? 'Chào mừng bạn trở lại với Mono' : 'Welcome back to Mono',
-                            style: TextStyle(
-                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                              fontSize: 13.5,
+                            style: context.textTheme.bodySmall?.copyWith(
+                              color: context.colors.onSurfaceVariant,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -320,9 +312,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           // Trường Email
                           Text(
                             'Email',
-                            style: TextStyle(
-                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF334155),
-                              fontSize: 14,
+                            style: context.textTheme.labelMedium?.copyWith(
+                              color: context.colors.onSurfaceVariant,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -330,37 +321,35 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
-                            style: TextStyle(
-                              color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
-                              fontSize: 15,
+                            style: context.textTheme.bodyMedium?.copyWith(
+                              color: context.colors.onSurface,
                               fontWeight: FontWeight.w600,
                             ),
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor: isDark ? const Color(0xFF141E2E) : const Color(0xFFF8FAFC),
+                              fillColor: context.inputBgColor,
                               hintText: isVi ? 'Nhập email của bạn' : 'Enter your email',
-                              hintStyle: TextStyle(
-                                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-                                fontSize: 14,
+                              hintStyle: context.textTheme.bodyMedium?.copyWith(
+                                color: context.colors.onSurfaceVariant.withValues(alpha: 0.7),
                                 fontWeight: FontWeight.normal,
                               ),
                               prefixIcon: Icon(
                                 Icons.alternate_email_rounded,
-                                color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                                color: primaryColor,
                                 size: 20,
                               ),
                               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                  color: context.borderColor,
                                   width: 1,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                                  color: primaryColor,
                                   width: 1.8,
                                 ),
                               ),
@@ -372,9 +361,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           // Trường Mật khẩu
                           Text(
                             isVi ? 'Mật khẩu' : 'Password',
-                            style: TextStyle(
-                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF334155),
-                              fontSize: 14,
+                            style: context.textTheme.labelMedium?.copyWith(
+                              color: context.colors.onSurfaceVariant,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -382,29 +370,27 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextFormField(
                             controller: _passwordController,
                             obscureText: !_isPasswordVisible,
-                            style: TextStyle(
-                              color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
-                              fontSize: 15,
+                            style: context.textTheme.bodyMedium?.copyWith(
+                              color: context.colors.onSurface,
                               fontWeight: FontWeight.w600,
                             ),
                             decoration: InputDecoration(
                               filled: true,
-                              fillColor: isDark ? const Color(0xFF141E2E) : const Color(0xFFF8FAFC),
+                              fillColor: context.inputBgColor,
                               hintText: isVi ? 'Nhập mật khẩu của bạn' : 'Enter your password',
-                              hintStyle: TextStyle(
-                                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-                                fontSize: 14,
+                              hintStyle: context.textTheme.bodyMedium?.copyWith(
+                                color: context.colors.onSurfaceVariant.withValues(alpha: 0.7),
                                 fontWeight: FontWeight.normal,
                               ),
                               prefixIcon: Icon(
                                 Icons.lock_outline_rounded,
-                                color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                                color: primaryColor,
                                 size: 20,
                               ),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _isPasswordVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
-                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                  color: context.colors.onSurfaceVariant,
                                   size: 20,
                                 ),
                                 onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
@@ -413,14 +399,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                  color: context.borderColor,
                                   width: 1,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
-                                  color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                                  color: primaryColor,
                                   width: 1.8,
                                 ),
                               ),
@@ -428,7 +414,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
 
                           const SizedBox(height: 14),
-
 
                           // Ghi nhớ & Quên mật khẩu
                           Row(
@@ -451,9 +436,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     const SizedBox(width: 8),
                                     Text(
                                       isVi ? 'Ghi nhớ đăng nhập' : 'Remember me',
-                                      style: TextStyle(
-                                        color: isDark ? Colors.white70 : const Color(0xFF475569),
-                                        fontSize: 13.5,
+                                      style: context.textTheme.bodyMedium?.copyWith(
+                                        color: context.colors.onSurfaceVariant,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -467,9 +451,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 },
                                 child: Text(
                                   isVi ? 'Quên mật khẩu?' : 'Forgot password?',
-                                  style: TextStyle(
-                                    color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
-                                    fontSize: 13.5,
+                                  style: context.textTheme.bodyMedium?.copyWith(
+                                    color: primaryColor,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -493,12 +476,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: _isLoading
-                                      ? [Colors.grey, Colors.grey.shade600]
-                                      : [const Color(0xFF438883), const Color(0xFF2DD4BF)],
+                                      ? [context.colors.surfaceContainerHighest, context.colors.surfaceContainerHighest]
+                                      : [AppColors.primaryTealLight, AppColors.primaryTeal],
                                   begin: Alignment.centerLeft,
                                   end: Alignment.centerRight,
                                 ),
-                                borderRadius: BorderRadius.circular(18),
+                                borderRadius: BorderRadius.circular(16),
                                 boxShadow: [
                                   BoxShadow(
                                     color: primaryColor.withValues(alpha: 0.35),
@@ -509,11 +492,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               child: Center(
                                 child: _isLoading
-                                    ? const SizedBox(
+                                    ? SizedBox(
                                         width: 22,
                                         height: 22,
                                         child: CircularProgressIndicator(
-                                          color: Colors.white,
+                                          color: context.colors.onPrimary,
                                           strokeWidth: 2.4,
                                         ),
                                       )
@@ -522,17 +505,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                         children: [
                                           Text(
                                             isVi ? 'Đăng Nhập' : 'Log In',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16.5,
+                                            style: context.textTheme.titleMedium?.copyWith(
+                                              color: context.colors.onPrimary,
                                               fontWeight: FontWeight.w700,
                                               letterSpacing: 0.4,
                                             ),
                                           ),
                                           const SizedBox(width: 8),
-                                          const Icon(
+                                          Icon(
                                             Icons.arrow_forward_rounded,
-                                            color: Colors.white,
+                                            color: context.colors.onPrimary,
                                             size: 18,
                                           ),
                                         ],
@@ -553,12 +535,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 width: double.infinity,
                                 height: 50,
                                 decoration: BoxDecoration(
-                                  color: (isDark ? const Color(0xFF2DD4BF) : primaryColor).withValues(alpha: 0.08),
+                                  color: primaryColor.withValues(alpha: 0.08),
                                   border: Border.all(
-                                    color: (isDark ? const Color(0xFF2DD4BF) : primaryColor).withValues(alpha: 0.35),
+                                    color: primaryColor.withValues(alpha: 0.35),
                                     width: 1.2,
                                   ),
-                                  borderRadius: BorderRadius.circular(18),
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -566,15 +548,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                     Icon(
                                       Icons.fingerprint_rounded,
                                       size: 24,
-                                      color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                                      color: primaryColor,
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
                                       isVi ? 'Đăng nhập nhanh bằng vân tay' : 'Quick login with fingerprint',
-                                      style: TextStyle(
-                                        color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                                      style: context.textTheme.labelLarge?.copyWith(
+                                        color: primaryColor,
                                         fontWeight: FontWeight.w700,
-                                        fontSize: 14.5,
                                       ),
                                     ),
                                   ],
@@ -601,17 +582,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             children: [
                               TextSpan(
                                 text: isVi ? 'Chưa có tài khoản? ' : "Don't have an account? ",
-                                style: TextStyle(
-                                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                                  fontSize: 14.5,
+                                style: context.textTheme.bodyMedium?.copyWith(
+                                  color: context.colors.onSurfaceVariant,
                                 ),
                               ),
                               TextSpan(
                                 text: isVi ? 'Đăng ký ngay' : 'Sign up now',
-                                style: TextStyle(
-                                  color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                                style: context.textTheme.bodyMedium?.copyWith(
+                                  color: primaryColor,
                                   fontWeight: FontWeight.w800,
-                                  fontSize: 14.5,
                                 ),
                               ),
                             ],

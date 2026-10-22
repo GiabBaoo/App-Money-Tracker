@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../models/transaction_model.dart';
 import '../../models/wallet_model.dart';
 import '../../utils/currency_format_utils.dart';
 import '../../widgets/transaction_item.dart';
-import '../../widgets/colored_amount_text.dart';
 import '../../widgets/staggered_list_item.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../data/repositories/transaction_repository.dart';
@@ -153,7 +153,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
     final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       appBar: PreferredSize(
         preferredSize: Size.zero,
         child: AppBar(
@@ -297,10 +297,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                 child: Container(
                   height: 48,
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withValues(alpha: 0.12) : Colors.white,
+                    color: isDark ? Colors.white.withValues(alpha: 0.12) : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isDark ? Colors.white.withValues(alpha: 0.22) : Colors.transparent,
+                      color: isDark ? Colors.white.withValues(alpha: 0.22) : const Color(0xFFE2E8F0),
                       width: 1.0,
                     ),
                     boxShadow: [
@@ -314,22 +314,22 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   child: TextField(
                     controller: _searchController,
                     onChanged: (val) => setState(() => _searchQuery = val.toLowerCase().trim()),
-                    cursorColor: isDark ? Colors.white : const Color(0xFF438883),
-                    style: TextStyle(
-                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    cursorColor: isDark ? Colors.white : context.colors.onSurface,
+                    style: (context.textTheme.bodyMedium ?? const TextStyle()).copyWith(
+                      color: isDark ? Colors.white : context.colors.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
                     decoration: InputDecoration(
                       hintText: isVi ? 'Tìm theo nội dung, danh mục, số tiền...' : 'Search by note, category, amount...',
-                      hintStyle: TextStyle(
-                        color: isDark ? Colors.white60 : const Color(0xFF94A3B8),
+                      hintStyle: (context.textTheme.bodyMedium ?? const TextStyle()).copyWith(
+                        color: isDark ? Colors.white60 : context.colors.onSurfaceVariant,
                         fontSize: 13.5,
                         fontWeight: FontWeight.w500,
                       ),
                       prefixIcon: Icon(
                         Icons.search_rounded,
-                        color: isDark ? Colors.white70 : const Color(0xFF438883),
+                        color: isDark ? Colors.white70 : context.colors.onSurfaceVariant,
                         size: 21,
                       ),
                       border: InputBorder.none,
@@ -338,7 +338,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                           ? IconButton(
                               icon: Icon(
                                 Icons.close_rounded,
-                                color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                                color: isDark ? Colors.white70 : context.colors.onSurfaceVariant,
                                 size: 18,
                               ),
                               onPressed: () {
@@ -414,11 +414,11 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       stream: _txRepo.getTransactionsStream(),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                          return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
+                          return Center(child: CircularProgressIndicator(color: context.brandColor));
                         }
 
                         // 1. ÁP DỤNG BỘ LỌC
-                        List<TransactionModel> transactions = snapshot.data ?? [];
+                        List<TransactionModel> transactions = List<TransactionModel>.from(snapshot.data ?? []);
                         transactions.sort(CurrencyUtils.compareTransactionsChronological);
 
                         // Lọc theo loại hình
@@ -478,7 +478,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.search_off_rounded, size: 56, color: isDark ? Colors.white24 : Colors.grey.shade300),
+                                Icon(Icons.search_off_rounded, size: 56, color: context.textMutedColor),
                                 const SizedBox(height: 14),
                                 Text(
                                   _searchQuery.isNotEmpty
@@ -487,7 +487,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                                           : 'No transactions found matching "$_searchQuery"')
                                       : (isVi ? 'Không tìm thấy giao dịch nào' : 'No transactions found'),
                                   style: TextStyle(
-                                    color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                                    color: context.textSecondaryColor,
                                     fontSize: 14.5,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -498,7 +498,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                         }
 
                         // 2. NHÓM GIAO DỊCH THEO NGÀY & VIRTUALIZATION TỐI ƯU 120FPS
-                        final allTx = snapshot.data ?? [];
+                        final allTx = List<TransactionModel>.from(snapshot.data ?? []);
                         final effectiveWallets = _walletRepo.latestWallets;
                         final walletMap = {for (final w in effectiveWallets) w.id: w};
                         final reverseBalances = CurrencyUtils.calculateReverseWalletBalances(
@@ -615,6 +615,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
         },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isSelected
                 ? Colors.white
@@ -636,12 +637,16 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   ]
                 : null,
           ),
-          child: Text(
-            displayLabel,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
-              color: isSelected ? const Color(0xFF235F5B) : Colors.white,
+          child: Center(
+            child: Text(
+              displayLabel,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                color: isSelected ? const Color(0xFF235F5B) : Colors.white,
+                height: 1.2,
+              ),
             ),
           ),
         ),
@@ -660,6 +665,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
         },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          alignment: Alignment.center,
           decoration: BoxDecoration(
             color: hasFilter
                 ? Colors.white
@@ -683,6 +689,8 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Icon(
                 Icons.calendar_month_rounded,
@@ -692,10 +700,12 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
               const SizedBox(width: 5),
               Text(
                 _getDateFilterLabel(),
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: hasFilter ? FontWeight.w800 : FontWeight.w700,
                   color: hasFilter ? const Color(0xFF235F5B) : Colors.white,
+                  height: 1.2,
                 ),
               ),
               const SizedBox(width: 4),
@@ -713,7 +723,6 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
 
   // BOTTOM SHEET CHỌN NHANH KHOẢNG THỜI GIAN FINTECH
   void _showDatePresetPickerSheet(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isVi = LanguageScope.of(context).isVietnamese;
 
     final presets = [
@@ -737,7 +746,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
         return Container(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF142423) : Colors.white,
+            color: context.cardBgColor,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             boxShadow: [
               BoxShadow(
@@ -756,7 +765,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   width: 38,
                   height: 4.5,
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white24 : Colors.grey.shade300,
+                    color: context.dividerColor,
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
@@ -766,10 +775,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   children: [
                     Text(
                       context.tr('transaction_time_range'),
-                      style: TextStyle(
+                      style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
-                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        color: context.textPrimaryColor,
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -780,7 +789,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                           setState(() => _applyDatePreset('all_time'));
                           Navigator.pop(ctx);
                         },
-                        child: Text(context.tr('clear_date_filter'), style: const TextStyle(color: Color(0xFF438883), fontWeight: FontWeight.bold, fontSize: 13)),
+                        child: Text(context.tr('clear_date_filter'), style: TextStyle(color: context.brandColor, fontWeight: FontWeight.bold, fontSize: 13)),
                       ),
                   ],
                 ),
@@ -828,13 +837,13 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? (isDark ? const Color(0xFF1E3A37) : const Color(0xFFE8F5F1))
-                                : (isDark ? Colors.white.withValues(alpha: 0.04) : const Color(0xFFF8FAFC)),
+                                ? context.brandColor.withValues(alpha: 0.12)
+                                : context.inputBgColor,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isSelected
-                                  ? const Color(0xFF438883)
-                                  : (isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
+                                  ? context.brandColor
+                                  : context.borderColor,
                               width: isSelected ? 1.5 : 1.0,
                             ),
                           ),
@@ -845,14 +854,14 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                                 height: 38,
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? const Color(0xFF438883)
-                                      : (isDark ? Colors.white10 : Colors.white),
+                                      ? context.brandColor
+                                      : context.cardBgColor,
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
                                   p['icon'] as IconData,
                                   size: 19,
-                                  color: isSelected ? Colors.white : const Color(0xFF438883),
+                                  color: isSelected ? Colors.white : context.brandColor,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -866,8 +875,8 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                                         fontSize: 14,
                                         fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                                         color: isSelected
-                                            ? (isDark ? Colors.white : const Color(0xFF1E293B))
-                                            : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                                            ? context.textPrimaryColor
+                                            : context.textSecondaryColor,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
@@ -875,16 +884,16 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                                       p['desc'] as String,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: isDark ? Colors.white54 : const Color(0xFF64748B),
+                                        color: context.textMutedColor,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
                               if (isSelected)
-                                const Icon(
+                                Icon(
                                   Icons.check_circle_rounded,
-                                  color: Color(0xFF438883),
+                                  color: context.brandColor,
                                   size: 22,
                                 ),
                             ],
@@ -911,11 +920,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            final isDark = Theme.of(context).brightness == Brightness.dark;
             return Container(
               padding: const EdgeInsets.fromLTRB(22, 14, 22, 28),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF142423) : Colors.white,
+                color: context.cardBgColor,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
                 boxShadow: [
                   BoxShadow(
@@ -936,7 +944,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                         width: 38,
                         height: 4.5,
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white24 : Colors.grey.shade300,
+                          color: context.dividerColor,
                           borderRadius: BorderRadius.circular(3),
                         ),
                       ),
@@ -947,10 +955,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       children: [
                         Text(
                           context.tr('filter_transactions'),
-                          style: TextStyle(
+                          style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
-                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            color: context.textPrimaryColor,
                           ),
                         ),
                         TextButton(
@@ -962,14 +970,17 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                             });
                             setState(() {});
                           },
-                          child: Text(context.tr('reset_filter'), style: const TextStyle(color: Color(0xFF438883), fontWeight: FontWeight.bold)),
+                          child: Text(context.tr('reset_filter'), style: TextStyle(color: context.brandColor, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
                     
                     // 1. LỌC THEO LOẠI HÌNH
-                    Text(context.tr('transaction_type'), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                    Text(
+                      context.tr('transaction_type'),
+                      style: (context.textTheme.titleSmall ?? const TextStyle()).copyWith(fontSize: 15, fontWeight: FontWeight.w700, color: context.textPrimaryColor),
+                    ),
                     const SizedBox(height: 10),
                     Row(
                       children: ['Tất cả', 'Thu nhập', 'Chi tiêu', 'Chuyển ví'].map((tp) {
@@ -986,22 +997,25 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                               duration: const Duration(milliseconds: 180),
                               margin: const EdgeInsets.symmetric(horizontal: 3),
                               padding: const EdgeInsets.symmetric(vertical: 10),
+                              alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? const Color(0xFF438883)
-                                    : (isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9)),
-                                borderRadius: BorderRadius.circular(14),
+                                    ? context.brandColor
+                                    : context.inputBgColor,
+                                borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: isSelected ? const Color(0xFF438883) : Colors.transparent,
+                                  color: isSelected ? context.brandColor : Colors.transparent,
                                 ),
                               ),
                               child: Center(
                                 child: Text(
                                   tp == 'Tất cả' ? context.tr('filter_all') : (tp == 'Thu nhập' ? context.tr('filter_income') : (tp == 'Chi tiêu' ? context.tr('filter_expense') : context.tr('filter_transfers'))),
+                                  textAlign: TextAlign.center,
                                   style: TextStyle(
                                     fontSize: 12.5,
-                                    color: isSelected ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                                    color: isSelected ? Colors.white : context.textSecondaryColor,
                                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                    height: 1.2,
                                   ),
                                 ),
                               ),
@@ -1017,12 +1031,15 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(context.tr('time_range'), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+                        Text(
+                          context.tr('time_range'),
+                          style: (context.textTheme.titleSmall ?? const TextStyle()).copyWith(fontSize: 15, fontWeight: FontWeight.w700, color: context.textPrimaryColor),
+                        ),
                         const SizedBox(width: 8),
                         Flexible(
                           child: Text(
                             _getDateFilterLabel(),
-                            style: const TextStyle(fontSize: 12.5, color: Color(0xFF438883), fontWeight: FontWeight.w700),
+                            style: TextStyle(fontSize: 12.5, color: context.brandColor, fontWeight: FontWeight.w700),
                             textAlign: TextAlign.right,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1055,11 +1072,11 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7.5),
                             decoration: BoxDecoration(
                               color: isSel
-                                  ? const Color(0xFF438883)
-                                  : (isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9)),
-                              borderRadius: BorderRadius.circular(12),
+                                  ? context.brandColor
+                                  : context.inputBgColor,
+                              borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: isSel ? const Color(0xFF438883) : Colors.transparent,
+                                color: isSel ? context.brandColor : Colors.transparent,
                               ),
                             ),
                             child: Text(
@@ -1067,7 +1084,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
-                                color: isSel ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                                color: isSel ? Colors.white : context.textSecondaryColor,
                               ),
                             ),
                           ),
@@ -1096,16 +1113,16 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                           setState(() {});
                         }
                       },
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(16),
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: context.borderColor),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.date_range_rounded, size: 18, color: Color(0xFF438883)),
+                            Icon(Icons.date_range_rounded, size: 18, color: context.brandColor),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -1114,12 +1131,12 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                                     : context.tr('specific_date_range'),
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                  color: context.textPrimaryColor,
                                   fontWeight: _datePreset == 'custom' ? FontWeight.w700 : FontWeight.normal,
                                 ),
                               ),
                             ),
-                            const Icon(Icons.chevron_right_rounded, size: 18, color: Colors.grey),
+                            Icon(Icons.chevron_right_rounded, size: 18, color: context.textMutedColor),
                           ],
                         ),
                       ),
@@ -1137,15 +1154,15 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                         width: double.infinity,
                         height: 48,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF438883), Color(0xFF2DD4BF)],
+                          gradient: LinearGradient(
+                            colors: [context.brandColor, context.brandColor.withValues(alpha: 0.85)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF438883).withValues(alpha: 0.3),
+                              color: context.brandColor.withValues(alpha: 0.3),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -1202,26 +1219,26 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF438883).withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(14),
+        color: context.brandColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF438883).withValues(alpha: 0.3),
+          color: context.brandColor.withValues(alpha: 0.3),
           width: 1.0,
         ),
       ),
       child: Row(
         children: [
-          const Icon(Icons.history_rounded, size: 16, color: Color(0xFF438883)),
+          Icon(Icons.history_rounded, size: 16, color: context.brandColor),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               isVi
                   ? 'Tìm thấy $count giao dịch trong toàn bộ lịch sử'
                   : 'Found $count transactions in all history',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF438883),
+                color: context.brandColor,
               ),
             ),
           ),
@@ -1237,10 +1254,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF152423) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: context.cardBgColor,
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0),
+          color: context.borderColor,
         ),
         boxShadow: [
           BoxShadow(
@@ -1260,12 +1277,12 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.arrow_downward_rounded, size: 13, color: Color(0xFF2ECC71)),
+                    Icon(Icons.arrow_downward_rounded, size: 13, color: context.income),
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
                         context.tr('total_income'),
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                        style: (context.textTheme.bodySmall ?? const TextStyle()).copyWith(fontSize: 11, fontWeight: FontWeight.w600, color: context.textSecondaryColor),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1278,10 +1295,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     '+${CurrencyUtils.formatCurrency(totalIncome)}',
-                    style: const TextStyle(
+                    style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
                       fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF2ECC71),
+                      fontWeight: FontWeight.w800,
+                      color: context.income,
                     ),
                   ),
                 ),
@@ -1292,7 +1309,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
             width: 1,
             height: 32,
             margin: const EdgeInsets.symmetric(horizontal: 4),
-            color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+            color: context.dividerColor,
           ),
           // Chi tiêu
           Expanded(
@@ -1301,12 +1318,12 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.arrow_upward_rounded, size: 13, color: Color(0xFFE63946)),
+                    Icon(Icons.arrow_upward_rounded, size: 13, color: context.expense),
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
                         context.tr('total_expense'),
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                        style: (context.textTheme.bodySmall ?? const TextStyle()).copyWith(fontSize: 11, fontWeight: FontWeight.w600, color: context.textSecondaryColor),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1319,10 +1336,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     '-${CurrencyUtils.formatCurrency(totalExpense)}',
-                    style: const TextStyle(
+                    style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
                       fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFFE63946),
+                      fontWeight: FontWeight.w800,
+                      color: context.expense,
                     ),
                   ),
                 ),
@@ -1333,7 +1350,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
             width: 1,
             height: 32,
             margin: const EdgeInsets.symmetric(horizontal: 4),
-            color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+            color: context.dividerColor,
           ),
           // Dòng tiền ròng (Net)
           Expanded(
@@ -1345,13 +1362,13 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                     Icon(
                       net >= 0 ? Icons.trending_up_rounded : Icons.trending_down_rounded,
                       size: 13,
-                      color: net >= 0 ? const Color(0xFF438883) : const Color(0xFFE63946),
+                      color: net >= 0 ? context.income : context.expense,
                     ),
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
                         context.tr('net_cashflow'),
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                        style: (context.textTheme.bodySmall ?? const TextStyle()).copyWith(fontSize: 11, fontWeight: FontWeight.w600, color: context.textSecondaryColor),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1364,10 +1381,10 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     '${net >= 0 ? '+' : ''}${CurrencyUtils.formatCurrency(net)}',
-                    style: TextStyle(
+                    style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
                       fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: net >= 0 ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)) : const Color(0xFFE63946),
+                      fontWeight: FontWeight.w800,
+                      color: net >= 0 ? context.income : context.expense,
                     ),
                   ),
                 ),
@@ -1409,21 +1426,21 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                 margin: const EdgeInsets.only(right: 8),
                 decoration: BoxDecoration(
                   color: isToday
-                      ? const Color(0xFF438883).withValues(alpha: 0.16)
-                      : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
+                      ? context.brandColor.withValues(alpha: 0.16)
+                      : context.dividerColor.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   isToday ? Icons.today_rounded : Icons.calendar_today_rounded,
                   size: 13,
-                  color: isToday ? const Color(0xFF438883) : (isDark ? Colors.white70 : Colors.black54),
+                  color: isToday ? context.brandColor : context.textSecondaryColor,
                 ),
               ),
               Expanded(
                 child: Text(
                   dateLabel,
                   style: TextStyle(
-                    color: isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF1E293B),
+                    color: context.textPrimaryColor,
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.1,
@@ -1437,24 +1454,24 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   margin: const EdgeInsets.only(left: 6),
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                   decoration: BoxDecoration(
-                    color: ColoredAmountText.incomeColor.withValues(alpha: isDark ? 0.2 : 0.1),
+                    color: context.income.withValues(alpha: isDark ? 0.2 : 0.1),
                     borderRadius: BorderRadius.circular(7),
                     border: Border.all(
-                      color: ColoredAmountText.incomeColor.withValues(alpha: 0.25),
+                      color: context.income.withValues(alpha: 0.25),
                       width: 0.8,
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.arrow_downward_rounded, size: 10, color: ColoredAmountText.incomeColor),
+                      Icon(Icons.arrow_downward_rounded, size: 10, color: context.income),
                       const SizedBox(width: 2),
                       Text(
                         '+${CurrencyUtils.formatCurrency(dailyIncome)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: ColoredAmountText.incomeColor,
+                          color: context.income,
                         ),
                       ),
                     ],
@@ -1465,24 +1482,24 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                   margin: const EdgeInsets.only(left: 6),
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                   decoration: BoxDecoration(
-                    color: ColoredAmountText.expenseColor.withValues(alpha: isDark ? 0.2 : 0.1),
+                    color: context.expense.withValues(alpha: isDark ? 0.2 : 0.1),
                     borderRadius: BorderRadius.circular(7),
                     border: Border.all(
-                      color: ColoredAmountText.expenseColor.withValues(alpha: 0.25),
+                      color: context.expense.withValues(alpha: 0.25),
                       width: 0.8,
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.arrow_upward_rounded, size: 10, color: ColoredAmountText.expenseColor),
+                      Icon(Icons.arrow_upward_rounded, size: 10, color: context.expense),
                       const SizedBox(width: 2),
                       Text(
                         '-${CurrencyUtils.formatCurrency(dailyExpense)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: ColoredAmountText.expenseColor,
+                          color: context.expense,
                         ),
                       ),
                     ],

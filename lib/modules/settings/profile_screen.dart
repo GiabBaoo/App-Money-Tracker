@@ -32,6 +32,7 @@ import 'widget_showcase_screen.dart';
 import 'dart:async';
 import 'avatar_crop_screen.dart';
 import 'about_app_screen.dart';
+import '../../core/theme/app_theme.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -76,7 +77,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ════════ CHỌN & ĐỔI AVATAR TRỰC TIẾP ════════
   Future<void> _showAvatarPickerSheet(BuildContext context) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isVi = LanguageService.instance.isVietnamese;
 
     MonoBottomSheet.show(
@@ -92,7 +92,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                color: context.colors.onSurface,
               ),
             ),
             const SizedBox(height: 16),
@@ -102,21 +102,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF438883).withValues(alpha: 0.15),
+                  color: context.brandColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF438883)),
+                child: Icon(Icons.auto_awesome_rounded, color: context.brandColor),
               ),
               title: Text(
                 isVi ? 'Chọn ảnh mẫu có sẵn (Preset)' : 'Choose Preset Avatar',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  color: context.colors.onSurface,
                 ),
               ),
               subtitle: Text(
                 isVi ? 'Bộ sưu tập avatar phong cách gradient' : 'Stylish gradient icons',
-                style: TextStyle(color: isDark ? Colors.white60 : Colors.grey.shade600, fontSize: 12),
+                style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 12),
               ),
               onTap: () {
                 Navigator.pop(sheetCtx);
@@ -138,7 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 isVi ? 'Chụp ảnh mới' : 'Take a photo',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  color: context.colors.onSurface,
                 ),
               ),
               onTap: () {
@@ -161,7 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 isVi ? 'Chọn từ thư viện ảnh' : 'Choose from gallery',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  color: context.colors.onSurface,
                 ),
               ),
               onTap: () {
@@ -176,7 +176,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showPresetPickerSheet(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isVi = LanguageService.instance.isVietnamese;
 
     MonoBottomSheet.show(
@@ -192,7 +191,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                color: context.colors.onSurface,
               ),
             ),
             const SizedBox(height: 16),
@@ -321,9 +320,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isVi = languageService.isVietnamese;
 
     final bgColor = Theme.of(context).scaffoldBackgroundColor;
-    final cardBgColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0);
-    final headerColor = isDark ? const Color(0xFF0F2625) : const Color(0xFF438883);
+    final cardBgColor = context.cardBg;
+    final borderColor = context.borderColor;
+    final headerColor = isDark ? AppColors.bgDark : context.brandColor;
 
     return Scaffold(
       backgroundColor: headerColor,
@@ -478,7 +477,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.all(5.5),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF438883),
+                                      color: context.brandColor,
                                       shape: BoxShape.circle,
                                       border: Border.all(color: Colors.white, width: 2),
                                       boxShadow: [
@@ -634,7 +633,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 title: context.tr('login_and_security'),
                                 subtitle: isVi ? 'Vân tay sinh trắc học, đổi mật khẩu' : 'Biometrics, change password',
                                 badgeText: isVi ? 'Bảo vệ' : 'Secure',
-                                badgeColor: const Color(0xFF438883),
+                                badgeColor: context.brandColor,
                                 onTap: () => Navigator.push(context, PageTransitions.slideRight(const SecurityScreen())),
                                 showDivider: true,
                               ),
@@ -701,7 +700,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 title: isVi ? 'Tiện ích Màn hình chính' : 'Home Screen Widgets',
                                 subtitle: isVi ? 'Xem trước demo & ghim Widget ra màn hình' : 'Preview demos & pin widgets',
                                 badgeText: isVi ? 'Mới' : 'New',
-                                badgeColor: const Color(0xFF2F7E79),
+                                badgeColor: context.brandColor,
                                 onTap: () => Navigator.push(context, PageTransitions.slideRight(const WidgetShowcaseScreen())),
                                 showDivider: false,
                               ),
@@ -742,7 +741,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 title: isVi ? 'Về ứng dụng Mono' : 'About Mono App',
                                 subtitle: isVi ? 'Thông tin phiên bản, điều khoản' : 'Version info, policy terms',
                                 badgeText: 'v${AppConstants.appVersion}',
-                                badgeColor: const Color(0xFF2DD4BF),
+                                badgeColor: context.brandColor,
                                 onTap: () => Navigator.push(context, PageTransitions.slideRight(const AboutAppScreen())),
                                 showDivider: false,
                               ),
@@ -777,12 +776,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     width: 40,
                                     height: 40,
                                     decoration: BoxDecoration(
-                                      color: isDark ? const Color(0xFF3E2020) : const Color(0xFFFDE8E8),
+                                      color: context.expense.withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.logout_rounded,
-                                      color: Color(0xFFE53935),
+                                      color: context.expense,
                                       size: 22,
                                     ),
                                   ),
@@ -790,16 +789,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Expanded(
                                     child: Text(
                                       isVi ? 'Đăng xuất' : 'Log out',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
-                                        color: Color(0xFFE53935),
+                                        color: context.expense,
                                       ),
                                     ),
                                   ),
-                                  const Icon(
+                                  Icon(
                                     Icons.chevron_right_rounded,
-                                    color: Color(0xFFE53935),
+                                    color: context.expense,
                                     size: 22,
                                   ),
                                 ],
@@ -828,7 +827,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           fontSize: 11,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.8,
-          color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+          color: context.colors.onSurfaceVariant,
         ),
       ),
     );
@@ -845,8 +844,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required VoidCallback onTap,
     required bool showDivider,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dividerColor = isDark ? Colors.white10 : const Color(0xFFF1F5F4);
+    final dividerColor = context.dividerColor;
 
     return Column(
       children: [
@@ -862,12 +860,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF0F6F5),
+                    color: context.brandColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     icon,
-                    color: const Color(0xFF438883),
+                    color: context.brandColor,
                     size: 22,
                   ),
                 ),
@@ -884,7 +882,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : const Color(0xFF1F2937),
+                          color: context.colors.onSurface,
                         ),
                       ),
                       if (subtitle != null) ...[
@@ -893,7 +891,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           subtitle,
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? Colors.white54 : const Color(0xFF6B7280),
+                            color: context.colors.onSurfaceVariant,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -908,7 +906,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
                     decoration: BoxDecoration(
-                      color: badgeGradient == null ? (badgeColor ?? const Color(0xFF438883)).withValues(alpha: 0.12) : null,
+                      color: badgeGradient == null ? (badgeColor ?? context.brandColor).withValues(alpha: 0.12) : null,
                       gradient: badgeGradient != null
                           ? LinearGradient(colors: badgeGradient)
                           : null,
@@ -919,7 +917,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: badgeGradient != null ? Colors.white : (badgeColor ?? const Color(0xFF438883)),
+                        color: badgeGradient != null ? Colors.white : (badgeColor ?? context.brandColor),
                       ),
                     ),
                   ),
@@ -929,7 +927,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // Trailing Chevron
                 Icon(
                   Icons.chevron_right_rounded,
-                  color: isDark ? Colors.white30 : const Color(0xFF9CA3AF),
+                  color: context.colors.onSurfaceVariant,
                   size: 22,
                 ),
               ],

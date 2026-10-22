@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/app_logo.dart';
 import '../../widgets/mono_toast.dart';
@@ -186,10 +187,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -199,16 +200,19 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                    icon: Icon(Icons.arrow_back_ios, color: context.colors.onPrimary, size: 20),
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Spacer(),
                   widget.isFromSecurity
                       ? Text(
                           isVi ? 'Đổi mật khẩu' : 'Change Password',
-                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+                          style: context.textTheme.titleMedium?.copyWith(
+                            color: context.colors.onPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         )
-                      : const AppLogo.wordmark(height: 32, color: Colors.white),
+                      : AppLogo.wordmark(height: 32, color: context.colors.onPrimary),
                   const Spacer(flex: 2),
                 ],
               ),
@@ -218,9 +222,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  color: context.colors.surface,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [BoxShadow(color: isDark ? Colors.black45 : Colors.black12, blurRadius: 20, offset: const Offset(0, -5))],
+                  boxShadow: AppShadows.modal(isDark),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
@@ -229,10 +233,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     children: [
                       Text(
                         isVi ? 'Đặt lại mật khẩu' : 'Reset Password',
-                        style: TextStyle(
-                          fontSize: 24,
+                        style: context.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF549B96),
+                          color: context.colors.primary,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -240,9 +243,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         isVi
                             ? 'Vui lòng nhập mật khẩu mới của bạn để bảo mật tài khoản.'
                             : 'Please enter your new password to secure your account.',
-                        style: TextStyle(
-                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                          fontSize: 14,
+                        style: context.textTheme.bodyMedium?.copyWith(
+                          color: context.colors.onSurfaceVariant,
                           height: 1.4,
                         ),
                       ),
@@ -256,7 +258,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         errorText: _passwordError,
                         onChanged: _updatePasswordValidation,
                         suffixIcon: IconButton(
-                          icon: Icon(_obscureNewPassword ? Icons.visibility_off : Icons.visibility, color: isDark ? const Color(0xFF94A3B8) : Colors.grey),
+                          icon: Icon(
+                            _obscureNewPassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                            color: context.colors.onSurfaceVariant,
+                            size: 20,
+                          ),
                           onPressed: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
                         ),
                       ),
@@ -265,9 +271,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF141E2E) : const Color(0xFFF9FAFB),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                          color: context.inputBgColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: context.borderColor),
                         ),
                         child: Column(children: [
                           _buildPasswordRule(
@@ -298,7 +304,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         errorText: _confirmPasswordError,
                         onChanged: _onConfirmPasswordChanged,
                         suffixIcon: IconButton(
-                          icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility, color: isDark ? const Color(0xFF94A3B8) : Colors.grey),
+                          icon: Icon(
+                            _obscureConfirmPassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                            color: context.colors.onSurfaceVariant,
+                            size: 20,
+                          ),
                           onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                         ),
                       ),
@@ -313,15 +323,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: _isLoading
-                                  ? [Colors.grey, Colors.grey.shade600]
-                                  : [const Color(0xFF68AEA9), const Color(0xFF3E8681)],
+                                  ? [context.colors.surfaceContainerHighest, context.colors.surfaceContainerHighest]
+                                  : [AppColors.primaryTealLight, AppColors.primaryTeal],
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                             ),
-                            borderRadius: BorderRadius.circular(40),
+                            borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF3E8681).withValues(alpha: 0.3),
+                                color: context.colors.primary.withValues(alpha: 0.3),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -329,10 +339,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           ),
                           child: Center(
                             child: _isLoading
-                                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                                ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: context.colors.onPrimary, strokeWidth: 2.5))
                                 : Text(
                                     isVi ? 'Lưu mật khẩu' : 'Save Password',
-                                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+                                    style: context.textTheme.titleMedium?.copyWith(
+                                      color: context.colors.onPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                           ),
                         ),
@@ -350,52 +363,79 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Widget _buildLabel(String text) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 2),
-      child: Text(text, style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.w600)),
+      child: Text(
+        text,
+        style: context.textTheme.labelMedium?.copyWith(
+          color: context.colors.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 
-  Widget _buildTextField({required String hintText, TextEditingController? controller, bool isObscure = false, Widget? suffixIcon, String? errorText, Function(String)? onChanged}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildTextField({
+    required String hintText,
+    TextEditingController? controller,
+    bool isObscure = false,
+    Widget? suffixIcon,
+    String? errorText,
+    Function(String)? onChanged,
+  }) {
     return TextFormField(
       controller: controller,
       obscureText: isObscure,
       onChanged: onChanged,
-      style: TextStyle(fontSize: 15, color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A)),
+      style: context.textTheme.bodyMedium?.copyWith(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        color: context.colors.onSurface,
+      ),
       decoration: InputDecoration(
         hintText: hintText,
         errorText: errorText,
-        hintStyle: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), fontSize: 14),
+        hintStyle: context.textTheme.bodyMedium?.copyWith(
+          color: context.colors.onSurfaceVariant.withValues(alpha: 0.7),
+        ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883), width: 1.5)),
-        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.red.shade400, width: 1.5)),
-        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: Colors.red.shade400, width: 2)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: context.borderColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: context.colors.primary, width: 1.8),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: context.colors.error, width: 1.2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: context.colors.error, width: 1.8),
+        ),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: isDark ? const Color(0xFF141E2E) : const Color(0xFFF8FAFC),
+        fillColor: context.inputBgColor,
       ),
     );
   }
 
   Widget _buildPasswordRule(String text, bool isValid) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(children: [
         Icon(
-          isValid ? Icons.check_circle : Icons.check_circle_outline,
-          color: isValid ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)) : (isDark ? const Color(0xFF64748B) : const Color(0xFF8B9098)),
+          isValid ? Icons.check_circle_rounded : Icons.check_circle_outline_rounded,
+          color: isValid ? context.income : context.colors.onSurfaceVariant.withValues(alpha: 0.6),
           size: 16,
         ),
         const SizedBox(width: 8),
         Text(
           text,
-          style: TextStyle(
-            color: isValid ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)) : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF8B9098)),
-            fontSize: 13,
+          style: context.textTheme.bodySmall?.copyWith(
+            color: isValid ? context.income : context.colors.onSurfaceVariant.withValues(alpha: 0.8),
             fontWeight: isValid ? FontWeight.w600 : FontWeight.normal,
           ),
         ),

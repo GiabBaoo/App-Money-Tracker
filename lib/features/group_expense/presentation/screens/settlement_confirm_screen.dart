@@ -1,3 +1,4 @@
+import '../../../../core/theme/app_theme.dart';
 import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,8 +19,8 @@ class SettlementConfirmScreen extends ConsumerWidget {
     final settlementService = ref.watch(settlementServiceProvider);
     final currentUserId = ref.watch(currentUserIdProvider);
     final currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: '₫');
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+    final isDark = context.isDarkMode;
+    final primaryColor = context.colors.primary;
 
     return Scaffold(
       backgroundColor: primaryColor,
@@ -55,7 +56,7 @@ class SettlementConfirmScreen extends ConsumerWidget {
                   const SizedBox(width: 14),
                   Text(
                     isVi ? 'Xác Nhận Thanh Toán' : 'Confirm Settlement',
-                    style: TextStyle(
+                    style: context.textTheme.titleLarge?.copyWith(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -71,7 +72,7 @@ class SettlementConfirmScreen extends ConsumerWidget {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FA),
+                  color: isDark ? AppColors.bgDark : AppColors.bgLight,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: FutureBuilder<SettlementModel>(
@@ -102,18 +103,12 @@ class SettlementConfirmScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                              borderRadius: BorderRadius.circular(24),
+                              color: context.cardBg,
+                              borderRadius: BorderRadius.circular(18),
                               border: Border.all(
-                                color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                                color: context.borderColor,
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
+                              boxShadow: AppShadows.card(isDark),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,28 +126,30 @@ class SettlementConfirmScreen extends ConsumerWidget {
                                     const SizedBox(width: 12),
                                     Text(
                                       isVi ? 'Thông tin thanh toán' : 'Settlement Information',
-                                      style: TextStyle(
+                                      style: context.textTheme.titleMedium?.copyWith(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
-                                        color: isDark ? Colors.white : Colors.black87,
+                                        color: context.colors.onSurface,
                                       ),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 20),
-                                _buildInfoRow(isVi ? 'Người trả:' : 'Payer:', settlement.payerId, isDark),
-                                _buildInfoRow(isVi ? 'Người nhận:' : 'Recipient:', settlement.payeeId, isDark),
-                                _buildInfoRow(isVi ? 'Số tiền:' : 'Amount:', currencyFormat.format(settlement.amount), isDark, isHighlight: true),
-                                _buildInfoRow(isVi ? 'Trạng thái:' : 'Status:', _getStatusText(settlement.status), isDark),
+                                _buildInfoRow(context, isVi ? 'Người trả:' : 'Payer:', settlement.payerId, isDark),
+                                _buildInfoRow(context, isVi ? 'Người nhận:' : 'Recipient:', settlement.payeeId, isDark),
+                                _buildInfoRow(context, isVi ? 'Số tiền:' : 'Amount:', currencyFormat.format(settlement.amount), isDark, isHighlight: true),
+                                _buildInfoRow(context, isVi ? 'Trạng thái:' : 'Status:', _getStatusText(settlement.status), isDark),
                                 if (settlement.notes != null)
-                                  _buildInfoRow(isVi ? 'Ghi chú:' : 'Notes:', settlement.notes!, isDark),
+                                  _buildInfoRow(context, isVi ? 'Ghi chú:' : 'Notes:', settlement.notes!, isDark),
                                 _buildInfoRow(
+                                  context,
                                   isVi ? 'Ngày tạo:' : 'Created date:',
                                   DateFormat('dd/MM/yyyy HH:mm').format(settlement.createdAt),
                                   isDark,
                                 ),
                                 if (settlement.confirmedAt != null)
                                   _buildInfoRow(
+                                    context,
                                     isVi ? 'Ngày xác nhận:' : 'Confirmed date:',
                                     DateFormat('dd/MM/yyyy HH:mm').format(settlement.confirmedAt!),
                                     isDark,
@@ -171,20 +168,14 @@ class SettlementConfirmScreen extends ConsumerWidget {
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 decoration: BoxDecoration(
-                                  color: Colors.green,
+                                  color: context.income,
                                   borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.green.withValues(alpha: 0.35),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
+                                  boxShadow: AppShadows.glow(context.income, alpha: 0.35),
                                 ),
                                 child: Center(
                                   child: Text(
                                     isVi ? 'Xác Nhận Đã Nhận Tiền' : 'Confirm Received Money',
-                                    style: TextStyle(
+                                    style: context.textTheme.titleMedium?.copyWith(
                                       color: Colors.white,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -203,15 +194,15 @@ class SettlementConfirmScreen extends ConsumerWidget {
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.withValues(alpha: 0.1),
+                                  color: context.expense.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: Colors.red.withValues(alpha: 0.4), width: 1.5),
+                                  border: Border.all(color: context.expense.withValues(alpha: 0.4), width: 1.5),
                                 ),
                                 child: Center(
                                   child: Text(
                                     isVi ? 'Từ Chối' : 'Decline',
-                                    style: TextStyle(
-                                      color: Colors.red,
+                                    style: context.textTheme.titleMedium?.copyWith(
+                                      color: context.expense,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -233,7 +224,7 @@ class SettlementConfirmScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value, bool isDark, {bool isHighlight = false}) {
+  Widget _buildInfoRow(BuildContext context, String label, String value, bool isDark, {bool isHighlight = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -243,9 +234,9 @@ class SettlementConfirmScreen extends ConsumerWidget {
             width: 130,
             child: Text(
               label,
-              style: TextStyle(
+              style: context.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white60 : Colors.black54,
+                color: context.textSecondaryColor,
                 fontSize: 14,
               ),
             ),
@@ -253,12 +244,12 @@ class SettlementConfirmScreen extends ConsumerWidget {
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
+              style: context.textTheme.bodyMedium?.copyWith(
                 fontWeight: isHighlight ? FontWeight.bold : FontWeight.w500,
                 fontSize: isHighlight ? 18 : 14,
                 color: isHighlight
-                    ? const Color(0xFF438883)
-                    : (isDark ? Colors.white : Colors.black87),
+                    ? context.colors.primary
+                    : context.colors.onSurface,
               ),
             ),
           ),

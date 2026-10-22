@@ -1,6 +1,7 @@
-import '../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_theme.dart';
+import '../../services/language_service.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/mono_toast.dart';
 import '../../utils/page_transitions.dart';
@@ -48,10 +49,10 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -71,12 +72,12 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                       height: 42,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.15),
-                        border: Border.all(color: Colors.white24, width: 1),
+                        color: context.colors.onPrimary.withValues(alpha: 0.15),
+                        border: Border.all(color: context.colors.onPrimary.withValues(alpha: 0.24), width: 1),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white,
+                        color: context.colors.onPrimary,
                         size: 18,
                       ),
                     ),
@@ -85,9 +86,8 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                     child: Text(
                       isVi ? 'Xác thực bảo mật' : 'Security Verification',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
+                      style: context.textTheme.titleMedium?.copyWith(
+                        color: context.colors.onPrimary,
                         fontWeight: FontWeight.bold,
                         letterSpacing: -0.3,
                       ),
@@ -105,8 +105,9 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
+                  color: context.colors.surface,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  boxShadow: AppShadows.modal(isDark),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(24),
@@ -115,18 +116,16 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                     children: [
                       Text(
                         isVi ? 'Nhập mật khẩu hiện tại' : 'Enter Current Password',
-                        style: TextStyle(
-                          fontSize: 22,
+                        style: context.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                          color: context.colors.primary,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         isVi ? 'Vui lòng nhập mật khẩu bạn đang sử dụng để xác minh danh tính trước khi đổi mật khẩu mới.' : 'Please enter your current password to verify your identity before changing your password.',
-                        style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
-                          fontSize: 14,
+                        style: context.textTheme.bodyMedium?.copyWith(
+                          color: context.colors.onSurfaceVariant,
                           height: 1.5,
                         ),
                       ),
@@ -137,51 +136,51 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                         padding: const EdgeInsets.only(bottom: 8, left: 4),
                         child: Text(
                           isVi ? 'Mật khẩu hiện tại' : 'Current Password',
-                          style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                          style: context.textTheme.labelMedium?.copyWith(
+                            color: context.colors.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
-                        style: TextStyle(
+                        style: context.textTheme.bodyMedium?.copyWith(
                           fontSize: 15,
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                          fontWeight: FontWeight.w600,
+                          color: context.colors.onSurface,
                         ),
                         decoration: InputDecoration(
                           hintText: isVi ? 'Nhập mật khẩu hiện tại' : 'Enter Current Password',
-                          hintStyle: TextStyle(
-                            color: isDark ? Colors.white38 : Colors.black.withValues(alpha: 0.3),
-                            fontSize: 14,
+                          hintStyle: context.textTheme.bodyMedium?.copyWith(
+                            color: context.colors.onSurfaceVariant.withValues(alpha: 0.7),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 16,
                           ),
                           filled: true,
-                          fillColor: isDark ? const Color(0xFF2E2E2E) : Colors.white,
+                          fillColor: context.inputBgColor,
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide(
-                              color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFDDDDDD),
+                              color: context.borderColor,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF438883),
-                              width: 1.5,
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(
+                              color: context.colors.primary,
+                              width: 1.8,
                             ),
                           ),
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscurePassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                              color: isDark ? Colors.white54 : Colors.grey,
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.visibility_rounded,
+                              color: context.colors.onSurfaceVariant,
+                              size: 20,
                             ),
                             onPressed: () => setState(
                               () => _obscurePassword = !_obscurePassword,
@@ -204,13 +203,15 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF68AEA9), Color(0xFF3E8681)],
+                            gradient: LinearGradient(
+                              colors: _isLoading
+                                  ? [context.colors.surfaceContainerHighest, context.colors.surfaceContainerHighest]
+                                  : [AppColors.primaryTealLight, AppColors.primaryTeal],
                             ),
-                            borderRadius: BorderRadius.circular(40),
+                            borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF3E8681).withValues(alpha: 0.35),
+                                color: context.colors.primary.withValues(alpha: 0.35),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -218,19 +219,18 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                           ),
                           child: Center(
                             child: _isLoading
-                                ? const SizedBox(
+                                ? SizedBox(
                                     width: 24,
                                     height: 24,
                                     child: CircularProgressIndicator(
-                                      color: Colors.white,
+                                      color: context.colors.onPrimary,
                                       strokeWidth: 2.5,
                                     ),
                                   )
                                 : Text(
                                     isVi ? 'Tiếp tục' : 'Continue',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
+                                    style: context.textTheme.titleMedium?.copyWith(
+                                      color: context.colors.onPrimary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),

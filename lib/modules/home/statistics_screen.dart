@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../core/theme/app_theme.dart';
 import '../../utils/page_transitions.dart';
 import '../../models/transaction_model.dart';
 import '../../utils/currency_format_utils.dart';
@@ -226,7 +227,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final topPadding = MediaQuery.of(context).padding.top;
     final bottomInset = MediaQuery.of(context).padding.bottom;
     final headerHeight = topPadding + 58.0;
@@ -247,13 +248,13 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                   gradient: LinearGradient(
                     colors: isDark
                         ? [
-                            const Color(0xFF0F2625),
-                            const Color(0xFF0F2625),
+                            AppColors.primaryTealDark,
+                            AppColors.primaryTealDark,
                             Theme.of(context).scaffoldBackgroundColor,
                           ]
                         : [
-                            const Color(0xFF438883),
-                            const Color(0xFF438883),
+                            AppColors.primaryTeal,
+                            AppColors.primaryTeal,
                             Theme.of(context).scaffoldBackgroundColor,
                           ],
                     stops: const [0.0, 0.60, 1.0],
@@ -270,7 +271,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
             stream: _transactionStream,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
+                return Center(child: CircularProgressIndicator(color: context.colors.primary));
               }
 
               final allTx = snapshot.data ?? [];
@@ -324,27 +325,20 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
                     const SizedBox(height: 12),
 
-                    // 2.3 KHỐI CANVAS CHỨA BIỂU ĐỒ (Bọc Card đồng bộ & RepaintBoundary tối ưu GPU)
+                    // 2.3 KHỐI CANVAS CHỨA BIỂU ĐỒ (Bọc Card đồng bộ 18px & RepaintBoundary tối ưu GPU)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: RepaintBoundary(
                         child: Container(
                           padding: const EdgeInsets.all(18),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                            borderRadius: BorderRadius.circular(22),
+                            color: context.cardBg,
+                            borderRadius: AppRadius.card,
                             border: Border.all(
-                              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                              color: context.borderColor,
                               width: 1.0,
                             ),
-                            boxShadow: [
-                              if (!isDark)
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.035),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 6),
-                                ),
-                            ],
+                            boxShadow: AppShadows.card(isDark),
                           ),
                           child: _selectedChartType == 0
                               ? _buildWaveChart(chartPoints, total)
@@ -402,7 +396,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
             ),
             decoration: BoxDecoration(
               color: isScrolled
-                  ? (isDark ? const Color(0xF50F2625) : const Color(0xF5438883))
+                  ? (isDark ? AppColors.primaryTealDark.withValues(alpha: 0.95) : AppColors.primaryTeal.withValues(alpha: 0.95))
                   : Colors.transparent,
               border: Border(
                 bottom: BorderSide(
@@ -441,7 +435,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                     const SizedBox(width: 10),
                     Text(
                       context.tr('stats_title'),
-                      style: const TextStyle(
+                      style: context.textTheme.titleLarge?.copyWith(
                         color: Colors.white,
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
@@ -499,17 +493,17 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: AppRadius.card,
           gradient: LinearGradient(
             colors: isDark
                 ? [
                     const Color(0xFF132F2C),
-                    const Color(0xFF0F2624),
+                    AppColors.primaryTealDark,
                     const Color(0xFF0A1B19),
                   ]
                 : [
                     const Color(0xFF2A6C67),
-                    const Color(0xFF438883),
+                    AppColors.primaryTeal,
                     const Color(0xFF35706B),
                   ],
             begin: Alignment.topLeft,
@@ -521,7 +515,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           ),
           boxShadow: [
             BoxShadow(
-              color: (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
+              color: (isDark ? AppColors.primaryTealVibrant : AppColors.primaryTeal)
                   .withValues(alpha: isDark ? 0.22 : 0.28),
               blurRadius: 22,
               offset: const Offset(0, 8),
@@ -529,7 +523,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(23),
+          borderRadius: AppRadius.card,
           child: Stack(
             children: [
               // Họa tiết watermark chìm góc phải
@@ -691,14 +685,14 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                     width: 7,
                                     height: 7,
                                     decoration: BoxDecoration(
-                                      color: _isExpense ? const Color(0xFFF87171) : const Color(0xFF2DD4BF),
+                                      color: _isExpense ? AppColors.expenseRose : AppColors.incomeEmerald,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
                                     _isExpense ? context.tr('expense') : context.tr('income'),
-                                    style: TextStyle(
+                                    style: context.textTheme.labelMedium?.copyWith(
                                       color: Colors.white.withValues(alpha: 0.8),
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
@@ -707,7 +701,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                   ),
                                   Text(
                                     ' (${_getPeriodSummaryLabel()})',
-                                    style: TextStyle(
+                                    style: context.textTheme.bodySmall?.copyWith(
                                       color: Colors.white.withValues(alpha: 0.6),
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
@@ -827,11 +821,11 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           padding: const EdgeInsets.symmetric(vertical: 6.5),
           decoration: BoxDecoration(
             color: isSelected
-                ? (isDark ? const Color(0xFF1E293B) : Colors.white)
+                ? (isDark ? AppColors.surfaceElevatedDark : Colors.white)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: isSelected && isDark
-                ? Border.all(color: const Color(0xFF334155), width: 1)
+                ? Border.all(color: AppColors.borderDark, width: 1)
                 : null,
             boxShadow: isSelected
                 ? [
@@ -848,9 +842,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               fit: BoxFit.scaleDown,
               child: Text(
                 label,
-                style: TextStyle(
+                style: context.textTheme.labelSmall?.copyWith(
                   color: isSelected
-                      ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF2A6C67))
+                      ? (isDark ? AppColors.primaryTealVibrant : AppColors.primaryTealDark)
                       : Colors.white.withValues(alpha: 0.8),
                   fontSize: 12.5,
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
@@ -869,12 +863,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     required double amount,
     required bool isDark,
   }) {
-    final activeTextColor = isExpensePill
-        ? (isDark ? const Color(0xFFF87171) : const Color(0xFFE63946))
-        : (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0D9488));
-    final activeIconColor = isExpensePill
-        ? (isDark ? const Color(0xFFF87171) : const Color(0xFFE63946))
-        : (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0D9488));
+    final activeTextColor = isExpensePill ? AppColors.expenseRose : AppColors.incomeEmerald;
+    final activeIconColor = isExpensePill ? AppColors.expenseRose : AppColors.incomeEmerald;
 
     return Expanded(
       child: AnimatedScaleButton(
@@ -892,11 +882,11 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
           decoration: BoxDecoration(
             color: isSelected
-                ? (isDark ? const Color(0xFF1E293B) : Colors.white)
+                ? (isDark ? AppColors.surfaceElevatedDark : Colors.white)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(13),
             border: isSelected && isDark
-                ? Border.all(color: const Color(0xFF334155), width: 1)
+                ? Border.all(color: AppColors.borderDark, width: 1)
                 : null,
             boxShadow: isSelected
                 ? [
@@ -915,13 +905,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 padding: const EdgeInsets.all(3.5),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? (isDark
-                          ? (isExpensePill
-                              ? const Color(0xFFEF4444).withValues(alpha: 0.2)
-                              : const Color(0xFF14B8A6).withValues(alpha: 0.2))
-                          : (isExpensePill
-                              ? const Color(0xFFFEF2F2)
-                              : const Color(0xFFE8F5EE)))
+                      ? (isExpensePill
+                          ? AppColors.expenseRose.withValues(alpha: 0.2)
+                          : AppColors.incomeEmerald.withValues(alpha: 0.2))
                       : Colors.white.withValues(alpha: 0.18),
                   shape: BoxShape.circle,
                 ),
@@ -942,7 +928,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                       alignment: Alignment.centerLeft,
                       child: Text(
                         isExpensePill ? context.tr('expense') : context.tr('income'),
-                        style: TextStyle(
+                        style: context.textTheme.labelSmall?.copyWith(
                           color: isSelected ? activeTextColor : Colors.white.withValues(alpha: 0.8),
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
@@ -955,7 +941,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                       alignment: Alignment.centerLeft,
                       child: Text(
                         CurrencyUtils.formatCurrency(amount),
-                        style: TextStyle(
+                        style: context.textTheme.labelMedium?.copyWith(
                           color: isSelected ? activeTextColor : Colors.white,
                           fontSize: 12.5,
                           fontWeight: FontWeight.w800,
@@ -1056,20 +1042,13 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                     margin: const EdgeInsets.only(bottom: 10),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      color: context.cardBg,
+                      borderRadius: AppRadius.card,
                       border: Border.all(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        color: context.borderColor,
                         width: 1.0,
                       ),
-                      boxShadow: [
-                        if (!isDark)
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: 15,
-                            offset: const Offset(0, 5),
-                          ),
-                      ],
+                      boxShadow: AppShadows.card(isDark),
                     ),
                     child: Column(
                       children: [
@@ -1090,12 +1069,12 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                 children: [
                                   Text(
                                     context.trCat(group.category),
-                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                                    style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800, fontSize: 15, color: context.textPrimaryColor),
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
                                     '${group.transactionCount} ${context.tr('tx_history').toLowerCase()}',
-                                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                    style: context.textTheme.bodySmall?.copyWith(color: context.textMutedColor, fontSize: 12),
                                   ),
                                 ],
                               ),
@@ -1109,15 +1088,15 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                   children: [
                                     Text(
                                       CurrencyUtils.formatCurrency(group.totalAmount),
-                                      style: TextStyle(
-                                        color: isDark ? Colors.white : const Color(0xFF333333),
+                                      style: context.textTheme.titleSmall?.copyWith(
+                                        color: context.textPrimaryColor,
                                         fontWeight: FontWeight.w800,
                                         fontSize: 15,
                                       ),
                                     ),
                                     Text(
                                       '${(percent * 100).toStringAsFixed(1)}%',
-                                      style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
+                                      style: context.textTheme.labelSmall?.copyWith(color: color, fontSize: 11, fontWeight: FontWeight.bold),
                                     ),
                                   ],
                                 ),
@@ -1125,7 +1104,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                 Icon(
                                   Icons.chevron_right_rounded,
                                   size: 20,
-                                  color: isDark ? Colors.white38 : Colors.grey.shade400,
+                                  color: context.textMutedColor,
                                 ),
                               ],
                             ),
@@ -1139,7 +1118,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                               height: 6,
                               width: double.infinity,
                               decoration: BoxDecoration(
-                                color: isDark ? Colors.white10 : Colors.grey.shade100,
+                                color: isDark ? AppColors.borderDark : AppColors.inputBgLight,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
@@ -1257,10 +1236,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                             children: [
                               Text(
                                 context.trCat(initialGroup.category),
-                                style: TextStyle(
+                                style: context.textTheme.titleMedium?.copyWith(
                                   fontSize: 19,
                                   fontWeight: FontWeight.w800,
-                                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                  color: context.textPrimaryColor,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -1277,7 +1256,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                     ),
                                     child: Text(
                                       '${percent.toStringAsFixed(1)}%',
-                                      style: TextStyle(
+                                      style: context.textTheme.labelSmall?.copyWith(
                                         color: color,
                                         fontWeight: FontWeight.w700,
                                         fontSize: 11,
@@ -1286,8 +1265,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                   ),
                                   Text(
                                     '${currentCategoryTx.length} ${context.tr('tx_history').toLowerCase()}',
-                                    style: TextStyle(
-                                      color: isDark ? Colors.white60 : Colors.black54,
+                                    style: context.textTheme.bodySmall?.copyWith(
+                                      color: context.textMutedColor,
                                       fontSize: 11.5,
                                     ),
                                   ),
@@ -1307,10 +1286,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                 alignment: Alignment.centerRight,
                                 child: Text(
                                   CurrencyUtils.formatAmountWithSign(currentCategoryTotal, !_isExpense),
-                                  style: TextStyle(
+                                  style: context.textTheme.titleMedium?.copyWith(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w900,
-                                    color: _isExpense ? const Color(0xFFE63946) : const Color(0xFF24A869),
+                                    color: _isExpense ? AppColors.expenseRose : AppColors.incomeEmerald,
                                   ),
                                 ),
                               ),
@@ -1322,7 +1301,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Divider(height: 1),
+                  Divider(height: 1, color: context.borderColor),
 
                   // Subheader
                   Padding(
@@ -1332,10 +1311,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                       children: [
                         Text(
                           context.tr('tx_history'),
-                          style: TextStyle(
+                          style: context.textTheme.titleSmall?.copyWith(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white70 : Colors.black87,
+                            color: context.textPrimaryColor,
                           ),
                         ),
                       ],
@@ -1349,7 +1328,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                       child: Center(
                         child: Text(
                           context.tr('no_tx_category'),
-                          style: TextStyle(color: isDark ? Colors.white54 : Colors.grey.shade500, fontSize: 13),
+                          style: context.textTheme.bodyMedium?.copyWith(color: context.textMutedColor, fontSize: 13),
                         ),
                       ),
                     )
@@ -1417,22 +1396,22 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
             width: 58,
             height: 58,
             decoration: BoxDecoration(
-              color: (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
+              color: (isDark ? AppColors.primaryTealVibrant : AppColors.primaryTeal)
                   .withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.receipt_long_rounded,
               size: 28,
-              color: (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
+              color: (isDark ? AppColors.primaryTealVibrant : AppColors.primaryTeal)
                   .withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 12),
           Text(
             context.tr('no_data'),
-            style: TextStyle(
-              color: isDark ? Colors.white60 : const Color(0xFF64748B),
+            style: context.textTheme.bodyMedium?.copyWith(
+              color: context.textMutedColor,
               fontSize: 13.5,
               fontWeight: FontWeight.w600,
             ),
@@ -1456,8 +1435,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
   // MODAL CHỌN THÁNG & NĂM
   void _showMonthPickerSheet(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+    final isDark = context.isDark;
+    final primaryColor = context.colors.primary;
     final now = DateTime.now();
     int tempYear = _selectedYear;
 
@@ -1495,17 +1474,17 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                   children: [
                     Text(
                       context.tr('select_month_stat'),
-                      style: TextStyle(
+                      style: context.textTheme.titleMedium?.copyWith(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                        color: context.textPrimaryColor,
                       ),
                     ),
                     // Bộ chọn năm: [<] Năm YYYY [>]
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF3F4F6),
+                        color: isDark ? AppColors.surfaceElevatedDark : AppColors.inputBgLight,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -1520,7 +1499,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                               size: 20,
                               color: canPrevYear
                                   ? (isDark ? Colors.white : Colors.black87)
-                                  : Colors.grey.shade400,
+                                  : context.textMutedColor,
                             ),
                             onPressed: canPrevYear
                                 ? () => setModalState(() => tempYear -= 1)
@@ -1528,7 +1507,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                           ),
                           Text(
                             '$tempYear',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                           IconButton(
                             visualDensity: VisualDensity.compact,
@@ -1539,7 +1518,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                               size: 20,
                               color: canNextYear
                                   ? (isDark ? Colors.white : Colors.black87)
-                                  : Colors.grey.shade400,
+                                  : context.textMutedColor,
                             ),
                             onPressed: canNextYear
                                 ? () => setModalState(() => tempYear += 1)
@@ -1588,16 +1567,16 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                               : isDisabled
                                   ? (isDark
                                       ? Colors.white.withValues(alpha: 0.03)
-                                      : const Color(0xFFF9FAFB))
+                                      : AppColors.inputBgLight)
                                   : (isDark
-                                      ? const Color(0xFF2E2E2E)
-                                      : const Color(0xFFF3F4F6)),
+                                      ? AppColors.surfaceElevatedDark
+                                      : AppColors.inputBgLight),
                           borderRadius: BorderRadius.circular(14),
                           border: isDisabled
                               ? Border.all(
                                   color: isDark
                                       ? Colors.white.withValues(alpha: 0.05)
-                                      : Colors.grey.shade200)
+                                      : context.borderColor)
                               : null,
                         ),
                         alignment: Alignment.center,
@@ -1606,7 +1585,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                           children: [
                             Text(
                               '${context.tr('month')} $month',
-                              style: TextStyle(
+                              style: context.textTheme.labelMedium?.copyWith(
                                 fontSize: 13,
                                 fontWeight: isSelected
                                     ? FontWeight.bold
@@ -1616,17 +1595,17 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                     : isDisabled
                                         ? (isDark
                                             ? Colors.white24
-                                            : Colors.grey.shade400)
-                                        : (isDark ? Colors.white : Colors.black87),
+                                            : context.textMutedColor)
+                                        : context.textPrimaryColor,
                               ),
                             ),
                             if (isDisabled) ...[
                               const SizedBox(height: 2),
                               Text(
                                 context.tr('not_yet'),
-                                style: TextStyle(
+                                style: context.textTheme.labelSmall?.copyWith(
                                   fontSize: 9,
-                                  color: isDark ? Colors.white24 : Colors.grey.shade400,
+                                  color: isDark ? Colors.white24 : context.textMutedColor,
                                 ),
                               ),
                             ],
@@ -1647,8 +1626,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
   // MODAL CHỌN NĂM (CHỈ CHO CHỌN TỪ NĂM TẠO TÀI KHOẢN ĐẾN HIỆN TẠI)
   void _showYearPickerSheet(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+    final isDark = context.isDark;
+    final primaryColor = context.colors.primary;
     final now = DateTime.now();
 
     const minYear = 2020;
@@ -1687,10 +1666,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               const SizedBox(height: 20),
               Text(
                 context.tr('select_year_stat'),
-                style: TextStyle(
+                style: context.textTheme.titleMedium?.copyWith(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                  color: context.textPrimaryColor,
                 ),
               ),
               const SizedBox(height: 16),
@@ -1716,7 +1695,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                         decoration: BoxDecoration(
                           color: isSelected
                               ? primaryColor
-                              : (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6)),
+                              : (isDark ? AppColors.surfaceElevatedDark : AppColors.inputBgLight),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Row(
@@ -1724,10 +1703,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                           children: [
                             Text(
                               '${context.tr('year')} $year',
-                              style: TextStyle(
+                              style: context.textTheme.labelLarge?.copyWith(
                                 color: isSelected
                                     ? Colors.white
-                                    : (isDark ? Colors.white : Colors.black87),
+                                    : context.textPrimaryColor,
                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                                 fontSize: 15,
                               ),
@@ -1751,8 +1730,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
   // MODAL CHỌN TUẦN
   void _showWeekPickerSheet(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+    final isDark = context.isDark;
+    final primaryColor = context.colors.primary;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
@@ -1801,10 +1780,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               const SizedBox(height: 20),
               Text(
                 context.tr('select_week_stat'),
-                style: TextStyle(
+                style: context.textTheme.titleMedium?.copyWith(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                  color: context.textPrimaryColor,
                 ),
               ),
               const SizedBox(height: 16),
@@ -1830,7 +1809,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                         decoration: BoxDecoration(
                           color: isSelected
                               ? primaryColor
-                              : (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6)),
+                              : (isDark ? AppColors.surfaceElevatedDark : AppColors.inputBgLight),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Row(
@@ -1838,10 +1817,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                           children: [
                             Text(
                               item.label,
-                              style: TextStyle(
+                              style: context.textTheme.labelLarge?.copyWith(
                                 color: isSelected
                                     ? Colors.white
-                                    : (isDark ? Colors.white : Colors.black87),
+                                    : context.textPrimaryColor,
                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                                 fontSize: 14,
                               ),
@@ -1870,10 +1849,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF182234) : const Color(0xFFF1F5F9),
+        color: isDark ? AppColors.inputBgDark : AppColors.inputBgLight,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          color: context.borderColor,
           width: 1.0,
         ),
       ),
@@ -1889,7 +1868,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
   Widget _buildChartTypeTab(int index, IconData icon, String label, bool isDark) {
     final isSelected = _selectedChartType == index;
-    final primaryColor = Theme.of(context).primaryColor;
+    final primaryColor = context.colors.primary;
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -1901,11 +1880,11 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           padding: const EdgeInsets.symmetric(vertical: 8.5, horizontal: 4),
           decoration: BoxDecoration(
             color: isSelected
-                ? (isDark ? const Color(0xFF1E293B) : Colors.white)
+                ? (isDark ? AppColors.surfaceElevatedDark : Colors.white)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: isSelected && isDark
-                ? Border.all(color: const Color(0xFF334155), width: 1)
+                ? Border.all(color: AppColors.borderDark, width: 1)
                 : null,
             boxShadow: isSelected
                 ? [
@@ -1924,8 +1903,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 icon,
                 size: 15,
                 color: isSelected
-                    ? (isDark ? const Color(0xFF2DD4BF) : primaryColor)
-                    : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                    ? (isDark ? AppColors.primaryTealVibrant : primaryColor)
+                    : context.textMutedColor,
               ),
               const SizedBox(width: 5),
               Flexible(
@@ -1933,12 +1912,12 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                   fit: BoxFit.scaleDown,
                   child: Text(
                     label,
-                    style: TextStyle(
+                    style: context.textTheme.labelSmall?.copyWith(
                       fontSize: 12,
                       fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                       color: isSelected
-                          ? (isDark ? const Color(0xFFF8FAFC) : primaryColor)
-                          : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
+                          ? (isDark ? AppColors.textPrimaryDark : primaryColor)
+                          : context.textMutedColor,
                     ),
                     maxLines: 1,
                   ),
@@ -1957,18 +1936,14 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
         height: 240,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.white.withValues(alpha: 0.05)
-              : const Color(0xFFF9FAFB),
+          color: context.isDark ? AppColors.surfaceElevatedDark : AppColors.inputBgLight,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
-          child: Text(context.tr('no_distribution_data'), style: const TextStyle(color: Color(0xFF999999))),
+          child: Text(context.tr('no_distribution_data'), style: context.textTheme.bodyMedium?.copyWith(color: context.textMutedColor)),
         ),
       );
     }
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final sections = groups.asMap().entries.map((entry) {
       final idx = entry.key;
@@ -2032,9 +2007,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 const SizedBox(width: 4),
                 Text(
                   '${context.trCat(g.category)} ($percent%)',
-                  style: TextStyle(
+                  style: context.textTheme.labelSmall?.copyWith(
                     fontSize: 11.5,
-                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B),
+                    color: context.textPrimaryColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -2052,18 +2027,16 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
         height: 240,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.white.withValues(alpha: 0.05)
-              : const Color(0xFFF9FAFB),
+          color: context.isDark ? AppColors.surfaceElevatedDark : AppColors.inputBgLight,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
-          child: Text(context.tr('no_compare_data'), style: const TextStyle(color: Color(0xFF999999))),
+          child: Text(context.tr('no_compare_data'), style: context.textTheme.bodyMedium?.copyWith(color: context.textMutedColor)),
         ),
       );
     }
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     List<({String label, double income, double expense})> barData = [];
 
     if (_selectedMainTab == 0) {
@@ -2120,13 +2093,13 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
         barRods: [
           BarChartRodData(
             toY: item.income,
-            color: const Color(0xFF10B981),
+            color: AppColors.incomeEmerald,
             width: 8,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
           ),
           BarChartRodData(
             toY: item.expense,
-            color: const Color(0xFFEF4444),
+            color: AppColors.expenseRose,
             width: 8,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
           ),
@@ -2139,13 +2112,13 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(width: 9, height: 9, decoration: const BoxDecoration(color: Color(0xFF10B981), shape: BoxShape.circle)),
+            Container(width: 9, height: 9, decoration: BoxDecoration(color: AppColors.incomeEmerald, shape: BoxShape.circle)),
             const SizedBox(width: 4),
-            Text(context.tr('income'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+            Text(context.tr('income'), style: context.textTheme.labelSmall?.copyWith(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.incomeEmerald)),
             const SizedBox(width: 16),
-            Container(width: 9, height: 9, decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle)),
+            Container(width: 9, height: 9, decoration: BoxDecoration(color: AppColors.expenseRose, shape: BoxShape.circle)),
             const SizedBox(width: 4),
-            Text(context.tr('expense'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFEF4444))),
+            Text(context.tr('expense'), style: context.textTheme.labelSmall?.copyWith(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.expenseRose)),
           ],
         ),
         const SizedBox(height: 12),
@@ -2157,13 +2130,21 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               maxY: maxY,
               barTouchData: BarTouchData(
                 touchTooltipData: BarTouchTooltipData(
-                  getTooltipColor: (_) => isDark ? const Color(0xFF1E293B) : Colors.white,
+                  getTooltipColor: (_) => isDark ? AppColors.surfaceElevatedDark : Colors.white,
+                  tooltipBorder: BorderSide(
+                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    width: 1,
+                  ),
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
                     final isInc = rodIndex == 0;
                     return BarTooltipItem(
                       '${isInc ? context.tr('flow_income') : context.tr('flow_expense')}: ${CurrencyUtils.formatCurrency(rod.toY)}',
-                      TextStyle(
-                        color: isInc ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      context.textTheme.labelMedium?.copyWith(
+                        color: isInc ? AppColors.incomeEmerald : AppColors.expenseRose,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ) ?? TextStyle(
+                        color: isInc ? AppColors.incomeEmerald : AppColors.expenseRose,
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                       ),
@@ -2186,10 +2167,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                         padding: const EdgeInsets.only(top: 6),
                         child: Text(
                           barData[i].label,
-                          style: TextStyle(
+                          style: context.textTheme.labelSmall?.copyWith(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                           ),
                         ),
                       );
@@ -2209,24 +2190,24 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
   Widget _buildFinancialHealthCard(double income, double expense, double savingsRate, bool isDark) {
     String healthStatus = context.tr('health_fair');
-    Color healthColor = const Color(0xFF10B981);
+    Color healthColor = AppColors.incomeEmerald;
     IconData healthIcon = Icons.sentiment_satisfied_alt;
 
     if (savingsRate >= 30) {
       healthStatus = context.tr('health_excellent');
-      healthColor = const Color(0xFF10B981);
+      healthColor = AppColors.incomeEmerald;
       healthIcon = Icons.sentiment_very_satisfied;
     } else if (savingsRate > 0) {
       healthStatus = context.tr('health_good');
-      healthColor = const Color(0xFF0EA5E9);
+      healthColor = AppColors.infoAzure;
       healthIcon = Icons.sentiment_satisfied;
     } else if (savingsRate == 0) {
       healthStatus = context.tr('health_fair');
-      healthColor = Colors.orange;
+      healthColor = AppColors.warningAmber;
       healthIcon = Icons.sentiment_neutral;
     } else {
       healthStatus = context.tr('health_warning');
-      healthColor = const Color(0xFFEF4444);
+      healthColor = AppColors.expenseRose;
       healthIcon = Icons.sentiment_dissatisfied;
     }
 
@@ -2234,20 +2215,13 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: context.cardBg,
+        borderRadius: AppRadius.card,
         border: Border.all(
           color: healthColor.withValues(alpha: isDark ? 0.35 : 0.25),
           width: 1.2,
         ),
-        boxShadow: [
-          if (!isDark)
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.035),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-        ],
+        boxShadow: AppShadows.card(isDark),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2259,7 +2233,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 children: [
                   Icon(healthIcon, color: healthColor, size: 20),
                   const SizedBox(width: 8),
-                  Text(context.tr('financial_health'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text(context.tr('financial_health'), style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, fontSize: 14, color: context.textPrimaryColor)),
                 ],
               ),
               Container(
@@ -2270,7 +2244,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 ),
                 child: Text(
                   healthStatus,
-                  style: TextStyle(color: healthColor, fontWeight: FontWeight.bold, fontSize: 11.5),
+                  style: context.textTheme.labelSmall?.copyWith(color: healthColor, fontWeight: FontWeight.bold, fontSize: 11.5),
                 ),
               ),
             ],
@@ -2284,20 +2258,20 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                   children: [
                     Text(
                       context.tr('savings_rate'),
-                      style: TextStyle(
+                      style: context.textTheme.bodySmall?.copyWith(
                         fontSize: 11.5,
-                        color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600,
+                        color: context.textMutedColor,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       '${savingsRate >= 0 ? "+" : ""}${savingsRate.toStringAsFixed(1)}%',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: healthColor),
+                      style: context.textTheme.titleMedium?.copyWith(fontSize: 17, fontWeight: FontWeight.w800, color: healthColor),
                     ),
                   ],
                 ),
               ),
-              Container(width: 1, height: 28, color: isDark ? const Color(0xFF334155) : Colors.grey.shade200),
+              Container(width: 1, height: 28, color: context.borderColor),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -2305,18 +2279,18 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                   children: [
                     Text(
                       context.tr('net_income_gap'),
-                      style: TextStyle(
+                      style: context.textTheme.bodySmall?.copyWith(
                         fontSize: 11.5,
-                        color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600,
+                        color: context.textMutedColor,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       CurrencyUtils.formatCurrency(income - expense),
-                      style: TextStyle(
+                      style: context.textTheme.titleSmall?.copyWith(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: (income - expense) >= 0 ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                        color: (income - expense) >= 0 ? AppColors.incomeEmerald : AppColors.expenseRose,
                       ),
                     ),
                   ],
@@ -2330,22 +2304,20 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
   }
 
   Widget _buildWaveChart(List<_ChartPoint> data, double total) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final chartColor = _isExpense ? const Color(0xFFE63946) : const Color(0xFF438883);
+    final isDark = context.isDark;
+    final chartColor = _isExpense ? AppColors.expenseRose : (isDark ? AppColors.primaryTealVibrant : AppColors.primaryTeal);
     if (data.isEmpty || total == 0) {
       return Container(
         height: 240,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xFF1E293B)
-              : const Color(0xFFF9FAFB),
+          color: isDark ? AppColors.surfaceElevatedDark : AppColors.inputBgLight,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
           child: Text(
             context.tr('no_transactions_period'),
-            style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF999999)),
+            style: context.textTheme.bodyMedium?.copyWith(color: context.textMutedColor),
           ),
         ),
       );
@@ -2378,8 +2350,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                     padding: const EdgeInsets.only(top: 10),
                     child: Text(
                       data[idx].label,
-                      style: TextStyle(
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      style: context.textTheme.labelSmall?.copyWith(
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                       ),
@@ -2391,12 +2363,16 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           ),
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) =>
-                  Theme.of(context).brightness == Brightness.dark ? const Color(0xFF1E293B) : Colors.white,
+              getTooltipColor: (_) => isDark ? AppColors.surfaceElevatedDark : Colors.white,
+              tooltipBorder: BorderSide(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                width: 1,
+              ),
               getTooltipItems: (spots) => spots
                   .map((s) => LineTooltipItem(
                         CurrencyUtils.formatCurrency(s.y),
-                        TextStyle(color: chartColor, fontWeight: FontWeight.bold),
+                        context.textTheme.labelMedium?.copyWith(color: chartColor, fontWeight: FontWeight.bold) ??
+                            TextStyle(color: chartColor, fontWeight: FontWeight.bold),
                       ))
                   .toList(),
             ),

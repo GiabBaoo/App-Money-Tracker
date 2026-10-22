@@ -6,6 +6,7 @@ import '../../services/gemini_ai_service.dart';
 import '../../services/language_service.dart';
 import '../../widgets/top_toast.dart';
 import '../../widgets/animated_scale_button.dart';
+import '../../core/theme/app_theme.dart';
 
 class AiSettingsScreen extends StatefulWidget {
   const AiSettingsScreen({super.key});
@@ -33,9 +34,6 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
   int _selectedSilenceMs = 2000;
   String _selectedEngineMode = 'local_qwen';
   String _selectedLocalModel = 'qwen2.5:1.5b';
-
-  static const Color _brandTeal = Color(0xFF438883);
-  static const Color _brightMint = Color(0xFF5CB8B2);
 
   @override
   void initState() {
@@ -127,12 +125,12 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF162321) : Colors.white;
-    final cardBorder = isDark ? const Color(0xFF334B48) : const Color(0xFFE2E8F0);
-    final activeMint = isDark ? _brightMint : _brandTeal;
+    final cardBg = context.cardBg;
+    final cardBorder = context.borderColor;
+    final activeMint = context.brandColor;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -149,7 +147,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                   ),
                   Text(
                     isVi ? 'Cài đặt Trợ lý AI Mono' : 'Mono AI Assistant Settings',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -189,7 +187,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                           ),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: isDark ? const Color(0xFF2DD4BF).withValues(alpha: 0.4) : const Color(0xFF8AD1C7),
+                            color: activeMint.withValues(alpha: isDark ? 0.4 : 0.5),
                             width: 1.4,
                           ),
                           boxShadow: [
@@ -208,15 +206,15 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [_brandTeal, Color(0xFF1F4E4A)],
+                                    gradient: LinearGradient(
+                                      colors: [activeMint, activeMint.withValues(alpha: 0.8)],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: _brandTeal.withValues(alpha: 0.45),
+                                        color: activeMint.withValues(alpha: 0.45),
                                         blurRadius: 10,
                                         offset: const Offset(0, 3),
                                       ),
@@ -237,7 +235,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 16,
-                                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                                color: context.colors.onSurface,
                                               ),
                                             ),
                                           ),
@@ -281,7 +279,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                         isVi ? 'Trợ lý Mono chạy cục bộ trên thiết bị của bạn. Dữ liệu thu chi, số dư ví không bao giờ rời khỏi điện thoại, tuyệt đối bảo mật và riêng tư.' : 'Mono Assistant runs locally on your device. Transaction records and balances never leave your phone, ensuring 100% privacy.',
                                         style: TextStyle(
                                           fontSize: 12.5,
-                                          color: isDark ? Colors.white.withValues(alpha: 0.85) : const Color(0xFF334155),
+                                          color: context.colors.onSurfaceVariant,
                                           height: 1.4,
                                         ),
                                       ),
@@ -298,6 +296,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
 
                       // ════════════ 2. CHỌN MÔ HÌNH LOCAL ════════════
                       _buildSectionHeader(
+                        context,
                         icon: Icons.psychology_rounded,
                         title: isVi ? 'Cấu hình Mô hình Trí tuệ Nhân tạo' : 'AI Model Configuration',
                         subtitle: isVi ? 'Chọn mức độ thông minh phù hợp với cấu hình thiết bị của bạn.' : 'Choose intelligence level matching your device specs.',
@@ -323,6 +322,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                           child: Column(
                             children: [
                               _buildModelOption(
+                                context,
                                 modelKey: 'qwen2.5:1.5b',
                                 title: 'Qwen 2.5 1.5B-Instruct',
                                 badge: isVi ? 'Khuyên dùng (Pixel 7a)' : 'Recommended (Pixel 7a)',
@@ -332,9 +332,10 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                               ),
                               Divider(
                                 height: 1,
-                                color: isDark ? const Color(0xFF263937) : const Color(0xFFF1F5F9),
+                                color: context.dividerColor,
                               ),
                               _buildModelOption(
+                                context,
                                 modelKey: 'qwen2.5:0.5b',
                                 title: 'Qwen 2.5 0.5B-Instruct',
                                 badge: isVi ? 'Siêu nhẹ & Tiết kiệm' : 'Ultra-light & Efficient',
@@ -351,6 +352,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
 
                       // ════════════ 3. CỔNG KẾT NỐI LOCAL AI ════════════
                       _buildSectionHeader(
+                        context,
                         icon: Icons.hub_rounded,
                         title: isVi ? 'Cổng kết nối Local AI (Endpoint)' : 'Local AI Connection Port (Endpoint)',
                         subtitle: isVi ? 'Mono kết nối trực tiếp với On-Device Inference hoặc máy chủ Ollama trên máy tính khi chạy dev.' : 'Mono connects directly to on-device inference or dev host Ollama server.',
@@ -384,12 +386,12 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                             fontSize: 14,
                             letterSpacing: 0.3,
                             fontWeight: FontWeight.w500,
-                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            color: context.colors.onSurface,
                           ),
                           decoration: InputDecoration(
                             hintText: isVi ? 'VD: http://10.0.2.2:11434 hoặc http://127.0.0.1:11434' : 'E.g.: http://10.0.2.2:11434 or http://127.0.0.1:11434',
                             hintStyle: TextStyle(
-                              color: isDark ? Colors.white38 : Colors.grey.shade400,
+                              color: context.colors.onSurfaceVariant.withValues(alpha: 0.6),
                               fontSize: 13,
                             ),
                             border: InputBorder.none,
@@ -466,10 +468,10 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 decoration: BoxDecoration(
-                                  color: isDark ? const Color(0xFF223533) : const Color(0xFFF1F5F9),
+                                  color: context.cardBg,
                                   borderRadius: BorderRadius.circular(14),
                                   border: Border.all(
-                                    color: isDark ? const Color(0xFF395753) : const Color(0xFFCBD5E1),
+                                    color: context.borderColor,
                                     width: 1.3,
                                   ),
                                 ),
@@ -505,7 +507,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                               style: TextStyle(
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 13.5,
-                                                color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                                color: context.colors.onSurface,
                                               ),
                                             ),
                                           ],
@@ -521,11 +523,11 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 decoration: BoxDecoration(
-                                  color: _brandTeal,
+                                  color: activeMint,
                                   borderRadius: BorderRadius.circular(14),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: _brandTeal.withValues(alpha: isDark ? 0.45 : 0.3),
+                                      color: activeMint.withValues(alpha: isDark ? 0.45 : 0.3),
                                       blurRadius: 10,
                                       offset: const Offset(0, 4),
                                     ),
@@ -535,11 +537,11 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.save_rounded, color: Colors.white, size: 18),
-                                      SizedBox(width: 8),
+                                      const Icon(Icons.save_rounded, color: Colors.white, size: 18),
+                                      const SizedBox(width: 8),
                                       Text(
                                         isVi ? 'Lưu cấu hình' : 'Save Config',
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13.5,
@@ -558,6 +560,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
 
                       // ════════════ 4. ĐỘ TRỄ PHẢN HỒI CỦA MONO ════════════
                       _buildSectionHeader(
+                        context,
                         icon: Icons.timer_outlined,
                         title: isVi ? 'Độ trễ phản hồi của Mono' : 'Mono Response Delay',
                         subtitle: isVi ? 'Tùy chỉnh nhịp độ hiển thị phản hồi của Mono cho phù hợp với thói quen đọc.' : 'Adjust typing rhythm of Mono responses to match your reading speed.',
@@ -583,22 +586,25 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                           child: Column(
                             children: [
                               _buildResponseDelayOption(
+                                context,
                                 ms: 300,
                                 title: isVi ? 'Nhanh (300ms)' : 'Fast (300ms)',
                                 subtitle: isVi ? 'Phản hồi chớp nhoáng, tức thì' : 'Lightning-fast, immediate',
                                 isDark: isDark,
                                 activeMint: activeMint,
                               ),
-                              Divider(height: 1, color: isDark ? const Color(0xFF263937) : const Color(0xFFF1F5F9)),
+                              Divider(height: 1, color: context.dividerColor),
                               _buildResponseDelayOption(
+                                context,
                                 ms: 700,
                                 title: isVi ? 'Chuẩn (700ms)' : 'Standard (700ms)',
                                 subtitle: isVi ? 'Khuyên dùng (tự nhiên & cân bằng)' : 'Recommended (natural & balanced)',
                                 isDark: isDark,
                                 activeMint: activeMint,
                               ),
-                              Divider(height: 1, color: isDark ? const Color(0xFF263937) : const Color(0xFFF1F5F9)),
+                              Divider(height: 1, color: context.dividerColor),
                               _buildResponseDelayOption(
+                                context,
                                 ms: 1500,
                                 title: isVi ? 'Thư thả (1500ms)' : 'Relaxed (1500ms)',
                                 subtitle: isVi ? 'Bình tĩnh, nhịp nhàng' : 'Steady, paced',
@@ -614,6 +620,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
 
                       // ════════════ 5. THỜI GIAN CHỜ IM LẶNG GIỌNG NÓI ════════════
                       _buildSectionHeader(
+                        context,
                         icon: Icons.mic_rounded,
                         title: isVi ? 'Khoảng chờ khi nói (Voice Silence)' : 'Voice Silence Wait Time',
                         subtitle: isVi ? 'Thời gian yên lặng trước khi Mono tự động gửi câu lệnh.' : 'Silence duration before Mono automatically sends your query.',
@@ -632,22 +639,25 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                           child: Column(
                             children: [
                               _buildSilenceOption(
+                                context,
                                 ms: 1500,
                                 title: isVi ? '1.5 giây' : '1.5 seconds',
                                 subtitle: isVi ? 'Dành cho người nói nhanh và dứt khoát' : 'For quick, decisive speakers',
                                 isDark: isDark,
                                 activeMint: activeMint,
                               ),
-                              Divider(height: 1, color: isDark ? const Color(0xFF263937) : const Color(0xFFF1F5F9)),
+                              Divider(height: 1, color: context.dividerColor),
                               _buildSilenceOption(
+                                context,
                                 ms: 2000,
                                 title: isVi ? '2.0 giây (Mặc định)' : '2.0 seconds (Default)',
                                 subtitle: isVi ? 'Cân bằng, tránh bị ngắt lời giữa chừng' : 'Balanced, avoids mid-sentence cutoffs',
                                 isDark: isDark,
                                 activeMint: activeMint,
                               ),
-                              Divider(height: 1, color: isDark ? const Color(0xFF263937) : const Color(0xFFF1F5F9)),
+                              Divider(height: 1, color: context.dividerColor),
                               _buildSilenceOption(
+                                context,
                                 ms: 3000,
                                 title: isVi ? '3.0 giây' : '3.0 seconds',
                                 subtitle: isVi ? 'Dành cho người nói chậm, có khoảng nghỉ dài' : 'For relaxed speakers with longer pauses',
@@ -675,7 +685,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                 style: TextStyle(
                                   fontSize: 14.5,
                                   fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white70 : const Color(0xFF334155),
+                                  color: context.colors.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -696,20 +706,23 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                     isVi ? 'Bạn có thể nhập Google Gemini API Key làm phương án dự phòng khi cần so sánh hiệu năng:' : 'You can enter a Google Gemini API Key as a fallback benchmark:',
                                     style: TextStyle(
                                       fontSize: 12.5,
-                                      color: isDark ? Colors.white70 : Colors.black87,
+                                      color: context.colors.onSurfaceVariant,
                                     ),
                                   ),
                                   const SizedBox(height: 10),
                                   TextField(
                                     controller: _apiKeyController,
                                     obscureText: _obscureKey,
-                                    style: TextStyle(fontSize: 13.5, color: isDark ? Colors.white : Colors.black87),
+                                    style: TextStyle(fontSize: 13.5, color: context.colors.onSurface),
                                     decoration: InputDecoration(
                                       hintText: isVi ? 'Dán API Key (AIzaSy...) dự phòng...' : 'Paste backup API Key (AIzaSy...)...',
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                      hintStyle: TextStyle(color: context.colors.onSurfaceVariant.withValues(alpha: 0.6)),
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: context.borderColor)),
+                                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: context.borderColor)),
+                                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: activeMint, width: 1.5)),
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                                       suffixIcon: IconButton(
-                                        icon: Icon(_obscureKey ? Icons.visibility_off_rounded : Icons.visibility_rounded, size: 18),
+                                        icon: Icon(_obscureKey ? Icons.visibility_off_rounded : Icons.visibility_rounded, size: 18, color: context.colors.onSurfaceVariant),
                                         onPressed: () => setState(() => _obscureKey = !_obscureKey),
                                       ),
                                     ),
@@ -720,12 +733,16 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                       ElevatedButton.icon(
                                         onPressed: _isTestingCloud ? null : _testCloudKey,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: isDark ? const Color(0xFF263937) : const Color(0xFFE2E8F0),
-                                          foregroundColor: isDark ? Colors.white : Colors.black87,
+                                          backgroundColor: context.cardBg,
+                                          foregroundColor: context.colors.onSurface,
                                           elevation: 0,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(10),
+                                            side: BorderSide(color: context.borderColor),
+                                          ),
                                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                         ),
-                                        icon: const Icon(Icons.bolt_rounded, size: 16),
+                                        icon: Icon(Icons.bolt_rounded, size: 16, color: activeMint),
                                         label: Text(isVi ? 'Kiểm tra Key Cloud' : 'Test Cloud Key', style: const TextStyle(fontSize: 12)),
                                       ),
                                       const SizedBox(width: 8),
@@ -736,9 +753,10 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                                           TopToast.show(context, isVi ? 'Đã lưu API Key dự phòng!' : 'Backup API Key saved successfully!');
                                         },
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: _brandTeal,
+                                          backgroundColor: activeMint,
                                           foregroundColor: Colors.white,
                                           elevation: 0,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                         ),
                                         icon: const Icon(Icons.save_rounded, size: 16),
@@ -763,13 +781,14 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
     );
   }
 
-  Widget _buildSectionHeader({
+  Widget _buildSectionHeader(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String subtitle,
     required bool isDark,
   }) {
-    final activeMint = isDark ? _brightMint : _brandTeal;
+    final activeMint = context.brandColor;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -782,7 +801,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
               style: TextStyle(
                 fontSize: 15.5,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                color: context.colors.onSurface,
               ),
             ),
           ],
@@ -794,7 +813,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
             subtitle,
             style: TextStyle(
               fontSize: 12.5,
-              color: isDark ? Colors.white.withValues(alpha: 0.70) : Colors.grey.shade600,
+              color: context.colors.onSurfaceVariant,
               height: 1.35,
             ),
           ),
@@ -803,7 +822,8 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
     );
   }
 
-  Widget _buildModelOption({
+  Widget _buildModelOption(
+    BuildContext context, {
     required String modelKey,
     required String title,
     required String badge,
@@ -814,11 +834,11 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
     final isSelected = _selectedLocalModel == modelKey;
     return InkWell(
       onTap: () async {
+        final isVi = LanguageScope.of(this.context).isVietnamese;
         setState(() => _selectedLocalModel = modelKey);
         await _configService.setLocalModelName(modelKey);
-        if (mounted) {
-          TopToast.show(context, LanguageScope.of(context).isVietnamese ? 'Đã chọn mô hình: $title' : 'Selected model: $title');
-        }
+        if (!mounted) return;
+        TopToast.show(this.context, isVi ? 'Đã chọn mô hình: $title' : 'Selected model: $title');
       },
       child: Container(
         color: isSelected ? activeMint.withValues(alpha: isDark ? 0.22 : 0.08) : Colors.transparent,
@@ -827,7 +847,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
           children: [
             Icon(
               isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-              color: isSelected ? activeMint : (isDark ? Colors.white38 : Colors.grey),
+              color: isSelected ? activeMint : context.colors.onSurfaceVariant,
               size: 21,
             ),
             const SizedBox(width: 14),
@@ -842,7 +862,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                         style: TextStyle(
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                           fontSize: 14.5,
-                          color: isDark ? Colors.white : const Color(0xFF0F172A),
+                          color: context.colors.onSurface,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -868,7 +888,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                     subtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark ? Colors.white.withValues(alpha: 0.75) : Colors.grey.shade600,
+                      color: context.colors.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -880,7 +900,8 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
     );
   }
 
-  Widget _buildResponseDelayOption({
+  Widget _buildResponseDelayOption(
+    BuildContext context, {
     required int ms,
     required String title,
     required String subtitle,
@@ -890,11 +911,11 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
     final isSelected = _selectedResponseDelayMs == ms;
     return InkWell(
       onTap: () async {
+        final isVi = LanguageScope.of(this.context).isVietnamese;
         setState(() => _selectedResponseDelayMs = ms);
         await _configService.setResponseDelayMs(ms);
-        if (mounted) {
-          TopToast.show(context, LanguageScope.of(context).isVietnamese ? 'Đã đặt độ trễ phản hồi: $title' : 'Response delay set: $title');
-        }
+        if (!mounted) return;
+        TopToast.show(this.context, isVi ? 'Đã đặt độ trễ phản hồi: $title' : 'Response delay set: $title');
       },
       child: Container(
         color: isSelected ? activeMint.withValues(alpha: isDark ? 0.22 : 0.08) : Colors.transparent,
@@ -903,7 +924,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
           children: [
             Icon(
               isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-              color: isSelected ? activeMint : (isDark ? Colors.white38 : Colors.grey),
+              color: isSelected ? activeMint : context.colors.onSurfaceVariant,
               size: 21,
             ),
             const SizedBox(width: 14),
@@ -916,7 +937,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                     style: TextStyle(
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                       fontSize: 14,
-                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      color: context.colors.onSurface,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -924,7 +945,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                     subtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark ? Colors.white.withValues(alpha: 0.75) : Colors.grey.shade600,
+                      color: context.colors.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -936,7 +957,8 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
     );
   }
 
-  Widget _buildSilenceOption({
+  Widget _buildSilenceOption(
+    BuildContext context, {
     required int ms,
     required String title,
     required String subtitle,
@@ -946,11 +968,11 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
     final isSelected = _selectedSilenceMs == ms;
     return InkWell(
       onTap: () async {
+        final isVi = LanguageScope.of(this.context).isVietnamese;
         setState(() => _selectedSilenceMs = ms);
         await _configService.setVoiceSilenceDurationMs(ms);
-        if (mounted) {
-          TopToast.show(context, LanguageScope.of(context).isVietnamese ? 'Đã đặt khoảng chờ giọng nói: $title' : 'Voice silence duration set: $title');
-        }
+        if (!mounted) return;
+        TopToast.show(this.context, isVi ? 'Đã đặt khoảng chờ giọng nói: $title' : 'Voice silence duration set: $title');
       },
       child: Container(
         color: isSelected ? activeMint.withValues(alpha: isDark ? 0.22 : 0.08) : Colors.transparent,
@@ -959,7 +981,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
           children: [
             Icon(
               isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-              color: isSelected ? activeMint : (isDark ? Colors.white38 : Colors.grey),
+              color: isSelected ? activeMint : context.colors.onSurfaceVariant,
               size: 21,
             ),
             const SizedBox(width: 14),
@@ -972,7 +994,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                     style: TextStyle(
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                       fontSize: 14,
-                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                      color: context.colors.onSurface,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -980,7 +1002,7 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
                     subtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark ? Colors.white.withValues(alpha: 0.75) : Colors.grey.shade600,
+                      color: context.colors.onSurfaceVariant,
                     ),
                   ),
                 ],

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_theme.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/staggered_list_item.dart';
@@ -69,11 +70,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final bool isDark = context.isDark;
     
     // MÀU SẮC FLOATING DOCK CHUẨN FINTECH
-    final Color activeColor = isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883);
-    final Color inactiveColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final Color activeColor = isDark ? AppColors.primaryTealVibrant : AppColors.primaryTeal;
+    final Color inactiveColor = isDark ? AppColors.textMutedDark : AppColors.textSecondaryLight;
 
     return PopScope(
       canPop: false,
@@ -95,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       child: Scaffold(
         extendBody: true,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: context.colors.surface,
         body: FadeIndexedStack(
           index: _selectedIndex,
           children: _pages,
@@ -109,13 +110,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 64,
                 decoration: BoxDecoration(
                   color: isDark
-                      ? const Color(0xF51E293B)
-                      : const Color(0xF8FFFFFF),
+                      ? AppColors.surfaceElevatedDark.withValues(alpha: 0.96)
+                      : Colors.white.withValues(alpha: 0.97),
                   borderRadius: BorderRadius.circular(28),
                   border: Border.all(
-                    color: isDark
-                        ? const Color(0xFF334155)
-                        : const Color(0xFFE2E8F0),
+                    color: context.borderColor,
                     width: 1.2,
                   ),
                   boxShadow: [
@@ -125,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       offset: const Offset(0, 6),
                     ),
                     BoxShadow(
-                      color: (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)).withValues(alpha: 0.06),
+                      color: activeColor.withValues(alpha: 0.06),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -266,15 +265,15 @@ class _HomeScreenState extends State<HomeScreen> {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF438883), Color(0xFF2DD4BF)],
+            gradient: LinearGradient(
+              colors: [AppColors.primaryTeal, isDark ? AppColors.primaryTealVibrant : AppColors.primaryTealLight],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF438883).withValues(alpha: 0.45),
+                color: AppColors.primaryTeal.withValues(alpha: 0.45),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -346,7 +345,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     
     return Column(
       children: [
@@ -358,7 +357,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                   key: const ValueKey('offline_banner'),
                   width: double.infinity,
                   height: 22,
-                  color: const Color(0xFFEA580C),
+                  color: AppColors.warningAmber,
                   child: Center(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -367,7 +366,12 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                         const SizedBox(width: 6),
                         Text(
                           context.tr('offline_mode'),
-                          style: const TextStyle(
+                          style: context.textTheme.labelSmall?.copyWith(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.2,
+                          ) ?? const TextStyle(
                             color: Colors.white,
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -388,7 +392,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
               height: 200,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+                color: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(30),
                   bottomRight: Radius.circular(30),
@@ -455,7 +459,10 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                                           Flexible(
                                             child: Text(
                                               greeting,
-                                              style: const TextStyle(
+                                              style: context.textTheme.bodySmall?.copyWith(
+                                                color: Colors.white70,
+                                                fontWeight: FontWeight.w500,
+                                              ) ?? const TextStyle(
                                                 color: Colors.white70,
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w500,
@@ -473,7 +480,10 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                                       ),
                                       Text(
                                         displayName,
-                                        style: const TextStyle(
+                                        style: context.textTheme.titleMedium?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ) ?? const TextStyle(
                                           color: Colors.white,
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -549,7 +559,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                                         child: Container(
                                           padding: const EdgeInsets.all(3),
                                           decoration: const BoxDecoration(
-                                            color: Colors.red,
+                                            color: AppColors.expenseRose,
                                             shape: BoxShape.circle,
                                           ),
                                           constraints: const BoxConstraints(
@@ -627,7 +637,10 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
             children: [
               Text(
                 context.tr('tx_history'),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: context.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: context.textPrimaryColor,
+                ) ?? const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               TextButton(
                 onPressed: () => Navigator.push(
@@ -636,8 +649,11 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                 ),
                 child: Text(
                   context.tr('see_all'),
-                  style: const TextStyle(
-                    color: Color(0xFF438883),
+                  style: context.textTheme.labelLarge?.copyWith(
+                    color: context.colors.primary,
+                    fontWeight: FontWeight.w700,
+                  ) ?? TextStyle(
+                    color: context.colors.primary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -718,7 +734,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
 
   // === THẺ SỐ DƯ TỔNG QUAN FINTECH GLASSMORPHISM ===
   Widget _buildBalanceCard(double totalBalance, double income, double expense) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final isVi = LanguageScope.of(context).isVietnamese;
     final double totalFlow = income + expense;
     final int incomePercent = totalFlow > 0 ? ((income / totalFlow) * 100).round() : 50;
@@ -733,23 +749,15 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
       child: Container(
         padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? [const Color(0xFF1B3835), const Color(0xFF102423)]
-                : [const Color(0xFF2F7E79), const Color(0xFF235F5B)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(24),
+          gradient: isDark ? AppColors.brandGradientDark : AppColors.brandGradientLight,
+          borderRadius: AppRadius.card,
           border: Border.all(
             color: Colors.white.withValues(alpha: isDark ? 0.16 : 0.22),
             width: 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: isDark
-                  ? Colors.black.withValues(alpha: 0.4)
-                  : const Color(0xFF438883).withValues(alpha: 0.32),
+              color: (isDark ? Colors.black : AppColors.primaryTeal).withValues(alpha: isDark ? 0.4 : 0.32),
               blurRadius: 22,
               offset: const Offset(0, 10),
             ),
@@ -791,7 +799,11 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                   children: [
                     Text(
                       context.tr('total_balance'),
-                      style: TextStyle(
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.2,
+                      ) ?? TextStyle(
                         color: Colors.white.withValues(alpha: 0.85),
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -845,7 +857,12 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                   child: Text(
                     _isBalanceVisible ? CurrencyUtils.formatCurrency(totalBalance) : '•••••••• ₫',
                     maxLines: 1,
-                    style: const TextStyle(
+                    style: context.textTheme.headlineMedium?.copyWith(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
+                    ) ?? const TextStyle(
                       color: Colors.white,
                       fontSize: 28,
                       fontWeight: FontWeight.w800,
@@ -864,7 +881,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                         label: context.tr('income'),
                         amount: income,
                         type: 'income',
-                        color: const Color(0xFF2DD4BF),
+                        color: AppColors.incomeEmeraldLight,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -874,7 +891,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                         label: context.tr('expense'),
                         amount: expense,
                         type: 'expense',
-                        color: const Color(0xFFF87171),
+                        color: AppColors.expenseRoseLight,
                       ),
                     ),
                   ],
@@ -896,14 +913,14 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                             Expanded(
                               flex: totalFlow > 0 ? incomePercent.clamp(1, 99) : 50,
                               child: Container(
-                                color: totalFlow > 0 ? const Color(0xFF2DD4BF) : Colors.white24,
+                                color: totalFlow > 0 ? AppColors.incomeEmeraldLight : Colors.white24,
                               ),
                             ),
                             const SizedBox(width: 2),
                             Expanded(
                               flex: totalFlow > 0 ? expensePercent.clamp(1, 99) : 50,
                               child: Container(
-                                color: totalFlow > 0 ? const Color(0xFFF87171) : Colors.white24,
+                                color: totalFlow > 0 ? AppColors.expenseRoseLight : Colors.white24,
                               ),
                             ),
                           ],
@@ -916,7 +933,11 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                       children: [
                         Text(
                           totalFlow > 0 ? '${context.tr('flow_income')} $incomePercent%' : context.tr('no_cash_flow'),
-                          style: TextStyle(
+                          style: context.textTheme.labelSmall?.copyWith(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white.withValues(alpha: 0.75),
+                          ) ?? TextStyle(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w600,
                             color: Colors.white.withValues(alpha: 0.75),
@@ -925,7 +946,11 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                         if (totalFlow > 0)
                           Text(
                             '${context.tr('flow_expense')} $expensePercent%',
-                            style: TextStyle(
+                            style: context.textTheme.labelSmall?.copyWith(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white.withValues(alpha: 0.75),
+                            ) ?? TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w600,
                               color: Colors.white.withValues(alpha: 0.75),
@@ -960,7 +985,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppRadius.input,
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.1),
             width: 1,
@@ -984,7 +1009,11 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                 children: [
                   Text(
                     label,
-                    style: TextStyle(
+                    style: context.textTheme.labelSmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ) ?? TextStyle(
                       color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
@@ -993,7 +1022,11 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                   const SizedBox(height: 2),
                   Text(
                     _isBalanceVisible ? CurrencyUtils.formatCurrency(amount) : '•••••• ₫',
-                    style: const TextStyle(
+                    style: context.textTheme.bodyMedium?.copyWith(
+                      color: Colors.white,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                    ) ?? const TextStyle(
                       color: Colors.white,
                       fontSize: 13.5,
                       fontWeight: FontWeight.w700,
@@ -1020,7 +1053,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
           _buildQuickActionItem(
             icon: Icons.swap_horiz_rounded,
             label: context.tr('quick_transfer'),
-            color: const Color(0xFF14B8A6),
+            color: AppColors.transferIndigo,
             isDark: isDark,
             onTap: () {
               widget.onNavigateTab?.call(2); // Chuyển sang Tab Ví
@@ -1029,7 +1062,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
           _buildQuickActionItem(
             icon: Icons.document_scanner_rounded,
             label: context.tr('quick_scan'),
-            color: const Color(0xFF3B82F6),
+            color: AppColors.infoAzure,
             isDark: isDark,
             onTap: () => Navigator.push(
               context,
@@ -1039,7 +1072,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
           _buildQuickActionItem(
             icon: Icons.track_changes_rounded,
             label: context.tr('quick_budget'),
-            color: const Color(0xFFF59E0B),
+            color: AppColors.warningAmber,
             isDark: isDark,
             onTap: () => Navigator.push(
               context,
@@ -1049,7 +1082,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
           _buildQuickActionItem(
             icon: Icons.auto_awesome_rounded,
             label: context.tr('quick_mono'),
-            color: const Color(0xFF8B5CF6),
+            color: AppColors.primaryTealVibrant,
             isDark: isDark,
             onTap: () => Navigator.push(
               context,
@@ -1083,7 +1116,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
               height: 52,
               decoration: BoxDecoration(
                 color: isDark ? color.withValues(alpha: 0.18) : color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: AppRadius.card,
                 border: Border.all(
                   color: color.withValues(alpha: isDark ? 0.35 : 0.22),
                   width: 1.2,
@@ -1101,10 +1134,15 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
             const SizedBox(height: 7),
             Text(
               label,
-              style: TextStyle(
+              style: context.textTheme.labelSmall?.copyWith(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white70 : const Color(0xFF334155),
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textSecondaryLight,
+                letterSpacing: 0.1,
+              ) ?? TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textSecondaryLight,
                 letterSpacing: 0.1,
               ),
               textAlign: TextAlign.center,

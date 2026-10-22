@@ -41,48 +41,46 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDZVxsm0G2JJckryKgMseAsvteKOGxUly8',
-    appId: '1:1046136703618:web:b0b96b54d410b618d7029b',
-    messagingSenderId: '1046136703618',
-    projectId: 'money-tracker-app-fc604',
-    authDomain: 'money-tracker-app-fc604.firebaseapp.com',
-    storageBucket: 'money-tracker-app-fc604.firebasestorage.app',
-    measurementId: 'G-290880GY62',
+    apiKey: 'AIzaSyCeh9m8IG-AGmTFYde3Uwkp3rUoZ-d1iCs',
+    appId: '1:495004463065:web:ffaa0dd5cf1dc2b41873c8',
+    messagingSenderId: '495004463065',
+    projectId: 'mono-money-tracker-prod',
+    authDomain: 'mono-money-tracker-prod.firebaseapp.com',
+    storageBucket: 'mono-money-tracker-prod.firebasestorage.app',
+    measurementId: 'G-FDMFG1N6Z6',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDHeXZUB-h9SCxHdrtTWA1hG5i5Uknoriw',
-    appId: '1:1046136703618:android:d9af6c813392d8a4d7029b',
-    messagingSenderId: '1046136703618',
-    projectId: 'money-tracker-app-fc604',
-    storageBucket: 'money-tracker-app-fc604.firebasestorage.app',
+    apiKey: 'AIzaSyB8YtTkeagO_E6Tbw10eA_bvrvKYcSx0B4',
+    appId: '1:495004463065:android:a14c23db4c97c9441873c8',
+    messagingSenderId: '495004463065',
+    projectId: 'mono-money-tracker-prod',
+    storageBucket: 'mono-money-tracker-prod.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCAcOnEa6Fbpo8Oy5WwU0q6iNucTbgHGOI',
-    appId: '1:1046136703618:ios:b7e2235244b77fe1d7029b',
-    messagingSenderId: '1046136703618',
-    projectId: 'money-tracker-app-fc604',
-    storageBucket: 'money-tracker-app-fc604.firebasestorage.app',
+    apiKey: 'AIzaSyCEIVhHCz455SpqEGUz5NFV4MLpIX2g6Bg',
+    appId: '1:495004463065:ios:2d394da481038c3e1873c8',
+    messagingSenderId: '495004463065',
+    projectId: 'mono-money-tracker-prod',
+    storageBucket: 'mono-money-tracker-prod.firebasestorage.app',
     iosBundleId: 'com.example.moneyTrackerApp',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCAcOnEa6Fbpo8Oy5WwU0q6iNucTbgHGOI',
-    appId: '1:1046136703618:ios:b7e2235244b77fe1d7029b',
-    messagingSenderId: '1046136703618',
-    projectId: 'money-tracker-app-fc604',
-    storageBucket: 'money-tracker-app-fc604.firebasestorage.app',
+    apiKey: 'AIzaSyCEIVhHCz455SpqEGUz5NFV4MLpIX2g6Bg',
+    appId: '1:495004463065:ios:2d394da481038c3e1873c8',
+    messagingSenderId: '495004463065',
+    projectId: 'mono-money-tracker-prod',
+    storageBucket: 'mono-money-tracker-prod.firebasestorage.app',
     iosBundleId: 'com.example.moneyTrackerApp',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyDZVxsm0G2JJckryKgMseAsvteKOGxUly8',
-    appId: '1:1046136703618:web:a3b7f101792e464fd7029b',
-    messagingSenderId: '1046136703618',
-    projectId: 'money-tracker-app-fc604',
-    authDomain: 'money-tracker-app-fc604.firebaseapp.com',
-    storageBucket: 'money-tracker-app-fc604.firebasestorage.app',
-    measurementId: 'G-S3Z72Q4N2P',
+    apiKey: 'AIzaSyCeh9m8IG-AGmTFYde3Uwkp3rUoZ-d1iCs',
+    appId: '1:495004463065:web:9db59a50e230a7db1873c8',
+    messagingSenderId: '495004463065',
+    projectId: 'mono-money-tracker-prod',
+    authDomain: 'mono-money-tracker-prod.firebaseapp.com',
+    storageBucket: 'mono-money-tracker-prod.firebasestorage.app',
+    measurementId: 'G-9TR3QGG76S',
   );
 }

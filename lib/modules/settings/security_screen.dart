@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
+import '../../core/theme/app_theme.dart';
 import '../../utils/page_transitions.dart';
 import '../../utils/time_utils.dart';
 import '../../widgets/animated_scale_button.dart';
@@ -17,11 +18,11 @@ class SecurityScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = AuthService();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.bgDark : Theme.of(context).primaryColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -95,15 +96,17 @@ class SecurityScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Security Health Banner
-                          _buildSecurityHeroCard(isDark, isVi),
+                          _buildSecurityHeroCard(context, isDark, isVi),
                           const SizedBox(height: 24),
 
                           // Section 1: PHƯƠNG THỨC XÁC THỰC
                           _buildSectionTitle(context, isVi ? 'PHƯƠNG THỨC XÁC THỰC' : 'AUTHENTICATION METHODS'),
                           _buildCardContainer(
+                            context,
                             isDark: isDark,
                             children: [
                               _buildSecurityRow(
+                                context,
                                 isDark: isDark,
                                 icon: Icons.lock_outline_rounded,
                                 title: isVi ? 'Đổi mật khẩu' : 'Change Password',
@@ -116,8 +119,9 @@ class SecurityScreen extends StatelessWidget {
                                   );
                                 },
                               ),
-                              _buildDivider(isDark),
+                              _buildDivider(context, isDark),
                               _buildSecurityRow(
+                                context,
                                 isDark: isDark,
                                 icon: Icons.fingerprint_rounded,
                                 title: isVi ? 'Đăng nhập sinh trắc học' : 'Biometric Login',
@@ -130,8 +134,9 @@ class SecurityScreen extends StatelessWidget {
                                   );
                                 },
                               ),
-                              _buildDivider(isDark),
+                              _buildDivider(context, isDark),
                               _buildSecurityRow(
+                                context,
                                 isDark: isDark,
                                 icon: Icons.devices_rounded,
                                 title: isVi ? 'Thiết bị đang hoạt động' : 'Active Devices',
@@ -139,15 +144,15 @@ class SecurityScreen extends StatelessWidget {
                                 badge: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF438883).withValues(alpha: 0.12),
+                                    color: context.brandColor.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
                                     isVi ? '1 thiết bị' : '1 device',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF438883),
+                                      color: context.brandColor,
                                     ),
                                   ),
                                 ),
@@ -166,9 +171,11 @@ class SecurityScreen extends StatelessWidget {
                           // Section 2: TÍNH NĂNG BẢO MẬT NÂNG CAO
                           _buildSectionTitle(context, isVi ? 'TÍNH NĂNG BẢO VỆ' : 'SECURITY FEATURES'),
                           _buildCardContainer(
+                            context,
                             isDark: isDark,
                             children: [
                               _buildSecurityRow(
+                                context,
                                 isDark: isDark,
                                 icon: Icons.security_update_good_rounded,
                                 title: isVi ? 'Ghi nhớ đăng nhập' : 'Remember Login',
@@ -176,21 +183,22 @@ class SecurityScreen extends StatelessWidget {
                                 badge: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: Colors.green.withValues(alpha: 0.14),
+                                    color: context.income.withValues(alpha: 0.14),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
                                     isVi ? 'Đang bật' : 'Active',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF10B981),
+                                      color: context.income,
                                     ),
                                   ),
                                 ),
                               ),
-                              _buildDivider(isDark),
+                              _buildDivider(context, isDark),
                               _buildSecurityRow(
+                                context,
                                 isDark: isDark,
                                 icon: Icons.shield_moon_outlined,
                                 title: isVi ? 'Bảo vệ dữ liệu cục bộ' : 'Local Data Protection',
@@ -198,15 +206,15 @@ class SecurityScreen extends StatelessWidget {
                                 badge: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF438883).withValues(alpha: 0.14),
+                                    color: context.brandColor.withValues(alpha: 0.14),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
                                     isVi ? 'Đã kích hoạt' : 'Enabled',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF438883),
+                                      color: context.brandColor,
                                     ),
                                   ),
                                 ),
@@ -227,23 +235,17 @@ class SecurityScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSecurityHeroCard(bool isDark, bool isVi) {
+  Widget _buildSecurityHeroCard(BuildContext context, bool isDark, bool isVi) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? const [Color(0xFF1E3A37), Color(0xFF132A27)]
-              : const [Color(0xFF438883), Color(0xFF2E635F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: isDark ? AppColors.brandGradientDark : AppColors.brandGradientLight,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: isDark ? const Color(0xFF2E5E57) : Colors.transparent),
+        border: Border.all(color: context.borderColor),
         boxShadow: [
           BoxShadow(
-            color: (isDark ? Colors.black : const Color(0xFF438883)).withValues(alpha: 0.35),
+            color: (isDark ? Colors.black : context.brandColor).withValues(alpha: 0.35),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -309,8 +311,12 @@ class SecurityScreen extends StatelessWidget {
       padding: const EdgeInsets.only(left: 4, bottom: 10),
       child: Text(
         title,
-        style: TextStyle(
-          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+        style: context.textTheme.labelMedium?.copyWith(
+          color: context.colors.onSurfaceVariant,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+        ) ?? TextStyle(
+          color: context.colors.onSurfaceVariant,
           fontSize: 12,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.8,
@@ -319,12 +325,12 @@ class SecurityScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCardContainer({required bool isDark, required List<Widget> children}) {
+  Widget _buildCardContainer(BuildContext context, {required bool isDark, required List<Widget> children}) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: context.cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFE5E7EB)),
+        border: Border.all(color: context.borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
@@ -337,7 +343,8 @@ class SecurityScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSecurityRow({
+  Widget _buildSecurityRow(
+    BuildContext context, {
     required bool isDark,
     required IconData icon,
     required String title,
@@ -355,10 +362,10 @@ class SecurityScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE8F5F0),
+                color: isDark ? context.surfaceElevatedColor : context.brandColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, color: const Color(0xFF438883), size: 22),
+              child: Icon(icon, color: context.brandColor, size: 22),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -367,18 +374,24 @@ class SecurityScreen extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
+                    style: context.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: context.colors.onSurface,
+                    ) ?? TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                      color: context.colors.onSurface,
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     subtitle,
-                    style: TextStyle(
+                    style: context.textTheme.bodySmall?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                      height: 1.25,
+                    ) ?? TextStyle(
                       fontSize: 12.5,
-                      color: isDark ? Colors.white60 : Colors.grey.shade600,
+                      color: context.colors.onSurfaceVariant,
                       height: 1.25,
                     ),
                   ),
@@ -391,7 +404,7 @@ class SecurityScreen extends StatelessWidget {
             ],
             if (onTap != null) ...[
               const SizedBox(width: 6),
-              Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey.shade400),
+              Icon(Icons.arrow_forward_ios_rounded, size: 14, color: context.colors.onSurfaceVariant.withValues(alpha: 0.5)),
             ],
           ],
         ),
@@ -399,13 +412,13 @@ class SecurityScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDivider(bool isDark) {
+  Widget _buildDivider(BuildContext context, bool isDark) {
     return Divider(
       height: 1,
       thickness: 1,
       indent: 62,
       endIndent: 16,
-      color: isDark ? Colors.white10 : const Color(0xFFF3F4F6),
+      color: context.dividerColor,
     );
   }
 }

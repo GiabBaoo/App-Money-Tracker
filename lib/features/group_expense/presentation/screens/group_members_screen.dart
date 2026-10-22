@@ -1,3 +1,4 @@
+import '../../../../core/theme/app_theme.dart';
 import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,16 +22,16 @@ class GroupMembersScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final groupAsync = ref.watch(groupStreamProvider(groupId));
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+    final isDark = context.isDarkMode;
+    final primaryColor = context.colors.primary;
     final currentUserId = ref.watch(currentUserIdProvider);
 
     // Design Tokens
-    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-    final cardBgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textPrimary = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-    final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0);
+    final bgColor = isDark ? AppColors.bgDark : AppColors.bgLight;
+    final cardBgColor = context.cardBg;
+    final textPrimary = context.colors.onSurface;
+    final textSecondary = context.colors.onSurfaceVariant;
+    final borderColor = context.borderColor;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -78,7 +79,7 @@ class GroupMembersScreen extends ConsumerWidget {
                       children: [
                         Text(
                           isVi ? 'Thành Viên' : 'Group Members',
-                          style: TextStyle(
+                          style: context.textTheme.titleLarge?.copyWith(
                             color: textPrimary,
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
@@ -87,7 +88,7 @@ class GroupMembersScreen extends ConsumerWidget {
                         ),
                         Text(
                           groupName,
-                          style: TextStyle(
+                          style: context.textTheme.bodySmall?.copyWith(
                             color: textSecondary,
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -144,7 +145,7 @@ class GroupMembersScreen extends ConsumerWidget {
                 loading: () => Center(
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                    color: primaryColor,
                   ),
                 ),
                 error: (error, _) => Center(
@@ -186,7 +187,7 @@ class GroupMembersScreen extends ConsumerWidget {
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
               color: cardBgColor,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(color: borderColor, width: 1),
             ),
             child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
@@ -208,29 +209,22 @@ class GroupMembersScreen extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: cardBgColor,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(color: borderColor, width: 1),
-            boxShadow: [
-              if (!isDark)
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-            ],
+            boxShadow: AppShadows.card(isDark),
           ),
           child: Row(
             children: [
               // Avatar
               CircleAvatar(
                 radius: 24,
-                backgroundColor: (isDark ? const Color(0xFF2DD4BF) : primaryColor).withValues(alpha: 0.15),
+                backgroundColor: primaryColor.withValues(alpha: 0.15),
                 backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
                 child: avatarUrl == null
                     ? Text(
                         name.isNotEmpty ? name[0].toUpperCase() : 'U',
                         style: TextStyle(
-                          color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                          color: primaryColor,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -249,7 +243,7 @@ class GroupMembersScreen extends ConsumerWidget {
                         Flexible(
                           child: Text(
                             name,
-                            style: TextStyle(
+                            style: context.textTheme.titleMedium?.copyWith(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
                               color: textPrimary,
@@ -261,7 +255,7 @@ class GroupMembersScreen extends ConsumerWidget {
                           const SizedBox(width: 6),
                           Text(
                             isVi ? '(Bạn)' : '(You)',
-                            style: TextStyle(fontSize: 12, color: textSecondary, fontWeight: FontWeight.w600),
+                            style: context.textTheme.bodySmall?.copyWith(fontSize: 12, color: textSecondary, fontWeight: FontWeight.w600),
                           ),
                         ],
                         if (isOwner) ...[
@@ -269,20 +263,20 @@ class GroupMembersScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: Colors.amber.withValues(alpha: isDark ? 0.2 : 0.12),
+                              color: context.warning.withValues(alpha: isDark ? 0.2 : 0.12),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.star_rounded, size: 12, color: Colors.amber[700]),
+                                Icon(Icons.star_rounded, size: 12, color: context.warning),
                                 const SizedBox(width: 2),
                                 Text(
                                   isVi ? 'Chủ quỹ' : 'Admin',
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
-                                    color: isDark ? Colors.amber[300] : Colors.amber[900],
+                                    color: context.warning,
                                   ),
                                 ),
                               ],
@@ -300,7 +294,7 @@ class GroupMembersScreen extends ConsumerWidget {
                           Expanded(
                             child: Text(
                               email,
-                              style: TextStyle(fontSize: 12, color: textSecondary),
+                              style: context.textTheme.bodySmall?.copyWith(fontSize: 12, color: textSecondary),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -315,7 +309,7 @@ class GroupMembersScreen extends ConsumerWidget {
                           const SizedBox(width: 5),
                           Text(
                             phone,
-                            style: TextStyle(fontSize: 12, color: textSecondary),
+                            style: context.textTheme.bodySmall?.copyWith(fontSize: 12, color: textSecondary),
                           ),
                         ],
                       ),

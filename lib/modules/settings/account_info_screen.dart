@@ -21,6 +21,7 @@ import '../../widgets/mono_bottom_sheet.dart';
 import '../auth/login_screen.dart';
 import 'avatar_crop_screen.dart';
 import '../../widgets/animated_scale_button.dart';
+import '../../core/theme/app_theme.dart';
 
 class AccountInfoScreen extends StatefulWidget {
   const AccountInfoScreen({super.key});
@@ -178,10 +179,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
 
   Future<void> _pickImage() async {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      backgroundColor: context.cardBg,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -197,7 +197,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: context.dividerColor,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -206,7 +206,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                    color: context.colors.onSurface,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -214,10 +214,10 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF438883).withValues(alpha: 0.12),
+                      color: context.brandColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF438883)),
+                    child: Icon(Icons.auto_awesome_rounded, color: context.brandColor),
                   ),
                   title: Text(
                     isVi ? 'Chọn ảnh mẫu có sẵn (Preset)' : 'Choose preset avatar',
@@ -322,7 +322,6 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
 
   void _showPresetPickerSheet() {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     MonoBottomSheet.show(
       context: context,
       builder: (context) {
@@ -340,7 +339,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                      color: context.colors.onSurface,
                     ),
                   ),
                   IconButton(
@@ -382,7 +381,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            border: isSelected ? Border.all(color: const Color(0xFF438883), width: 3) : null,
+                            border: isSelected ? Border.all(color: context.brandColor, width: 3) : null,
                             boxShadow: [
                               BoxShadow(
                                 color: preset.gradient[0].withValues(alpha: 0.3),
@@ -400,8 +399,8 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                             fontSize: 11,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                             color: isSelected
-                                ? const Color(0xFF438883)
-                                : (isDark ? Colors.white70 : Colors.black87),
+                                ? context.brandColor
+                                : context.colors.onSurfaceVariant,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -479,7 +478,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -536,15 +535,15 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                           ],
                         ),
                         child: _isSaving
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 16,
                                 height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF438883)),
+                                child: CircularProgressIndicator(strokeWidth: 2, color: context.brandColor),
                               )
                             : Text(
                                 isVi ? 'Lưu' : 'Save',
-                                style: const TextStyle(
-                                  color: Color(0xFF438883),
+                                style: TextStyle(
+                                  color: context.brandColor,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -587,7 +586,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                   builder: (context, snapshot) {
                     final user = snapshot.data ?? UserRepository().currentUser;
                     if (user == null) {
-                      return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
+                      return Center(child: CircularProgressIndicator(color: context.brandColor));
                     }
                     _initializeControllers(user);
 
@@ -603,12 +602,12 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                                color: context.cardBg,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFE5E7EB)),
+                                border: Border.all(color: context.borderColor),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                                    color: Colors.black.withValues(alpha: context.isDarkMode ? 0.2 : 0.03),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),
@@ -624,12 +623,12 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                         padding: const EdgeInsets.all(3),
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
-                                          gradient: const LinearGradient(
-                                            colors: [Color(0xFF63B3AB), Color(0xFF438883)],
+                                          gradient: LinearGradient(
+                                            colors: [context.brandColor.withValues(alpha: 0.7), context.brandColor],
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: const Color(0xFF438883).withValues(alpha: 0.25),
+                                              color: context.brandColor.withValues(alpha: 0.25),
                                               blurRadius: 12,
                                               offset: const Offset(0, 4),
                                             ),
@@ -650,7 +649,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                         child: Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF438883),
+                                            color: context.brandColor,
                                             shape: BoxShape.circle,
                                             border: Border.all(
                                               color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
@@ -684,14 +683,22 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                       style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
-                                        color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                                        color: context.colors.onSurface,
                                       ),
                                       decoration: InputDecoration(
                                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                         hintText: isVi ? 'Nhập họ và tên...' : 'Enter full name...',
                                         border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(12),
-                                          borderSide: const BorderSide(color: Color(0xFF438883)),
+                                          borderSide: BorderSide(color: context.brandColor),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide(color: context.borderColor),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide(color: context.brandColor, width: 1.5),
                                         ),
                                       ),
                                       validator: (v) => (v == null || v.trim().isEmpty) ? (isVi ? 'Tên không được để trống' : 'Name cannot be empty') : null,
@@ -702,7 +709,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                       style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
-                                        color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                                        color: context.colors.onSurface,
                                       ),
                                     ),
                                   const SizedBox(height: 8),
@@ -717,7 +724,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                                       decoration: BoxDecoration(
-                                        color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFF3F4F6),
+                                        color: context.brandColor.withValues(alpha: 0.12),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Row(
@@ -728,14 +735,14 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                             style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w600,
-                                              color: isDark ? Colors.white70 : Colors.grey.shade700,
+                                              color: context.colors.onSurfaceVariant,
                                             ),
                                           ),
                                           const SizedBox(width: 6),
                                           Icon(
                                             Icons.copy_rounded,
                                             size: 13,
-                                            color: isDark ? Colors.white54 : Colors.grey.shade600,
+                                            color: context.colors.onSurfaceVariant,
                                           ),
                                         ],
                                       ),
@@ -749,10 +756,10 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                             // Group 1: THÔNG TIN CÁ NHÂN
                             _buildSectionHeader(isVi ? 'THÔNG TIN CÁ NHÂN' : 'PERSONAL INFORMATION'),
                             _buildCardContainer(
-                              isDark: isDark,
+                              context,
                               children: [
                                 _buildSettingRow(
-                                  isDark: isDark,
+                                  context,
                                   icon: Icons.badge_outlined,
                                   title: isVi ? 'Họ và tên' : 'Full Name',
                                   value: _isEditing ? null : user.name,
@@ -767,9 +774,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                         )
                                       : null,
                                 ),
-                                _buildDivider(isDark),
+                                _buildDivider(context),
                                 _buildSettingRow(
-                                  isDark: isDark,
+                                  context,
                                   icon: Icons.wc_outlined,
                                   title: isVi ? 'Giới tính' : 'Gender',
                                   value: _isEditing ? null : _getGenderLabel(_selectedGender ?? user.gender, isVi),
@@ -784,9 +791,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                         )
                                       : null,
                                 ),
-                                _buildDivider(isDark),
+                                _buildDivider(context),
                                 _buildSettingRow(
-                                  isDark: isDark,
+                                  context,
                                   icon: Icons.cake_outlined,
                                   title: isVi ? 'Ngày sinh' : 'Date of Birth',
                                   value: _selectedDOB != null
@@ -795,9 +802,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                   trailingIcon: _isEditing ? Icons.calendar_today_rounded : null,
                                   onTap: _isEditing ? () => _selectDate(context) : null,
                                 ),
-                                _buildDivider(isDark),
+                                _buildDivider(context),
                                 _buildSettingRow(
-                                  isDark: isDark,
+                                  context,
                                   icon: Icons.currency_exchange_rounded,
                                   title: isVi ? 'Loại tiền tệ' : 'Currency',
                                   value: _isEditing ? null : (_selectedCurrency ?? user.currency),
@@ -821,17 +828,17 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                             // Group 2: THÔNG TIN LIÊN LẠC
                             _buildSectionHeader(isVi ? 'THÔNG TIN LIÊN LẠC' : 'CONTACT INFORMATION'),
                             _buildCardContainer(
-                              isDark: isDark,
+                              context,
                               children: [
                                 _buildSettingRow(
-                                  isDark: isDark,
+                                  context,
                                   icon: Icons.alternate_email_rounded,
                                   title: 'Email',
                                   value: user.email,
                                   badge: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF438883).withValues(alpha: 0.12),
+                                      color: context.income.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Text(
@@ -839,14 +846,14 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
-                                        color: Color(0xFF438883),
+                                        color: context.income,
                                       ),
                                     ),
                                   ),
                                 ),
-                                _buildDivider(isDark),
+                                _buildDivider(context),
                                 _buildSettingRow(
-                                  isDark: isDark,
+                                  context,
                                   icon: Icons.phone_android_rounded,
                                   title: isVi ? 'Số điện thoại' : 'Phone Number',
                                   value: _isEditing ? null : (user.phone.isNotEmpty ? user.phone : (isVi ? 'Chưa cập nhật' : 'Not updated')),
@@ -869,17 +876,17 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                             // Group 3: CHI TIẾT TÀI KHOẢN
                             _buildSectionHeader(isVi ? 'CHI TIẾT TÀI KHOẢN' : 'ACCOUNT DETAILS'),
                             _buildCardContainer(
-                              isDark: isDark,
+                              context,
                               children: [
                                 _buildSettingRow(
-                                  isDark: isDark,
+                                  context,
                                   icon: Icons.verified_user_outlined,
                                   title: isVi ? 'Loại tài khoản' : 'Account Type',
                                   value: user.accountType.isNotEmpty ? (user.accountType == 'Miễn phí' ? (isVi ? 'Miễn phí' : 'Free') : user.accountType) : (isVi ? 'Miễn phí' : 'Free'),
                                 ),
-                                _buildDivider(isDark),
+                                _buildDivider(context),
                                 _buildSettingRow(
-                                  isDark: isDark,
+                                  context,
                                   icon: Icons.calendar_month_rounded,
                                   title: isVi ? 'Ngày gia nhập' : 'Join Date',
                                   value: DateFormat('dd/MM/yyyy').format(user.joinDate),
@@ -896,7 +903,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                 child: ElevatedButton(
                                   onPressed: _isSaving ? null : _saveProfile,
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF438883),
+                                    backgroundColor: context.brandColor,
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                     elevation: 2,
@@ -905,7 +912,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                       ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
                                       : Text(
                                           isVi ? 'Lưu thay đổi' : 'Save Changes',
-                                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                         ),
                                 ),
                               ),
@@ -916,7 +923,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                 child: OutlinedButton(
                                   onPressed: () => setState(() => _isEditing = false),
                                   style: OutlinedButton.styleFrom(
-                                    side: BorderSide(color: Colors.grey.shade400),
+                                    side: BorderSide(color: context.borderColor),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                   ),
                                   child: Text(
@@ -924,7 +931,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
-                                      color: isDark ? Colors.white70 : Colors.grey.shade700,
+                                      color: context.colors.onSurfaceVariant,
                                     ),
                                   ),
                                 ),
@@ -937,19 +944,19 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                   width: double.infinity,
                                   padding: const EdgeInsets.symmetric(vertical: 16),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFFEE2E2),
+                                    color: context.expense.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   child: Center(
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        const Icon(Icons.logout_rounded, color: Color(0xFFE63946), size: 20),
+                                        Icon(Icons.logout_rounded, color: context.expense, size: 20),
                                         const SizedBox(width: 8),
                                         Text(
                                           isVi ? 'Đăng xuất' : 'Log Out',
                                           style: TextStyle(
-                                            color: Color(0xFFE63946),
+                                            color: context.expense,
                                             fontSize: 16,
                                             fontWeight: FontWeight.w700,
                                           ),
@@ -983,22 +990,22 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w700,
-          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+          color: context.colors.onSurfaceVariant,
           letterSpacing: 0.8,
         ),
       ),
     );
   }
 
-  Widget _buildCardContainer({required bool isDark, required List<Widget> children}) {
+  Widget _buildCardContainer(BuildContext context, {required List<Widget> children}) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: context.cardBg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFE5E7EB)),
+        border: Border.all(color: context.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
+            color: Colors.black.withValues(alpha: context.isDarkMode ? 0.2 : 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1008,8 +1015,8 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
     );
   }
 
-  Widget _buildSettingRow({
-    required bool isDark,
+  Widget _buildSettingRow(
+    BuildContext context, {
     required IconData icon,
     required String title,
     String? value,
@@ -1028,10 +1035,10 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE8F5F0),
+                color: context.brandColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: const Color(0xFF438883), size: 22),
+              child: Icon(icon, color: context.brandColor, size: 22),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -1042,7 +1049,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                     title,
                     style: TextStyle(
                       fontSize: 13,
-                      color: isDark ? Colors.white60 : Colors.grey.shade600,
+                      color: context.colors.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -1052,7 +1059,7 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                          color: context.colors.onSurface,
                         ),
                       ),
                 ],
@@ -1060,20 +1067,20 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
             ),
             ?badge,
             if (trailingIcon != null)
-              Icon(trailingIcon, size: 18, color: const Color(0xFF438883)),
+              Icon(trailingIcon, size: 18, color: context.brandColor),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDivider(bool isDark) {
+  Widget _buildDivider(BuildContext context) {
     return Divider(
       height: 1,
       thickness: 1,
       indent: 62,
       endIndent: 16,
-      color: isDark ? const Color(0xFF3A3A3A) : const Color(0xFFF3F4F6),
+      color: context.dividerColor,
     );
   }
 }

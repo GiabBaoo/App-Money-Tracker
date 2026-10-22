@@ -9,6 +9,7 @@ import '../../widgets/top_toast.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/mono_dialog.dart';
 import '../../services/language_service.dart';
+import '../../core/theme/app_theme.dart';
 
 class AddBudgetDialog extends StatefulWidget {
   final BudgetModel? existingBudget;
@@ -130,8 +131,9 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+    final isDark = context.isDark;
+    final primaryColor = context.colors.primary;
+    final accentTeal = isDark ? AppColors.primaryTealVibrant : primaryColor;
     final isVi = LanguageScope.of(context).isVietnamese;
 
     return MonoDialogContainer(
@@ -141,235 +143,260 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.existingBudget != null
-                          ? (isVi ? 'Sửa Ngân Sách' : 'Edit Budget')
-                          : (isVi ? 'Thiết Lập Ngân Sách' : 'Set Up Budget'),
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 20),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Chọn danh mục
-              Text(
-                isVi ? 'Danh mục áp dụng' : 'Applicable category',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              if (_isLoadingCategories)
-                Container(
-                  height: 48,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF141E2E) : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        isVi ? 'Đang tải danh mục...' : 'Loading categories...',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF141E2E) : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                      width: 1,
-                    ),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _categories.any((c) => c.name == _selectedCategory) ? _selectedCategory : null,
-                      dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-                      isExpanded: true,
-                      items: _categories.map((c) {
-                        final isAll = c.name == 'Tất cả';
-                        final icon = isAll ? Icons.account_balance_wallet_outlined : c.icon;
-                        final iconColor = isAll
-                            ? (isDark ? const Color(0xFF2DD4BF) : primaryColor)
-                            : (c.color ?? CategoryUtils.getVibrantColor(c.name));
-                        final displayName = isAll ? (isVi ? 'Tất cả (Tổng ngân sách)' : 'All (Total Budget)') : context.trCat(c.name);
-
-                        return DropdownMenuItem(
-                          value: c.name,
-                          child: Row(
-                            children: [
-                              Icon(icon, size: 18, color: iconColor),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  displayName,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (c.isCustom) ...[
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: (isDark ? const Color(0xFF2DD4BF) : primaryColor).withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    isVi ? 'Tùy biến' : 'Custom',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (val) {
-                        if (val != null) setState(() => _selectedCategory = val);
-                      },
-                    ),
-                  ),
-                ),
-
-              const SizedBox(height: 16),
-
-              // Nhập số tiền hạn mức
-              Text(
-                isVi ? 'Hạn mức chi tiêu (VNĐ)' : 'Spending limit (VND)',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF141E2E) : const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                    width: 1,
-                  ),
-                ),
-                child: TextField(
-                  controller: _amountController,
-                  keyboardType: TextInputType.number,
-                  style: TextStyle(
-                    fontSize: 16,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  widget.existingBudget != null
+                      ? (isVi ? 'Sửa Ngân Sách' : 'Edit Budget')
+                      : (isVi ? 'Thiết Lập Ngân Sách' : 'Set Up Budget'),
+                  style: context.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                    color: context.colors.onSurface,
                   ),
-                  decoration: InputDecoration(
-                    hintText: isVi ? 'Ví dụ: 3.000.000' : 'e.g. 3,000,000',
-                    hintStyle: TextStyle(
-                      color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-                    ),
-                    border: InputBorder.none,
-                    suffixText: 'đ',
-                    suffixStyle: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
-                    ),
-                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-
-              const SizedBox(height: 16),
-
-              // Thời gian áp dụng
-              Text(
-                isVi
-                    ? 'Tháng áp dụng: Tháng $_selectedMonth/$_selectedYear'
-                    : 'Applicable period: Month $_selectedMonth/$_selectedYear',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Nút Lưu
-              AnimatedScaleButton(
-                onTap: _handleSave,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isDark ? const Color(0xFF2DD4BF) : primaryColor).withValues(alpha: 0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      widget.existingBudget != null
-                          ? (isVi ? 'Cập Nhật' : 'Update')
-                          : (isVi ? 'Tạo Ngân Sách' : 'Create Budget'),
-                      style: TextStyle(
-                        color: isDark ? const Color(0xFF0F2625) : Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ),
-                ),
+              IconButton(
+                icon: Icon(Icons.close, size: 20, color: context.colors.onSurfaceVariant),
+                onPressed: () => Navigator.pop(context),
               ),
             ],
           ),
-        );
+          const SizedBox(height: 16),
 
+          // Chọn danh mục
+          Text(
+            isVi ? 'Danh mục áp dụng' : 'Applicable category',
+            style: context.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: context.colors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          if (_isLoadingCategories)
+            Container(
+              width: double.infinity,
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.inputBgDark : context.inputBgColor,
+                borderRadius: AppRadius.button,
+                border: Border.all(
+                  color: isDark ? context.colors.outline.withValues(alpha: 0.3) : context.borderColor,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: accentTeal,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    isVi ? 'Đang tải danh mục...' : 'Loading categories...',
+                    style: context.textTheme.bodyMedium?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              width: double.infinity,
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.inputBgDark : context.inputBgColor,
+                borderRadius: AppRadius.button,
+                border: Border.all(
+                  color: isDark ? context.colors.outline.withValues(alpha: 0.3) : context.borderColor,
+                  width: 1,
+                ),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _categories.any((c) => c.name == _selectedCategory) ? _selectedCategory : null,
+                  dropdownColor: isDark ? AppColors.surfaceElevatedDark : context.colors.surface,
+                  isExpanded: true,
+                  items: _categories.map((c) {
+                    final isAll = c.name == 'Tất cả';
+                    final icon = isAll ? Icons.account_balance_wallet_outlined : c.icon;
+                    final iconColor = isAll
+                        ? accentTeal
+                        : (c.color ?? CategoryUtils.getVibrantColor(c.name));
+                    final displayName = isAll ? (isVi ? 'Tất cả (Tổng ngân sách)' : 'All (Total Budget)') : context.trCat(c.name);
+
+                    return DropdownMenuItem(
+                      value: c.name,
+                      child: Row(
+                        children: [
+                          Icon(icon, size: 18, color: iconColor),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              displayName,
+                              style: context.textTheme.bodyMedium?.copyWith(
+                                color: context.colors.onSurface,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (c.isCustom) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: accentTeal.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                isVi ? 'Tùy biến' : 'Custom',
+                                style: context.textTheme.labelSmall?.copyWith(
+                                  fontSize: 10,
+                                  color: accentTeal,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => _selectedCategory = val);
+                  },
+                ),
+              ),
+            ),
+
+          const SizedBox(height: 16),
+
+          // Nhập số tiền hạn mức
+          Text(
+            isVi ? 'Hạn mức chi tiêu (VNĐ)' : 'Spending limit (VND)',
+            style: context.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: context.colors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _amountController,
+            keyboardType: TextInputType.number,
+            cursorColor: accentTeal,
+            style: context.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: context.colors.onSurface,
+            ),
+            decoration: InputDecoration(
+              isDense: true,
+              filled: true,
+              fillColor: isDark ? AppColors.inputBgDark : context.inputBgColor,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              hintText: isVi ? 'Ví dụ: 3.000.000' : 'e.g. 3,000,000',
+              hintStyle: context.textTheme.bodyMedium?.copyWith(
+                color: isDark ? AppColors.textMutedDark : context.colors.onSurfaceVariant.withValues(alpha: 0.7),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: AppRadius.button,
+                borderSide: BorderSide(
+                  color: isDark ? context.colors.outline.withValues(alpha: 0.3) : context.borderColor,
+                  width: 1,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: AppRadius.button,
+                borderSide: BorderSide(
+                  color: isDark ? context.colors.outline.withValues(alpha: 0.3) : context.borderColor,
+                  width: 1,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: AppRadius.button,
+                borderSide: BorderSide(
+                  color: accentTeal,
+                  width: 1.5,
+                ),
+              ),
+              suffixText: '₫',
+              suffixStyle: context.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: accentTeal,
+              ),
+            ),
+            onChanged: (val) {
+              final clean = val.replaceAll(RegExp(r'[^\d]'), '');
+              if (clean.isNotEmpty) {
+                final parsed = double.tryParse(clean);
+                if (parsed != null) {
+                  final formatted = NumberFormat.currency(locale: 'vi_VN', symbol: '').format(parsed).trim();
+                  _amountController.value = TextEditingValue(
+                    text: formatted,
+                    selection: TextSelection.collapsed(offset: formatted.length),
+                  );
+                }
+              }
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          // Thời gian áp dụng
+          Text(
+            isVi
+                ? 'Tháng áp dụng: Tháng $_selectedMonth/$_selectedYear'
+                : 'Applicable period: Month $_selectedMonth/$_selectedYear',
+            style: context.textTheme.bodySmall?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Nút Lưu
+          AnimatedScaleButton(
+            onTap: _handleSave,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: accentTeal,
+                borderRadius: AppRadius.button,
+                boxShadow: [
+                  BoxShadow(
+                    color: accentTeal.withValues(alpha: 0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  widget.existingBudget != null
+                      ? (isVi ? 'Cập Nhật' : 'Update')
+                      : (isVi ? 'Tạo Ngân Sách' : 'Create Budget'),
+                  style: context.textTheme.titleSmall?.copyWith(
+                    color: isDark ? AppColors.primaryTealDark : Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -1,4 +1,5 @@
 import '../../services/language_service.dart';
+import '../../core/theme/app_theme.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -979,15 +980,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
   }
 
   void _showVoiceTroubleshootSheet({required bool isMicDenied}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E2827) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          color: context.cardBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -996,7 +996,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.3),
+                color: context.colors.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1004,15 +1004,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF438883).withValues(alpha: 0.12),
+                color: context.colors.primary.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.mic_off_rounded, color: Color(0xFF438883), size: 32),
+              child: Icon(Icons.mic_off_rounded, color: context.colors.primary, size: 32),
             ),
             const SizedBox(height: 16),
             Text(
               isMicDenied ? (LanguageScope.of(context).isVietnamese ? 'Cần cấp quyền Microphone' : 'Microphone Permission Required') : (LanguageScope.of(context).isVietnamese ? 'Thiết lập Giọng nói trên thiết bị' : 'Device Voice Settings'),
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+              style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 10),
@@ -1024,9 +1024,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                   : (LanguageScope.of(context).isVietnamese
                       ? 'Để nhận diện giọng nói mượt mà và chính xác nhất, vui lòng đảm bảo Google được chọn làm Dịch vụ nhận dạng giọng nói mặc định trên thiết bị.'
                       : 'To ensure accurate speech recognition, please ensure default voice recognition service is configured on your device.'),
-              style: TextStyle(
-                fontSize: 13.5,
-                color: isDark ? Colors.white70 : Colors.black87,
+              style: context.textTheme.bodyMedium?.copyWith(
+                color: context.colors.onSurfaceVariant,
                 height: 1.45,
               ),
               textAlign: TextAlign.center,
@@ -1056,7 +1055,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF438883),
+                      backgroundColor: context.colors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -1310,13 +1309,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
 
   void _showWalletPickerSheet(_ChatMessage msg, AiTransactionItem tx) {
     _cancelAutoSave();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E2928) : Colors.white,
+          color: context.cardBg,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -1330,14 +1328,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.3),
+                  color: context.colors.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
             Text(
               tx.type == 'income' ? (LanguageScope.of(context).isVietnamese ? 'Chọn ví nhận tiền' : 'Select deposit wallet') : (LanguageScope.of(context).isVietnamese ? 'Chọn ví trừ tiền' : 'Select deduct wallet'),
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+              style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             ..._wallets.map((w) {
@@ -1347,9 +1345,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                   backgroundColor: Color(w.colorValue).withValues(alpha: 0.15),
                   child: Icon(IconData(w.iconCode, fontFamily: 'MaterialIcons'), color: Color(w.colorValue)),
                 ),
-                title: Text(w.name, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-                subtitle: Text('${LanguageScope.of(context).isVietnamese ? 'Số dư' : 'Balance'}: ${CurrencyUtils.formatCurrency(w.balance)}'),
-                trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: Color(0xFF438883)) : null,
+                title: Text(w.name, style: context.textTheme.bodyMedium?.copyWith(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                subtitle: Text(
+                  '${LanguageScope.of(context).isVietnamese ? 'Số dư' : 'Balance'}: ${CurrencyUtils.formatCurrency(w.balance)}',
+                  style: context.textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceVariant),
+                ),
+                trailing: isSelected ? Icon(Icons.check_circle_rounded, color: context.colors.primary) : null,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -1392,8 +1393,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             return Container(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E2827) : Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                color: context.cardBg,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.18),
@@ -1413,7 +1414,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                         width: 38,
                         height: 4.5,
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white24 : Colors.grey.shade300,
+                          color: context.colors.outlineVariant,
                           borderRadius: BorderRadius.circular(3),
                         ),
                       ),
@@ -1424,10 +1425,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF438883).withValues(alpha: 0.15),
+                            color: context.colors.primary.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.receipt_long_rounded, color: Color(0xFF438883), size: 20),
+                          child: Icon(Icons.receipt_long_rounded, color: context.colors.primary, size: 20),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -1436,13 +1437,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                             children: [
                               Text(
                                 LanguageScope.of(context).isVietnamese ? 'Xác nhận ghi nhận hóa đơn' : 'Confirm Receipt Transactions',
-                                style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
+                                style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
                               ),
                               Text(
                                 '${firstTx.description.isNotEmpty ? firstTx.description : firstTx.category} • ${CurrencyUtils.formatCurrency(firstTx.amount)}',
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                                style: context.textTheme.bodySmall?.copyWith(
+                                  color: context.colors.onSurfaceVariant,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -1458,14 +1458,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                     // 1. CHỌN NGÀY GHI NHẬN (BẮT BUỘC HỎI Ý BẠN)
                     Row(
                       children: [
-                        const Icon(Icons.event_available_rounded, size: 16, color: Color(0xFF438883)),
+                        Icon(Icons.event_available_rounded, size: 16, color: context.colors.primary),
                         const SizedBox(width: 6),
                         Text(
                           LanguageScope.of(context).isVietnamese ? '1. Bạn muốn ghi nhận vào ngày nào?' : '1. Which date to record?',
-                          style: TextStyle(
-                            fontSize: 13.5,
+                          style: context.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            color: context.colors.onSurface,
                           ),
                         ),
                       ],
@@ -1487,11 +1486,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                         margin: const EdgeInsets.only(bottom: 6),
                         decoration: BoxDecoration(
                           color: dateChoice == 'today'
-                              ? const Color(0xFF438883).withValues(alpha: 0.12)
-                              : (isDark ? Colors.white10 : const Color(0xFFF8FAFC)),
+                              ? context.colors.primary.withValues(alpha: 0.12)
+                              : context.colors.surfaceContainerHighest.withValues(alpha: isDark ? 0.3 : 0.5),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: dateChoice == 'today' ? const Color(0xFF438883) : Colors.transparent,
+                            color: dateChoice == 'today' ? context.colors.primary : Colors.transparent,
                             width: 1.2,
                           ),
                         ),
@@ -1499,7 +1498,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                           children: [
                             Icon(
                               dateChoice == 'today' ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
-                              color: dateChoice == 'today' ? const Color(0xFF438883) : Colors.grey,
+                              color: dateChoice == 'today' ? context.colors.primary : context.colors.onSurfaceVariant,
                               size: 18,
                             ),
                             const SizedBox(width: 10),
@@ -1509,21 +1508,21 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                                 children: [
                                   Row(
                                     children: [
-                                      Text(LanguageScope.of(context).isVietnamese ? '⚡ Hôm nay' : '⚡ Today', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                      Text(LanguageScope.of(context).isVietnamese ? '⚡ Hôm nay' : '⚡ Today', style: context.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
                                       const SizedBox(width: 6),
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                                         decoration: BoxDecoration(
-                                          color: Colors.green.withValues(alpha: 0.15),
+                                          color: context.incomeBg,
                                           borderRadius: BorderRadius.circular(6),
                                         ),
-                                        child: Text(LanguageScope.of(context).isVietnamese ? 'Khuyên dùng' : 'Recommended', style: const TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                                        child: Text(LanguageScope.of(context).isVietnamese ? 'Khuyên dùng' : 'Recommended', style: TextStyle(color: context.income, fontSize: 10, fontWeight: FontWeight.bold)),
                                       ),
                                     ],
                                   ),
                                   Text(
                                     CurrencyUtils.formatDate(now),
-                                    style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white60 : Colors.grey.shade600),
+                                    style: context.textTheme.labelSmall?.copyWith(color: context.colors.onSurfaceVariant),
                                   ),
                                 ],
                               ),
@@ -1548,11 +1547,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                         margin: const EdgeInsets.only(bottom: 6),
                         decoration: BoxDecoration(
                           color: dateChoice == 'receipt'
-                              ? const Color(0xFF438883).withValues(alpha: 0.12)
-                              : (isDark ? Colors.white10 : const Color(0xFFF8FAFC)),
+                              ? context.colors.primary.withValues(alpha: 0.12)
+                              : context.colors.surfaceContainerHighest.withValues(alpha: isDark ? 0.3 : 0.5),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: dateChoice == 'receipt' ? const Color(0xFF438883) : Colors.transparent,
+                            color: dateChoice == 'receipt' ? context.colors.primary : Colors.transparent,
                             width: 1.2,
                           ),
                         ),
@@ -1560,7 +1559,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                           children: [
                             Icon(
                               dateChoice == 'receipt' ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
-                              color: dateChoice == 'receipt' ? const Color(0xFF438883) : Colors.grey,
+                              color: dateChoice == 'receipt' ? context.colors.primary : context.colors.onSurfaceVariant,
                               size: 18,
                             ),
                             const SizedBox(width: 10),
@@ -1568,10 +1567,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(LanguageScope.of(context).isVietnamese ? '🧾 Ngày in trên hóa đơn' : '🧾 Date on receipt', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Text(LanguageScope.of(context).isVietnamese ? '🧾 Ngày in trên hóa đơn' : '🧾 Date on receipt', style: context.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
                                   Text(
                                     CurrencyUtils.formatDate(originalReceiptDate),
-                                    style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white60 : Colors.grey.shade600),
+                                    style: context.textTheme.labelSmall?.copyWith(color: context.colors.onSurfaceVariant),
                                   ),
                                 ],
                               ),
@@ -1602,11 +1601,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
                           color: dateChoice == 'custom'
-                              ? const Color(0xFF438883).withValues(alpha: 0.12)
-                              : (isDark ? Colors.white10 : const Color(0xFFF8FAFC)),
+                              ? context.colors.primary.withValues(alpha: 0.12)
+                              : context.colors.surfaceContainerHighest.withValues(alpha: isDark ? 0.3 : 0.5),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: dateChoice == 'custom' ? const Color(0xFF438883) : Colors.transparent,
+                            color: dateChoice == 'custom' ? context.colors.primary : Colors.transparent,
                             width: 1.2,
                           ),
                         ),
@@ -1614,7 +1613,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                           children: [
                             Icon(
                               dateChoice == 'custom' ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
-                              color: dateChoice == 'custom' ? const Color(0xFF438883) : Colors.grey,
+                              color: dateChoice == 'custom' ? context.colors.primary : context.colors.onSurfaceVariant,
                               size: 18,
                             ),
                             const SizedBox(width: 10),
@@ -1622,16 +1621,16 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(LanguageScope.of(context).isVietnamese ? '🗓️ Chọn ngày khác trên lịch...' : '🗓️ Pick another date...', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Text(LanguageScope.of(context).isVietnamese ? '🗓️ Chọn ngày khác trên lịch...' : '🗓️ Pick another date...', style: context.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold)),
                                   if (dateChoice == 'custom')
                                     Text(
                                       '${LanguageScope.of(context).isVietnamese ? 'Đã chọn' : 'Selected'}: ${CurrencyUtils.formatDate(selectedDate)}',
-                                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF438883), fontWeight: FontWeight.bold),
+                                      style: context.textTheme.labelSmall?.copyWith(color: context.colors.primary, fontWeight: FontWeight.bold),
                                     ),
                                 ],
                               ),
                             ),
-                            const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.grey),
+                            Icon(Icons.chevron_right_rounded, size: 20, color: context.colors.onSurfaceVariant),
                           ],
                         ),
                       ),
@@ -1642,14 +1641,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                     // 2. CHỌN VÍ THANH TOÁN
                     Row(
                       children: [
-                        const Icon(Icons.account_balance_wallet_rounded, size: 16, color: Color(0xFF438883)),
+                        Icon(Icons.account_balance_wallet_rounded, size: 16, color: context.colors.primary),
                         const SizedBox(width: 6),
                         Text(
                           LanguageScope.of(context).isVietnamese ? '2. Trừ vào ví nào?' : '2. Deduct from which wallet?',
-                          style: TextStyle(
-                            fontSize: 13.5,
+                          style: context.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            color: context.colors.onSurface,
                           ),
                         ),
                       ],
@@ -1671,11 +1669,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                             decoration: BoxDecoration(
                               color: isSel
-                                  ? const Color(0xFF438883)
-                                  : (isDark ? const Color(0xFF243332) : const Color(0xFFF1F5F9)),
+                                  ? context.colors.primary
+                                  : context.colors.surfaceContainerHighest.withValues(alpha: isDark ? 0.3 : 0.5),
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: isSel ? const Color(0xFF438883) : Colors.transparent,
+                                color: isSel ? context.colors.primary : Colors.transparent,
                                 width: 1.2,
                               ),
                             ),
@@ -1685,15 +1683,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                                 Icon(
                                   isSel ? Icons.check_circle_rounded : Icons.account_balance_wallet_outlined,
                                   size: 14,
-                                  color: isSel ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                  color: isSel ? Colors.white : context.colors.onSurfaceVariant,
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
                                   w.name,
-                                  style: TextStyle(
-                                    fontSize: 12,
+                                  style: context.textTheme.labelMedium?.copyWith(
                                     fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                                    color: isSel ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                    color: isSel ? Colors.white : context.colors.onSurface,
                                   ),
                                 ),
                               ],
@@ -1723,13 +1720,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF438883), Color(0xFF2DD4BF)],
+                          gradient: LinearGradient(
+                            colors: [context.colors.primary, context.colors.primary.withValues(alpha: 0.85)],
                           ),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF438883).withValues(alpha: 0.35),
+                              color: context.colors.primary.withValues(alpha: 0.35),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             ),
@@ -1743,7 +1740,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                             const SizedBox(width: 8),
                             Text(
                               LanguageScope.of(context).isVietnamese ? 'Xác nhận lưu vào sổ thu chi' : 'Confirm Save Transactions',
-                              style: const TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.bold),
+                              style: context.textTheme.labelLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
@@ -1806,10 +1806,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     final primaryColor = Theme.of(context).primaryColor;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F1716) : const Color(0xFFF8FAFB),
+      backgroundColor: isDark ? AppColors.bgDark : const Color(0xFFF8FAFB),
       appBar: AppBar(
         titleSpacing: 0,
-        backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+        backgroundColor: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
@@ -1836,10 +1836,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                     width: 9,
                     height: 9,
                     decoration: BoxDecoration(
-                      color: _isOnline ? const Color(0xFF10B981) : Colors.amber,
+                      color: _isOnline ? AppColors.incomeEmerald : Colors.amber,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+                        color: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
                         width: 1.5,
                       ),
                     ),
@@ -1984,12 +1984,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF162524) : Colors.white,
+                            color: isDark ? context.colors.surface : context.cardBg,
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(
-                              color: isDark
-                                  ? const Color(0xFF2DD4BF).withValues(alpha: 0.35)
-                                  : const Color(0xFF438883).withValues(alpha: 0.2),
+                              color: isDark ? AppColors.primaryTealVibrant.withValues(alpha: 0.35) : context.colors.primary.withValues(alpha: 0.2),
                             ),
                             boxShadow: [
                               BoxShadow(
@@ -2002,10 +2000,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                           child: Center(
                             child: Text(
                               suggestion,
-                              style: TextStyle(
-                                fontSize: 12,
+                              style: context.textTheme.labelMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? const Color(0xFF5EEAD4) : const Color(0xFF2F7E79),
+                                color: isDark ? AppColors.primaryTealVibrant : context.colors.primary,
                               ),
                             ),
                           ),
@@ -2030,10 +2027,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                 child: Container(
                   padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E2827) : Colors.white,
+                    color: context.cardBg,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: const Color(0xFF438883).withValues(alpha: 0.3),
+                      color: context.colors.primary.withValues(alpha: 0.3),
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -2043,10 +2040,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                       ),
                     ],
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_downward_rounded,
                     size: 19,
-                    color: Color(0xFF438883),
+                    color: context.colors.primary,
                   ),
                 ),
               ),
@@ -2066,8 +2063,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     if (isUser) {
       return Text(
         text,
-        style: const TextStyle(
-          fontSize: 14.5,
+        style: context.textTheme.bodyMedium?.copyWith(
           color: Colors.white,
           height: 1.45,
         ),
@@ -2088,10 +2084,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     }
 
     final lines = cleanText.split('\n');
-    final defaultColor = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF1E293B);
-    final boldColor = isDark ? const Color(0xFF5EEAD4) : const Color(0xFF0F766E);
-    final accentTeal = isDark ? const Color(0xFF2DD4BF) : const Color(0xFF0D9488);
-    final quoteBg = isDark ? const Color(0xFF132B29) : const Color(0xFFF0FDFA);
+    final defaultColor = context.colors.onSurface;
+    final boldColor = isDark ? AppColors.primaryTealVibrant : context.colors.primary;
+    final accentTeal = isDark ? AppColors.primaryTealVibrant : context.colors.primary;
+    final quoteBg = isDark ? AppColors.surfaceElevatedDark : context.colors.primary.withValues(alpha: 0.08);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2107,7 +2103,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Divider(
               height: 1,
-              color: isDark ? Colors.white12 : Colors.grey.shade200,
+              color: isDark ? context.colors.outline.withValues(alpha: 0.3) : context.colors.outlineVariant,
             ),
           );
         }
@@ -2155,13 +2151,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
             decoration: BoxDecoration(
               color: isTip
-                  ? (isDark ? const Color(0xFF2A2415) : const Color(0xFFFFFBEB))
-                  : (isDark ? const Color(0xFF132B29) : const Color(0xFFF0FDFA)),
+                  ? context.warningBg
+                  : context.colors.primary.withValues(alpha: isDark ? 0.15 : 0.08),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isTip
-                    ? Colors.amber.withValues(alpha: isDark ? 0.35 : 0.4)
-                    : accentTeal.withValues(alpha: isDark ? 0.35 : 0.4),
+                    ? context.warning.withValues(alpha: isDark ? 0.4 : 0.3)
+                    : context.colors.primary.withValues(alpha: isDark ? 0.35 : 0.25),
                 width: 1,
               ),
             ),
@@ -2222,16 +2218,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                   margin: const EdgeInsets.only(top: 2, right: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                   decoration: BoxDecoration(
-                    color: accentTeal.withValues(alpha: isDark ? 0.25 : 0.15),
+                    color: context.colors.primary.withValues(alpha: isDark ? 0.25 : 0.15),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: accentTeal.withValues(alpha: 0.4), width: 0.8),
+                    border: Border.all(color: context.colors.primary.withValues(alpha: 0.4), width: 0.8),
                   ),
                   child: Text(
                     numStr,
-                    style: TextStyle(
-                      fontSize: 11,
+                    style: context.textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: accentTeal,
+                      color: context.colors.primary,
                     ),
                   ),
                 ),
@@ -2264,7 +2259,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                     width: 5,
                     height: 5,
                     decoration: BoxDecoration(
-                      color: accentTeal,
+                      color: context.colors.primary,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -2375,15 +2370,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                     margin: const EdgeInsets.only(right: 8, top: 2),
                     padding: const EdgeInsets.all(7),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF438883), Color(0xFF2F7E79)],
+                      gradient: LinearGradient(
+                        colors: [context.colors.primary, context.colors.primary.withValues(alpha: 0.8)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF438883).withValues(alpha: 0.25),
+                          color: context.colors.primary.withValues(alpha: 0.25),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
@@ -2396,15 +2391,17 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
                       gradient: msg.isUser
-                          ? const LinearGradient(
-                              colors: [Color(0xFF438883), Color(0xFF2F7E79)],
+                          ? LinearGradient(
+                              colors: isDark
+                                  ? [AppColors.primaryTeal, const Color(0xFF1E6F68)]
+                                  : [context.colors.primary, context.colors.primary.withValues(alpha: 0.85)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             )
                           : null,
                       color: msg.isUser
                           ? null
-                          : (isDark ? const Color(0xFF162524) : Colors.white),
+                          : (isDark ? context.colors.surface : context.cardBg),
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(18),
                         topRight: const Radius.circular(18),
@@ -2414,18 +2411,18 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                       border: !msg.isUser
                           ? Border.all(
                               color: msg.isError
-                                  ? (isDark ? Colors.amber.withValues(alpha: 0.45) : Colors.amber.shade400)
+                                  ? context.warning
                                   : (isDark
-                                      ? const Color(0xFF2DD4BF).withValues(alpha: 0.22)
-                                      : Colors.grey.shade200),
+                                      ? context.colors.outline.withValues(alpha: 0.25)
+                                      : context.colors.outlineVariant),
                               width: msg.isError ? 1.4 : 1.0,
                             )
                           : null,
                       boxShadow: [
                         BoxShadow(
                           color: msg.isUser
-                              ? const Color(0xFF438883).withValues(alpha: 0.28)
-                              : Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                              ? (isDark ? Colors.black.withValues(alpha: 0.3) : context.colors.primary.withValues(alpha: 0.28))
+                              : Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -2442,7 +2439,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: (msg.isError ? Colors.amber : const Color(0xFF438883)).withValues(alpha: 0.12),
+                                  color: (msg.isError ? context.warning : context.colors.primary).withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Row(
@@ -2450,16 +2447,16 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                                   children: [
                                     Icon(
                                       msg.isError ? Icons.info_outline_rounded : Icons.bolt_rounded,
-                                      color: msg.isError ? Colors.amber : const Color(0xFF438883),
+                                      color: msg.isError ? context.warning : context.colors.primary,
                                       size: 12,
                                     ),
                                     const SizedBox(width: 3),
                                     Text(
                                       'Mono AI',
-                                      style: TextStyle(
+                                      style: context.textTheme.labelSmall?.copyWith(
                                         fontSize: 10.5,
                                         fontWeight: FontWeight.bold,
-                                        color: msg.isError ? Colors.amber : const Color(0xFF438883),
+                                        color: msg.isError ? context.warning : context.colors.primary,
                                       ),
                                     ),
                                   ],
@@ -2476,14 +2473,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                                       Icon(
                                         Icons.copy_rounded,
                                         size: 13,
-                                        color: isDark ? Colors.white60 : Colors.black45,
+                                        color: context.colors.onSurfaceVariant,
                                       ),
                                       const SizedBox(width: 3),
                                       Text(
                                         isVi ? 'Sao chép' : 'Copy',
-                                        style: TextStyle(
+                                        style: context.textTheme.labelSmall?.copyWith(
                                           fontSize: 10.5,
-                                          color: isDark ? Colors.white60 : Colors.black45,
+                                          color: context.colors.onSurfaceVariant,
                                         ),
                                       ),
                                     ],
@@ -2546,24 +2543,23 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF438883).withValues(alpha: 0.12),
+                                color: context.colors.primary.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: const Color(0xFF438883).withValues(alpha: 0.35),
+                                  color: context.colors.primary.withValues(alpha: 0.35),
                                   width: 1.1,
                                 ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.refresh_rounded, size: 14, color: Color(0xFF438883)),
+                                  Icon(Icons.refresh_rounded, size: 14, color: context.colors.primary),
                                   const SizedBox(width: 4),
                                   Text(
                                     isVi ? 'Thử lại ngay' : 'Retry Now',
-                                    style: const TextStyle(
-                                      fontSize: 12,
+                                    style: context.textTheme.labelSmall?.copyWith(
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFF438883),
+                                      color: context.colors.primary,
                                     ),
                                   ),
                                 ],
@@ -2577,11 +2573,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                           alignment: Alignment.bottomRight,
                           child: Text(
                             _formatTime(msg.time),
-                            style: TextStyle(
+                            style: context.textTheme.labelSmall?.copyWith(
                               fontSize: 10,
                               color: msg.isUser
-                                  ? Colors.white.withValues(alpha: 0.75)
-                                  : (isDark ? Colors.white38 : Colors.black38),
+                                  ? Colors.white.withValues(alpha: 0.85)
+                                  : (isDark ? AppColors.textMutedDark : context.colors.onSurfaceVariant.withValues(alpha: 0.7)),
                             ),
                           ),
                         ),
@@ -2785,7 +2781,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white70 : const Color(0xFF475569),
+                            color: isDark ? AppColors.textPrimaryDark : const Color(0xFF475569),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -2805,11 +2801,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? const Color(0xFF438883)
-                                      : (isDark ? Colors.white12 : Colors.grey.shade200),
+                                      ? (isDark ? AppColors.primaryTeal : const Color(0xFF438883))
+                                      : (isDark ? AppColors.surfaceElevatedDark : Colors.grey.shade200),
                                   borderRadius: BorderRadius.circular(14),
                                   border: Border.all(
-                                    color: isSelected ? const Color(0xFF438883) : Colors.transparent,
+                                    color: isSelected
+                                        ? (isDark ? AppColors.primaryTealVibrant : const Color(0xFF438883))
+                                        : (isDark ? context.colors.outline.withValues(alpha: 0.25) : Colors.transparent),
                                     width: 1.2,
                                   ),
                                 ),
@@ -2819,7 +2817,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                                     Icon(
                                       isSelected ? Icons.check_circle_rounded : Icons.account_balance_wallet_outlined,
                                       size: 13,
-                                      color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                      color: isSelected ? Colors.white : (isDark ? AppColors.textPrimaryDark : Colors.black87),
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
@@ -2827,7 +2825,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                                       style: TextStyle(
                                         fontSize: 11.5,
                                         fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                        color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                        color: isSelected ? Colors.white : (isDark ? AppColors.textPrimaryDark : Colors.black87),
                                       ),
                                     ),
                                   ],
@@ -2882,17 +2880,20 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                               decoration: BoxDecoration(
-                                color: isDark ? Colors.white12 : Colors.grey.shade200,
+                                color: isDark ? AppColors.surfaceElevatedDark : Colors.grey.shade200,
                                 borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isDark ? context.colors.outline.withValues(alpha: 0.25) : Colors.transparent,
+                                ),
                               ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.edit_rounded, color: isDark ? Colors.white70 : Colors.black87, size: 16),
+                                  Icon(Icons.edit_rounded, color: isDark ? AppColors.textPrimaryDark : Colors.black87, size: 16),
                                   const SizedBox(width: 4),
                                   Text(
                                     context.tr('edit'),
                                     style: TextStyle(
-                                      color: isDark ? Colors.white70 : Colors.black87,
+                                      color: isDark ? AppColors.textPrimaryDark : Colors.black87,
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -2961,15 +2962,18 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 12),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white12 : Colors.grey.shade200,
+                          color: isDark ? AppColors.surfaceElevatedDark : Colors.grey.shade200,
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isDark ? context.colors.outline.withValues(alpha: 0.25) : Colors.transparent,
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.receipt_long_rounded, color: isDark ? Colors.white70 : Colors.black87, size: 16),
+                            Icon(Icons.receipt_long_rounded, color: isDark ? AppColors.textPrimaryDark : Colors.black87, size: 16),
                             const SizedBox(width: 6),
-                            Text(context.tr('all_transactions'), style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 12, fontWeight: FontWeight.bold)),
+                            Text(context.tr('all_transactions'), style: TextStyle(color: isDark ? AppColors.textPrimaryDark : Colors.black87, fontSize: 12, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
@@ -2993,8 +2997,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
   }) {
     final isExpense = tx.type == 'expense';
     final amountColor = needsAmount
-        ? Colors.amber.shade700
-        : (isExpense ? const Color(0xFFEF4444) : const Color(0xFF10B981));
+        ? context.warning
+        : (isExpense ? context.expense : context.income);
     final isPending = parentMsg?.isPendingSaving == true;
     final now = DateTime.now();
     final isOldDate = now.difference(tx.date).inDays.abs() > 30 || tx.date.year != now.year;
@@ -3004,8 +3008,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF162524) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? context.colors.surface : context.cardBg,
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: amountColor.withValues(alpha: isDark ? 0.45 : 0.35), width: 1.2),
         boxShadow: [
           BoxShadow(
@@ -3032,10 +3036,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                   children: [
                     Text(
                       tx.description.isNotEmpty ? tx.description : tx.category,
-                      style: TextStyle(
+                      style: context.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: isDark ? Colors.white : const Color(0xFF0F172A),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -3045,15 +3047,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                       children: [
                         Text(
                           tx.category,
-                          style: TextStyle(fontSize: 12, color: isDark ? const Color(0xFFCBD5E1) : Colors.grey.shade600),
+                          style: context.textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceVariant),
                         ),
                         if (tx.photoPath != null && tx.photoPath!.isNotEmpty) ...[
-                          Text(' • ', style: TextStyle(color: isDark ? Colors.white38 : Colors.grey)),
-                          const Icon(Icons.receipt_long_rounded, size: 13, color: Color(0xFF438883)),
+                          Text(' • ', style: TextStyle(color: isDark ? AppColors.textMutedDark : Colors.grey)),
+                          Icon(Icons.receipt_long_rounded, size: 13, color: context.colors.primary),
                           const SizedBox(width: 2),
                           Text(
                             isVi ? 'Có hóa đơn' : 'Receipt',
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF438883), fontWeight: FontWeight.w600),
+                            style: context.textTheme.labelSmall?.copyWith(color: context.colors.primary, fontWeight: FontWeight.w600),
                           ),
                         ],
                       ],
@@ -3065,8 +3067,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                 needsAmount
                     ? (isVi ? 'Chưa có số tiền' : 'No amount')
                     : '${isExpense ? '-' : '+'}${CurrencyUtils.formatCurrency(tx.amount)}',
-                style: TextStyle(
-                  fontSize: 14.5,
+                style: context.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: amountColor,
                 ),
@@ -3074,7 +3075,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             ],
           ),
           const SizedBox(height: 8),
-          Divider(height: 1, thickness: 0.6, color: isDark ? Colors.white.withValues(alpha: 0.12) : const Color(0xFFE2E8F0)),
+          Divider(height: 1, thickness: 0.6, color: isDark ? context.colors.outline.withValues(alpha: 0.25) : context.colors.outlineVariant),
           const SizedBox(height: 8),
           // Hàng hiển thị & tương tác chọn Ví, Ngày và Giờ
           Row(
@@ -3088,28 +3089,27 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E2D2B) : primaryColor.withValues(alpha: 0.1),
+                    color: isDark ? AppColors.surfaceElevatedDark : context.colors.surfaceContainerHighest.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF2DD4BF).withValues(alpha: 0.35) : primaryColor.withValues(alpha: isPending ? 0.35 : 0.15),
+                      color: primaryColor.withValues(alpha: isPending ? 0.35 : 0.15),
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.account_balance_wallet_outlined, size: 13, color: isDark ? const Color(0xFF5EEAD4) : primaryColor),
+                      Icon(Icons.account_balance_wallet_outlined, size: 13, color: primaryColor),
                       const SizedBox(width: 4),
                       Text(
                         tx.walletName.isNotEmpty ? context.trWallet(tx.walletName) : (isVi ? 'Chọn ví' : 'Select wallet'),
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: isDark ? const Color(0xFF5EEAD4) : primaryColor,
+                        style: context.textTheme.labelSmall?.copyWith(
+                          color: primaryColor,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       if (isPending) ...[
                         const SizedBox(width: 2),
-                        Icon(Icons.arrow_drop_down, size: 14, color: isDark ? const Color(0xFF5EEAD4) : primaryColor),
+                        Icon(Icons.arrow_drop_down, size: 14, color: primaryColor),
                       ],
                     ],
                   ),
@@ -3125,28 +3125,27 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E2D2B) : Colors.grey.shade100,
+                    color: isDark ? AppColors.surfaceElevatedDark : context.colors.surfaceContainerHighest.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF2DD4BF).withValues(alpha: 0.3) : Colors.grey.shade300,
+                      color: isDark ? context.colors.outline.withValues(alpha: 0.25) : context.colors.outlineVariant,
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.calendar_today_rounded, size: 12, color: isDark ? const Color(0xFF5EEAD4) : Colors.grey.shade700),
+                      Icon(Icons.calendar_today_rounded, size: 12, color: context.colors.onSurfaceVariant),
                       const SizedBox(width: 4),
                       Text(
                         CurrencyUtils.formatDate(tx.date),
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: isDark ? Colors.white : Colors.grey.shade800,
+                        style: context.textTheme.labelSmall?.copyWith(
+                          color: context.colors.onSurface,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       if (isPending) ...[
                         const SizedBox(width: 2),
-                        Icon(Icons.arrow_drop_down, size: 14, color: isDark ? Colors.white70 : Colors.grey.shade600),
+                        Icon(Icons.arrow_drop_down, size: 14, color: context.colors.onSurfaceVariant),
                       ],
                     ],
                   ),
@@ -3162,28 +3161,27 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E2D2B) : Colors.grey.shade100,
+                    color: isDark ? AppColors.surfaceElevatedDark : context.colors.surfaceContainerHighest.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF2DD4BF).withValues(alpha: 0.3) : Colors.grey.shade300,
+                      color: isDark ? context.colors.outline.withValues(alpha: 0.25) : context.colors.outlineVariant,
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.access_time_rounded, size: 12, color: isDark ? const Color(0xFF5EEAD4) : Colors.grey.shade700),
+                      Icon(Icons.access_time_rounded, size: 12, color: context.colors.onSurfaceVariant),
                       const SizedBox(width: 4),
                       Text(
                         '${tx.date.hour.toString().padLeft(2, '0')}:${tx.date.minute.toString().padLeft(2, '0')}',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: isDark ? Colors.white : Colors.grey.shade800,
+                        style: context.textTheme.labelSmall?.copyWith(
+                          color: context.colors.onSurface,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       if (isPending) ...[
                         const SizedBox(width: 2),
-                        Icon(Icons.arrow_drop_down, size: 14, color: isDark ? Colors.white70 : Colors.grey.shade600),
+                        Icon(Icons.arrow_drop_down, size: 14, color: context.colors.onSurfaceVariant),
                       ],
                     ],
                   ),
@@ -3197,21 +3195,21 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.1),
+                color: context.warningBg,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                border: Border.all(color: context.warning.withValues(alpha: 0.3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.info_outline_rounded, size: 13, color: Colors.amber),
+                      Icon(Icons.info_outline_rounded, size: 13, color: context.warning),
                       const SizedBox(width: 5),
                       Expanded(
                         child: Text(
                           isVi ? 'Hóa đơn ghi ngày ${CurrencyUtils.formatDate(tx.date)} (năm cũ)' : 'Receipt dated ${CurrencyUtils.formatDate(tx.date)} (past year)',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.amber),
+                          style: context.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600, color: context.warning),
                         ),
                       ),
                     ],
@@ -3225,17 +3223,16 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 5),
                             decoration: BoxDecoration(
-                              color: isToday ? Colors.amber.shade700 : (isDark ? Colors.white10 : Colors.white),
+                              color: isToday ? context.warning : (isDark ? context.colors.surface : context.cardBg),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.amber.shade700.withValues(alpha: 0.4)),
+                              border: Border.all(color: context.warning.withValues(alpha: 0.4)),
                             ),
                             alignment: Alignment.center,
                             child: Text(
                               isVi ? '⚡ Ghi vào Hôm nay' : '⚡ Record as Today',
-                              style: TextStyle(
-                                fontSize: 11,
+                              style: context.textTheme.labelSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: isToday ? Colors.white : Colors.amber.shade800,
+                                color: isToday ? Colors.white : context.warning,
                               ),
                             ),
                           ),
@@ -3250,17 +3247,16 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 5),
                             decoration: BoxDecoration(
-                              color: !isToday ? Colors.amber.shade700 : (isDark ? Colors.white10 : Colors.white),
+                              color: !isToday ? context.warning : context.cardBg,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.amber.shade700.withValues(alpha: 0.4)),
+                              border: Border.all(color: context.warning.withValues(alpha: 0.4)),
                             ),
                             alignment: Alignment.center,
                             child: Text(
                               isVi ? '📅 Giữ ngày hóa đơn' : '📅 Keep Receipt Date',
-                              style: TextStyle(
-                                fontSize: 11,
+                              style: context.textTheme.labelSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: !isToday ? Colors.white : Colors.amber.shade800,
+                                color: !isToday ? Colors.white : context.warning,
                               ),
                             ),
                           ),
@@ -3284,12 +3280,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F1F1F) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: primaryColor.withValues(alpha: 0.3), width: 1.2),
+        color: isDark ? context.colors.surface : context.cardBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: primaryColor.withValues(alpha: isDark ? 0.45 : 0.3), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -3300,26 +3296,25 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
         children: [
           Row(
             children: [
-              const Icon(Icons.bar_chart_rounded, color: Color(0xFF438883), size: 20),
+              Icon(Icons.bar_chart_rounded, color: primaryColor, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   isVi ? 'Báo cáo: ${report.periodText}' : 'Report: ${report.periodText}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: (isSurplus ? const Color(0xFF10B981) : const Color(0xFFEF4444)).withValues(alpha: 0.12),
+                  color: (isSurplus ? context.income : context.expense).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   isSurplus ? (isVi ? 'Thặng dư' : 'Surplus') : (isVi ? 'Thâm hụt' : 'Deficit'),
-                  style: TextStyle(
-                    fontSize: 11,
+                  style: context.textTheme.labelSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isSurplus ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                    color: isSurplus ? context.income : context.expense,
                   ),
                 ),
               ),
@@ -3329,12 +3324,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildReportStat(isVi ? 'Tổng thu' : 'Total Income', report.totalIncome, const Color(0xFF10B981)),
-              _buildReportStat(isVi ? 'Tổng chi' : 'Total Expense', report.totalExpense, const Color(0xFFEF4444)),
+              _buildReportStat(isVi ? 'Tổng thu' : 'Total Income', report.totalIncome, context.income),
+              _buildReportStat(isVi ? 'Tổng chi' : 'Total Expense', report.totalExpense, context.expense),
               _buildReportStat(
                 isSurplus ? (isVi ? 'Còn dư' : 'Surplus') : (isVi ? 'Thâm hụt' : 'Deficit'),
                 net.abs(),
-                isSurplus ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                isSurplus ? context.income : context.expense,
               ),
             ],
           ),
@@ -3348,9 +3343,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                     child: LinearProgressIndicator(
                       value: (report.totalExpense / report.totalIncome).clamp(0.0, 1.0),
                       minHeight: 6,
-                      backgroundColor: isDark ? Colors.white10 : Colors.grey.shade200,
+                      backgroundColor: isDark ? AppColors.borderDark : context.colors.surfaceContainerHighest,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        report.totalExpense > report.totalIncome ? const Color(0xFFEF4444) : primaryColor,
+                        report.totalExpense > report.totalIncome ? context.expense : primaryColor,
                       ),
                     ),
                   ),
@@ -3358,7 +3353,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                 const SizedBox(width: 8),
                 Text(
                   '${((report.totalExpense / report.totalIncome) * 100).toStringAsFixed(0)}% chi',
-                  style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w600),
+                  style: context.textTheme.labelSmall?.copyWith(color: context.colors.onSurfaceVariant, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -3372,7 +3367,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
-                color: primaryColor.withValues(alpha: 0.1),
+                color: primaryColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
@@ -3392,15 +3387,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1B2826) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? context.colors.surface : context.cardBg,
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.35 : 0.25),
+          color: context.income.withValues(alpha: isDark ? 0.45 : 0.25),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -3414,16 +3409,16 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                  color: context.income.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.tips_and_updates_rounded, color: Color(0xFF10B981), size: 18),
+                child: Icon(Icons.tips_and_updates_rounded, color: context.income, size: 18),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   advice.title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -3437,9 +3432,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                 height: 8,
                 child: Row(
                   children: [
-                    Expanded(flex: 50, child: Container(color: const Color(0xFF3B82F6))),
-                    Expanded(flex: 30, child: Container(color: const Color(0xFFF59E0B))),
-                    Expanded(flex: 20, child: Container(color: const Color(0xFF10B981))),
+                    Expanded(flex: 50, child: Container(color: context.info)),
+                    Expanded(flex: 30, child: Container(color: context.warning)),
+                    Expanded(flex: 20, child: Container(color: context.income)),
                   ],
                 ),
               ),
@@ -3448,9 +3443,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildAllocationPill(isVi ? '50% Thiết yếu' : '50% Needs', advice.needs50, const Color(0xFF3B82F6), isDark),
-                _buildAllocationPill(isVi ? '30% Linh hoạt' : '30% Wants', advice.wants30, const Color(0xFFF59E0B), isDark),
-                _buildAllocationPill(isVi ? '20% Tiết kiệm' : '20% Savings', advice.savings20, const Color(0xFF10B981), isDark),
+                _buildAllocationPill(isVi ? '50% Thiết yếu' : '50% Needs', advice.needs50, context.info, isDark),
+                _buildAllocationPill(isVi ? '30% Linh hoạt' : '30% Wants', advice.wants30, context.warning, isDark),
+                _buildAllocationPill(isVi ? '20% Tiết kiệm' : '20% Savings', advice.savings20, context.income, isDark),
               ],
             ),
           ],
@@ -3458,7 +3453,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             const SizedBox(height: 12),
             Text(
               isVi ? 'Gợi ý hành động từ Mono:' : 'Action advice from Mono:',
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
+              style: context.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
             ...advice.actionableTips.map((tip) => Padding(
@@ -3466,16 +3461,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Padding(
-                        padding: EdgeInsets.only(top: 2, right: 6),
-                        child: Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 14),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2, right: 6),
+                        child: Icon(Icons.check_circle_rounded, color: context.income, size: 14),
                       ),
                       Expanded(
                         child: Text(
                           tip.replaceAll('**', ''),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark ? Colors.white70 : Colors.black87,
+                          style: context.textTheme.bodySmall?.copyWith(
+                            color: context.colors.onSurfaceVariant,
                             height: 1.35,
                           ),
                         ),
@@ -3493,14 +3487,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                color: context.income.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
                 child: Text(
                   isVi ? 'Quản lý Ngân Sách & Mục Tiêu ➔' : 'Manage Budgets & Goals ➔',
                   style: TextStyle(
-                    color: Color(0xFF059669),
+                    color: context.income,
                     fontWeight: FontWeight.bold,
                     fontSize: 12.5,
                   ),
@@ -3522,7 +3516,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
           children: [
             Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
             const SizedBox(width: 4),
-            Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                color: isDark ? AppColors.textMutedDark : context.colors.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 2),
@@ -3538,11 +3538,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+        Text(label, style: context.textTheme.labelSmall?.copyWith(color: context.colors.onSurfaceVariant)),
         const SizedBox(height: 2),
         Text(
           CurrencyUtils.formatCurrency(amount),
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: color),
+          style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: color),
         ),
       ],
     );
@@ -3552,13 +3552,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2A1C1C) : const Color(0xFFFEF2F2),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.red.shade300, width: 1),
+        color: context.warningBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: context.warning.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         children: [
-          const Icon(Icons.shield_outlined, color: Colors.redAccent, size: 24),
+          Icon(Icons.shield_outlined, color: context.warning, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -3566,12 +3566,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
               children: [
                 Text(
                   isVi ? 'Bảo mật & Quyền riêng tư' : 'Security & Privacy',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.redAccent),
+                  style: context.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold, color: context.warning),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   isVi ? 'Vui lòng tự thao tác để bảo vệ thông tin cá nhân' : 'Please navigate manually to protect personal info',
-                  style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white70 : Colors.black87),
+                  style: context.textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceVariant),
                 ),
               ],
             ),
@@ -3580,7 +3580,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             onPressed: () {
               Navigator.push(context, PageTransitions.slideRight(const SecurityScreen()));
             },
-            child: Text(isVi ? 'Đi tới' : 'Go', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+            child: Text(isVi ? 'Đi tới' : 'Go', style: TextStyle(fontWeight: FontWeight.bold, color: context.warning)),
           ),
         ],
       ),
@@ -3596,10 +3596,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1A2E2C) : const Color(0xFFE8F5F3),
-          borderRadius: BorderRadius.circular(14),
+          color: primaryColor.withValues(alpha: isDark ? 0.15 : 0.08),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: primaryColor.withValues(alpha: isDark ? 0.4 : 0.45),
+            color: primaryColor.withValues(alpha: isDark ? 0.4 : 0.3),
             width: 1.2,
           ),
           boxShadow: [
@@ -3624,10 +3624,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             const SizedBox(width: 10),
             Text(
               isVi ? 'Mở $title' : 'Open $title',
-              style: TextStyle(
-                fontSize: 13,
+              style: context.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : const Color(0xFF1C4542),
+                color: context.colors.onSurface,
               ),
             ),
             const SizedBox(width: 8),
@@ -3663,17 +3662,18 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
           height: 32,
           margin: const EdgeInsets.symmetric(horizontal: 2),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF1F5F9),
+            color: isDark ? AppColors.surfaceElevatedDark : context.colors.surfaceContainerHighest,
             shape: BoxShape.circle,
-            border: isDark
-                ? Border.all(color: const Color(0xFF2DD4BF).withValues(alpha: 0.25), width: 0.8)
-                : null,
+            border: Border.all(
+              color: isDark ? context.colors.outline.withValues(alpha: 0.25) : context.colors.outlineVariant,
+              width: 0.8,
+            ),
           ),
           child: Center(
             child: Icon(
               icon,
               size: 18,
-              color: isDark ? const Color(0xFF5EEAD4) : const Color(0xFF2F7E79),
+              color: isDark ? AppColors.primaryTealVibrant : primaryColor,
             ),
           ),
         ),
@@ -3691,15 +3691,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
           margin: const EdgeInsets.fromLTRB(12, 4, 12, 10),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF162423) : const Color(0xFFF0FDF8),
+            color: isDark ? context.colors.surface : context.cardBg,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: const Color(0xFF438883).withValues(alpha: 0.35),
+              color: primaryColor.withValues(alpha: 0.35),
               width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF438883).withValues(alpha: isDark ? 0.22 : 0.12),
+                color: primaryColor.withValues(alpha: isDark ? 0.22 : 0.12),
                 blurRadius: 16,
                 offset: const Offset(0, -3),
               ),
@@ -3721,12 +3721,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                 constraints: const BoxConstraints(minHeight: 52, maxHeight: 96),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.black38 : Colors.white.withValues(alpha: 0.9),
+                  color: isDark ? AppColors.inputBgDark : context.colors.surfaceContainerHighest.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: hasText
-                        ? const Color(0xFF438883).withValues(alpha: 0.5)
-                        : (isDark ? Colors.white12 : Colors.grey.shade200),
+                        ? (isDark ? AppColors.primaryTealVibrant : primaryColor).withValues(alpha: 0.5)
+                        : (isDark ? context.colors.outline.withValues(alpha: 0.25) : context.colors.outlineVariant),
                     width: hasText ? 1.4 : 1.0,
                   ),
                 ),
@@ -3737,10 +3737,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                       ? Text.rich(
                           TextSpan(
                             text: _inputController.text,
-                            style: TextStyle(
-                              fontSize: 14.5,
+                            style: context.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              color: context.colors.onSurface,
                               height: 1.4,
                             ),
                             children: [
@@ -3759,20 +3758,19 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                             Icon(
                               Icons.mic_none_rounded,
                               size: 17,
-                              color: isDark ? Colors.white38 : Colors.black38,
+                              color: isDark ? AppColors.textMutedDark : Colors.black38,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 isVi ? 'Đang nghe tiếng Việt... (VD: "Ăn bún bò 35k ví MoMo")' : 'Listening... (e.g. "Lunch \$15 Cash")',
-                                style: TextStyle(
-                                  fontSize: 13,
+                                style: context.textTheme.bodySmall?.copyWith(
                                   fontStyle: FontStyle.italic,
-                                  color: isDark ? Colors.white38 : Colors.black45,
+                                  color: context.colors.onSurfaceVariant,
                                 ),
                               ),
                             ),
-                            _BlinkingCursor(color: isDark ? Colors.white38 : Colors.black38),
+                            _BlinkingCursor(color: isDark ? AppColors.primaryTealVibrant : Colors.black38),
                           ],
                         ),
                 ),
@@ -3798,9 +3796,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                       hasText
                           ? (isVi ? 'Đang lắng nghe... Dừng nói hoặc nhấn "Gửi ngay"' : 'Listening... Stop speaking or tap "Send Now"')
                           : (isVi ? 'Hãy nói yêu cầu của bạn bằng tiếng Việt...' : 'Speak your request...'),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? Colors.white70 : Colors.black54,
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -3816,13 +3813,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                     flex: 2,
                     child: OutlinedButton.icon(
                       onPressed: _cancelVoiceRecording,
-                      icon: const Icon(Icons.close_rounded, size: 18, color: Colors.redAccent),
+                      icon: Icon(Icons.close_rounded, size: 18, color: context.expense),
                       label: Text(
                         context.tr('cancel'),
-                        style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13.5),
+                        style: TextStyle(color: context.expense, fontWeight: FontWeight.bold, fontSize: 13.5),
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.35)),
+                        side: BorderSide(color: context.expense.withValues(alpha: 0.35)),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         padding: const EdgeInsets.symmetric(vertical: 11),
                       ),
@@ -3836,13 +3833,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 11),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF438883), Color(0xFF2F7E79)],
+                          gradient: LinearGradient(
+                            colors: [primaryColor, primaryColor.withValues(alpha: 0.85)],
                           ),
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF438883).withValues(alpha: 0.35),
+                              color: primaryColor.withValues(alpha: 0.35),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
@@ -3886,13 +3883,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
               margin: const EdgeInsets.fromLTRB(16, 0, 16, 6),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF065F46), Color(0xFF047857)],
+                gradient: LinearGradient(
+                  colors: [context.income, context.income.withValues(alpha: 0.85)],
                 ),
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.green.withValues(alpha: 0.3),
+                    color: context.income.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -3943,10 +3940,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
             margin: const EdgeInsets.fromLTRB(10, 4, 10, 10),
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF162524) : Colors.white,
-              borderRadius: BorderRadius.circular(26),
+              color: isDark ? AppColors.surfaceElevatedDark : context.inputBgColor,
+              borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: isDark ? const Color(0xFF2DD4BF).withValues(alpha: 0.3) : const Color(0xFFE2E8F0),
+                color: isDark ? context.colors.outline.withValues(alpha: 0.28) : context.colors.outlineVariant,
                 width: 1.2,
               ),
               boxShadow: [
@@ -4001,16 +3998,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                       onSubmitted: _handleSendMessage,
                       maxLines: 4,
                       minLines: 1,
+                      cursorColor: isDark ? AppColors.primaryTealVibrant : primaryColor,
                       textAlignVertical: TextAlignVertical.center,
-                      style: TextStyle(
-                        color: isDark ? Colors.white : const Color(0xFF1E293B),
-                        fontSize: 14.5,
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        color: context.colors.onSurface,
                       ),
                       decoration: InputDecoration(
                         hintText: isVi ? 'Hỏi Mono hoặc nhập lệnh...' : 'Ask Mono or enter command...',
-                        hintStyle: TextStyle(
-                          fontSize: 13.5,
-                          color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade400,
+                        hintStyle: context.textTheme.bodyMedium?.copyWith(
+                          color: isDark ? AppColors.textMutedDark : context.colors.onSurfaceVariant.withValues(alpha: 0.7),
                         ),
                         border: InputBorder.none,
                         isDense: true,
@@ -4038,15 +4034,17 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with TickerProvid
                         width: 38,
                         height: 38,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF438883), Color(0xFF2F7E79)],
+                          gradient: LinearGradient(
+                            colors: isDark
+                                ? [AppColors.primaryTeal, const Color(0xFF2E7E78)]
+                                : [primaryColor, primaryColor.withValues(alpha: 0.85)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF438883).withValues(alpha: 0.35),
+                              color: (isDark ? AppColors.primaryTeal : primaryColor).withValues(alpha: 0.35),
                               blurRadius: 6,
                               offset: const Offset(0, 2),
                             ),
@@ -4263,7 +4261,7 @@ class _MonoThinkingBubbleState extends State<_MonoThinkingBubble> with SingleTic
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: widget.isDark ? const Color(0xFF1E2827) : Colors.white,
+              color: widget.isDark ? context.colors.surface : context.cardBg,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(6),
                 topRight: Radius.circular(18),
@@ -4271,11 +4269,13 @@ class _MonoThinkingBubbleState extends State<_MonoThinkingBubble> with SingleTic
                 bottomRight: Radius.circular(18),
               ),
               border: Border.all(
-                color: widget.isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade200,
+                color: widget.isDark
+                    ? context.colors.outline.withValues(alpha: 0.25)
+                    : context.colors.outlineVariant,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: widget.isDark ? 0.2 : 0.04),
+                  color: Colors.black.withValues(alpha: widget.isDark ? 0.25 : 0.04),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -4292,9 +4292,8 @@ class _MonoThinkingBubbleState extends State<_MonoThinkingBubble> with SingleTic
                   child: Text(
                     _thinkingText,
                     key: ValueKey<String>(_thinkingText),
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: widget.isDark ? Colors.white70 : Colors.black54,
+                    style: context.textTheme.bodySmall?.copyWith(
+                      color: widget.isDark ? AppColors.textPrimaryDark : context.colors.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/theme/app_theme.dart';
 import '../../widgets/mono_liquid_glass_logo.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../home/home_screen.dart';
@@ -198,13 +199,11 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     // Nền Aura thích ứng OLED Dark Mode và Light Mode (Tông màu xanh Teal đặc trưng của MONO)
-    final bgColor = isDark ? const Color(0xFF091413) : const Color(0xFFF4FBF9);
-    final auraCenterColor = isDark
-        ? const Color(0xFF5E8C83).withValues(alpha: 0.32)
-        : const Color(0xFF5E8C83).withValues(alpha: 0.25);
+    final bgColor = isDark ? AppColors.bgDark : AppColors.bgLight;
+    final auraCenterColor = AppColors.logoAura.withValues(alpha: isDark ? 0.32 : 0.22);
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -271,15 +270,17 @@ class _SplashScreenState extends State<SplashScreen>
                           children: [
                             MonoLiquidGlassLogo.wordmark(
                               height: 34,
-                              color: isDark ? Colors.white : const Color(0xFF0F2625),
+                              color: context.colors.onSurface,
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'FINANCIAL TRACKER',
-                              style: TextStyle(
-                                color: isDark
-                                    ? const Color(0xFF2DD4BF).withValues(alpha: 0.85)
-                                    : const Color(0xFF0D9488),
+                              style: context.textTheme.labelSmall?.copyWith(
+                                color: context.brandColor,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 3.2,
+                              ) ?? TextStyle(
+                                color: context.brandColor,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 3.2,
@@ -305,8 +306,12 @@ class _SplashScreenState extends State<SplashScreen>
               child: Center(
                 child: Text(
                   'v${AppConstants.appVersion}',
-                  style: TextStyle(
-                    color: isDark ? Colors.white30 : Colors.black26,
+                  style: context.textTheme.bodySmall?.copyWith(
+                    color: context.colors.onSurfaceVariant.withValues(alpha: 0.5),
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.8,
+                  ) ?? TextStyle(
+                    color: context.colors.onSurfaceVariant.withValues(alpha: 0.5),
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.8,

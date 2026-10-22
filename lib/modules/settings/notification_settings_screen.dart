@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/theme/app_theme.dart';
 import '../../services/smart_notification_service.dart';
 import '../../services/local_notification_service.dart';
 import '../../services/language_service.dart';
@@ -188,11 +189,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     final controller = TextEditingController(
       text: CurrencyUtils.formatNumberOnly(_dailySpendingLimit),
     );
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: context.cardBg,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
       builder: (modalCtx) => StatefulBuilder(
         builder: (modalCtx, setModalState) => Padding(
@@ -219,15 +220,15 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                 children: [
                   Text(
                     context.tr('daily_limit_title'),
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.colors.onSurface),
                   ),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(modalCtx)),
+                  IconButton(icon: Icon(Icons.close, color: context.colors.onSurfaceVariant), onPressed: () => Navigator.pop(modalCtx)),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
                 context.tr('daily_limit_desc'),
-                style: const TextStyle(fontSize: 13, color: Colors.grey),
+                style: TextStyle(fontSize: 13, color: context.colors.onSurfaceVariant),
               ),
               const SizedBox(height: 20),
 
@@ -236,14 +237,25 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                 controller: controller,
                 keyboardType: TextInputType.number,
                 autofocus: true,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF438883)),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: context.brandColor),
                 decoration: InputDecoration(
                   labelText: context.tr('daily_limit_amount'),
                   suffixText: '₫',
-                  suffixStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  suffixStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.brandColor),
                   filled: true,
-                  fillColor: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF3F4F6),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                  fillColor: context.cardBg,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: context.borderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: context.borderColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: context.brandColor, width: 1.5),
+                  ),
                 ),
                 onChanged: (val) {
                   final cleaned = val.replaceAll(RegExp(r'[^\d]'), '');
@@ -293,7 +305,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                     _saveDailySpendingLimit(amount);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF438883),
+                    backgroundColor: context.brandColor,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: Text(
@@ -351,7 +363,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -426,9 +438,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF438883).withValues(alpha: 0.1),
+                                color: context.brandColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: const Color(0xFF438883).withValues(alpha: 0.2)),
+                                border: Border.all(color: context.brandColor.withValues(alpha: 0.2)),
                               ),
                               child: Row(
                                 children: [
@@ -441,16 +453,16 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
-                                            color: isDark ? Colors.white60 : Colors.grey.shade700,
+                                            color: context.colors.onSurfaceVariant,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
                                           CurrencyUtils.formatCurrency(_dailySpendingLimit),
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 20,
                                             fontWeight: FontWeight.bold,
-                                            color: Color(0xFF438883),
+                                            color: context.brandColor,
                                           ),
                                         ),
                                       ],
@@ -458,11 +470,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                                   ),
                                   // Nút nói giọng nói
                                   IconButton(
-                                    icon: const Icon(Icons.mic, color: Color(0xFF438883)),
+                                    icon: Icon(Icons.mic, color: context.brandColor),
                                     tooltip: context.tr('daily_limit_set_voice'),
                                     onPressed: _openVoiceSetLimit,
                                     style: IconButton.styleFrom(
-                                      backgroundColor: const Color(0xFF438883).withValues(alpha: 0.15),
+                                      backgroundColor: context.brandColor.withValues(alpha: 0.15),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                     ),
                                   ),
@@ -476,7 +488,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                                       style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                                     ),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF438883),
+                                      backgroundColor: context.brandColor,
                                       elevation: 0,
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -557,7 +569,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                           children: [
                             ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF438883),
+                                backgroundColor: context.brandColor,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -581,8 +593,8 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                             const SizedBox(height: 12),
                             OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF10B981),
-                                side: const BorderSide(color: Color(0xFF10B981), width: 1.5),
+                                foregroundColor: context.income,
+                                side: BorderSide(color: context.income, width: 1.5),
                                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               ),
@@ -598,9 +610,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                             const SizedBox(height: 12),
                             OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: isDark ? const Color(0xFF00E5FF) : const Color(0xFF438883),
+                                foregroundColor: isDark ? const Color(0xFF00E5FF) : context.brandColor,
                                 side: BorderSide(
-                                  color: isDark ? const Color(0xFF00E5FF) : const Color(0xFF438883),
+                                  color: isDark ? const Color(0xFF00E5FF) : context.brandColor,
                                   width: 1.5,
                                 ),
                                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
@@ -625,13 +637,13 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                           color: isDark ? const Color(0xFF1E2827) : const Color(0xFFF0FDF4),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                            color: context.income.withValues(alpha: 0.3),
                           ),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.info_outline_rounded, color: Color(0xFF10B981), size: 20),
+                            Icon(Icons.info_outline_rounded, color: context.income, size: 20),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -654,7 +666,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                             ? 'Hệ thống sẽ tự động quét các giao dịch và ví tiền thực tế để tạo báo cáo chi tiêu và cảnh báo vượt hạn mức kịp thời cho bạn.'
                             : 'The system automatically scans transactions and wallet balances to generate spending reports and timely budget alerts.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600, height: 1.4),
+                        style: TextStyle(fontSize: 12, color: context.colors.onSurfaceVariant, height: 1.4),
                       ),
                     ],
                   ),
@@ -673,7 +685,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       child: Text(
         title,
         style: TextStyle(
-          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+          color: context.colors.onSurfaceVariant,
           fontSize: 12.5,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.8,
@@ -683,17 +695,16 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
   }
 
   Widget _buildInfoBox(BuildContext context, List<Widget> children) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF222C2A) : Colors.white,
+        color: context.cardBg,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? Colors.white10 : const Color(0xFFE5E7EB),
+          color: context.borderColor,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+            color: Colors.black.withValues(alpha: context.isDarkMode ? 0.2 : 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -712,7 +723,6 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     required ValueChanged<bool> onChanged,
     required bool showDivider,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         Padding(
@@ -722,10 +732,10 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF438883).withValues(alpha: 0.12),
+                  color: context.brandColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: const Color(0xFF438883), size: 22),
+                child: Icon(icon, color: context.brandColor, size: 22),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -737,7 +747,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        color: context.colors.onSurface,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -745,7 +755,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                       subtitle,
                       style: TextStyle(
                         fontSize: 12.5,
-                        color: isDark ? Colors.white60 : Colors.grey.shade600,
+                        color: context.colors.onSurfaceVariant,
                         height: 1.3,
                       ),
                     ),
@@ -753,11 +763,10 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                 ),
               ),
               const SizedBox(width: 8),
-              Switch(
+              Switch.adaptive(
                 value: value,
                 onChanged: onChanged,
-                activeThumbColor: Colors.white,
-                activeTrackColor: const Color(0xFF438883),
+                activeTrackColor: context.brandColor,
               ),
             ],
           ),
@@ -765,7 +774,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
         if (showDivider)
           Divider(
             height: 1,
-            color: isDark ? Colors.white12 : const Color(0xFFF0F0F0),
+            color: context.dividerColor,
             indent: 64,
             endIndent: 16,
           ),

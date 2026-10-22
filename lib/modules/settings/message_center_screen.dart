@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_theme.dart';
 import '../../models/message_model.dart';
 import '../../services/firestore_service.dart';
 import '../../utils/page_transitions.dart';
@@ -65,11 +66,11 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -141,8 +142,8 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                   stream: _messagesStream,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(color: Color(0xFF438883)),
+                      return Center(
+                        child: CircularProgressIndicator(color: context.brandColor),
                       );
                     }
 
@@ -159,10 +160,10 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                                 width: 80,
                                 height: 80,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF438883).withValues(alpha: 0.1),
+                                  color: context.brandColor.withValues(alpha: isDark ? 0.2 : 0.1),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.mail_outline_rounded, size: 40, color: Color(0xFF438883)),
+                                child: Icon(Icons.mail_outline_rounded, size: 40, color: context.brandColor),
                               ),
                               const SizedBox(height: 20),
                               Text(
@@ -170,7 +171,7 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                                  color: context.colors.onSurface,
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -181,7 +182,7 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: isDark ? Colors.white60 : Colors.grey.shade600,
+                                  color: context.colors.onSurfaceVariant,
                                   height: 1.4,
                                 ),
                               ),
@@ -248,10 +249,10 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                                color: context.cardBg,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE5E7EB),
+                                  color: context.borderColor,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
@@ -306,19 +307,19 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                                                   timeStr,
                                                   style: TextStyle(
                                                     fontSize: 11,
-                                                    color: isDark ? Colors.white54 : Colors.grey.shade500,
+                                                    color: context.colors.onSurfaceVariant,
                                                   ),
                                                 ),
                                                 if (msg.isUnread) ...[
                                                   const SizedBox(width: 6),
-                                                   Container(
-                                                     width: 8,
-                                                     height: 8,
-                                                     decoration: BoxDecoration(
-                                                       shape: BoxShape.circle,
-                                                       color: isDark ? const Color(0xFF00E5FF) : const Color(0xFF438883),
-                                                     ),
-                                                   ),
+                                                  Container(
+                                                    width: 8,
+                                                    height: 8,
+                                                    decoration: BoxDecoration(
+                                                      shape: BoxShape.circle,
+                                                      color: context.brandColor,
+                                                    ),
+                                                  ),
                                                 ],
                                               ],
                                             ),
@@ -330,7 +331,7 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                                           style: TextStyle(
                                             fontSize: 15,
                                             fontWeight: msg.isUnread ? FontWeight.bold : FontWeight.w600,
-                                            color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                                            color: context.colors.onSurface,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -340,7 +341,7 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                                           msg.shortMessage,
                                           style: TextStyle(
                                             fontSize: 13,
-                                            color: isDark ? Colors.white70 : Colors.grey.shade600,
+                                            color: context.colors.onSurfaceVariant,
                                             height: 1.3,
                                           ),
                                           maxLines: 2,
@@ -350,7 +351,7 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 6),
-                                  Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Colors.grey.shade400),
+                                  Icon(Icons.arrow_forward_ios_rounded, size: 13, color: context.colors.onSurfaceVariant.withValues(alpha: 0.5)),
                                 ],
                               ),
                             ),

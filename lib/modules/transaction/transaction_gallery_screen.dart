@@ -1,6 +1,7 @@
 import '../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_theme.dart';
 
 import '../../services/receipt_storage_service.dart';
 import '../../data/repositories/transaction_repository.dart';
@@ -27,7 +28,7 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
     final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -119,8 +120,8 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                   stream: _txRepo.getTransactionsWithPhotosStream(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(color: Color(0xFF438883)),
+                      return Center(
+                        child: CircularProgressIndicator(color: context.brandColor),
                       );
                     }
 
@@ -166,25 +167,11 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: isDark
-                                      ? [
-                                          const Color(0xFF132C2A),
-                                          const Color(0xFF0F2220),
-                                        ]
-                                      : [
-                                          const Color(0xFFE8F5F3),
-                                          const Color(0xFFD6EFEA),
-                                        ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(22),
+                                color: context.cardBgColor,
+                                borderRadius: BorderRadius.circular(18),
                                 border: Border.all(
-                                  color: isDark
-                                      ? const Color(0xFF235550)
-                                      : const Color(0xFF438883).withValues(alpha: 0.2),
-                                  width: 1.2,
+                                  color: context.borderColor,
+                                  width: 1.0,
                                 ),
                               ),
                               child: Row(
@@ -193,12 +180,12 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                                     width: 48,
                                     height: 48,
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF438883).withValues(alpha: isDark ? 0.35 : 0.15),
-                                      borderRadius: BorderRadius.circular(16),
+                                      color: context.brandColor.withValues(alpha: isDark ? 0.35 : 0.15),
+                                      borderRadius: BorderRadius.circular(14),
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.receipt_long_rounded,
-                                      color: Color(0xFF438883),
+                                      color: context.brandColor,
                                       size: 26,
                                     ),
                                   ),
@@ -209,10 +196,9 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                                       children: [
                                         Text(
                                           isVi ? '${photos.length} hóa đơn đã lưu trữ' : '${photos.length} receipts archived',
-                                          style: TextStyle(
-                                            fontSize: 15,
+                                          style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
                                             fontWeight: FontWeight.w800,
-                                            color: isDark ? Colors.white : const Color(0xFF0F2625),
+                                            color: context.textPrimaryColor,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
@@ -220,20 +206,18 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                                           children: [
                                             Text(
                                               'Chi: -${CurrencyUtils.formatCurrency(totalExpense)}',
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: Color(0xFFEF4444),
+                                              style: (context.textTheme.labelMedium ?? const TextStyle()).copyWith(
+                                                fontWeight: FontWeight.w700,
+                                                color: context.expense,
                                               ),
                                             ),
                                             if (totalIncome > 0) ...[
                                               const SizedBox(width: 10),
                                               Text(
                                                 'Thu: +${CurrencyUtils.formatCurrency(totalIncome)}',
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Color(0xFF10B981),
+                                                style: (context.textTheme.labelMedium ?? const TextStyle()).copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                  color: context.income,
                                                 ),
                                               ),
                                             ],
@@ -366,7 +350,6 @@ class _GalleryEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isVi = LanguageScope.of(context).isVietnamese;
 
     return Center(
@@ -379,24 +362,24 @@ class _GalleryEmptyState extends StatelessWidget {
               width: 110,
               height: 110,
               decoration: BoxDecoration(
-                color: const Color(0xFF438883).withValues(alpha: 0.12),
+                color: context.brandColor.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: const Color(0xFF438883).withValues(alpha: 0.25),
+                  color: context.brandColor.withValues(alpha: 0.25),
                   width: 1.5,
                 ),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.receipt_long_rounded,
                 size: 54,
-                color: Color(0xFF438883),
+                color: context.brandColor,
               ),
             ),
             const SizedBox(height: 24),
             Text(
               isVi ? 'Chưa có hóa đơn nào' : 'No receipts yet',
-              style: TextStyle(
-                color: isDark ? Colors.white : const Color(0xFF1E293B),
+              style: (context.textTheme.titleLarge ?? const TextStyle()).copyWith(
+                color: context.textPrimaryColor,
                 fontSize: 19,
                 fontWeight: FontWeight.w800,
               ),
@@ -405,8 +388,8 @@ class _GalleryEmptyState extends StatelessWidget {
             Text(
               isVi ? 'Khi thêm khoản thu chi hoặc dùng Trợ lý Mono quét hóa đơn, ảnh chứng từ sẽ tự động lưu trữ tại đây.' : 'When you add transactions or scan receipts with Mono Assistant, photos will be stored here.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: isDark ? Colors.white60 : Colors.grey.shade600,
+              style: (context.textTheme.bodyMedium ?? const TextStyle()).copyWith(
+                color: context.textSecondaryColor,
                 fontSize: 14,
                 height: 1.5,
               ),
@@ -423,15 +406,15 @@ class _GalleryEmptyState extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF438883), Color(0xFF2F6360)],
+                  gradient: LinearGradient(
+                    colors: [context.colors.primary, context.brandColor],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(18),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF438883).withValues(alpha: 0.35),
+                      color: context.brandColor.withValues(alpha: 0.35),
                       blurRadius: 14,
                       offset: const Offset(0, 6),
                     ),
@@ -474,7 +457,7 @@ class _PhotoGridTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final heroTag = 'tx_photo_${transaction.id}';
     final isIncome = transaction.isIncome;
-    final statusColor = isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final statusColor = isIncome ? context.income : context.expense;
 
     return Hero(
       tag: heroTag,
@@ -532,8 +515,8 @@ class _PhotoGridTile extends StatelessWidget {
                     right: 6,
                     child: Text(
                       '${isIncome ? '+' : '-'}${CurrencyUtils.formatCurrency(transaction.amount)}',
-                      style: TextStyle(
-                        color: isIncome ? const Color(0xFF34D399) : Colors.white,
+                      style: (context.textTheme.labelSmall ?? const TextStyle()).copyWith(
+                        color: isIncome ? context.income : Colors.white,
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.2,

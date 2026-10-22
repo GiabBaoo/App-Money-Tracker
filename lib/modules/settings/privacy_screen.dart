@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/theme/app_theme.dart';
 import '../../services/sync_service.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/language_service.dart';
@@ -148,13 +149,13 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
   @override
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final isOnline = _connectivity.isOnline;
     final isSyncing = _isManualSyncing || _syncService.isSyncing;
     final lastSyncTime = _syncService.lastSyncTime;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -263,15 +264,15 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                             badge: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF438883).withValues(alpha: 0.12),
+                                color: context.brandColor.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 isVi ? 'An toàn' : 'Secured',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF438883),
+                                  color: context.brandColor,
                                 ),
                               ),
                             ),
@@ -298,10 +299,10 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFFEE2E2),
+                                      color: context.expense.withValues(alpha: isDark ? 0.2 : 0.12),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: const Icon(Icons.delete_forever_rounded, color: Color(0xFFE63946), size: 22),
+                                    child: Icon(Icons.delete_forever_rounded, color: context.expense, size: 22),
                                   ),
                                   const SizedBox(width: 14),
                                   Expanded(
@@ -310,10 +311,10 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                                       children: [
                                         Text(
                                           isVi ? 'Xóa tài khoản vĩnh viễn' : 'Delete Account Permanently',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 15,
                                             fontWeight: FontWeight.w600,
-                                            color: Color(0xFFE63946),
+                                            color: context.expense,
                                           ),
                                         ),
                                         const SizedBox(height: 3),
@@ -321,12 +322,12 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                                           isVi
                                               ? 'Xóa tài khoản và toàn bộ dữ liệu trên đám mây'
                                               : 'Permanently remove your account and all cloud data',
-                                          style: const TextStyle(fontSize: 12.5, color: Colors.grey, height: 1.25),
+                                          style: TextStyle(fontSize: 12.5, color: context.colors.onSurfaceVariant, height: 1.25),
                                         ),
                                       ],
                                     ),
                                   ),
-                                  Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey.shade400),
+                                  Icon(Icons.arrow_forward_ios_rounded, size: 14, color: context.colors.onSurfaceVariant.withValues(alpha: 0.5)),
                                 ],
                               ),
                             ),
@@ -356,9 +357,9 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: context.cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFE5E7EB)),
+        border: Border.all(color: context.borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
@@ -375,14 +376,13 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: isOnline
-                      ? const Color(0xFF438883).withValues(alpha: 0.12)
-                      : Colors.grey.withValues(alpha: 0.12),
+                  color: (isOnline ? context.brandColor : context.colors.onSurfaceVariant)
+                      .withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   isOnline ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
-                  color: isOnline ? const Color(0xFF438883) : Colors.grey,
+                  color: isOnline ? context.brandColor : context.colors.onSurfaceVariant,
                   size: 24,
                 ),
               ),
@@ -396,7 +396,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                        color: context.colors.onSurface,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -407,7 +407,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                           height: 8,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isOnline ? const Color(0xFF2ECC71) : Colors.amber,
+                            color: isOnline ? context.income : context.warning,
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -418,7 +418,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: isDark ? Colors.white70 : Colors.grey.shade600,
+                            color: context.colors.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -433,7 +433,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF383838) : const Color(0xFFF9FAFB),
+              color: isDark ? context.surfaceElevatedColor : const Color(0xFFF9FAFB),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -444,7 +444,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   children: [
                     Text(
                       isVi ? 'Đồng bộ gần nhất' : 'Last Synced',
-                      style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : Colors.grey.shade600),
+                      style: TextStyle(fontSize: 11, color: context.colors.onSurfaceVariant),
                     ),
                     const SizedBox(height: 3),
                     Text(
@@ -452,7 +452,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                        color: context.colors.onSurface,
                       ),
                     ),
                   ],
@@ -462,7 +462,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   children: [
                     Text(
                       isVi ? 'Hàng chờ đồng bộ' : 'Pending Queue',
-                      style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : Colors.grey.shade600),
+                      style: TextStyle(fontSize: 11, color: context.colors.onSurfaceVariant),
                     ),
                     const SizedBox(height: 3),
                     Text(
@@ -472,7 +472,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: _pendingCount == 0 ? const Color(0xFF438883) : Colors.orange,
+                        color: _pendingCount == 0 ? context.income : context.warning,
                       ),
                     ),
                   ],
@@ -488,7 +488,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
             height: 48,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF438883),
+                backgroundColor: context.brandColor,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 elevation: 0,
@@ -534,7 +534,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       child: Text(
         title,
         style: TextStyle(
-          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+          color: context.colors.onSurfaceVariant,
           fontSize: 12,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.8,
@@ -546,9 +546,9 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
   Widget _buildCardContainer({required bool isDark, required List<Widget> children}) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: context.cardBg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFE5E7EB)),
+        border: Border.all(color: context.borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
@@ -579,10 +579,10 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE8F5F0),
+                color: context.brandColor.withValues(alpha: isDark ? 0.2 : 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: const Color(0xFF438883), size: 22),
+              child: Icon(icon, color: context.brandColor, size: 22),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -594,7 +594,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                      color: context.colors.onSurface,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -602,7 +602,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                     subtitle,
                     style: TextStyle(
                       fontSize: 12.5,
-                      color: isDark ? Colors.white60 : Colors.grey.shade600,
+                      color: context.colors.onSurfaceVariant,
                       height: 1.25,
                     ),
                   ),
@@ -615,7 +615,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
             ],
             if (onTap != null) ...[
               const SizedBox(width: 6),
-              Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey.shade400),
+              Icon(Icons.arrow_forward_ios_rounded, size: 14, color: context.colors.onSurfaceVariant.withValues(alpha: 0.5)),
             ],
           ],
         ),
@@ -629,7 +629,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       thickness: 1,
       indent: 62,
       endIndent: 16,
-      color: isDark ? Colors.white10 : const Color(0xFFF3F4F6),
+      color: context.dividerColor,
     );
   }
 }

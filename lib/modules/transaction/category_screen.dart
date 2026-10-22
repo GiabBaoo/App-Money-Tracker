@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_theme.dart';
 import '../../services/firestore_service.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
@@ -156,13 +157,13 @@ class _CategoryScreenState extends State<CategoryScreen> {
     final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0A1817) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? AppColors.bgDark : AppColors.bgLight,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: isDark
-                ? [const Color(0xFF0F2625), const Color(0xFF0A1817)]
-                : [const Color(0xFF438883), const Color(0xFFF8FAFC)],
+                ? [const Color(0xFF0F2625), AppColors.bgDark]
+                : [context.brandColor, AppColors.bgLight],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             stops: const [0.0, 0.35],
@@ -282,12 +283,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             duration: const Duration(milliseconds: 200),
                             curve: Curves.easeInOut,
                             decoration: BoxDecoration(
-                              color: !_isIncomeTab ? const Color(0xFFE63946) : Colors.transparent,
+                              color: !_isIncomeTab ? context.expense : Colors.transparent,
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: !_isIncomeTab
                                   ? [
                                       BoxShadow(
-                                        color: const Color(0xFFE63946).withValues(alpha: 0.35),
+                                        color: context.expense.withValues(alpha: 0.35),
                                         blurRadius: 8,
                                         offset: const Offset(0, 2),
                                       ),
@@ -330,12 +331,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             duration: const Duration(milliseconds: 200),
                             curve: Curves.easeInOut,
                             decoration: BoxDecoration(
-                              color: _isIncomeTab ? const Color(0xFF2ECC71) : Colors.transparent,
+                              color: _isIncomeTab ? context.income : Colors.transparent,
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: _isIncomeTab
                                   ? [
                                       BoxShadow(
-                                        color: const Color(0xFF2ECC71).withValues(alpha: 0.35),
+                                        color: context.income.withValues(alpha: 0.35),
                                         blurRadius: 8,
                                         offset: const Offset(0, 2),
                                       ),
@@ -398,37 +399,37 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           child: Container(
                             height: 48,
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF141E2E) : const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(18),
+                              color: context.inputBgColor,
+                              borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                color: context.borderColor,
                               ),
                             ),
                             child: TextField(
                               controller: _searchController,
                               focusNode: _searchFocusNode,
                               onChanged: (val) => setState(() => _searchQuery = val.toLowerCase().trim()),
-                              style: TextStyle(
-                                color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B),
+                              style: (context.textTheme.bodyMedium ?? const TextStyle()).copyWith(
+                                color: context.textPrimaryColor,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                               ),
                               decoration: InputDecoration(
                                 hintText: isVi ? 'Tìm kiếm danh mục nhanh...' : 'Search categories quickly...',
-                                hintStyle: TextStyle(
-                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF94A3B8),
+                                hintStyle: (context.textTheme.bodyMedium ?? const TextStyle()).copyWith(
+                                  color: context.textMutedColor,
                                   fontSize: 14,
                                 ),
                                 prefixIcon: Icon(
                                   Icons.search_rounded,
-                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                  color: context.textSecondaryColor,
                                   size: 20,
                                 ),
                                 border: InputBorder.none,
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                 suffixIcon: _searchQuery.isNotEmpty
                                     ? IconButton(
-                                        icon: Icon(Icons.close_rounded, color: isDark ? const Color(0xFF94A3B8) : Colors.grey, size: 18),
+                                        icon: Icon(Icons.close_rounded, color: context.textSecondaryColor, size: 18),
                                         onPressed: () {
                                           _searchController.clear();
                                           setState(() => _searchQuery = '');
@@ -566,7 +567,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
               child: InkWell(
                 onTap: () => Navigator.push(context, PageTransitions.slideRight(const GroupListScreen())),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(18),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
@@ -575,8 +576,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           ? [const Color(0xFF1A3A38), const Color(0xFF1E4842)]
                           : [const Color(0xFFE8F5F3), const Color(0xFFD5EDE9)],
                     ),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF438883).withValues(alpha: 0.3)),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: context.brandColor.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
@@ -584,10 +585,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF438883).withValues(alpha: 0.2),
+                          color: context.brandColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(14),
                         ),
-                        child: const Icon(Icons.group_rounded, color: Color(0xFF438883), size: 22),
+                        child: Icon(Icons.group_rounded, color: context.brandColor, size: 22),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -596,21 +597,24 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           children: [
                             Text(
                               isVi ? 'Nhóm Chi Tiêu' : 'Group Fund',
-                              style: TextStyle(
+                              style: (context.textTheme.titleSmall ?? const TextStyle()).copyWith(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
-                                color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                                color: context.textPrimaryColor,
                               ),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               isVi ? 'Quản lý chi tiêu nhóm, quỹ chung' : 'Manage shared group expenses & funds',
-                              style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.grey.shade600),
+                              style: (context.textTheme.bodySmall ?? const TextStyle()).copyWith(
+                                fontSize: 12,
+                                color: context.textSecondaryColor,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      Icon(Icons.arrow_forward_ios_rounded, size: 16, color: isDark ? Colors.white38 : Colors.grey),
+                      Icon(Icons.arrow_forward_ios_rounded, size: 16, color: context.textSecondaryColor),
                     ],
                   ),
                 ),
@@ -809,7 +813,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           onTap: () {
             Navigator.pop(context, {
               'name': cat['name'],
@@ -832,12 +836,12 @@ class _CategoryScreenState extends State<CategoryScreen> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              color: isDark ? context.cardBgColor : Colors.white,
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: (isCustom || isOverridden)
                     ? color.withValues(alpha: 0.45)
-                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                    : context.borderColor,
                 width: (isCustom || isOverridden) ? 1.5 : 1,
               ),
             ),
@@ -864,8 +868,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           Flexible(
                             child: Text(
                               context.trCat(cat['name']),
-                              style: TextStyle(
-                                color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1A1A1A),
+                              style: (context.textTheme.bodyLarge ?? const TextStyle()).copyWith(
+                                color: context.textPrimaryColor,
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1257,8 +1261,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                 fontSize: 13,
                               ),
-                              backgroundColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              backgroundColor: isDark ? context.colors.surfaceContainerHighest : context.inputBgColor,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                           );
                         }).toList(),
@@ -1271,14 +1275,29 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   TextField(
                     controller: nameController,
                     readOnly: isDefaultEdit,
+                    style: (context.textTheme.bodyMedium ?? const TextStyle()).copyWith(
+                      color: context.textPrimaryColor,
+                      fontSize: 14,
+                    ),
                     decoration: InputDecoration(
                       hintText: context.tr('category_name_hint'),
+                      hintStyle: (context.textTheme.bodyMedium ?? const TextStyle()).copyWith(
+                        color: context.textMutedColor,
+                        fontSize: 14,
+                      ),
                       helperText: isDefaultEdit ? 'Tên danh mục mặc định của hệ thống không thể thay đổi' : null,
-                      helperStyle: TextStyle(fontSize: 11.5, color: isDark ? Colors.white38 : Colors.grey.shade600),
+                      helperStyle: TextStyle(fontSize: 11.5, color: context.textMutedColor),
                       filled: true,
-                      fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6),
+                      fillColor: context.inputBgColor,
                       prefixIcon: Icon(selectedIcon, color: selectedColor),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: context.borderColor),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: context.borderColor),
+                      ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     ),
                   ),

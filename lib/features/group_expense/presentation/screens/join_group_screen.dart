@@ -10,6 +10,7 @@ import '../../../../widgets/mono_toast.dart';
 import '../providers/group_expense_providers.dart';
 import '../../../../models/notification_model.dart';
 import 'group_detail_screen.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../utils/page_transitions.dart';
 import '../../../../utils/category_utils.dart';
 
@@ -288,23 +289,31 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+    final isDark = context.isDarkMode;
+    final primaryColor = context.colors.primary;
+    final bgColor = isDark ? AppColors.bgDark : AppColors.bgLight;
+    final cardBgColor = context.cardBg;
+    final textPrimary = context.colors.onSurface;
+    final textSecondary = context.colors.onSurfaceVariant;
+    final borderColor = context.borderColor;
     final groupAsync = ref.watch(groupDetailsProvider(widget.groupId));
 
     return Scaffold(
+      backgroundColor: bgColor,
       body: groupAsync.when(
         data: (group) {
           if (group == null) {
             return Scaffold(
+              backgroundColor: bgColor,
               appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
               body: Center(
                 child: Container(
                   margin: const EdgeInsets.all(24),
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    color: cardBgColor,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: borderColor, width: 1),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -312,7 +321,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                       Icon(
                         Icons.error_outline,
                         size: 64,
-                        color: Colors.red.withValues(alpha: 0.7),
+                        color: context.colors.error.withValues(alpha: 0.7),
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -320,7 +329,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black87,
+                          color: textPrimary,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -329,7 +338,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 14,
-                          color: isDark ? Colors.white60 : Colors.black54,
+                          color: textSecondary,
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -341,10 +350,13 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                             horizontal: 32,
                             vertical: 12,
                           ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
                         ),
                         child: Text(
                           isVi ? 'Quay lại' : 'Go back',
-                          style: TextStyle(color: Colors.white),
+                          style: const TextStyle(color: Colors.white),
                         ),
                       ),
                     ],
@@ -445,7 +457,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                             groupColor.withValues(alpha: 0.4),
                                           ],
                                         ),
-                                        borderRadius: BorderRadius.circular(24),
+                                        borderRadius: BorderRadius.circular(18),
                                         boxShadow: [
                                           BoxShadow(
                                             color: groupColor.withValues(
@@ -469,9 +481,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                       style: TextStyle(
                                         fontSize: 32,
                                         fontWeight: FontWeight.bold,
-                                        color: isDark
-                                            ? Colors.white
-                                            : Colors.black87,
+                                        color: textPrimary,
                                       ),
                                       textAlign: TextAlign.center,
                                     ),
@@ -482,9 +492,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                         group.description!,
                                         style: TextStyle(
                                           fontSize: 16,
-                                          color: isDark
-                                              ? Colors.white70
-                                              : Colors.black54,
+                                          color: textSecondary,
                                           height: 1.5,
                                         ),
                                         textAlign: TextAlign.center,
@@ -519,10 +527,9 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                   return Container(
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: isDark
-                                          ? const Color(0xFF2E2E2E)
-                                          : const Color(0xFFF5F5F5),
-                                      borderRadius: BorderRadius.circular(16),
+                                      color: cardBgColor,
+                                      borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(color: borderColor, width: 1),
                                     ),
                                     child: Column(
                                       crossAxisAlignment:
@@ -532,9 +539,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                           isVi ? 'Người tạo quỹ' : 'Fund Creator',
                                           style: TextStyle(
                                             fontSize: 13,
-                                            color: isDark
-                                                ? Colors.white60
-                                                : Colors.black54,
+                                            color: textSecondary,
                                             fontWeight: FontWeight.w600,
                                             letterSpacing: 0.5,
                                           ),
@@ -576,9 +581,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                                       fontSize: 16,
                                                       fontWeight:
                                                           FontWeight.bold,
-                                                      color: isDark
-                                                          ? Colors.white
-                                                          : Colors.black87,
+                                                      color: textPrimary,
                                                     ),
                                                   ),
                                                   const SizedBox(height: 4),
@@ -637,26 +640,26 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: Colors.red.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(12),
+                                    color: context.colors.error.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(18),
                                     border: Border.all(
-                                      color: Colors.red,
+                                      color: context.colors.error,
                                       width: 1,
                                     ),
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(
+                                      Icon(
                                         Icons.error_outline,
-                                        color: Colors.red,
+                                        color: context.colors.error,
                                         size: 20,
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Text(
                                           _errorMessage!,
-                                          style: const TextStyle(
-                                            color: Colors.red,
+                                          style: TextStyle(
+                                            color: context.colors.error,
                                             fontSize: 14,
                                           ),
                                         ),
@@ -686,7 +689,8 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                   top: false,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+                      color: cardBgColor,
+                      border: Border(top: BorderSide(color: borderColor, width: 1)),
                     ),
                     padding: const EdgeInsets.all(16),
                     child: _isAccepted || _isRejected
@@ -694,11 +698,11 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               color: _isAccepted
-                                  ? Colors.green.withValues(alpha: 0.1)
-                                  : Colors.red.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
+                                  ? context.income.withValues(alpha: 0.1)
+                                  : context.expense.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(18),
                               border: Border.all(
-                                color: _isAccepted ? Colors.green : Colors.red,
+                                color: _isAccepted ? context.income : context.expense,
                                 width: 1,
                               ),
                             ),
@@ -710,18 +714,18 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                       ? Icons.check_circle_rounded
                                       : Icons.cancel_rounded,
                                   color: _isAccepted
-                                      ? Colors.green
-                                      : Colors.red,
+                                      ? context.income
+                                      : context.expense,
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
                                   _isAccepted
-                                      ? 'Bạn đã chấp nhận lời mời'
-                                      : 'Bạn đã từ chối lời mời',
+                                      ? (isVi ? 'Bạn đã chấp nhận lời mời' : 'You accepted the invitation')
+                                      : (isVi ? 'Bạn đã từ chối lời mời' : 'You declined the invitation'),
                                   style: TextStyle(
                                     color: _isAccepted
-                                        ? Colors.green
-                                        : Colors.red,
+                                        ? context.income
+                                        : context.expense,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -742,14 +746,14 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                         ),
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(
-                                      color: Colors.red.withValues(alpha: 0.5),
-                                      width: 2,
+                                      color: context.colors.error.withValues(alpha: 0.5),
+                                      width: 1.5,
                                     ),
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 14,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(18),
                                     ),
                                   ),
                                   child: _isRejecting
@@ -759,7 +763,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                           child: CircularProgressIndicator(
                                             valueColor:
                                                 AlwaysStoppedAnimation<Color>(
-                                                  Colors.red.withValues(
+                                                  context.colors.error.withValues(
                                                     alpha: 0.7,
                                                   ),
                                                 ),
@@ -769,9 +773,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                       : Text(
                                           isVi ? 'Từ chối' : 'Decline',
                                           style: TextStyle(
-                                            color: Colors.red.withValues(
-                                              alpha: 0.8,
-                                            ),
+                                            color: context.colors.error,
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -791,17 +793,17 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                       vertical: 14,
                                     ),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(18),
                                     ),
                                     elevation: 0,
                                   ),
                                   child: _isJoining
-                                      ? SizedBox(
+                                      ? const SizedBox(
                                           height: 20,
                                           width: 20,
                                           child: CircularProgressIndicator(
                                             valueColor:
-                                                const AlwaysStoppedAnimation<
+                                                AlwaysStoppedAnimation<
                                                   Color
                                                 >(Colors.white),
                                             strokeWidth: 2,
@@ -809,7 +811,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                         )
                                       : Text(
                                           isVi ? 'Chấp nhận' : 'Accept',
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
@@ -826,6 +828,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
           );
         },
         loading: () => Scaffold(
+          backgroundColor: bgColor,
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -835,9 +838,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                 Text(
                   isVi ? 'Đang tải thông tin quỹ...' : 'Loading fund info...',
                   style: TextStyle(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white70
-                        : Colors.black54,
+                    color: textSecondary,
                     fontSize: 16,
                   ),
                 ),
@@ -846,16 +847,16 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
           ),
         ),
         error: (error, stack) => Scaffold(
+          backgroundColor: bgColor,
           appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
           body: Center(
             child: Container(
               margin: const EdgeInsets.all(24),
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF2E2E2E)
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                color: cardBgColor,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: borderColor, width: 1),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -863,22 +864,25 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                   Icon(
                     Icons.error_outline,
                     size: 64,
-                    color: Colors.red.withValues(alpha: 0.7),
+                    color: context.colors.error.withValues(alpha: 0.7),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     isVi ? 'Lỗi tải quỹ' : 'Failed to load fund',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textPrimary),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     isVi ? 'Không thể tải thông tin quỹ. Vui lòng thử lại sau.' : 'Cannot load fund info. Please try again later.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14),
+                    style: TextStyle(fontSize: 14, color: textSecondary),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    ),
                     child: Text(isVi ? 'Quay lại' : 'Go back'),
                   ),
                 ],
@@ -897,14 +901,12 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
     required String value,
     required Color color,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2), width: 1.5),
+        color: context.cardBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: context.borderColor, width: 1),
       ),
       child: Column(
         children: [
@@ -915,7 +917,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black87,
+              color: context.colors.onSurface,
             ),
           ),
           const SizedBox(height: 4),
@@ -923,7 +925,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
             label,
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? Colors.white60 : Colors.black54,
+              color: context.colors.onSurfaceVariant,
               fontWeight: FontWeight.w500,
             ),
           ),

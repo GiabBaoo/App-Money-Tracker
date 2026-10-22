@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_theme.dart';
 import '../../widgets/top_toast.dart';
 import '../../services/language_service.dart';
 import '../../widgets/staggered_list_item.dart';
@@ -77,10 +78,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -109,7 +110,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   ),
                   Text(
                     isVi ? 'Thông báo' : 'Notifications',
-                    style: TextStyle(
+                    style: context.textTheme.titleMedium?.copyWith(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -188,12 +189,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.error_outline_rounded, size: 56, color: Colors.redAccent),
+                              Icon(Icons.error_outline_rounded, size: 56, color: context.expenseColor),
                               const SizedBox(height: 16),
                               Text(
                                 isVi ? 'Lỗi tải thông báo: ${snapshot.error}' : 'Error loading notifications: ${snapshot.error}',
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(fontSize: 14),
+                                style: context.textTheme.bodyMedium,
                               ),
                               const SizedBox(height: 20),
                               ElevatedButton.icon(
@@ -208,8 +209,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     }
 
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(color: Color(0xFF438883)),
+                      return Center(
+                        child: CircularProgressIndicator(color: context.colors.primary),
                       );
                     }
 
@@ -219,7 +220,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     }
 
                     return RefreshIndicator(
-                      color: const Color(0xFF438883),
+                      color: context.colors.primary,
                       onRefresh: _handleRefresh,
                       child: ListView.builder(
                         padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
@@ -297,39 +298,39 @@ class _NotificationScreenState extends State<NotificationScreen> {
               height: 88,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isDark ? const Color(0xFF1E2D2B) : const Color(0xFFE8F5F1),
+                color: isDark ? AppColors.surfaceElevatedDark : context.colors.primary.withValues(alpha: 0.1),
               ),
               child: Icon(
                 Icons.notifications_off_outlined,
                 size: 44,
-                color: isDark ? const Color(0xFF00BFA5) : const Color(0xFF438883),
+                color: context.colors.primary,
               ),
             ),
             const SizedBox(height: 20),
             Text(
               isVi ? 'Chưa có thông báo nào' : 'No notifications yet',
-              style: TextStyle(
+              style: context.textTheme.titleMedium?.copyWith(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                color: context.textPrimaryColor,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               isVi ? 'Mọi thông tin về giao dịch, quỹ nhóm và nhắc nhở chi tiêu sẽ được hiển thị tại đây.' : 'All transaction, group fund, and reminder updates will appear here.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: context.textTheme.bodyMedium?.copyWith(
                 fontSize: 14,
-                color: isDark ? Colors.white60 : Colors.grey.shade600,
+                color: context.textMutedColor,
                 height: 1.4,
               ),
             ),
             const SizedBox(height: 28),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF438883),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                backgroundColor: context.colors.primary,
+                foregroundColor: context.colors.onPrimary,
+                shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
               onPressed: () => _handleRefresh(forceAnalyze: true),
@@ -350,38 +351,38 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final dateStr =
         '${notification.createdAt.day.toString().padLeft(2, '0')}/${notification.createdAt.month.toString().padLeft(2, '0')}/${notification.createdAt.year}';
 
-    Color iconColor = const Color(0xFF438883);
+    Color iconColor = context.colors.primary;
     IconData iconData = Icons.notifications_active_rounded;
 
     if (notification.type == 'spending_spike_alert') {
-      iconColor = Colors.deepOrange.shade700;
+      iconColor = AppColors.warningAmber;
       iconData = Icons.bolt_rounded;
     } else if (notification.type == 'daily_limit_exceeded' || notification.type == 'monthly_limit_exceeded') {
-      iconColor = Colors.redAccent;
+      iconColor = AppColors.expenseRose;
       iconData = Icons.warning_rounded;
     } else if (notification.type == 'daily_limit_warning' || notification.type == 'monthly_limit_warning') {
-      iconColor = Colors.amber.shade800;
+      iconColor = AppColors.warningAmber;
       iconData = Icons.running_with_errors_rounded;
     } else if (notification.type == 'spending_alert_high') {
-      iconColor = Colors.deepOrange;
+      iconColor = AppColors.expenseRose;
       iconData = Icons.trending_up_rounded;
     } else if (notification.type == 'spending_alert_saved') {
-      iconColor = Colors.green;
+      iconColor = AppColors.incomeEmerald;
       iconData = Icons.savings_rounded;
     } else if (notification.type == 'smart_budget_suggestion') {
-      iconColor = Colors.amber.shade700;
+      iconColor = AppColors.infoAzure;
       iconData = Icons.lightbulb_outline_rounded;
     } else if (notification.type == 'low_balance_alert') {
-      iconColor = Colors.redAccent;
+      iconColor = AppColors.expenseRose;
       iconData = Icons.warning_amber_rounded;
     } else if (notification.type == 'offline_sync_reminder') {
-      iconColor = Colors.blueGrey;
+      iconColor = AppColors.textSecondaryDark;
       iconData = Icons.cloud_off_rounded;
     } else if (notification.type == 'daily_reminder') {
-      iconColor = const Color(0xFF438883);
+      iconColor = context.colors.primary;
       iconData = Icons.edit_note_rounded;
     } else if (notification.type == 'group_invite' || notification.type == 'group_response') {
-      iconColor = Colors.indigo;
+      iconColor = AppColors.transferIndigo;
       iconData = Icons.group_rounded;
     }
 
@@ -391,13 +392,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
     if (notification.type == 'group_invite') {
       if (notification.status == 'accepted') {
         statusLabel = isVi ? 'Đã tham gia' : 'Joined';
-        statusColor = Colors.green;
+        statusColor = AppColors.incomeEmerald;
       } else if (notification.status == 'rejected') {
         statusLabel = isVi ? 'Đã từ chối' : 'Declined';
-        statusColor = Colors.red;
+        statusColor = AppColors.expenseRose;
       } else {
         statusLabel = isVi ? 'Chờ phản hồi' : 'Pending';
-        statusColor = Colors.orange;
+        statusColor = AppColors.warningAmber;
       }
     }
 
@@ -418,20 +419,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF222C2A) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: context.cardBg,
+        borderRadius: AppRadius.card,
         border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.05)
-              : const Color(0xFF438883).withValues(alpha: 0.08),
+          color: context.borderColor,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: AppShadows.card(isDark),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -465,10 +458,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       Expanded(
                         child: Text(
                           notification.title,
-                          style: TextStyle(
+                          style: context.textTheme.titleSmall?.copyWith(
                             fontSize: 15,
                             fontWeight: notification.isRead ? FontWeight.w600 : FontWeight.w700,
-                            color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                            color: context.textPrimaryColor,
                           ),
                         ),
                       ),
@@ -482,7 +475,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           ),
                           child: Text(
                             statusLabel,
-                            style: TextStyle(
+                            style: context.textTheme.labelSmall?.copyWith(
                               fontSize: 10,
                               color: statusColor,
                               fontWeight: FontWeight.bold,
@@ -493,8 +486,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         Container(
                           width: 8,
                           height: 8,
-                          decoration: const BoxDecoration(
-                            color: Colors.redAccent,
+                          decoration: BoxDecoration(
+                            color: context.expenseColor,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -503,18 +496,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   const SizedBox(height: 6),
                   Text(
                     notification.description,
-                    style: TextStyle(
+                    style: context.textTheme.bodyMedium?.copyWith(
                       fontSize: 13,
-                      color: isDark ? Colors.white70 : Colors.grey.shade700,
+                      color: context.textSecondaryColor,
                       height: 1.4,
                     ),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     timeAgo,
-                    style: TextStyle(
+                    style: context.textTheme.bodySmall?.copyWith(
                       fontSize: 11,
-                      color: isDark ? Colors.white38 : Colors.grey.shade400,
+                      color: context.textMutedColor,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

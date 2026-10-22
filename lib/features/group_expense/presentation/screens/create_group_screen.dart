@@ -1,3 +1,4 @@
+import '../../../../core/theme/app_theme.dart';
 import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -52,16 +53,16 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+    final isDark = context.isDarkMode;
+    final primaryColor = context.colors.primary;
 
     // Design Tokens
-    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-    final cardBgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final inputBgColor = isDark ? const Color(0xFF141E2E) : const Color(0xFFF1F5F9);
-    final textPrimary = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-    final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0);
+    final bgColor = isDark ? AppColors.bgDark : AppColors.bgLight;
+    final cardBgColor = context.cardBg;
+    final inputBgColor = context.inputBgColor;
+    final textPrimary = context.colors.onSurface;
+    final textSecondary = context.colors.onSurfaceVariant;
+    final borderColor = context.borderColor;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -142,7 +143,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                     // 1. Group Type Segmented Selector
                     Text(
                       isVi ? 'MÔ HÌNH QUỸ' : 'FUND TYPE',
-                      style: TextStyle(
+                      style: context.textTheme.labelMedium?.copyWith(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: textSecondary,
@@ -154,7 +155,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                       padding: const EdgeInsets.all(5),
                       decoration: BoxDecoration(
                         color: cardBgColor,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(18),
                         border: Border.all(color: borderColor, width: 1),
                       ),
                       child: TabBar(
@@ -163,14 +164,8 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                         dividerColor: Colors.transparent,
                         indicator: BoxDecoration(
                           color: primaryColor,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: primaryColor.withValues(alpha: 0.35),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: AppShadows.glow(primaryColor, alpha: 0.35),
                         ),
                         labelColor: Colors.white,
                         unselectedLabelColor: textSecondary,
@@ -213,7 +208,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                       children: [
                         Text(
                           isVi ? 'TÊN QUỸ *' : 'FUND NAME *',
-                          style: TextStyle(
+                          style: context.textTheme.labelMedium?.copyWith(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             color: textSecondary,
@@ -230,7 +225,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                     Container(
                       decoration: BoxDecoration(
                         color: cardBgColor,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(18),
                         border: Border.all(color: borderColor, width: 1),
                       ),
                       child: TextField(
@@ -245,7 +240,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                           hintStyle: TextStyle(color: textSecondary.withValues(alpha: 0.6), fontSize: 14),
                           prefixIcon: Icon(
                             _selectedIcon,
-                            color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                            color: primaryColor,
                             size: 20,
                           ),
                           border: InputBorder.none,
@@ -260,7 +255,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                     // 3. Quick Preset Templates
                     Text(
                       isVi ? 'GỢI Ý TÊN QUỸ NHANH' : 'QUICK TEMPLATES',
-                      style: TextStyle(
+                      style: context.textTheme.labelMedium?.copyWith(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: textSecondary,
@@ -286,12 +281,12 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? (isDark ? const Color(0xFF2DD4BF).withValues(alpha: 0.18) : primaryColor.withValues(alpha: 0.12))
+                                  ? primaryColor.withValues(alpha: 0.15)
                                   : cardBgColor,
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                 color: isSelected
-                                    ? (isDark ? const Color(0xFF2DD4BF) : primaryColor)
+                                    ? primaryColor
                                     : borderColor,
                                 width: isSelected ? 1.5 : 1,
                               ),
@@ -303,7 +298,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                                   template['icon'] as IconData,
                                   size: 15,
                                   color: isSelected
-                                      ? (isDark ? const Color(0xFF2DD4BF) : primaryColor)
+                                      ? primaryColor
                                       : textSecondary,
                                 ),
                                 const SizedBox(width: 6),
@@ -313,7 +308,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                                     fontSize: 12,
                                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                                     color: isSelected
-                                        ? (isDark ? const Color(0xFF2DD4BF) : primaryColor)
+                                        ? primaryColor
                                         : textPrimary,
                                   ),
                                 ),
@@ -332,7 +327,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                       children: [
                         Text(
                           isVi ? 'MÔ TẢ MỤC ĐÍCH QUỸ' : 'FUND DESCRIPTION',
-                          style: TextStyle(
+                          style: context.textTheme.labelMedium?.copyWith(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             color: textSecondary,
@@ -349,7 +344,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                     Container(
                       decoration: BoxDecoration(
                         color: cardBgColor,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(18),
                         border: Border.all(color: borderColor, width: 1),
                       ),
                       child: TextField(
@@ -425,13 +420,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: _nameController.text.trim().isEmpty
                           ? []
-                          : [
-                              BoxShadow(
-                                color: primaryColor.withValues(alpha: 0.35),
-                                blurRadius: 14,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
+                          : AppShadows.glow(primaryColor, alpha: 0.35),
                     ),
                     child: Center(
                       child: _isLoading
@@ -454,7 +443,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> with Sing
                                 const SizedBox(width: 8),
                                 Text(
                                   isVi ? 'Tạo Quỹ Ngay' : 'Create Fund Now',
-                                  style: TextStyle(
+                                  style: context.textTheme.titleMedium?.copyWith(
                                     color: _nameController.text.trim().isEmpty ? textSecondary : Colors.white,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,

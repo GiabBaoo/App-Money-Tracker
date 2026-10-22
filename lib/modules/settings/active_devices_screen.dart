@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import '../../utils/time_utils.dart';
 import '../../utils/device_utils.dart';
 import '../../utils/page_transitions.dart';
@@ -54,32 +55,16 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
   }
 
   Future<void> _confirmLogoutCurrentDevice(bool isVi) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(isVi ? 'Đăng xuất thiết bị này?' : 'Log out this device?'),
-        content: Text(
-          isVi
-              ? 'Bạn sẽ đăng xuất khỏi ứng dụng trên thiết bị hiện tại và cần đăng nhập lại.'
-              : 'You will be logged out of the app on this device and need to sign in again.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(isVi ? 'Hủy' : 'Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(isVi ? 'Đăng xuất' : 'Log out'),
-          ),
-        ],
-      ),
+    final confirmed = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Đăng xuất thiết bị này?' : 'Log out this device?',
+      message: isVi
+          ? 'Bạn sẽ đăng xuất khỏi ứng dụng trên thiết bị hiện tại và cần đăng nhập lại.'
+          : 'You will be logged out of the app on this device and need to sign in again.',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      confirmText: isVi ? 'Đăng xuất' : 'Log out',
+      isDestructive: true,
+      icon: Icons.logout_rounded,
     );
 
     if (confirmed == true && mounted) {
@@ -142,10 +127,10 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
   @override
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
+      backgroundColor: isDark ? AppColors.bgDark : Theme.of(context).primaryColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -182,12 +167,12 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: _isLoading
-                    ? const Center(child: CircularProgressIndicator(color: Color(0xFF438883)))
+                    ? Center(child: CircularProgressIndicator(color: context.brandColor))
                     : StreamBuilder<List<DeviceSessionModel>>(
                         stream: _firestoreService.getDeviceSessionsStream(),
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
+                            return Center(child: CircularProgressIndicator(color: context.brandColor));
                           }
 
                           final sessions = snapshot.data ?? [];
@@ -295,12 +280,12 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE8F5F0),
+              color: isDark ? context.surfaceElevatedColor : context.brandColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               devType == 'mobile' ? Icons.phone_android_rounded : Icons.computer_rounded,
-              color: const Color(0xFF438883),
+              color: context.brandColor,
               size: 24,
             ),
           ),
@@ -314,10 +299,13 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                     Flexible(
                       child: Text(
                         devName,
-                        style: TextStyle(
+                        style: context.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: context.colors.onSurface,
+                        ) ?? TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : Colors.black87,
+                          color: context.colors.onSurface,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -327,12 +315,12 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.amber.withValues(alpha: 0.15),
+                        color: context.warning.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         isVi ? 'Đang đồng bộ...' : 'Syncing...',
-                        style: const TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: context.warning, fontSize: 10, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
@@ -340,7 +328,9 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                 const SizedBox(height: 2),
                 Text(
                   isVi ? 'Đang đăng ký phiên thiết bị...' : 'Registering device session...',
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  style: context.textTheme.bodySmall?.copyWith(
+                    color: context.colors.onSurfaceVariant,
+                  ) ?? const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
             ),
@@ -355,20 +345,23 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
+        color: context.cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: isDark ? null : Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: context.borderColor),
       ),
       child: Column(
         children: [
-          Icon(Icons.verified_user_outlined, color: Colors.green.shade400, size: 36),
+          Icon(Icons.verified_user_outlined, color: context.income, size: 36),
           const SizedBox(height: 8),
           Text(
             isVi ? 'Chỉ có thiết bị này đang kết nối' : 'Only this device is connected',
-            style: TextStyle(
+            style: context.textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: context.colors.onSurface,
+            ) ?? TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white70 : Colors.black87,
+              color: context.colors.onSurface,
             ),
           ),
           const SizedBox(height: 4),
@@ -377,7 +370,9 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                 ? 'Không phát hiện phiên đăng nhập nào khác trên tài khoản của bạn.'
                 : 'No other login sessions detected on your account.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+            style: context.textTheme.bodySmall?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ) ?? TextStyle(fontSize: 12, color: context.colors.onSurfaceVariant),
           ),
         ],
       ),
@@ -389,8 +384,12 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
       padding: const EdgeInsets.only(bottom: 12, left: 4),
       child: Text(
         title,
-        style: TextStyle(
-          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+        style: context.textTheme.labelMedium?.copyWith(
+          color: context.colors.onSurfaceVariant,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+        ) ?? TextStyle(
+          color: context.colors.onSurfaceVariant,
           fontSize: 13,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.5,
@@ -400,12 +399,11 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
   }
 
   Widget _buildInfoBox(BuildContext context, List<Widget> children) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
+        color: context.cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: isDark ? null : Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: context.borderColor),
       ),
       child: Column(children: children),
     );
@@ -419,7 +417,7 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
     required VoidCallback? onRemove,
     required bool showDivider,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     final timeStr = isCurrent ? (isVi ? 'Đang hoạt động' : 'Active now') : TimeUtils.timeAgo(session.lastActive, isVi: isVi);
 
     return Column(
@@ -431,12 +429,12 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE8F5F0),
+                  color: isDark ? context.surfaceElevatedColor : context.brandColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   session.deviceType == 'mobile' ? Icons.phone_android_rounded : Icons.computer_rounded,
-                  color: const Color(0xFF438883),
+                  color: context.brandColor,
                   size: 24,
                 ),
               ),
@@ -450,10 +448,13 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                         Flexible(
                           child: Text(
                             session.deviceName,
-                            style: TextStyle(
+                            style: context.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: context.colors.onSurface,
+                            ) ?? TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white : Colors.black87,
+                              color: context.colors.onSurface,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -464,12 +465,12 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.15),
+                              color: context.income.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               isVi ? 'Thiết bị này' : 'This device',
-                              style: const TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: context.income, fontSize: 10, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
@@ -478,7 +479,9 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                     const SizedBox(height: 2),
                     Text(
                       '${session.location} • $timeStr',
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ) ?? const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                   ],
                 ),
@@ -491,7 +494,7 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                       : (isVi ? 'Gỡ phiên đăng nhập này' : 'Revoke this session'),
                   icon: Icon(
                     Icons.logout_rounded,
-                    color: isCurrent ? Colors.grey : Colors.redAccent,
+                    color: isCurrent ? context.colors.onSurfaceVariant.withValues(alpha: 0.5) : context.expense,
                     size: 20,
                   ),
                 ),
@@ -501,7 +504,7 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
         if (showDivider)
           Divider(
             height: 1,
-            color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFF0F0F0),
+            color: context.dividerColor,
             indent: 70,
             endIndent: 16,
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import '../../services/language_service.dart';
 import '../../utils/page_transitions.dart';
 import 'support_request_screen.dart';
@@ -10,12 +11,12 @@ class PrivacyPolicyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final languageService = LanguageScope.of(context);
     final isVi = languageService.isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
 
     return Scaffold(
       backgroundColor: isDark 
-        ? const Color(0xFF0F2625) 
-        : const Color(0xFF438883),
+        ? AppColors.bgDark 
+        : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -73,7 +74,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                           ? 'Sự riêng tư của bạn là ưu tiên hàng đầu' 
                           : 'Your privacy is our top priority',
                         style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                          color: context.colors.onSurface,
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                         ),
@@ -84,7 +85,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                           ? 'Chào mừng bạn đến với ứng dụng của chúng tôi. Chúng tôi cam kết bảo vệ thông tin cá nhân và quyền riêng tư của bạn một cách tuyệt đối theo các tiêu chuẩn bảo mật hiện đại nhất.'
                           : 'Welcome to our application. We are committed to protecting your personal information and privacy with the highest modern security standards.',
                         style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                          color: context.colors.onSurfaceVariant,
                           fontSize: 15,
                           height: 1.5,
                         ),
@@ -99,24 +100,22 @@ class PrivacyPolicyScreen extends StatelessWidget {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: isDark 
-                            ? const Color(0xFF3E3E3E) 
-                            : const Color(0xFFE8F5F0),
+                          color: context.brandColor.withValues(alpha: isDark ? 0.2 : 0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.calendar_today,
-                              color: Color(0xFF4A9B7F),
+                              color: context.brandColor,
                               size: 16,
                             ),
                             const SizedBox(width: 8),
                             Text(
                               isVi ? 'CẬP NHẬT LẦN CUỐI: 24-5-2024' : 'LAST UPDATED: 24-05-2024',
-                              style: const TextStyle(
-                                color: Color(0xFF4A9B7F),
+                              style: TextStyle(
+                                color: context.brandColor,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -129,6 +128,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
                       // CÁC ĐIỀU KHOẢN (Danh sách)
                       _buildPolicyItem(
+                        context: context,
                         step: '1',
                         title: isVi ? 'Thu thập dữ liệu' : 'Data Collection',
                         content: isVi
@@ -136,6 +136,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                             : 'We collect information you provide when registering an account, including:\n\n• Name and contact info\n• Login credentials\n• Device data and IP address',
                       ),
                       _buildPolicyItem(
+                        context: context,
                         step: '2',
                         title: isVi ? 'Sử dụng thông tin' : 'Information Usage',
                         content: isVi
@@ -143,6 +144,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                             : 'Your data is used to provide and enhance services, personalize user experience, and send important security notifications.',
                       ),
                       _buildPolicyItem(
+                        context: context,
                         step: '3',
                         title: isVi ? 'Bảo mật dữ liệu' : 'Data Security',
                         content: isVi
@@ -150,6 +152,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                             : 'We implement advanced encryption and firewall measures to prevent unauthorized access to your personal information.',
                       ),
                       _buildPolicyItem(
+                        context: context,
                         step: '4',
                         title: isVi ? 'Chia sẻ với bên thứ ba' : 'Third-Party Sharing',
                         content: isVi
@@ -157,6 +160,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                             : 'We do not sell or lease your data. Information is only shared upon lawful request by authorities or with vetted service partners.',
                       ),
                       _buildPolicyItem(
+                        context: context,
                         step: '5',
                         title: isVi ? 'Quyền của người dùng' : 'User Rights',
                         content: isVi
@@ -167,80 +171,77 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       const SizedBox(height: 10),
 
                       // HỘP LIÊN HỆ HỖ TRỢ
-                      Builder(
-                        builder: (context) {
-                          return Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE5E7EB),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: context.cardBg,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: context.borderColor,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isVi ? 'Bạn có câu hỏi?' : 'Have Questions?',
+                              style: TextStyle(
+                                color: context.colors.onSurface,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  isVi ? 'Bạn có câu hỏi?' : 'Have Questions?',
-                                  style: TextStyle(
-                                    color: isDark ? Colors.white : const Color(0xFF333333),
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  isVi
-                                    ? 'Nếu bạn có bất kỳ thắc mắc nào về Chính sách bảo mật này, xin liên hệ với chúng tôi.'
-                                    : 'If you have any questions regarding this Privacy Policy, please contact us.',
-                                  style: TextStyle(
-                                    color: isDark ? Colors.white70 : const Color(0xFF666666),
-                                    fontSize: 14,
-                                    height: 1.4,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                InkWell(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      PageTransitions.slideRight(const SupportRequestScreen()),
-                                    );
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE8F5F0),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(
-                                          Icons.support_agent,
-                                          color: Color(0xFF4A9B7F),
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          isVi ? 'Liên hệ hỗ trợ' : 'Contact Support',
-                                          style: const TextStyle(
-                                            color: Color(0xFF4A9B7F),
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            const SizedBox(height: 8),
+                            Text(
+                              isVi
+                                ? 'Nếu bạn có bất kỳ thắc mắc nào về Chính sách bảo mật này, xin liên hệ với chúng tôi.'
+                                : 'If you have any questions regarding this Privacy Policy, please contact us.',
+                              style: TextStyle(
+                                color: context.colors.onSurfaceVariant,
+                                fontSize: 14,
+                                height: 1.4,
+                              ),
                             ),
-                          );
-                        }
+                            const SizedBox(height: 16),
+                            InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  PageTransitions.slideRight(const SupportRequestScreen()),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: context.brandColor.withValues(alpha: isDark ? 0.2 : 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.support_agent,
+                                      color: context.brandColor,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      isVi ? 'Liên hệ hỗ trợ' : 'Contact Support',
+                                      style: TextStyle(
+                                        color: context.brandColor,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -255,67 +256,64 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
   // --- HÀM TẠO TỪNG MỤC TRONG CHÍNH SÁCH ---
   Widget _buildPolicyItem({
+    required BuildContext context,
     required String step,
     required String title,
     required String content,
   }) {
-    return Builder(
-      builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
+    final isDark = context.isDark;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: context.cardBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: context.borderColor,
+        ),
+      ),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        shape: const Border(),
+        leading: Container(
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE5E7EB),
-            ),
+            color: context.brandColor.withValues(alpha: isDark ? 0.2 : 0.12),
+            borderRadius: BorderRadius.circular(8),
           ),
-          child: ExpansionTile(
-            tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            shape: const Border(),
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE8F5F0),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Text(
-                  step,
-                  style: const TextStyle(
-                    color: Color(0xFF4A9B7F),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-            title: Text(
-              title,
+          child: Center(
+            child: Text(
+              step,
               style: TextStyle(
-                color: isDark ? Colors.white : const Color(0xFF333333),
+                color: context.brandColor,
                 fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 72, right: 16, bottom: 16),
-                child: Text(
-                  content,
-                  style: TextStyle(
-                    color: isDark ? Colors.white70 : const Color(0xFF666666),
-                    fontSize: 14,
-                    height: 1.5,
-                  ),
-                ),
-              ),
-            ],
           ),
-        );
-      }
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: context.colors.onSurface,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 72, right: 16, bottom: 16),
+            child: Text(
+              content,
+              style: TextStyle(
+                color: context.colors.onSurfaceVariant,
+                fontSize: 14,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

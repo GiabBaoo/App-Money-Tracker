@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import '../../services/sync_service.dart';
 import '../../services/language_service.dart';
 import '../../services/transaction_balance_service.dart';
@@ -143,12 +144,12 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
     // Tự động chọn màu tùy theo trạng thái Thu / Chi
     final Color statusColor = isIncome
-        ? const Color(0xFF24A869) // Xanh lá
-        : const Color(0xFFE17E5B); // Cam đất
+        ? context.income
+        : context.expense;
     final String statusText = isIncome ? 'Khoản Thu' : 'Khoản Chi';
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -232,20 +233,20 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         PopupMenuItem(
                           value: 'edit',
                           child: Row(
-                            children: const [
-                              Icon(Icons.edit_outlined, color: Color(0xFF438883), size: 20),
-                              SizedBox(width: 10),
-                              Text('Chỉnh sửa'),
+                            children: [
+                              Icon(Icons.edit_outlined, color: context.brandColor, size: 20),
+                              const SizedBox(width: 10),
+                              const Text('Chỉnh sửa'),
                             ],
                           ),
                         ),
                       PopupMenuItem(
                         value: 'delete',
                         child: Row(
-                          children: const [
-                            Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                            SizedBox(width: 10),
-                            Text('Xóa giao dịch', style: TextStyle(color: Colors.red)),
+                          children: [
+                            Icon(Icons.delete_outline, color: context.expense, size: 20),
+                            const SizedBox(width: 10),
+                            Text('Xóa giao dịch', style: TextStyle(color: context.expense)),
                           ],
                         ),
                       ),
@@ -301,11 +302,11 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: statusColor.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           statusText,
-                          style: TextStyle(
+                          style: (context.textTheme.labelMedium ?? const TextStyle()).copyWith(
                             color: statusColor,
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -318,10 +319,10 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       // SỐ TIỀN TO BỰ
                       Text(
                         amount,
-                        style: TextStyle(
-                          color: isDark ? Colors.white : const Color(0xFF1A1A1A),
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
+                        style: (context.textTheme.headlineLarge ?? const TextStyle()).copyWith(
+                          color: context.textPrimaryColor,
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -332,10 +333,10 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF222C2A) : const Color(0xFFF9FAFB),
-                          borderRadius: BorderRadius.circular(16),
+                          color: context.cardBgColor,
+                          borderRadius: BorderRadius.circular(18),
                           border: Border.all(
-                            color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE5E7EB),
+                            color: context.borderColor,
                           ),
                         ),
                         child: Row(
@@ -359,8 +360,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                 children: [
                                   Text(
                                     isIncome ? 'Tiền nhận vào ví' : 'Tiền lấy từ ví',
-                                    style: TextStyle(
-                                      color: isDark ? Colors.white60 : const Color(0xFF6B7280),
+                                    style: (context.textTheme.bodySmall ?? const TextStyle()).copyWith(
+                                      color: context.textSecondaryColor,
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -372,8 +373,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                         : (_transaction.walletId.isNotEmpty
                                             ? (_isLoadingWallet ? 'Đang tải thông tin ví...' : 'Ví đã xóa / chưa rõ')
                                             : 'Chưa gắn ví'),
-                                    style: TextStyle(
-                                      color: isDark ? Colors.white : const Color(0xFF111827),
+                                    style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
+                                      color: context.textPrimaryColor,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -382,8 +383,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                     const SizedBox(height: 2),
                                     Text(
                                       _wallet!.typeDisplayName,
-                                      style: TextStyle(
-                                        color: isDark ? Colors.white54 : const Color(0xFF9CA3AF),
+                                      style: (context.textTheme.bodySmall ?? const TextStyle()).copyWith(
+                                        color: context.textMutedColor,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -403,10 +404,10 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         children: [
                           Text(
                             'Chi tiết thông tin',
-                            style: TextStyle(
+                            style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                              color: context.textPrimaryColor,
                             ),
                           ),
                         ],
@@ -460,14 +461,14 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                     decoration: BoxDecoration(
                                       color: (_transaction.syncStatus == 'synced'
-                                              ? const Color(0xFF24A869)
-                                              : const Color(0xFFF59E0B))
+                                              ? context.income
+                                              : context.warning)
                                           .withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
                                         color: (_transaction.syncStatus == 'synced'
-                                                ? const Color(0xFF24A869)
-                                                : const Color(0xFFF59E0B))
+                                                ? context.income
+                                                : context.warning)
                                             .withValues(alpha: 0.35),
                                       ),
                                     ),
@@ -477,19 +478,19 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           if (_isManualSyncing) ...[
-                                            const SizedBox(
+                                            SizedBox(
                                               width: 12,
                                               height: 12,
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 2,
-                                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF438883)),
+                                                valueColor: AlwaysStoppedAnimation<Color>(context.brandColor),
                                               ),
                                             ),
                                             const SizedBox(width: 6),
                                             Text(
                                               context.tr('syncing_in_progress'),
-                                              style: const TextStyle(
-                                                color: Color(0xFF438883),
+                                              style: TextStyle(
+                                                color: context.brandColor,
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600,
                                               ),
@@ -501,8 +502,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                                   : Icons.sync_rounded,
                                               size: 16,
                                               color: _transaction.syncStatus == 'synced'
-                                                  ? const Color(0xFF24A869)
-                                                  : const Color(0xFFF59E0B),
+                                                  ? context.income
+                                                  : context.warning,
                                             ),
                                             const SizedBox(width: 6),
                                             Text(
@@ -511,8 +512,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                                   : 'Chưa đồng bộ (Chạm để đồng bộ)',
                                               style: TextStyle(
                                                 color: _transaction.syncStatus == 'synced'
-                                                    ? const Color(0xFF24A869)
-                                                    : const Color(0xFFF59E0B),
+                                                    ? context.income
+                                                    : context.warning,
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600,
                                               ),
@@ -542,33 +543,33 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 16),
-                            Divider(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFEEEEEE), thickness: 1),
+                            Divider(color: context.dividerColor, thickness: 1),
                             const SizedBox(height: 16),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
                                   'Ảnh hóa đơn / Chứng từ',
-                                  style: TextStyle(
+                                  style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
-                                    color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                                    color: context.textPrimaryColor,
                                   ),
                                 ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF438883).withValues(alpha: 0.12),
+                                    color: context.brandColor.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.zoom_in_rounded, size: 14, color: Color(0xFF438883)),
-                                      SizedBox(width: 4),
+                                      Icon(Icons.zoom_in_rounded, size: 14, color: context.brandColor),
+                                      const SizedBox(width: 4),
                                       Text(
                                         'Chạm để xem',
-                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF438883)),
+                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: context.brandColor),
                                       ),
                                     ],
                                   ),
@@ -589,14 +590,14 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                   width: double.infinity,
                                   constraints: const BoxConstraints(maxHeight: 280, minHeight: 160),
                                   decoration: BoxDecoration(
-                                    color: isDark ? const Color(0xFF0D1615) : const Color(0xFFF1F5F9),
-                                    borderRadius: BorderRadius.circular(16),
+                                    color: context.inputBgColor,
+                                    borderRadius: BorderRadius.circular(18),
                                     border: Border.all(
-                                      color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                                      color: context.borderColor,
                                     ),
                                   ),
                                   child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(18),
                                     child: ReceiptStorageService.buildReceiptImage(
                                       photoLocalPath: _transaction.photoLocalPath,
                                       photoUrl: _transaction.photoUrl,
@@ -611,7 +612,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       }(),
 
                       const SizedBox(height: 20),
-                      Divider(color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFEEEEEE), thickness: 1),
+                      Divider(color: context.dividerColor, thickness: 1),
                       const SizedBox(height: 16),
 
                       // TỔNG CỘNG
@@ -620,17 +621,17 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         children: [
                           Text(
                             'Tổng cộng',
-                            style: TextStyle(
-                              color: isDark ? Colors.white70 : const Color(0xFF4B5563),
+                            style: (context.textTheme.bodyLarge ?? const TextStyle()).copyWith(
+                              color: context.textSecondaryColor,
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           Text(
                             amount,
-                            style: TextStyle(
+                            style: (context.textTheme.titleLarge ?? const TextStyle()).copyWith(
                               color: statusColor,
-                              fontSize: 18,
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -651,7 +652,6 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   Widget _buildDetailRow(String label, String value, {Color? valueColor}) {
     return Builder(
       builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Padding(
           padding: const EdgeInsets.only(bottom: 14),
           child: Row(
@@ -660,8 +660,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                style: (context.textTheme.bodyMedium ?? const TextStyle()).copyWith(
+                  color: context.textSecondaryColor,
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
                 ),
@@ -671,12 +671,10 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                 child: Text(
                   value,
                   textAlign: TextAlign.right,
-                  style: TextStyle(
-                    color: valueColor ?? (isDark ? Colors.white : const Color(0xFF1F2937)),
+                  style: (context.textTheme.bodyLarge ?? const TextStyle()).copyWith(
+                    color: valueColor ?? context.textPrimaryColor,
                     fontSize: 15,
-                    fontWeight: valueColor != null
-                        ? FontWeight.w600
-                        : FontWeight.w600,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),

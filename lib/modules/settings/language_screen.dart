@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/app_providers.dart';
+import '../../core/theme/app_theme.dart';
 import '../../services/language_service.dart';
 
 class LanguageScreen extends ConsumerWidget {
@@ -9,9 +10,10 @@ class LanguageScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final languageService = ref.watch(languageServiceProvider);
+    final isDark = context.isDark;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).primaryColor,
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -83,25 +85,24 @@ class LanguageScreen extends ConsumerWidget {
       child: Text(
         title,
         style: TextStyle(
-          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
+          color: context.colors.onSurfaceVariant,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.6,
         ),
       ),
     );
   }
 
   Widget _buildInfoBox(BuildContext context, List<Widget> children) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
+        color: context.cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: isDark ? null : Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: context.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: context.isDark ? 0.2 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -119,8 +120,7 @@ class LanguageScreen extends ConsumerWidget {
     required VoidCallback onTap,
     required bool showDivider,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark ? const Color(0xFF00E5FF) : const Color(0xFF438883);
+    final primaryColor = context.brandColor;
 
     return Column(
       children: [
@@ -139,15 +139,18 @@ class LanguageScreen extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                      color: isDark ? Colors.white : Colors.black87,
+                      color: isSelected ? primaryColor : context.colors.onSurface,
                     ),
                   ),
                 ),
                 if (isSelected)
                   Icon(Icons.check_circle_rounded, color: primaryColor, size: 24)
                 else
-                  Icon(Icons.radio_button_unchecked_rounded,
-                      color: isDark ? Colors.white24 : Colors.grey.shade400, size: 22),
+                  Icon(
+                    Icons.radio_button_unchecked_rounded,
+                    color: context.colors.onSurfaceVariant.withValues(alpha: 0.4),
+                    size: 22,
+                  ),
               ],
             ),
           ),
@@ -155,7 +158,7 @@ class LanguageScreen extends ConsumerWidget {
         if (showDivider)
           Divider(
             height: 1,
-            color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFF0F0F0),
+            color: context.dividerColor,
             indent: 64,
             endIndent: 16,
           ),

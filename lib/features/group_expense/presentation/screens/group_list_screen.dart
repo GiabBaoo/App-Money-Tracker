@@ -1,3 +1,4 @@
+import '../../../../core/theme/app_theme.dart';
 import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,15 +25,15 @@ class GroupListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final groupsAsync = ref.watch(userGroupsStreamProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = Theme.of(context).primaryColor;
+    final isDark = context.isDarkMode;
+    final primaryColor = context.colors.primary;
 
     // Design Tokens
-    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-    final cardBgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textPrimary = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-    final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0);
+    final bgColor = isDark ? AppColors.bgDark : AppColors.bgLight;
+    final cardBgColor = context.cardBg;
+    final textPrimary = context.colors.onSurface;
+    final textSecondary = context.colors.onSurfaceVariant;
+    final borderColor = context.borderColor;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -80,7 +81,7 @@ class GroupListScreen extends ConsumerWidget {
                       children: [
                         Text(
                           isVi ? 'Quỹ Nhóm' : 'Group Funds',
-                          style: TextStyle(
+                          style: context.textTheme.headlineSmall?.copyWith(
                             color: textPrimary,
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
@@ -89,7 +90,7 @@ class GroupListScreen extends ConsumerWidget {
                         ),
                         Text(
                           isVi ? 'Quản lý thu chi & mục tiêu chung' : 'Collaborative expense & fund tracker',
-                          style: TextStyle(
+                          style: context.textTheme.bodySmall?.copyWith(
                             color: textSecondary,
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -110,7 +111,7 @@ class GroupListScreen extends ConsumerWidget {
                       children: [
                         Icon(
                           Icons.groups_rounded,
-                          color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                          color: primaryColor,
                           size: 16,
                         ),
                         const SizedBox(width: 4),
@@ -118,7 +119,7 @@ class GroupListScreen extends ConsumerWidget {
                           data: (groups) => Text(
                             '${groups.length}',
                             style: TextStyle(
-                              color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                              color: primaryColor,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -126,7 +127,7 @@ class GroupListScreen extends ConsumerWidget {
                           loading: () => Text(
                             '•',
                             style: TextStyle(
-                              color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                              color: primaryColor,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -157,7 +158,7 @@ class GroupListScreen extends ConsumerWidget {
                 loading: () => Center(
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                    color: primaryColor,
                   ),
                 ),
                 error: (error, stack) => Center(
@@ -169,7 +170,7 @@ class GroupListScreen extends ConsumerWidget {
                         Icon(
                           Icons.error_outline_rounded,
                           size: 48,
-                          color: Colors.redAccent.withValues(alpha: 0.8),
+                          color: context.expense.withValues(alpha: 0.8),
                         ),
                         const SizedBox(height: 12),
                         Text(
@@ -209,14 +210,8 @@ class GroupListScreen extends ConsumerWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryColor.withValues(alpha: 0.35),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: AppShadows.glow(primaryColor, alpha: 0.35),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -236,7 +231,7 @@ class GroupListScreen extends ConsumerWidget {
                   const SizedBox(width: 10),
                   Text(
                     isVi ? 'Tạo Quỹ Mới' : 'Create New Fund',
-                    style: const TextStyle(
+                    style: context.textTheme.titleMedium?.copyWith(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -283,15 +278,15 @@ class GroupListScreen extends ConsumerWidget {
                 end: Alignment.bottomRight,
                 colors: isDark
                     ? [
-                        const Color(0xFF1E293B),
-                        const Color(0xFF182334),
+                        AppColors.surfaceElevatedDark,
+                        AppColors.surfaceDark,
                       ]
                     : [
                         primaryColor,
                         Color.lerp(primaryColor, Colors.black, 0.15) ?? primaryColor,
                       ],
               ),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.15),
                 width: 1,
@@ -498,7 +493,7 @@ class GroupListScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
       decoration: BoxDecoration(
         color: cardBgColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: borderColor, width: 1),
       ),
       child: Column(
@@ -513,13 +508,13 @@ class GroupListScreen extends ConsumerWidget {
             child: Icon(
               Icons.account_balance_wallet_outlined,
               size: 36,
-              color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+              color: primaryColor,
             ),
           ),
           const SizedBox(height: 18),
           Text(
             isVi ? 'Chưa có quỹ nào' : 'No funds yet',
-            style: TextStyle(
+            style: context.textTheme.titleMedium?.copyWith(
               fontSize: 17,
               fontWeight: FontWeight.bold,
               color: textPrimary,
@@ -531,7 +526,7 @@ class GroupListScreen extends ConsumerWidget {
                 ? 'Tạo quỹ mới để bắt đầu quản lý chi tiêu nhóm, ăn uống, du lịch cùng bạn bè.'
                 : 'Create a new fund to start tracking group expenses with friends and family.',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: context.textTheme.bodyMedium?.copyWith(
               fontSize: 13,
               color: textSecondary,
               height: 1.4,
@@ -549,7 +544,7 @@ class GroupListScreen extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF2DD4BF).withValues(alpha: 0.15) : primaryColor.withValues(alpha: 0.1),
+                color: primaryColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Row(
@@ -558,7 +553,7 @@ class GroupListScreen extends ConsumerWidget {
                   Icon(
                     Icons.add_rounded,
                     size: 16,
-                    color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                    color: primaryColor,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -566,7 +561,7 @@ class GroupListScreen extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                      color: primaryColor,
                     ),
                   ),
                 ],
@@ -602,16 +597,9 @@ class GroupListScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
         color: cardBgColor,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: borderColor, width: 1),
-        boxShadow: [
-          if (!isDark)
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-        ],
+        boxShadow: AppShadows.card(isDark),
       ),
       child: Material(
         color: Colors.transparent,
@@ -623,7 +611,7 @@ class GroupListScreen extends ConsumerWidget {
               PageTransitions.slideRight(GroupDetailScreen(groupId: group.id)),
             );
           },
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(18),
           child: Padding(
             padding: const EdgeInsets.all(18),
             child: Column(
@@ -637,13 +625,13 @@ class GroupListScreen extends ConsumerWidget {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: (isDark ? const Color(0xFF2DD4BF) : primaryColor).withValues(alpha: 0.12),
+                        color: primaryColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(
                         iconData,
                         size: 22,
-                        color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                        color: primaryColor,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -653,7 +641,7 @@ class GroupListScreen extends ConsumerWidget {
                         children: [
                           Text(
                             group.name,
-                            style: TextStyle(
+                            style: context.textTheme.titleMedium?.copyWith(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: textPrimary,
@@ -665,7 +653,7 @@ class GroupListScreen extends ConsumerWidget {
                           const SizedBox(height: 3),
                           Text(
                             group.description ?? (isVi ? '${group.memberIds.length} thành viên' : '${group.memberIds.length} members'),
-                            style: TextStyle(
+                            style: context.textTheme.bodySmall?.copyWith(
                               fontSize: 12,
                               color: textSecondary,
                             ),
@@ -681,13 +669,13 @@ class GroupListScreen extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: isOwner
-                            ? Colors.amber.withValues(alpha: isDark ? 0.18 : 0.12)
-                            : Colors.blue.withValues(alpha: isDark ? 0.18 : 0.1),
+                            ? context.warning.withValues(alpha: isDark ? 0.18 : 0.12)
+                            : context.info.withValues(alpha: isDark ? 0.18 : 0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isOwner
-                              ? Colors.amber.withValues(alpha: 0.3)
-                              : Colors.blue.withValues(alpha: 0.2),
+                              ? context.warning.withValues(alpha: 0.3)
+                              : context.info.withValues(alpha: 0.2),
                           width: 1,
                         ),
                       ),
@@ -697,7 +685,7 @@ class GroupListScreen extends ConsumerWidget {
                           Icon(
                             isOwner ? Icons.star_rounded : Icons.person_rounded,
                             size: 13,
-                            color: isOwner ? Colors.amber[800] ?? Colors.amber : Colors.blueAccent,
+                            color: isOwner ? context.warning : context.info,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -705,7 +693,7 @@ class GroupListScreen extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: isOwner ? (isDark ? Colors.amber[300] : Colors.amber[900]) : (isDark ? Colors.blue[300] : Colors.blue[800]),
+                              color: isOwner ? context.warning : context.info,
                             ),
                           ),
                         ],
@@ -727,7 +715,7 @@ class GroupListScreen extends ConsumerWidget {
                       children: [
                         Text(
                           isVi ? 'Số dư quỹ' : 'Current Balance',
-                          style: TextStyle(
+                          style: context.textTheme.labelMedium?.copyWith(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: textSecondary,
@@ -737,8 +725,8 @@ class GroupListScreen extends ConsumerWidget {
                         balanceAsync.when(
                           data: (balance) => Text(
                             '${_formatMoney(balance)}đ',
-                            style: TextStyle(
-                              color: isDark ? const Color(0xFF2DD4BF) : primaryColor,
+                            style: context.textTheme.titleMedium?.copyWith(
+                              color: primaryColor,
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.3,
@@ -797,12 +785,12 @@ class GroupListScreen extends ConsumerWidget {
                             child: Container(
                               padding: const EdgeInsets.all(7),
                               decoration: BoxDecoration(
-                                color: Colors.red.withValues(alpha: isDark ? 0.15 : 0.08),
+                                color: context.expense.withValues(alpha: isDark ? 0.15 : 0.08),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.delete_outline_rounded,
-                                color: Colors.redAccent,
+                                color: context.expense,
                                 size: 17,
                               ),
                             ),

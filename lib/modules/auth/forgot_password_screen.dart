@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_theme.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/app_logo.dart';
 import '../../widgets/mono_toast.dart';
@@ -79,10 +80,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.isDark;
     
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -100,18 +101,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     height: 42,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.15),
-                      border: Border.all(color: Colors.white24, width: 1),
+                      color: context.colors.onPrimary.withValues(alpha: 0.15),
+                      border: Border.all(color: context.colors.onPrimary.withValues(alpha: 0.24), width: 1),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.arrow_back_ios_new_rounded,
-                      color: Colors.white,
+                      color: context.colors.onPrimary,
                       size: 18,
                     ),
                   ),
                 ),
                 const Spacer(),
-                const AppLogo.wordmark(height: 32, color: Colors.white),
+                AppLogo.wordmark(height: 32, color: context.colors.onPrimary),
                 const Spacer(flex: 2),
               ]),
             ),
@@ -120,9 +121,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  color: context.colors.surface,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [BoxShadow(color: isDark ? Colors.black45 : Colors.black12, blurRadius: 20, offset: const Offset(0, -5))],
+                  boxShadow: AppShadows.modal(isDark),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
@@ -131,39 +132,56 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     children: [
                       Text(
                         isVi ? 'Quên mật khẩu' : 'Forgot Password',
-                        style: TextStyle(color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF549B96), fontSize: 28, fontWeight: FontWeight.w700),
+                        style: context.textTheme.headlineMedium?.copyWith(
+                          color: context.colors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         isVi
                             ? 'Vui lòng nhập email của bạn. Chúng tôi sẽ gửi link đặt lại mật khẩu.'
                             : 'Please enter your email. We will send you a password reset link.',
-                        style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontSize: 14, height: 1.5),
+                        style: context.textTheme.bodyMedium?.copyWith(
+                          color: context.colors.onSurfaceVariant,
+                          height: 1.5,
+                        ),
                       ),
                       const SizedBox(height: 40),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8, left: 4),
-                        child: Text('Email', style: TextStyle(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF334155), fontSize: 14, fontWeight: FontWeight.w500)),
+                        child: Text(
+                          'Email',
+                          style: context.textTheme.labelMedium?.copyWith(
+                            color: context.colors.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                       TextFormField(
                         controller: _emailController,
-                        style: TextStyle(fontSize: 15, color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A)),
+                        style: context.textTheme.bodyMedium?.copyWith(
+                          color: context.colors.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           filled: true,
-                          fillColor: isDark ? const Color(0xFF141E2E) : const Color(0xFFF8FAFC),
+                          fillColor: context.inputBgColor,
                           hintText: isVi ? 'Nhập email của bạn' : 'Enter your email',
-                          hintStyle: TextStyle(color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8), fontSize: 14),
+                          hintStyle: context.textTheme.bodyMedium?.copyWith(
+                            color: context.colors.onSurfaceVariant.withValues(alpha: 0.7),
+                          ),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                            borderSide: BorderSide(color: context.borderColor),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883), width: 1.5),
+                            borderSide: BorderSide(color: context.colors.primary, width: 1.8),
                           ),
-                          suffixIcon: Icon(Icons.mail_outline, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFFAAAAAA)),
+                          suffixIcon: Icon(Icons.mail_outline, color: context.colors.onSurfaceVariant),
                         ),
                       ),
                       const SizedBox(height: 50),
@@ -177,7 +195,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             child: Text(
                               isVi ? 'Quay lại Đăng nhập' : 'Back to Login',
-                              style: TextStyle(color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883), fontSize: 15, fontWeight: FontWeight.bold),
+                              style: context.textTheme.bodyMedium?.copyWith(
+                                color: context.colors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -196,13 +217,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: _isLoading
-                                  ? [Colors.grey, Colors.grey.shade600]
-                                  : const [Color(0xFF68AEA9), Color(0xFF3E8681)],
+                                  ? [context.colors.surfaceContainerHighest, context.colors.surfaceContainerHighest]
+                                  : [AppColors.primaryTealLight, AppColors.primaryTeal],
                             ),
-                            borderRadius: BorderRadius.circular(40),
+                            borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF3E8681).withValues(alpha: 0.3),
+                                color: context.colors.primary.withValues(alpha: 0.3),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -210,19 +231,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           ),
                           child: Center(
                             child: _isLoading
-                                ? const SizedBox(
+                                ? SizedBox(
                                     width: 24,
                                     height: 24,
                                     child: CircularProgressIndicator(
-                                      color: Colors.white,
+                                      color: context.colors.onPrimary,
                                       strokeWidth: 2.5,
                                     ),
                                   )
                                 : Text(
                                     isVi ? 'Gửi email đặt lại mật khẩu' : 'Send Reset Link',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
+                                    style: context.textTheme.titleMedium?.copyWith(
+                                      color: context.colors.onPrimary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),

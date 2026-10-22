@@ -13,6 +13,7 @@ import '../../widgets/staggered_list_item.dart';
 import '../../widgets/transaction_item.dart';
 import '../../services/auth_service.dart';
 import '../../services/language_service.dart';
+import '../../core/theme/app_theme.dart';
 
 /// Trang chuyên sâu dành riêng cho lịch sử giao dịch và dòng tiền của các ví.
 /// Hỗ trợ lọc theo từng ví cụ thể, theo loại (thu/chi/chuyển tiền),
@@ -191,31 +192,55 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               child: Container(
                 height: 44,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF163230) : Colors.white.withValues(alpha: 0.2),
+                  color: isDark ? const Color(0xFF163230) : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.25),
+                    color: isDark ? Colors.white.withValues(alpha: 0.25) : const Color(0xFFE2E8F0),
+                    width: 1.0,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: TextField(
                   controller: _searchController,
-                  style: const TextStyle(color: Colors.white, fontSize: 13.5),
-                  cursorColor: Colors.white,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : context.colors.onSurface,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  cursorColor: isDark ? Colors.white : context.colors.onSurface,
                   decoration: InputDecoration(
                     hintText: isVi ? 'Tìm kiếm theo tên món, ghi chú, danh mục...' : 'Search by item, note, category...',
-                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 13),
-                    prefixIcon: const Icon(Icons.search_rounded, color: Colors.white70, size: 20),
+                    hintStyle: TextStyle(
+                      color: isDark ? Colors.white.withValues(alpha: 0.65) : context.colors.onSurfaceVariant,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: isDark ? Colors.white70 : context.colors.onSurfaceVariant,
+                      size: 20,
+                    ),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? GestureDetector(
                             onTap: () {
                               _searchController.clear();
                               FocusScope.of(context).unfocus();
                             },
-                            child: const Icon(Icons.close_rounded, color: Colors.white70, size: 18),
+                            child: Icon(
+                              Icons.close_rounded,
+                              color: isDark ? Colors.white70 : context.colors.onSurfaceVariant,
+                              size: 18,
+                            ),
                           )
                         : null,
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 11),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 11, horizontal: 12),
                   ),
                 ),
               ),
@@ -453,6 +478,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: _selectedWalletId != null
                             ? const Color(0xFF438883)
@@ -466,6 +492,8 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Icon(
                             curWallet?.icon ?? Icons.account_balance_wallet_rounded,
@@ -511,21 +539,26 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                       },
                       child: Container(
                         margin: const EdgeInsets.only(left: 6),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                        alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: isSel
                               ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
                               : (isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF1F5F9)),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Text(
-                          t['label']!,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: isSel ? FontWeight.bold : FontWeight.w600,
-                            color: isSel
-                                ? (isDark ? const Color(0xFF0F2625) : Colors.white)
-                                : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                        child: Center(
+                          child: Text(
+                            t['label']!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: isSel ? FontWeight.bold : FontWeight.w600,
+                              color: isSel
+                                  ? (isDark ? const Color(0xFF0F2625) : Colors.white)
+                                  : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                              height: 1.2,
+                            ),
                           ),
                         ),
                       ),
@@ -546,6 +579,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                     child: Container(
                       margin: const EdgeInsets.only(left: 6),
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: isDark ? const Color(0xFF1E2D2B) : const Color(0xFFE8F5F1),
                         borderRadius: BorderRadius.circular(16),
@@ -554,6 +588,8 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Icon(
                             Icons.calendar_month_rounded,
@@ -594,6 +630,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: _hasActiveFilters
                     ? const Color(0xFF438883)
@@ -607,6 +644,8 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Icon(
                     Icons.tune_rounded,
@@ -1005,14 +1044,18 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                                       : (isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF1F5F9)),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: Text(
-                                  t['label']!,
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: isSel ? FontWeight.bold : FontWeight.w600,
-                                    color: isSel
-                                        ? (isDark ? const Color(0xFF0F2625) : Colors.white)
-                                        : (isDark ? Colors.white70 : const Color(0xFF475569)),
+                                child: Center(
+                                  child: Text(
+                                    t['label']!,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: isSel ? FontWeight.bold : FontWeight.w600,
+                                      color: isSel
+                                          ? (isDark ? const Color(0xFF0F2625) : Colors.white)
+                                          : (isDark ? Colors.white70 : const Color(0xFF475569)),
+                                      height: 1.2,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -1082,6 +1125,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isSelected
               ? (isDark ? const Color(0xFF00BFA5) : const Color(0xFF438883))
@@ -1091,14 +1135,18 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
             color: isSelected ? Colors.transparent : (isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
           ),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected
-                ? Colors.white
-                : (isDark ? Colors.white70 : const Color(0xFF475569)),
+        child: Center(
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              color: isSelected
+                  ? Colors.white
+                  : (isDark ? Colors.white70 : const Color(0xFF475569)),
+              height: 1.2,
+            ),
           ),
         ),
       ),
@@ -1388,6 +1436,7 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                   child: Container(
                     margin: const EdgeInsets.only(right: 6),
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: isCatSelected
                           ? catColor
@@ -1399,6 +1448,8 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Icon(
                           CategoryUtils.getCategoryIcon(cat),
@@ -1408,9 +1459,11 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                         const SizedBox(width: 4),
                         Text(
                           '$cat $percent%',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: isCatSelected ? FontWeight.bold : FontWeight.w500,
+                            height: 1.2,
                             color: isCatSelected
                                 ? Colors.white
                                 : (isDark ? Colors.white70 : const Color(0xFF333333)),

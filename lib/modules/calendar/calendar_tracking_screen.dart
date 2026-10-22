@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_theme.dart';
 import '../../models/transaction_model.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../data/repositories/wallet_repository.dart';
@@ -145,8 +146,8 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark ? const Color(0xFF0F2625) : const Color(0xFF438883);
+    final isDark = context.isDark;
+    final primaryColor = isDark ? AppColors.primaryTealDark : AppColors.primaryTeal;
 
     return Scaffold(
       backgroundColor: primaryColor,
@@ -182,9 +183,8 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: context.textTheme.titleMedium?.copyWith(
                         color: Colors.white,
-                        fontSize: 18,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.3,
                       ),
@@ -205,9 +205,8 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                           const SizedBox(width: 4),
                           Text(
                             LanguageScope.of(context).isVietnamese ? 'Hôm nay' : 'Today',
-                            style: const TextStyle(
+                            style: context.textTheme.labelMedium?.copyWith(
                               color: Colors.white,
-                              fontSize: 12,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -228,7 +227,7 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
+                      color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.08),
                       blurRadius: 20,
                       offset: const Offset(0, -6),
                     ),
@@ -284,13 +283,13 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                         // Danh sách giao dịch của ngày đang chọn
                         Expanded(
                           child: !_isTransitionReady && dayTx.length > 5
-                              ? const Center(
+                              ? Center(
                                   child: SizedBox(
                                     width: 24,
                                     height: 24,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF438883)),
+                                      valueColor: AlwaysStoppedAnimation<Color>(context.colors.primary),
                                     ),
                                   ),
                                 )
@@ -340,7 +339,7 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF162524) : const Color(0xFFF1F8F6),
+        color: isDark ? context.cardBg : context.inputBgColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
@@ -360,15 +359,14 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                       BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4),
                     ],
                   ),
-                  child: const Icon(Icons.chevron_left_rounded, size: 24, color: Color(0xFF438883)),
+                  child: Icon(Icons.chevron_left_rounded, size: 24, color: context.colors.primary),
                 ),
               ),
               Text(
                 monthStr,
-                style: TextStyle(
-                  fontSize: 16,
+                style: context.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  color: context.colors.onSurface,
                 ),
               ),
               AnimatedScaleButton(
@@ -383,7 +381,7 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                       BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4),
                     ],
                   ),
-                  child: const Icon(Icons.chevron_right_rounded, size: 24, color: Color(0xFF438883)),
+                  child: Icon(Icons.chevron_right_rounded, size: 24, color: context.colors.primary),
                 ),
               ),
             ],
@@ -393,11 +391,11 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Expanded(child: _buildSummaryPill(isVi ? 'Tổng thu' : 'Total Income', income, const Color(0xFF10B981), isDark)),
+              Expanded(child: _buildSummaryPill(isVi ? 'Tổng thu' : 'Total Income', income, context.income, isDark)),
               const SizedBox(width: 4),
-              Expanded(child: _buildSummaryPill(isVi ? 'Tổng chi' : 'Total Expense', expense, const Color(0xFFEF4444), isDark)),
+              Expanded(child: _buildSummaryPill(isVi ? 'Tổng chi' : 'Total Expense', expense, context.expense, isDark)),
               const SizedBox(width: 4),
-              Expanded(child: _buildSummaryPill(isVi ? 'Chênh lệch' : 'Net Cashflow', net, net >= 0 ? const Color(0xFF0EA5E9) : Colors.orange, isDark)),
+              Expanded(child: _buildSummaryPill(isVi ? 'Chênh lệch' : 'Net Cashflow', net, net >= 0 ? context.info : context.warning, isDark)),
             ],
           ),
         ],
@@ -410,7 +408,9 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
       children: [
         Text(
           label,
-          style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white60 : Colors.black54),
+          style: context.textTheme.labelSmall?.copyWith(
+            color: context.colors.onSurfaceVariant,
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -419,8 +419,7 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
           fit: BoxFit.scaleDown,
           child: Text(
             CurrencyUtils.formatCurrency(amount),
-            style: TextStyle(
-              fontSize: 13,
+            style: context.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w800,
               color: color,
             ),
@@ -455,10 +454,9 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                 child: Center(
                   child: Text(
                     d,
-                    style: TextStyle(
-                      fontSize: 11.5,
+                    style: context.textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: isWeekend ? Colors.orange : (isDark ? Colors.white60 : Colors.black54),
+                      color: isWeekend ? context.warning : context.colors.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -503,13 +501,13 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                   margin: const EdgeInsets.all(2.5),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? const Color(0xFF438883)
+                        ? context.colors.primary
                         : (isToday
-                            ? (isDark ? const Color(0xFF1E3A37) : const Color(0xFFE8F5F1))
+                            ? (isDark ? context.colors.primary.withValues(alpha: 0.25) : context.colors.primary.withValues(alpha: 0.12))
                             : Colors.transparent),
                     borderRadius: BorderRadius.circular(12),
                     border: isToday && !isSelected
-                        ? Border.all(color: const Color(0xFF438883), width: 1.2)
+                        ? Border.all(color: context.colors.primary, width: 1.2)
                         : null,
                   ),
                   child: Column(
@@ -517,14 +515,14 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                     children: [
                       Text(
                         '$dayNum',
-                        style: TextStyle(
+                        style: context.textTheme.bodyMedium?.copyWith(
                           fontSize: 13,
                           fontWeight: isSelected || isToday ? FontWeight.w800 : FontWeight.w500,
                           color: isSelected
                               ? Colors.white
                               : (isToday
-                                  ? const Color(0xFF438883)
-                                  : (isDark ? Colors.white70 : const Color(0xFF1E293B))),
+                                  ? context.colors.primary
+                                  : context.colors.onSurface),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -537,7 +535,7 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                               height: 4,
                               margin: const EdgeInsets.symmetric(horizontal: 1),
                               decoration: BoxDecoration(
-                                color: isSelected ? Colors.white : const Color(0xFF10B981),
+                                color: isSelected ? Colors.white : context.income,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -547,7 +545,7 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                               height: 4,
                               margin: const EdgeInsets.symmetric(horizontal: 1),
                               decoration: BoxDecoration(
-                                color: isSelected ? Colors.white : const Color(0xFFEF4444),
+                                color: isSelected ? Colors.white : context.expense,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -557,7 +555,7 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                               height: 4,
                               margin: const EdgeInsets.symmetric(horizontal: 1),
                               decoration: BoxDecoration(
-                                color: isSelected ? Colors.white : const Color(0xFF0EA5E9),
+                                color: isSelected ? Colors.white : context.info,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -584,7 +582,7 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-      color: isDark ? const Color(0xFF162524).withValues(alpha: 0.6) : const Color(0xFFF8FAFC),
+      color: isDark ? context.cardBg.withValues(alpha: 0.6) : context.inputBgColor,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -597,23 +595,22 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                   margin: const EdgeInsets.only(right: 7),
                   decoration: BoxDecoration(
                     color: isToday
-                        ? const Color(0xFF438883).withValues(alpha: 0.16)
+                        ? context.colors.primary.withValues(alpha: 0.16)
                         : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Icon(
                     isToday ? Icons.today_rounded : Icons.calendar_today_rounded,
                     size: 13,
-                    color: isToday ? const Color(0xFF438883) : (isDark ? Colors.white70 : Colors.black54),
+                    color: isToday ? context.colors.primary : context.colors.onSurfaceVariant,
                   ),
                 ),
                 Expanded(
                   child: Text(
                     dayStr,
-                    style: TextStyle(
+                    style: context.textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                      color: isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF1E293B),
+                      color: context.colors.onSurface,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -635,24 +632,24 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                       margin: const EdgeInsets.only(left: 6),
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2ECC71).withValues(alpha: isDark ? 0.2 : 0.1),
+                        color: context.income.withValues(alpha: isDark ? 0.2 : 0.1),
                         borderRadius: BorderRadius.circular(7),
                         border: Border.all(
-                          color: const Color(0xFF2ECC71).withValues(alpha: 0.25),
+                          color: context.income.withValues(alpha: 0.25),
                           width: 0.8,
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.arrow_downward_rounded, size: 10, color: Color(0xFF2ECC71)),
+                          Icon(Icons.arrow_downward_rounded, size: 10, color: context.income),
                           const SizedBox(width: 2),
                           Text(
                             '+${CurrencyUtils.formatCurrency(dayIncome)}',
-                            style: const TextStyle(
+                            style: context.textTheme.labelSmall?.copyWith(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF2ECC71),
+                              color: context.income,
                             ),
                           ),
                         ],
@@ -663,24 +660,24 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                       margin: const EdgeInsets.only(left: 6),
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE63946).withValues(alpha: isDark ? 0.2 : 0.1),
+                        color: context.expense.withValues(alpha: isDark ? 0.2 : 0.1),
                         borderRadius: BorderRadius.circular(7),
                         border: Border.all(
-                          color: const Color(0xFFE63946).withValues(alpha: 0.25),
+                          color: context.expense.withValues(alpha: 0.25),
                           width: 0.8,
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.arrow_upward_rounded, size: 10, color: Color(0xFFE63946)),
+                          Icon(Icons.arrow_upward_rounded, size: 10, color: context.expense),
                           const SizedBox(width: 2),
                           Text(
                             '-${CurrencyUtils.formatCurrency(dayExpense)}',
-                            style: const TextStyle(
+                            style: context.textTheme.labelSmall?.copyWith(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFFE63946),
+                              color: context.expense,
                             ),
                           ),
                         ],
@@ -706,11 +703,14 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.event_busy_rounded, size: 38, color: Colors.grey.withValues(alpha: 0.3)),
+              Icon(Icons.event_busy_rounded, size: 38, color: context.colors.onSurfaceVariant.withValues(alpha: 0.3)),
               const SizedBox(height: 8),
               Text(
                 isVi ? 'Không có giao dịch trong ngày này' : 'No transactions on this day',
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
+                style: context.textTheme.bodyMedium?.copyWith(
+                  color: context.colors.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(height: 10),
               AnimatedScaleButton(
@@ -724,19 +724,18 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF438883).withValues(alpha: 0.12),
+                    color: context.colors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.add_rounded, size: 16, color: Color(0xFF438883)),
+                      Icon(Icons.add_rounded, size: 16, color: context.colors.primary),
                       const SizedBox(width: 4),
                       Text(
                         isVi ? 'Thêm giao dịch' : 'Add transaction',
-                        style: const TextStyle(
-                          color: Color(0xFF438883),
-                          fontSize: 12.5,
+                        style: context.textTheme.labelMedium?.copyWith(
+                          color: context.colors.primary,
                           fontWeight: FontWeight.w700,
                         ),
                       ),

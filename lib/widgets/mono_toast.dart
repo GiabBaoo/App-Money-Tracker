@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/app_widget_service.dart';
+import '../core/theme/app_theme.dart';
 
 enum MonoToastType {
   success,
@@ -212,34 +213,35 @@ class _MonoToastWidgetState extends State<_MonoToastWidget>
     super.dispose();
   }
 
-  _ToastColorConfig _getColorConfig() {
+  _ToastColorConfig _getColorConfig(BuildContext context) {
+    final isDark = context.isDarkMode;
     switch (widget.type) {
       case MonoToastType.success:
         return _ToastColorConfig(
-          bg: widget.isDark ? const Color(0xFF133E32) : const Color(0xFF0F766E),
-          border: const Color(0xFF34D399).withValues(alpha: 0.4),
-          icon: const Color(0xFF34D399),
+          bg: isDark ? AppColors.incomeBgDark : context.income,
+          border: AppColors.incomeEmeraldLight.withValues(alpha: 0.45),
+          icon: AppColors.incomeEmeraldLight,
           iconData: Icons.check_circle_rounded,
         );
       case MonoToastType.error:
         return _ToastColorConfig(
-          bg: widget.isDark ? const Color(0xFF451A1A) : const Color(0xFFDC2626),
-          border: const Color(0xFFF87171).withValues(alpha: 0.4),
-          icon: const Color(0xFFFCA5A5),
+          bg: isDark ? AppColors.expenseBgDark : context.expense,
+          border: AppColors.expenseRoseLight.withValues(alpha: 0.45),
+          icon: AppColors.expenseRoseLight,
           iconData: Icons.error_rounded,
         );
       case MonoToastType.warning:
         return _ToastColorConfig(
-          bg: widget.isDark ? const Color(0xFF452B14) : const Color(0xFFD97706),
-          border: const Color(0xFFFBBF24).withValues(alpha: 0.4),
-          icon: const Color(0xFFFDE68A),
+          bg: isDark ? AppColors.warningBgDark : context.warning,
+          border: AppColors.warningAmberLight.withValues(alpha: 0.45),
+          icon: AppColors.warningAmberLight,
           iconData: Icons.warning_rounded,
         );
       case MonoToastType.info:
         return _ToastColorConfig(
-          bg: widget.isDark ? const Color(0xFF172C3C) : const Color(0xFF0284C7),
-          border: const Color(0xFF38BDF8).withValues(alpha: 0.4),
-          icon: const Color(0xFF7DD3FC),
+          bg: isDark ? AppColors.transferBgDark : context.transfer,
+          border: AppColors.transferIndigoLight.withValues(alpha: 0.45),
+          icon: AppColors.transferIndigoLight,
           iconData: Icons.info_rounded,
         );
     }
@@ -248,7 +250,8 @@ class _MonoToastWidgetState extends State<_MonoToastWidget>
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
-    final config = _getColorConfig();
+    final config = _getColorConfig(context);
+    final isDark = context.isDarkMode;
 
     return Positioned(
       top: topPadding + 12,
@@ -272,23 +275,17 @@ class _MonoToastWidgetState extends State<_MonoToastWidget>
           },
           child: Center(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: AppRadius.dialog,
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 480),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: config.bg.withValues(alpha: widget.isDark ? 0.90 : 0.95),
-                    borderRadius: BorderRadius.circular(24),
+                    color: config.bg.withValues(alpha: isDark ? 0.92 : 0.96),
+                    borderRadius: AppRadius.dialog,
                     border: Border.all(color: config.border, width: 1.2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.25),
-                        blurRadius: 18,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
+                    boxShadow: AppShadows.floating(isDark),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -296,7 +293,7 @@ class _MonoToastWidgetState extends State<_MonoToastWidget>
                       Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.12),
+                          color: Colors.white.withValues(alpha: 0.14),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(config.iconData, color: config.icon, size: 18),
@@ -305,7 +302,7 @@ class _MonoToastWidgetState extends State<_MonoToastWidget>
                       Flexible(
                         child: Text(
                           widget.message,
-                          style: const TextStyle(
+                          style: context.textTheme.labelLarge?.copyWith(
                             color: Colors.white,
                             fontSize: 13.5,
                             fontWeight: FontWeight.w600,

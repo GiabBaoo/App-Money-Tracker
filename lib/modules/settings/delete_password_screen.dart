@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import '../../services/language_service.dart';
@@ -57,10 +58,10 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
+    final isDark = context.isDark;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).brightness == Brightness.dark 
-        ? const Color(0xFF1E1E1E) 
-        : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -115,7 +116,7 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                          color: context.colors.onSurface,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -124,7 +125,7 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                             ? 'Vui lòng nhập mật khẩu của bạn để xác nhận hành động xóa tài khoản.'
                             : 'Please enter your password to confirm account deletion.',
                         style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                          color: context.colors.onSurfaceVariant,
                           fontSize: 15,
                           height: 1.5,
                         ),
@@ -137,43 +138,37 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                         child: Text(
                           isVi ? 'Mật khẩu' : 'Password',
                           style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                            color: context.colors.onSurfaceVariant,
                             fontSize: 13,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                       TextFormField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
-                        style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
+                        style: TextStyle(color: context.colors.onSurface),
                         decoration: InputDecoration(
                           hintText: isVi ? 'Nhập mật khẩu của bạn' : 'Enter your password',
                           hintStyle: TextStyle(
-                            color: Theme.of(context).brightness == Brightness.dark 
-                              ? Colors.white38 
-                              : const Color(0xFFAAAAAA),
+                            color: context.colors.onSurfaceVariant.withValues(alpha: 0.5),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 16,
                           ),
                           filled: true,
-                          fillColor: Theme.of(context).brightness == Brightness.dark 
-                            ? const Color(0xFF2E2E2E) 
-                            : Colors.white,
+                          fillColor: context.cardBg,
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: Theme.of(context).brightness == Brightness.dark 
-                                ? const Color(0xFF3E3E3E) 
-                                : const Color(0xFFE5E7EB),
+                              color: context.borderColor,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF438883),
+                            borderSide: BorderSide(
+                              color: context.brandColor,
                               width: 1.5,
                             ),
                           ),
@@ -182,7 +177,7 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                               _obscurePassword
                                   ? Icons.visibility_off
                                   : Icons.visibility,
-                              color: Colors.grey,
+                              color: context.colors.onSurfaceVariant,
                             ),
                             onPressed: () {
                               setState(() {
@@ -197,22 +192,32 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
 
                       InkWell(
                         onTap: _isLoading ? null : _handleDelete,
+                        borderRadius: BorderRadius.circular(14),
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE63946),
-                            borderRadius: BorderRadius.circular(12),
+                            color: context.expense,
+                            borderRadius: BorderRadius.circular(14),
                           ),
                           child: Center(
-                            child: Text(
-                              isVi ? 'Xác nhận xóa' : 'Confirm Delete',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : Text(
+                                    isVi ? 'Xác nhận xóa' : 'Confirm Delete',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                           ),
                         ),
                       ),

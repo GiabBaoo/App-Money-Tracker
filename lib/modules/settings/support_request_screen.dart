@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import '../../utils/page_transitions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firestore_service.dart';
@@ -57,11 +58,10 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
   @override
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
+    final isDark = context.isDark;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).brightness == Brightness.dark 
-        ? const Color(0xFF0F2625) 
-        : const Color(0xFF438883),
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -113,7 +113,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                          color: context.colors.onSurface,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -122,7 +122,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                             ? 'Vui lòng mô tả chi tiết vấn đề bạn đang gặp phải, đội ngũ CSKH sẽ phản hồi trong thời gian sớm nhất.'
                             : 'Please describe the problem you are encountering, our support team will respond as soon as possible.',
                         style: TextStyle(
-                          color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                          color: context.colors.onSurfaceVariant,
                           fontSize: 15,
                           height: 1.5,
                         ),
@@ -134,11 +134,11 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                       _buildLabel(isVi ? 'Chủ đề' : 'Topic'),
                       DropdownButtonFormField<String>(
                         initialValue: _selectedTopic,
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.keyboard_arrow_down,
-                          color: Color(0xFF438883),
+                          color: context.brandColor,
                         ),
-                        decoration: _buildInputDecoration(),
+                        decoration: _buildInputDecoration(context),
                         items: _topics.map((String value) {
                           return DropdownMenuItem<String>(
                             value: value,
@@ -158,8 +158,9 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                       _buildLabel(isVi ? 'Tiêu đề' : 'Title'),
                       TextFormField(
                         controller: _titleController,
-                        style: const TextStyle(fontSize: 16),
+                        style: TextStyle(fontSize: 16, color: context.colors.onSurface),
                         decoration: _buildInputDecoration(
+                          context,
                           hintText: isVi ? 'Nhập tiêu đề ngắn gọn' : 'Enter brief title',
                         ),
                       ),
@@ -171,8 +172,9 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                       TextFormField(
                         controller: _detailsController,
                         maxLines: 5,
-                        style: const TextStyle(fontSize: 16, height: 1.5),
+                        style: TextStyle(fontSize: 16, height: 1.5, color: context.colors.onSurface),
                         decoration: _buildInputDecoration(
+                          context,
                           hintText: isVi ? 'Mô tả chi tiết vấn đề của bạn...' : 'Describe your problem in detail...',
                         ),
                       ),
@@ -245,15 +247,16 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                             if (mounted) setState(() => _isLoading = false);
                           }
                         },
+                        borderRadius: BorderRadius.circular(14),
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            color: _isLoading ? Colors.grey : const Color(0xFF4A9B7F),
-                            borderRadius: BorderRadius.circular(12),
+                            color: _isLoading ? context.colors.onSurfaceVariant.withValues(alpha: 0.3) : context.brandColor,
+                            borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF4A9B7F).withValues(alpha: 0.3),
+                                color: context.brandColor.withValues(alpha: 0.25),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -292,7 +295,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
         child: Text(
           text,
           style: TextStyle(
-            color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+            color: context.colors.onSurfaceVariant,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -301,27 +304,26 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
     );
   }
 
-  // Hàm phụ tạo khung Input viền xanh cho đồng bộ
-  InputDecoration _buildInputDecoration({String? hintText}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  // Hàm phụ tạo khung Input viền đồng bộ
+  InputDecoration _buildInputDecoration(BuildContext context, {String? hintText}) {
     return InputDecoration(
       hintText: hintText,
       hintStyle: TextStyle(
-        color: isDark ? Colors.white38 : const Color(0xFFAAAAAA),
+        color: context.colors.onSurfaceVariant.withValues(alpha: 0.5),
         fontSize: 15,
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       filled: true,
-      fillColor: isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF9FAFB), // Nền xám cực nhạt
+      fillColor: context.cardBg,
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
-          color: isDark ? const Color(0xFF3E3E3E) : const Color(0xFFE5E7EB),
+          color: context.borderColor,
         ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF438883), width: 1.5),
+        borderSide: BorderSide(color: context.brandColor, width: 1.5),
       ),
     );
   }
