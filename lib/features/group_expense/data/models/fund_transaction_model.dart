@@ -43,8 +43,8 @@ class FundTransactionModel {
       userId: json['userId'] as String,
       userName: json['userName'] as String? ?? 'Người dùng',
       amount: (json['amount'] as num).toDouble(),
-      type: json['type'] == 'contribute' 
-          ? TransactionType.contribute 
+      type: json['type'] == 'contribute'
+          ? TransactionType.contribute
           : TransactionType.withdraw,
       createdAt: (json['createdAt'] as Timestamp).toDate(),
       notes: json['notes'] as String?,

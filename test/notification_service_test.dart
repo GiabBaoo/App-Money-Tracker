@@ -11,57 +11,66 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    test('syncDailyReminderState maintains 20h reminder when reminders enabled', () async {
-      SharedPreferences.setMockInitialValues({
-        'notif_reminders': true,
-      });
+    test(
+      'syncDailyReminderState maintains 20h reminder when reminders enabled',
+      () async {
+        SharedPreferences.setMockInitialValues({'notif_reminders': true});
 
-      // Should run without throwing errors
-      await SmartNotificationService.instance.syncDailyReminderState();
-      final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getBool('notif_reminders'), isTrue);
-    });
+        // Should run without throwing errors
+        await SmartNotificationService.instance.syncDailyReminderState();
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getBool('notif_reminders'), isTrue);
+      },
+    );
 
-    test('syncDailyReminderState disables 20h reminder when reminders disabled', () async {
-      SharedPreferences.setMockInitialValues({
-        'notif_reminders': false,
-      });
+    test(
+      'syncDailyReminderState disables 20h reminder when reminders disabled',
+      () async {
+        SharedPreferences.setMockInitialValues({'notif_reminders': false});
 
-      await SmartNotificationService.instance.syncDailyReminderState();
-      final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getBool('notif_reminders'), isFalse);
-    });
+        await SmartNotificationService.instance.syncDailyReminderState();
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getBool('notif_reminders'), isFalse);
+      },
+    );
 
-    test('scheduleAllBackgroundNotifications executes cleanly with default settings', () async {
-      SharedPreferences.setMockInitialValues({
-        'notif_reminders': true,
-        'notif_spending_report': true,
-        'notif_smart_advice': true,
-      });
+    test(
+      'scheduleAllBackgroundNotifications executes cleanly with default settings',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'notif_reminders': true,
+          'notif_spending_report': true,
+          'notif_smart_advice': true,
+        });
 
-      await SmartNotificationService.instance.scheduleAllBackgroundNotifications();
-      final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getBool('notif_reminders'), isTrue);
-      expect(prefs.getBool('notif_spending_report'), isTrue);
-      expect(prefs.getBool('notif_smart_advice'), isTrue);
-    });
+        await SmartNotificationService.instance
+            .scheduleAllBackgroundNotifications();
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getBool('notif_reminders'), isTrue);
+        expect(prefs.getBool('notif_spending_report'), isTrue);
+        expect(prefs.getBool('notif_smart_advice'), isTrue);
+      },
+    );
 
     test('LocalNotificationService singleton instance is accessible', () {
       final service = LocalNotificationService.instance;
       expect(service, isNotNull);
     });
 
-    test('notifyTransactionCreated is silenced for manual transactions', () async {
-      // Must complete without error and without creating spam
-      await expectLater(
-        SmartNotificationService.instance.notifyTransactionCreated(
-          type: 'expense',
-          category: 'Ăn uống',
-          amount: 50000,
-          note: 'Cơm trưa',
-        ),
-        completes,
-      );
-    });
+    test(
+      'notifyTransactionCreated is silenced for manual transactions',
+      () async {
+        // Must complete without error and without creating spam
+        await expectLater(
+          SmartNotificationService.instance.notifyTransactionCreated(
+            type: 'expense',
+            category: 'Ăn uống',
+            amount: 50000,
+            note: 'Cơm trưa',
+          ),
+          completes,
+        );
+      },
+    );
   });
 }

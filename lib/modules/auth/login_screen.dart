@@ -72,7 +72,8 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (lastUid != null && lastUid.isNotEmpty) {
-        final isBioEnabled = await BiometricService.instance.isFingerprintEnabledForUser(lastUid);
+        final isBioEnabled = await BiometricService.instance
+            .isFingerprintEnabledForUser(lastUid);
         if (mounted) {
           setState(() {
             _lastOfflineUid = lastUid;
@@ -86,15 +87,28 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleBiometricLogin() async {
     if (_lastOfflineUid == null) return;
     final isVi = LanguageScope.of(context).isVietnamese;
-    final authenticated = await BiometricService.instance.authenticateFingerprint(
-      localizedReason: isVi ? 'Quét vân tay để đăng nhập vào Mono' : 'Scan fingerprint to log in to Mono',
-    );
+    final authenticated = await BiometricService.instance
+        .authenticateFingerprint(
+          localizedReason: isVi
+              ? 'Quét vân tay để đăng nhập vào Mono'
+              : 'Scan fingerprint to log in to Mono',
+        );
     if (authenticated && mounted) {
       _authService.setOfflineUid(_lastOfflineUid!);
       // Tự động re-authenticate Firebase Auth ngầm và ghi nhận vân tay (không await)
-      unawaited(_authService.silentReauthenticateIfNeeded().catchError((_) => false));
-      unawaited(BiometricService.instance.recordFingerprintLogin(uid: _lastOfflineUid!).catchError((_) {}));
-      _showSnackBar(isVi ? 'Đăng nhập bằng vân tay thành công!' : 'Fingerprint login successful!');
+      unawaited(
+        _authService.silentReauthenticateIfNeeded().catchError((_) => false),
+      );
+      unawaited(
+        BiometricService.instance
+            .recordFingerprintLogin(uid: _lastOfflineUid!)
+            .catchError((_) {}),
+      );
+      _showSnackBar(
+        isVi
+            ? 'Đăng nhập bằng vân tay thành công!'
+            : 'Fingerprint login successful!',
+      );
       Navigator.pushReplacement(
         context,
         PageTransitions.fade(const HomeScreen()),
@@ -116,7 +130,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (email.isEmpty || password.isEmpty) {
       _showSnackBar(
-        isVi ? 'Vui lòng nhập đầy đủ email và mật khẩu!' : 'Please enter your email and password!',
+        isVi
+            ? 'Vui lòng nhập đầy đủ email và mật khẩu!'
+            : 'Please enter your email and password!',
         isError: true,
       );
       return;
@@ -140,19 +156,24 @@ class _LoginScreenState extends State<LoginScreen> {
         await prefs.setBool('saved_remember_me', false);
         await secureStorage.delete(key: 'saved_login_password');
       }
-      
+
       // Kiểm tra xác nhận email nếu đang có mạng trực tuyến (bỏ qua khi offline)
       final isOffline = _authService.isOfflineSession;
       final currentUser = _authService.currentUser;
-      if (!isOffline && currentUser != null && currentUser.email != null && !currentUser.emailVerified) {
+      if (!isOffline &&
+          currentUser != null &&
+          currentUser.email != null &&
+          !currentUser.emailVerified) {
         _showSnackBar(
-          isVi ? 'Vui lòng xác nhận email trước khi đăng nhập!' : 'Please verify your email before logging in!',
+          isVi
+              ? 'Vui lòng xác nhận email trước khi đăng nhập!'
+              : 'Please verify your email before logging in!',
           isError: true,
         );
         await _authService.logout();
         return;
       }
-      
+
       // Kiểm tra xem có pendingGroupId không (sau khi login từ invite link)
       final pendingGroupId = prefs.getString('pendingGroupId');
       if (pendingGroupId != null && pendingGroupId.isNotEmpty) {
@@ -172,7 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
               : 'Entering Offline mode. Data will sync automatically when online.',
         );
       }
-      
+
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -229,7 +250,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.primaryTealVibrant.withValues(alpha: isDark ? 0.2 : 0.15),
+                    AppColors.primaryTealVibrant.withValues(
+                      alpha: isDark ? 0.2 : 0.15,
+                    ),
                     AppColors.primaryTealVibrant.withValues(alpha: 0.0),
                   ],
                 ),
@@ -241,7 +264,10 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Center(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 20,
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -301,7 +327,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            isVi ? 'Chào mừng bạn trở lại với Mono' : 'Welcome back to Mono',
+                            isVi
+                                ? 'Chào mừng bạn trở lại với Mono'
+                                : 'Welcome back to Mono',
                             style: context.textTheme.bodySmall?.copyWith(
                               color: context.colors.onSurfaceVariant,
                               fontWeight: FontWeight.w500,
@@ -328,9 +356,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: context.inputBgColor,
-                              hintText: isVi ? 'Nhập email của bạn' : 'Enter your email',
+                              hintText: isVi
+                                  ? 'Nhập email của bạn'
+                                  : 'Enter your email',
                               hintStyle: context.textTheme.bodyMedium?.copyWith(
-                                color: context.colors.onSurfaceVariant.withValues(alpha: 0.7),
+                                color: context.colors.onSurfaceVariant
+                                    .withValues(alpha: 0.7),
                                 fontWeight: FontWeight.normal,
                               ),
                               prefixIcon: Icon(
@@ -338,7 +369,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: primaryColor,
                                 size: 20,
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
@@ -377,9 +411,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: context.inputBgColor,
-                              hintText: isVi ? 'Nhập mật khẩu của bạn' : 'Enter your password',
+                              hintText: isVi
+                                  ? 'Nhập mật khẩu của bạn'
+                                  : 'Enter your password',
                               hintStyle: context.textTheme.bodyMedium?.copyWith(
-                                color: context.colors.onSurfaceVariant.withValues(alpha: 0.7),
+                                color: context.colors.onSurfaceVariant
+                                    .withValues(alpha: 0.7),
                                 fontWeight: FontWeight.normal,
                               ),
                               prefixIcon: Icon(
@@ -389,13 +426,21 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  _isPasswordVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                                  _isPasswordVisible
+                                      ? Icons.visibility_rounded
+                                      : Icons.visibility_off_rounded,
                                   color: context.colors.onSurfaceVariant,
                                   size: 20,
                                 ),
-                                onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                                onPressed: () => setState(
+                                  () =>
+                                      _isPasswordVisible = !_isPasswordVisible,
+                                ),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide(
@@ -420,7 +465,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               GestureDetector(
-                                onTap: () => setState(() => _rememberMe = !_rememberMe),
+                                onTap: () =>
+                                    setState(() => _rememberMe = !_rememberMe),
                                 child: Row(
                                   children: [
                                     SizedBox(
@@ -429,17 +475,27 @@ class _LoginScreenState extends State<LoginScreen> {
                                       child: Checkbox(
                                         value: _rememberMe,
                                         activeColor: primaryColor,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                                        onChanged: (v) => setState(() => _rememberMe = v ?? false),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            5,
+                                          ),
+                                        ),
+                                        onChanged: (v) => setState(
+                                          () => _rememberMe = v ?? false,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      isVi ? 'Ghi nhớ đăng nhập' : 'Remember me',
-                                      style: context.textTheme.bodyMedium?.copyWith(
-                                        color: context.colors.onSurfaceVariant,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                      isVi
+                                          ? 'Ghi nhớ đăng nhập'
+                                          : 'Remember me',
+                                      style: context.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            color:
+                                                context.colors.onSurfaceVariant,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -447,7 +503,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               GestureDetector(
                                 onTap: () {
                                   HapticFeedback.lightImpact();
-                                  Navigator.push(context, PageTransitions.slideRight(const ForgotPasswordScreen()));
+                                  Navigator.push(
+                                    context,
+                                    PageTransitions.slideRight(
+                                      const ForgotPasswordScreen(),
+                                    ),
+                                  );
                                 },
                                 child: Text(
                                   isVi ? 'Quên mật khẩu?' : 'Forgot password?',
@@ -476,8 +537,18 @@ class _LoginScreenState extends State<LoginScreen> {
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: _isLoading
-                                      ? [context.colors.surfaceContainerHighest, context.colors.surfaceContainerHighest]
-                                      : [AppColors.primaryTealLight, AppColors.primaryTeal],
+                                      ? [
+                                          context
+                                              .colors
+                                              .surfaceContainerHighest,
+                                          context
+                                              .colors
+                                              .surfaceContainerHighest,
+                                        ]
+                                      : [
+                                          AppColors.primaryTealLight,
+                                          AppColors.primaryTeal,
+                                        ],
                                   begin: Alignment.centerLeft,
                                   end: Alignment.centerRight,
                                 ),
@@ -501,15 +572,18 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                       )
                                     : Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           Text(
                                             isVi ? 'Đăng Nhập' : 'Log In',
-                                            style: context.textTheme.titleMedium?.copyWith(
-                                              color: context.colors.onPrimary,
-                                              fontWeight: FontWeight.w700,
-                                              letterSpacing: 0.4,
-                                            ),
+                                            style: context.textTheme.titleMedium
+                                                ?.copyWith(
+                                                  color:
+                                                      context.colors.onPrimary,
+                                                  fontWeight: FontWeight.w700,
+                                                  letterSpacing: 0.4,
+                                                ),
                                           ),
                                           const SizedBox(width: 8),
                                           Icon(
@@ -552,11 +626,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
-                                      isVi ? 'Đăng nhập nhanh bằng vân tay' : 'Quick login with fingerprint',
-                                      style: context.textTheme.labelLarge?.copyWith(
-                                        color: primaryColor,
-                                        fontWeight: FontWeight.w700,
-                                      ),
+                                      isVi
+                                          ? 'Đăng nhập nhanh bằng vân tay'
+                                          : 'Quick login with fingerprint',
+                                      style: context.textTheme.labelLarge
+                                          ?.copyWith(
+                                            color: primaryColor,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -573,15 +650,23 @@ class _LoginScreenState extends State<LoginScreen> {
                     AnimatedScaleButton(
                       onTap: () {
                         HapticFeedback.lightImpact();
-                        Navigator.push(context, PageTransitions.slideRight(const RegisterScreen()));
+                        Navigator.push(
+                          context,
+                          PageTransitions.slideRight(const RegisterScreen()),
+                        );
                       },
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 16,
+                        ),
                         child: Text.rich(
                           TextSpan(
                             children: [
                               TextSpan(
-                                text: isVi ? 'Chưa có tài khoản? ' : "Don't have an account? ",
+                                text: isVi
+                                    ? 'Chưa có tài khoản? '
+                                    : "Don't have an account? ",
                                 style: context.textTheme.bodyMedium?.copyWith(
                                   color: context.colors.onSurfaceVariant,
                                 ),

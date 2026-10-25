@@ -200,7 +200,10 @@ class _MonoLiquidGlassLogoState extends State<MonoLiquidGlassLogo>
       );
 
       if (widget.animatedSheen) {
-        _sheenController!.repeat(reverse: false, period: const Duration(seconds: 4));
+        _sheenController!.repeat(
+          reverse: false,
+          period: const Duration(seconds: 4),
+        );
       }
     }
   }
@@ -210,7 +213,10 @@ class _MonoLiquidGlassLogoState extends State<MonoLiquidGlassLogo>
     super.didUpdateWidget(oldWidget);
     if (widget.animatedSheen != oldWidget.animatedSheen) {
       if (widget.animatedSheen) {
-        _sheenController?.repeat(reverse: false, period: const Duration(seconds: 4));
+        _sheenController?.repeat(
+          reverse: false,
+          period: const Duration(seconds: 4),
+        );
       } else {
         _sheenController?.stop();
       }
@@ -246,7 +252,8 @@ class _MonoLiquidGlassLogoState extends State<MonoLiquidGlassLogo>
         child: AnimatedBuilder(
           animation: _sheenController ?? const AlwaysStoppedAnimation(0.0),
           builder: (context, child) {
-            final double currentSheen = widget.externalSheen ??
+            final double currentSheen =
+                widget.externalSheen ??
                 (_sheenAnimation != null ? _sheenAnimation!.value : 0.0);
 
             return Container(
@@ -290,11 +297,14 @@ class _MonoLiquidGlassLogoState extends State<MonoLiquidGlassLogo>
                           center: Alignment(-0.15, -0.22),
                           radius: 0.96,
                           colors: [
-                            AppColors.logoRadialCenter, // Tâm sáng dịu (soft luminous sage)
-                            AppColors.logoRadialBase,   // Màu xanh sage đặc trưng thương hiệu gốc
-                            AppColors.logoRadialMid,    // Chuyển sắc mượt mà
-                            AppColors.logoRadialShade,  // Rìa đổ bóng chiều sâu 3D
-                            AppColors.logoRadialDark,   // Góc sâu
+                            AppColors
+                                .logoRadialCenter, // Tâm sáng dịu (soft luminous sage)
+                            AppColors
+                                .logoRadialBase, // Màu xanh sage đặc trưng thương hiệu gốc
+                            AppColors.logoRadialMid, // Chuyển sắc mượt mà
+                            AppColors
+                                .logoRadialShade, // Rìa đổ bóng chiều sâu 3D
+                            AppColors.logoRadialDark, // Góc sâu
                           ],
                           stops: [0.0, 0.40, 0.65, 0.88, 1.0],
                         ),
@@ -311,7 +321,9 @@ class _MonoLiquidGlassLogoState extends State<MonoLiquidGlassLogo>
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              Colors.white.withValues(alpha: isDark ? 0.20 : 0.28),
+                              Colors.white.withValues(
+                                alpha: isDark ? 0.20 : 0.28,
+                              ),
                               Colors.white.withValues(alpha: 0.04),
                               Colors.transparent,
                             ],
@@ -340,7 +352,9 @@ class _MonoLiquidGlassLogoState extends State<MonoLiquidGlassLogo>
                         decoration: BoxDecoration(
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.logoTextShadow.withValues(alpha: 0.35),
+                              color: AppColors.logoTextShadow.withValues(
+                                alpha: 0.35,
+                              ),
                               blurRadius: math.max(2.0, s * 0.035),
                               offset: Offset(0, math.max(1.0, s * 0.016)),
                             ),
@@ -368,7 +382,8 @@ class _MonoLiquidGlassLogoState extends State<MonoLiquidGlassLogo>
 
   Widget _buildWordmark(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final defaultColor = widget.color ?? (isDark ? Colors.white : AppColors.primaryTealDark);
+    final defaultColor =
+        widget.color ?? (isDark ? Colors.white : AppColors.primaryTealDark);
 
     return RepaintBoundary(
       child: Image.asset(
@@ -387,10 +402,7 @@ class _SheenPainter extends CustomPainter {
   final double progress;
   final Color sheenColor;
 
-  _SheenPainter({
-    required this.progress,
-    required this.sheenColor,
-  });
+  _SheenPainter({required this.progress, required this.sheenColor});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -399,18 +411,21 @@ class _SheenPainter extends CustomPainter {
     final double barWidth = size.width * 0.38;
 
     final paint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          Colors.transparent,
-          sheenColor.withValues(alpha: 0.15),
-          sheenColor,
-          sheenColor.withValues(alpha: 0.15),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
-      ).createShader(Rect.fromLTWH(currentX - barWidth, 0, barWidth * 2, size.height));
+      ..shader =
+          LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.transparent,
+              sheenColor.withValues(alpha: 0.15),
+              sheenColor,
+              sheenColor.withValues(alpha: 0.15),
+              Colors.transparent,
+            ],
+            stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
+          ).createShader(
+            Rect.fromLTWH(currentX - barWidth, 0, barWidth * 2, size.height),
+          );
 
     final path = Path()
       ..moveTo(currentX - barWidth, 0)
@@ -424,6 +439,7 @@ class _SheenPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SheenPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.sheenColor != sheenColor;
+    return oldDelegate.progress != progress ||
+        oldDelegate.sheenColor != sheenColor;
   }
 }

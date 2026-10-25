@@ -26,7 +26,9 @@ class FintechKeypad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final keyBg = isDark ? context.colors.surfaceContainerHighest : context.inputBgColor;
+    final keyBg = isDark
+        ? context.colors.surfaceContainerHighest
+        : context.inputBgColor;
     final keyBorder = context.borderColor;
     final textNumberColor = context.textPrimaryColor;
 
@@ -35,11 +37,29 @@ class FintechKeypad extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildRow(context, ['1', '2', '3'], keyBg, keyBorder, textNumberColor),
+          _buildRow(
+            context,
+            ['1', '2', '3'],
+            keyBg,
+            keyBorder,
+            textNumberColor,
+          ),
           const SizedBox(height: 8),
-          _buildRow(context, ['4', '5', '6'], keyBg, keyBorder, textNumberColor),
+          _buildRow(
+            context,
+            ['4', '5', '6'],
+            keyBg,
+            keyBorder,
+            textNumberColor,
+          ),
           const SizedBox(height: 8),
-          _buildRow(context, ['7', '8', '9'], keyBg, keyBorder, textNumberColor),
+          _buildRow(
+            context,
+            ['7', '8', '9'],
+            keyBg,
+            keyBorder,
+            textNumberColor,
+          ),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -61,7 +81,13 @@ class FintechKeypad extends StatelessWidget {
               const SizedBox(width: 8),
               // Phím 0
               Expanded(
-                child: _buildNumberKey(context, '0', keyBg, keyBorder, textNumberColor),
+                child: _buildNumberKey(
+                  context,
+                  '0',
+                  keyBg,
+                  keyBorder,
+                  textNumberColor,
+                ),
               ),
               const SizedBox(width: 8),
               // Phím Xóa từng số (Backspace) & Giữ để xóa hết (Clear)
@@ -100,7 +126,13 @@ class FintechKeypad extends StatelessWidget {
         for (int i = 0; i < keys.length; i++) ...[
           if (i > 0) const SizedBox(width: 8),
           Expanded(
-            child: _buildNumberKey(context, keys[i], keyBg, keyBorder, textNumberColor),
+            child: _buildNumberKey(
+              context,
+              keys[i],
+              keyBg,
+              keyBorder,
+              textNumberColor,
+            ),
           ),
         ],
       ],
@@ -171,12 +203,13 @@ class FintechKeypad extends StatelessWidget {
         child: Center(
           child: Text(
             label,
-            style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
-              fontSize: 18,
-              fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
-              color: textColor,
-              letterSpacing: 0.5,
-            ),
+            style: (context.textTheme.titleMedium ?? const TextStyle())
+                .copyWith(
+                  fontSize: 18,
+                  fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
+                  color: textColor,
+                  letterSpacing: 0.5,
+                ),
           ),
         ),
       ),
@@ -203,9 +236,7 @@ class FintechKeypad extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: borderColor, width: 1.2),
           ),
-          child: Center(
-            child: Icon(icon, color: iconColor, size: 21),
-          ),
+          child: Center(child: Icon(icon, color: iconColor, size: 21)),
         ),
       ),
     );

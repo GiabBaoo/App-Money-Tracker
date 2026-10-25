@@ -11,7 +11,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 /// - Hiển thị đa nguồn thông minh (File -> Base64 -> HTTPS URL)
 /// - Trình phóng to toàn màn hình cảm ứng đa điểm (InteractiveViewer)
 class ReceiptStorageService {
-  static final ReceiptStorageService _instance = ReceiptStorageService._internal();
+  static final ReceiptStorageService _instance =
+      ReceiptStorageService._internal();
   factory ReceiptStorageService() => _instance;
   ReceiptStorageService._internal();
 
@@ -28,15 +29,23 @@ class ReceiptStorageService {
   }
 
   /// Sao chép file từ cache (ImagePicker) sang thư mục vĩnh viễn của ứng dụng
-  Future<String> saveReceiptPermanently(File tempFile, String transactionId) async {
+  Future<String> saveReceiptPermanently(
+    File tempFile,
+    String transactionId,
+  ) async {
     try {
       final dir = await _receiptsDirectory;
-      final ext = tempFile.path.contains('.') ? tempFile.path.split('.').last.toLowerCase() : 'jpg';
-      final fileName = 'receipt_${transactionId}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final ext = tempFile.path.contains('.')
+          ? tempFile.path.split('.').last.toLowerCase()
+          : 'jpg';
+      final fileName =
+          'receipt_${transactionId}_${DateTime.now().millisecondsSinceEpoch}.$ext';
       final targetPath = '${dir.path}/$fileName';
 
       final permanentFile = await tempFile.copy(targetPath);
-      debugPrint('ReceiptStorage: Đã lưu hóa đơn vĩnh viễn tại: ${permanentFile.path}');
+      debugPrint(
+        'ReceiptStorage: Đã lưu hóa đơn vĩnh viễn tại: ${permanentFile.path}',
+      );
       return permanentFile.path;
     } catch (e) {
       debugPrint('ReceiptStorage: Lỗi sao chép ảnh sang thư mục vĩnh viễn: $e');
@@ -45,16 +54,22 @@ class ReceiptStorageService {
   }
 
   /// Upload ảnh hóa đơn: Thử Firebase Storage trước -> Fallback Base64 an toàn nếu lỗi billing/mạng
-  Future<({String photoUrl, String photoStoragePath, String photoLocalPath})> processAndUploadReceipt({
+  Future<({String photoUrl, String photoStoragePath, String photoLocalPath})>
+  processAndUploadReceipt({
     required String uid,
     required String transactionId,
     required File pickedFile,
   }) async {
     // 1. Luôn lưu vĩnh viễn vào bộ nhớ máy (SQLite-first)
-    final permanentLocalPath = await saveReceiptPermanently(pickedFile, transactionId);
+    final permanentLocalPath = await saveReceiptPermanently(
+      pickedFile,
+      transactionId,
+    );
     final fileToUpload = File(permanentLocalPath);
 
-    final ext = fileToUpload.path.contains('.') ? fileToUpload.path.split('.').last.toLowerCase() : 'jpg';
+    final ext = fileToUpload.path.contains('.')
+        ? fileToUpload.path.split('.').last.toLowerCase()
+        : 'jpg';
     final fileName = '$transactionId.$ext';
     final storagePath = 'transaction_images/$uid/$transactionId/$fileName';
 
@@ -68,14 +83,18 @@ class ReceiptStorageService {
       final task = await ref.putFile(fileToUpload, metadata);
       final downloadUrl = await task.ref.getDownloadURL();
 
-      debugPrint('ReceiptStorage: Tải lên Firebase Storage thành công: $downloadUrl');
+      debugPrint(
+        'ReceiptStorage: Tải lên Firebase Storage thành công: $downloadUrl',
+      );
       return (
         photoUrl: downloadUrl,
         photoStoragePath: storagePath,
         photoLocalPath: permanentLocalPath,
       );
     } catch (storageError) {
-      debugPrint('ReceiptStorage: Firebase Storage upload không thành công ($storageError). Kích hoạt Base64 Fallback...');
+      debugPrint(
+        'ReceiptStorage: Firebase Storage upload không thành công ($storageError). Kích hoạt Base64 Fallback...',
+      );
 
       // 3. Fallback: Mã hóa Base64 Data URI lưu trực tiếp lên Firestore
       try {
@@ -83,7 +102,9 @@ class ReceiptStorageService {
         final base64String = base64Encode(bytes);
         final dataUri = 'data:image/jpeg;base64,$base64String';
 
-        debugPrint('ReceiptStorage: Đã tạo Base64 fallback (${(bytes.length / 1024).toStringAsFixed(1)} KB)');
+        debugPrint(
+          'ReceiptStorage: Đã tạo Base64 fallback (${(bytes.length / 1024).toStringAsFixed(1)} KB)',
+        );
         return (
           photoUrl: dataUri,
           photoStoragePath: '',
@@ -176,7 +197,10 @@ class ReceiptStorageService {
             child: SizedBox(
               width: 24,
               height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2.2, color: Color(0xFF438883)),
+              child: CircularProgressIndicator(
+                strokeWidth: 2.2,
+                color: Color(0xFF438883),
+              ),
             ),
           ),
         );
@@ -192,7 +216,11 @@ class ReceiptStorageService {
       height: height,
       color: Colors.grey.withValues(alpha: 0.12),
       alignment: Alignment.center,
-      child: const Icon(Icons.receipt_long_rounded, size: 36, color: Colors.grey),
+      child: const Icon(
+        Icons.receipt_long_rounded,
+        size: 36,
+        color: Colors.grey,
+      ),
     );
   }
 
@@ -238,7 +266,10 @@ class ReceiptStorageService {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(20),
@@ -246,7 +277,11 @@ class ReceiptStorageService {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.zoom_in_rounded, color: Colors.white, size: 18),
+                            const Icon(
+                              Icons.zoom_in_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
                             const SizedBox(width: 8),
                             Text(
                               title,
@@ -264,7 +299,11 @@ class ReceiptStorageService {
                           backgroundColor: Colors.black.withValues(alpha: 0.6),
                           side: const BorderSide(color: Colors.white24),
                         ),
-                        icon: const Icon(Icons.close_rounded, color: Colors.white, size: 22),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
                         onPressed: () => Navigator.pop(ctx),
                       ),
                     ],
@@ -278,7 +317,10 @@ class ReceiptStorageService {
                   right: 0,
                   child: Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(20),

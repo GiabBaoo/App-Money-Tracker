@@ -25,9 +25,7 @@ class MonoBottomSheet {
       barrierColor: barrierColor ?? Colors.black.withValues(alpha: 0.55),
       backgroundColor: Colors.transparent,
       elevation: 0,
-      builder: (ctx) => MonoBottomSheetContainer(
-        child: builder(ctx),
-      ),
+      builder: (ctx) => MonoBottomSheetContainer(child: builder(ctx)),
     );
   }
 }
@@ -51,14 +49,18 @@ class MonoBottomSheetContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = context.isDarkMode;
     final sheetTheme = Theme.of(context).bottomSheetTheme;
-    final baseBg = sheetTheme.backgroundColor ??
+    final baseBg =
+        sheetTheme.backgroundColor ??
         (isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceLight);
     final bgColor = baseBg.withValues(alpha: isDark ? 0.96 : 0.98);
     final topBorderColor = isDark
         ? AppColors.borderDarkHighlight
         : context.borderColor;
-    final dragHandleColor = sheetTheme.dragHandleColor ??
-        (isDark ? Colors.white.withValues(alpha: 0.28) : const Color(0xFFCBD5E1));
+    final dragHandleColor =
+        sheetTheme.dragHandleColor ??
+        (isDark
+            ? Colors.white.withValues(alpha: 0.28)
+            : const Color(0xFFCBD5E1));
 
     Widget content = Container(
       decoration: BoxDecoration(
@@ -66,8 +68,14 @@ class MonoBottomSheetContainer extends StatelessWidget {
         borderRadius: AppRadius.bottomSheet,
         border: Border(
           top: BorderSide(color: topBorderColor, width: 1.2),
-          left: BorderSide(color: topBorderColor.withValues(alpha: 0.4), width: 0.6),
-          right: BorderSide(color: topBorderColor.withValues(alpha: 0.4), width: 0.6),
+          left: BorderSide(
+            color: topBorderColor.withValues(alpha: 0.4),
+            width: 0.6,
+          ),
+          right: BorderSide(
+            color: topBorderColor.withValues(alpha: 0.4),
+            width: 0.6,
+          ),
         ),
         boxShadow: AppShadows.modal(isDark),
       ),
@@ -109,7 +117,8 @@ class MonoBottomSheetContainer extends StatelessWidget {
                 heightFactor: null,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * maxHeightFactor!,
+                    maxHeight:
+                        MediaQuery.of(context).size.height * maxHeightFactor!,
                   ),
                   child: content,
                 ),

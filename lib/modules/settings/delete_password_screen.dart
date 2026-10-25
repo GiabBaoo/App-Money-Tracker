@@ -30,7 +30,10 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
     final isVi = LanguageScope.of(context).isVietnamese;
     final password = _passwordController.text;
     if (password.isEmpty) {
-      MonoToast.error(context, isVi ? 'Vui lòng nhập mật khẩu!' : 'Please enter your password!');
+      MonoToast.error(
+        context,
+        isVi ? 'Vui lòng nhập mật khẩu!' : 'Please enter your password!',
+      );
       return;
     }
     setState(() => _isLoading = true);
@@ -39,17 +42,28 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
 
     if (!mounted) return;
     if (result.success) {
-      Navigator.push(context, PageTransitions.scale(SuccessScreen(
-        appBarTitle: isVi ? 'Xóa tài khoản' : 'Delete Account',
-        successTitle: isVi ? 'Xóa tài khoản thành công' : 'Account Deleted Successfully',
-        successMessage: isVi
-            ? 'Tất cả dữ liệu tài chính cá nhân của bạn đã được gỡ bỏ vĩnh viễn khỏi hệ thống.'
-            : 'All your personal financial data has been permanently removed from the system.',
-        buttonText: isVi ? 'Quay về đăng nhập' : 'Back to Login',
-        onButtonPressed: () {
-          Navigator.pushAndRemoveUntil(context, PageTransitions.fade(const LoginScreen()), (route) => false);
-        },
-      )));
+      Navigator.push(
+        context,
+        PageTransitions.scale(
+          SuccessScreen(
+            appBarTitle: isVi ? 'Xóa tài khoản' : 'Delete Account',
+            successTitle: isVi
+                ? 'Xóa tài khoản thành công'
+                : 'Account Deleted Successfully',
+            successMessage: isVi
+                ? 'Tất cả dữ liệu tài chính cá nhân của bạn đã được gỡ bỏ vĩnh viễn khỏi hệ thống.'
+                : 'All your personal financial data has been permanently removed from the system.',
+            buttonText: isVi ? 'Quay về đăng nhập' : 'Back to Login',
+            onButtonPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                PageTransitions.fade(const LoginScreen()),
+                (route) => false,
+              );
+            },
+          ),
+        ),
+      );
     } else {
       MonoToast.error(context, result.message);
     }
@@ -99,7 +113,9 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.only(
@@ -149,9 +165,13 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                         obscureText: _obscurePassword,
                         style: TextStyle(color: context.colors.onSurface),
                         decoration: InputDecoration(
-                          hintText: isVi ? 'Nhập mật khẩu của bạn' : 'Enter your password',
+                          hintText: isVi
+                              ? 'Nhập mật khẩu của bạn'
+                              : 'Enter your password',
                           hintStyle: TextStyle(
-                            color: context.colors.onSurfaceVariant.withValues(alpha: 0.5),
+                            color: context.colors.onSurfaceVariant.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -161,9 +181,7 @@ class _DeletePasswordScreenState extends State<DeletePasswordScreen> {
                           fillColor: context.cardBg,
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: context.borderColor,
-                            ),
+                            borderSide: BorderSide(color: context.borderColor),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),

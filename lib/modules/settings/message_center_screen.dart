@@ -28,29 +28,44 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
 
   String _formatRelativeTime(DateTime dt, bool isVi) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inDays > 0) return isVi ? '${diff.inDays} ngày trước' : '${diff.inDays}d ago';
-    if (diff.inHours > 0) return isVi ? '${diff.inHours} giờ trước' : '${diff.inHours}h ago';
-    if (diff.inMinutes > 0) return isVi ? '${diff.inMinutes} phút trước' : '${diff.inMinutes}m ago';
+    if (diff.inDays > 0)
+      return isVi ? '${diff.inDays} ngày trước' : '${diff.inDays}d ago';
+    if (diff.inHours > 0)
+      return isVi ? '${diff.inHours} giờ trước' : '${diff.inHours}h ago';
+    if (diff.inMinutes > 0)
+      return isVi ? '${diff.inMinutes} phút trước' : '${diff.inMinutes}m ago';
     return isVi ? 'Vừa xong' : 'Just now';
   }
 
   Map<String, dynamic> _getCategoryInfo(String title, int iconCode, bool isVi) {
     final lower = title.toLowerCase();
-    if (lower.contains('hỗ trợ') || lower.contains('kỹ thuật') || lower.contains('ticket') || lower.contains('yêu cầu') || lower.contains('support')) {
+    if (lower.contains('hỗ trợ') ||
+        lower.contains('kỹ thuật') ||
+        lower.contains('ticket') ||
+        lower.contains('yêu cầu') ||
+        lower.contains('support')) {
       return {
         'label': isVi ? 'Hỗ trợ' : 'Support',
         'color': const Color(0xFFF59E0B),
         'icon': Icons.support_agent_rounded,
       };
     }
-    if (lower.contains('bảo mật') || lower.contains('đăng nhập') || lower.contains('mật khẩu') || lower.contains('cảnh báo') || lower.contains('security')) {
+    if (lower.contains('bảo mật') ||
+        lower.contains('đăng nhập') ||
+        lower.contains('mật khẩu') ||
+        lower.contains('cảnh báo') ||
+        lower.contains('security')) {
       return {
         'label': isVi ? 'Bảo mật' : 'Security',
         'color': const Color(0xFFEF4444),
         'icon': Icons.shield_rounded,
       };
     }
-    if (lower.contains('số dư') || lower.contains('ví') || lower.contains('giao dịch') || lower.contains('tiền') || lower.contains('balance')) {
+    if (lower.contains('số dư') ||
+        lower.contains('ví') ||
+        lower.contains('giao dịch') ||
+        lower.contains('tiền') ||
+        lower.contains('balance')) {
       return {
         'label': isVi ? 'Biến động' : 'Balance',
         'color': const Color(0xFF10B981),
@@ -94,7 +109,11 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white24, width: 0.8),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 18,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   Text(
@@ -111,7 +130,9 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                       HapticFeedback.lightImpact();
                       Navigator.push(
                         context,
-                        PageTransitions.slideRight(const SupportRequestScreen()),
+                        PageTransitions.slideRight(
+                          const SupportRequestScreen(),
+                        ),
                       );
                     },
                     child: Container(
@@ -122,7 +143,11 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white24, width: 0.8),
                       ),
-                      child: const Icon(Icons.add_comment_rounded, color: Colors.white, size: 20),
+                      child: const Icon(
+                        Icons.add_comment_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ],
@@ -136,14 +161,18 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: StreamBuilder<List<MessageModel>>(
                   stream: _messagesStream,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Center(
-                        child: CircularProgressIndicator(color: context.brandColor),
+                        child: CircularProgressIndicator(
+                          color: context.brandColor,
+                        ),
                       );
                     }
 
@@ -160,10 +189,16 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                                 width: 80,
                                 height: 80,
                                 decoration: BoxDecoration(
-                                  color: context.brandColor.withValues(alpha: isDark ? 0.2 : 0.1),
+                                  color: context.brandColor.withValues(
+                                    alpha: isDark ? 0.2 : 0.1,
+                                  ),
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(Icons.mail_outline_rounded, size: 40, color: context.brandColor),
+                                child: Icon(
+                                  Icons.mail_outline_rounded,
+                                  size: 40,
+                                  color: context.brandColor,
+                                ),
                               ),
                               const SizedBox(height: 20),
                               Text(
@@ -193,16 +228,30 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                     }
 
                     return ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 20,
+                      ),
                       itemCount: messages.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 12),
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final msg = messages[index];
-                        final timeStr = _formatRelativeTime(msg.createdAt, isVi);
-                        final catInfo = _getCategoryInfo(msg.title, msg.iconCode, isVi);
+                        final timeStr = _formatRelativeTime(
+                          msg.createdAt,
+                          isVi,
+                        );
+                        final catInfo = _getCategoryInfo(
+                          msg.title,
+                          msg.iconCode,
+                          isVi,
+                        );
                         final Color catColor = catInfo['color'] as Color;
                         final String catLabel = catInfo['label'] as String;
-                        final IconData itemIcon = IconData(msg.iconCode, fontFamily: 'MaterialIcons');
+                        final IconData itemIcon = IconData(
+                          msg.iconCode,
+                          fontFamily: 'MaterialIcons',
+                        );
 
                         return Dismissible(
                           key: Key(msg.id),
@@ -217,18 +266,28 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24),
+                                const Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
                                   isVi ? 'Xóa' : 'Delete',
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                           onDismissed: (_) {
                             FirestoreService().deleteMessage(msg.id);
-                            TopToast.show(context, isVi ? 'Đã xóa tin nhắn' : 'Message deleted');
+                            TopToast.show(
+                              context,
+                              isVi ? 'Đã xóa tin nhắn' : 'Message deleted',
+                            );
                           },
                           child: InkWell(
                             onTap: () {
@@ -240,7 +299,9 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                                     iconBgColor: catColor,
                                     title: msg.title,
                                     time: timeStr,
-                                    fullMessage: msg.fullMessage.isNotEmpty ? msg.fullMessage : msg.shortMessage,
+                                    fullMessage: msg.fullMessage.isNotEmpty
+                                        ? msg.fullMessage
+                                        : msg.shortMessage,
                                   ),
                                 ),
                               );
@@ -251,12 +312,12 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                               decoration: BoxDecoration(
                                 color: context.cardBg,
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: context.borderColor,
-                                ),
+                                border: Border.all(color: context.borderColor),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.03),
+                                    color: Colors.black.withValues(
+                                      alpha: isDark ? 0.3 : 0.03,
+                                    ),
                                     blurRadius: 8,
                                     offset: const Offset(0, 2),
                                   ),
@@ -272,24 +333,37 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                                       color: catColor.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(14),
                                     ),
-                                    child: Icon(itemIcon, color: catColor, size: 24),
+                                    child: Icon(
+                                      itemIcon,
+                                      color: catColor,
+                                      size: 24,
+                                    ),
                                   ),
                                   const SizedBox(width: 14),
 
                                   // Details
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
                                             // Category Badge
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 2,
+                                                  ),
                                               decoration: BoxDecoration(
-                                                color: catColor.withValues(alpha: 0.12),
-                                                borderRadius: BorderRadius.circular(6),
+                                                color: catColor.withValues(
+                                                  alpha: 0.12,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
                                               ),
                                               child: Text(
                                                 catLabel,
@@ -307,7 +381,9 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                                                   timeStr,
                                                   style: TextStyle(
                                                     fontSize: 11,
-                                                    color: context.colors.onSurfaceVariant,
+                                                    color: context
+                                                        .colors
+                                                        .onSurfaceVariant,
                                                   ),
                                                 ),
                                                 if (msg.isUnread) ...[
@@ -330,7 +406,9 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                                           msg.title,
                                           style: TextStyle(
                                             fontSize: 15,
-                                            fontWeight: msg.isUnread ? FontWeight.bold : FontWeight.w600,
+                                            fontWeight: msg.isUnread
+                                                ? FontWeight.bold
+                                                : FontWeight.w600,
                                             color: context.colors.onSurface,
                                           ),
                                           maxLines: 1,
@@ -341,7 +419,8 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                                           msg.shortMessage,
                                           style: TextStyle(
                                             fontSize: 13,
-                                            color: context.colors.onSurfaceVariant,
+                                            color:
+                                                context.colors.onSurfaceVariant,
                                             height: 1.3,
                                           ),
                                           maxLines: 2,
@@ -351,7 +430,12 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 6),
-                                  Icon(Icons.arrow_forward_ios_rounded, size: 13, color: context.colors.onSurfaceVariant.withValues(alpha: 0.5)),
+                                  Icon(
+                                    Icons.arrow_forward_ios_rounded,
+                                    size: 13,
+                                    color: context.colors.onSurfaceVariant
+                                        .withValues(alpha: 0.5),
+                                  ),
                                 ],
                               ),
                             ),

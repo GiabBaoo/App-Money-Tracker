@@ -26,10 +26,11 @@ class VoiceInputBottomSheet extends StatefulWidget {
   State<VoiceInputBottomSheet> createState() => _VoiceInputBottomSheetState();
 }
 
-class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with SingleTickerProviderStateMixin {
+class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet>
+    with SingleTickerProviderStateMixin {
   final VoiceService _voiceService = VoiceService();
   final GeminiAiService _geminiService = GeminiAiService();
-  
+
   String _recognizedText = "";
   bool _isListening = false;
   bool _isInitializing = true;
@@ -81,18 +82,26 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
       _dailyLimitEnabled = prefs.getBool('daily_limit_enabled') ?? false;
       _dailyLimit = prefs.getDouble('daily_spending_limit');
 
-      final uid = FirebaseAuth.instance.currentUser?.uid ?? AuthService().offlineUid;
+      final uid =
+          FirebaseAuth.instance.currentUser?.uid ?? AuthService().offlineUid;
       if (uid != null) {
         final txRepo = TransactionRepository();
         txRepo.setUid(uid);
         final allTx = await txRepo.getAllTransactions();
         final now = DateTime.now();
-        final todayTx = allTx.where((t) =>
-            t.type == 'expense' &&
-            t.date.year == now.year &&
-            t.date.month == now.month &&
-            t.date.day == now.day).toList();
-        _todayExpenseTotal = todayTx.fold<double>(0.0, (acc, t) => acc + t.amount);
+        final todayTx = allTx
+            .where(
+              (t) =>
+                  t.type == 'expense' &&
+                  t.date.year == now.year &&
+                  t.date.month == now.month &&
+                  t.date.day == now.day,
+            )
+            .toList();
+        _todayExpenseTotal = todayTx.fold<double>(
+          0.0,
+          (acc, t) => acc + t.amount,
+        );
       }
       if (mounted) setState(() {});
     } catch (_) {}
@@ -108,7 +117,7 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
 
   Future<void> _initAndStartListening() async {
     if (!mounted) return;
-    
+
     setState(() {
       _isInitializing = true;
       _errorMessage = null;
@@ -123,7 +132,9 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
           setState(() {
             _isInitializing = false;
             final isVi = LanguageService.instance.isVietnamese;
-        _errorMessage = isVi ? 'Cần cấp quyền Microphone để sử dụng giọng nói.\nVào Cài đặt > Ứng dụng > mono > Quyền > Micro' : 'Microphone permission required for voice input.\nGo to Settings > Apps > Mono > Permissions > Microphone';
+            _errorMessage = isVi
+                ? 'Cần cấp quyền Microphone để sử dụng giọng nói.\nVào Cài đặt > Ứng dụng > mono > Quyền > Micro'
+                : 'Microphone permission required for voice input.\nGo to Settings > Apps > Mono > Permissions > Microphone';
           });
         }
         return;
@@ -138,7 +149,11 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
       setState(() {
         _isInitializing = false;
         final isVi = LanguageService.instance.isVietnamese;
-        _errorMessage = _voiceService.lastError ?? (isVi ? 'Không thể khởi tạo nhận diện giọng nói.\nThiết bị có thể chưa hỗ trợ tính năng này.' : 'Could not initialize speech recognition.\nDevice may not support this feature.');
+        _errorMessage =
+            _voiceService.lastError ??
+            (isVi
+                ? 'Không thể khởi tạo nhận diện giọng nói.\nThiết bị có thể chưa hỗ trợ tính năng này.'
+                : 'Could not initialize speech recognition.\nDevice may not support this feature.');
       });
       return;
     }
@@ -149,7 +164,7 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
 
   void _startListening() async {
     if (!mounted) return;
-    
+
     setState(() {
       _isListening = true;
       _parsedData = null;
@@ -171,8 +186,12 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
           _silenceTimer?.cancel();
           if (text.trim().isNotEmpty) {
             _silenceTimer = Timer(Duration(milliseconds: silenceMs), () async {
-              if (mounted && _isListening && _recognizedText.trim().isNotEmpty) {
-                debugPrint('VoiceInput: Ngừng nói ${silenceMs}ms, tự động ngắt mic và bóc tách thông tin');
+              if (mounted &&
+                  _isListening &&
+                  _recognizedText.trim().isNotEmpty) {
+                debugPrint(
+                  'VoiceInput: Ngừng nói ${silenceMs}ms, tự động ngắt mic và bóc tách thông tin',
+                );
                 setState(() => _isListening = false);
                 await _voiceService.stopListening();
                 _processText(_recognizedText);
@@ -218,7 +237,9 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
         _parsedData = localParsed;
         if (_parsedData != null && _parsedData!['isDailyLimit'] != true) {
           final categoryName = _parsedData!['category'];
-          _parsedData!['iconCode'] = CategoryUtils.getCategoryIcon(categoryName).codePoint;
+          _parsedData!['iconCode'] = CategoryUtils.getCategoryIcon(
+            categoryName,
+          ).codePoint;
         }
       });
     }
@@ -232,7 +253,12 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
       if (aiResult.actionType != AiActionType.recordTransaction) {
         if (mounted) {
           Navigator.pop(context);
-          Navigator.push(context, PageTransitions.slideRight(AiAssistantScreen(initialVoiceText: text)));
+          Navigator.push(
+            context,
+            PageTransitions.slideRight(
+              AiAssistantScreen(initialVoiceText: text),
+            ),
+          );
           return;
         }
       }
@@ -249,7 +275,8 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
             'date': tx.date,
             'hour': tx.date.hour,
             'minute': tx.date.minute,
-            'time': '${tx.date.hour.toString().padLeft(2, '0')}:${tx.date.minute.toString().padLeft(2, '0')}',
+            'time':
+                '${tx.date.hour.toString().padLeft(2, '0')}:${tx.date.minute.toString().padLeft(2, '0')}',
             'walletName': tx.walletName,
             'isFromGemini': true,
           };
@@ -280,7 +307,7 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
             'settings': {
               'dailySpendingLimit': amount,
               'dailyLimitEnabled': true,
-            }
+            },
           }, SetOptions(merge: true));
         } catch (_) {}
       }
@@ -294,18 +321,18 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
       }
       return;
     }
-    
+
     // Đóng Bottom Sheet hiện tại và mở Màn hình Add Transaction với dữ liệu đã được parse
     final parsedCopy = Map<String, dynamic>.from(_parsedData!);
     if (!mounted) return;
-    
+
     // Lấy navigator trước khi pop
     final navigator = Navigator.of(context);
     navigator.pop();
-    
+
     // Delay nhỏ cho animation pop hoàn thành
     await Future.delayed(const Duration(milliseconds: 250));
-    
+
     navigator.push(
       PageTransitions.slideUp(AddTransactionScreen(initialData: parsedCopy)),
     );
@@ -322,7 +349,8 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
     final hasError = _errorMessage != null;
 
     final sheetTheme = Theme.of(context).bottomSheetTheme;
-    final bgColor = sheetTheme.backgroundColor ??
+    final bgColor =
+        sheetTheme.backgroundColor ??
         (isDark ? AppColors.surfaceElevatedDark : AppColors.surfaceLight);
     final textColor = context.colors.onSurface;
     final subtextColor = context.colors.onSurfaceVariant;
@@ -342,7 +370,9 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
             width: 38,
             height: 4.5,
             decoration: BoxDecoration(
-              color: sheetTheme.dragHandleColor ?? (isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
+              color:
+                  sheetTheme.dragHandleColor ??
+                  (isDark ? Colors.white24 : const Color(0xFFCBD5E1)),
               borderRadius: AppRadius.pill,
             ),
           ),
@@ -354,18 +384,25 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
             children: [
               const SizedBox(width: 48), // Cân bằng không gian
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: hasError
                       ? context.colors.error.withValues(alpha: 0.15)
                       : (isListening
-                          ? context.income.withValues(alpha: 0.15)
-                          : (isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9))),
+                            ? context.income.withValues(alpha: 0.15)
+                            : (isDark
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : const Color(0xFFF1F5F9))),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: hasError
                         ? context.colors.error.withValues(alpha: 0.3)
-                        : (isListening ? context.income.withValues(alpha: 0.4) : context.borderColor),
+                        : (isListening
+                              ? context.income.withValues(alpha: 0.4)
+                              : context.borderColor),
                   ),
                 ),
                 child: Row(
@@ -378,7 +415,11 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                       decoration: BoxDecoration(
                         color: hasError
                             ? context.colors.error
-                            : (isListening ? context.income : (isDark ? Colors.grey : const Color(0xFF64748B))),
+                            : (isListening
+                                  ? context.income
+                                  : (isDark
+                                        ? Colors.grey
+                                        : const Color(0xFF64748B))),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -386,13 +427,15 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                     Text(
                       hasError
                           ? context.tr('error')
-                          : (_isInitializing 
-                              ? context.tr('loading')
-                              : (_isAiProcessing
-                                  ? context.tr('ai_processing')
-                                  : (isListening 
-                                      ? context.tr('voice_listening') 
-                                      : context.tr('voice_input_title')))),
+                          : (_isInitializing
+                                ? context.tr('loading')
+                                : (_isAiProcessing
+                                      ? context.tr('ai_processing')
+                                      : (isListening
+                                            ? context.tr('voice_listening')
+                                            : context.tr(
+                                                'voice_input_title',
+                                              )))),
                       style: context.textTheme.labelMedium?.copyWith(
                         color: textColor,
                         fontWeight: FontWeight.w600,
@@ -413,7 +456,10 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                 },
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: context.colors.primary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
@@ -421,7 +467,11 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.auto_awesome, size: 15, color: context.colors.primary),
+                      Icon(
+                        Icons.auto_awesome,
+                        size: 15,
+                        color: context.colors.primary,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         context.tr('chat_ai'),
@@ -444,19 +494,31 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? context.colors.error.withValues(alpha: 0.12) : const Color(0xFFFEF2F2),
+                color: isDark
+                    ? context.colors.error.withValues(alpha: 0.12)
+                    : const Color(0xFFFEF2F2),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: isDark ? context.colors.error.withValues(alpha: 0.3) : const Color(0xFFFECACA)),
+                border: Border.all(
+                  color: isDark
+                      ? context.colors.error.withValues(alpha: 0.3)
+                      : const Color(0xFFFECACA),
+                ),
               ),
               child: Column(
                 children: [
-                  Icon(Icons.mic_off_rounded, color: context.colors.error, size: 36),
+                  Icon(
+                    Icons.mic_off_rounded,
+                    color: context.colors.error,
+                    size: 36,
+                  ),
                   const SizedBox(height: 10),
                   Text(
                     _errorMessage!,
                     textAlign: TextAlign.center,
                     style: context.textTheme.bodyMedium?.copyWith(
-                      color: isDark ? Colors.white.withValues(alpha: 0.85) : const Color(0xFF991B1B),
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.85)
+                          : const Color(0xFF991B1B),
                       fontSize: 13,
                     ),
                   ),
@@ -466,16 +528,26 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                     children: [
                       OutlinedButton.icon(
                         onPressed: _initAndStartListening,
-                        icon: Icon(Icons.refresh, color: isDark ? Colors.white70 : const Color(0xFF334155), size: 18),
+                        icon: Icon(
+                          Icons.refresh,
+                          color: isDark
+                              ? Colors.white70
+                              : const Color(0xFF334155),
+                          size: 18,
+                        ),
                         label: Text(
                           context.tr('retry_speak'),
                           style: context.textTheme.labelMedium?.copyWith(
-                            color: isDark ? Colors.white70 : const Color(0xFF334155),
+                            color: isDark
+                                ? Colors.white70
+                                : const Color(0xFF334155),
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(color: context.borderColor),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -488,12 +560,17 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                             await _voiceService.openVoiceInputSettings();
                           }
                         },
-                        icon: const Icon(Icons.settings_suggest_rounded, size: 18),
+                        icon: const Icon(
+                          Icons.settings_suggest_rounded,
+                          size: 18,
+                        ),
                         label: Text(context.tr('voice_settings')),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: context.colors.primary,
                           foregroundColor: context.colors.onPrimary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ],
@@ -511,7 +588,10 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
             const SizedBox(height: 10),
             Text(
               context.tr('voice_initializing'),
-              style: context.textTheme.bodySmall?.copyWith(color: subtextColor, fontSize: 13),
+              style: context.textTheme.bodySmall?.copyWith(
+                color: subtextColor,
+                fontSize: 13,
+              ),
             ),
             const SizedBox(height: 16),
           ],
@@ -529,7 +609,8 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                     }
                   });
                   await _voiceService.stopListening();
-                  if (!_voiceService.isAiVoiceMode && _recognizedText.isNotEmpty) {
+                  if (!_voiceService.isAiVoiceMode &&
+                      _recognizedText.isNotEmpty) {
                     _processText(_recognizedText);
                   }
                 } else {
@@ -539,8 +620,13 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
               child: AnimatedBuilder(
                 animation: _orbAnimationController,
                 builder: (context, child) {
-                  final pulse = _isListening ? _orbAnimationController.value : 0.0;
-                  final scale = 1.0 + (pulse * 0.12) + (_soundLevel.clamp(0.0, 10.0) * 0.02);
+                  final pulse = _isListening
+                      ? _orbAnimationController.value
+                      : 0.0;
+                  final scale =
+                      1.0 +
+                      (pulse * 0.12) +
+                      (_soundLevel.clamp(0.0, 10.0) * 0.02);
 
                   return Transform.scale(
                     scale: scale,
@@ -556,7 +642,9 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF14B8A6).withValues(alpha: _isListening ? 0.5 + (pulse * 0.3) : 0.2),
+                            color: const Color(0xFF14B8A6).withValues(
+                              alpha: _isListening ? 0.5 + (pulse * 0.3) : 0.2,
+                            ),
                             blurRadius: _isListening ? 24 : 10,
                             spreadRadius: _isListening ? 6 : 1,
                           ),
@@ -575,10 +663,7 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
             const SizedBox(height: 14),
 
             // Smooth Waveform
-            VoiceWaveform(
-              isListening: _isListening,
-              currentLevel: _soundLevel,
-            ),
+            VoiceWaveform(isListening: _isListening, currentLevel: _soundLevel),
             const SizedBox(height: 10),
 
             // Recognized Text Box
@@ -587,7 +672,9 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
               width: double.infinity,
               constraints: const BoxConstraints(minHeight: 52),
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF8FAFC),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: context.borderColor),
               ),
@@ -595,19 +682,27 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
               child: Text(
                 _recognizedText.isEmpty
                     ? (_isAiProcessing
-                        ? context.tr('voice_ai_converting')
-                        : (_isListening
-                            ? (_voiceService.isAiVoiceMode ? context.tr('voice_listening_ai') : context.tr('voice_listening'))
-                            : context.tr('voice_tap_to_speak')))
+                          ? context.tr('voice_ai_converting')
+                          : (_isListening
+                                ? (_voiceService.isAiVoiceMode
+                                      ? context.tr('voice_listening_ai')
+                                      : context.tr('voice_listening'))
+                                : context.tr('voice_tap_to_speak')))
                     : _recognizedText,
                 textAlign: TextAlign.center,
                 style: context.textTheme.bodyMedium?.copyWith(
                   color: isDark
-                      ? Colors.white.withValues(alpha: _recognizedText.isEmpty ? 0.6 : 0.95)
-                      : (_recognizedText.isEmpty ? const Color(0xFF94A3B8) : const Color(0xFF0F172A)),
+                      ? Colors.white.withValues(
+                          alpha: _recognizedText.isEmpty ? 0.6 : 0.95,
+                        )
+                      : (_recognizedText.isEmpty
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF0F172A)),
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
-                  fontStyle: _recognizedText.isEmpty ? FontStyle.italic : FontStyle.normal,
+                  fontStyle: _recognizedText.isEmpty
+                      ? FontStyle.italic
+                      : FontStyle.normal,
                 ),
               ),
             ),
@@ -621,7 +716,11 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
               children: [
                 Row(
                   children: [
-                    Icon(Icons.tips_and_updates_outlined, color: context.warning, size: 16),
+                    Icon(
+                      Icons.tips_and_updates_outlined,
+                      color: context.warning,
+                      size: 16,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       context.tr('voice_suggestions_title'),
@@ -653,18 +752,23 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                             _processText(suggestion);
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 7,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9),
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: context.borderColor,
-                              ),
+                              border: Border.all(color: context.borderColor),
                             ),
                             child: Text(
                               suggestion,
                               style: context.textTheme.labelMedium?.copyWith(
-                                color: isDark ? Colors.white : const Color(0xFF0F766E),
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF0F766E),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -686,17 +790,29 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: isLimit
-                    ? (isDark ? context.warning.withValues(alpha: 0.15) : const Color(0xFFFEF3C7))
+                    ? (isDark
+                          ? context.warning.withValues(alpha: 0.15)
+                          : const Color(0xFFFEF3C7))
                     : (_parsedData!['type'] == 'income'
-                        ? (isDark ? context.income.withValues(alpha: 0.15) : const Color(0xFFECFDF5))
-                        : (isDark ? context.expense.withValues(alpha: 0.15) : const Color(0xFFFFF7ED))),
+                          ? (isDark
+                                ? context.income.withValues(alpha: 0.15)
+                                : const Color(0xFFECFDF5))
+                          : (isDark
+                                ? context.expense.withValues(alpha: 0.15)
+                                : const Color(0xFFFFF7ED))),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isLimit
-                      ? (isDark ? context.warning.withValues(alpha: 0.4) : const Color(0xFFFDE68A))
+                      ? (isDark
+                            ? context.warning.withValues(alpha: 0.4)
+                            : const Color(0xFFFDE68A))
                       : (_parsedData!['type'] == 'income'
-                          ? (isDark ? context.income.withValues(alpha: 0.4) : const Color(0xFFA7F3D0))
-                          : (isDark ? context.expense.withValues(alpha: 0.4) : const Color(0xFFFED7AA))),
+                            ? (isDark
+                                  ? context.income.withValues(alpha: 0.4)
+                                  : const Color(0xFFA7F3D0))
+                            : (isDark
+                                  ? context.expense.withValues(alpha: 0.4)
+                                  : const Color(0xFFFED7AA))),
                 ),
               ),
               child: Column(
@@ -708,7 +824,9 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                         radius: 22,
                         backgroundColor: isLimit
                             ? context.warning
-                            : CategoryUtils.getVibrantColor(_parsedData!['category'] ?? ''),
+                            : CategoryUtils.getVibrantColor(
+                                _parsedData!['category'] ?? '',
+                              ),
                         child: Icon(
                           isLimit ? Icons.track_changes : Icons.check,
                           color: Colors.white,
@@ -726,17 +844,25 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                                   : '${_parsedData!['type'] == 'income' ? context.tr('income') : context.tr('expense')} • ${context.trCat(_parsedData!['category'] ?? '')}',
                               style: context.textTheme.labelMedium?.copyWith(
                                 color: isLimit
-                                    ? (isDark ? Colors.amberAccent : const Color(0xFFB45309))
+                                    ? (isDark
+                                          ? Colors.amberAccent
+                                          : const Color(0xFFB45309))
                                     : (_parsedData!['type'] == 'income'
-                                        ? (isDark ? Colors.greenAccent : const Color(0xFF047857))
-                                        : (isDark ? Colors.orangeAccent : const Color(0xFFC2410C))),
+                                          ? (isDark
+                                                ? Colors.greenAccent
+                                                : const Color(0xFF047857))
+                                          : (isDark
+                                                ? Colors.orangeAccent
+                                                : const Color(0xFFC2410C))),
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              CurrencyUtils.formatCurrency((_parsedData!['amount'] as num).toDouble()),
+                              CurrencyUtils.formatCurrency(
+                                (_parsedData!['amount'] as num).toDouble(),
+                              ),
                               style: context.textTheme.titleLarge?.copyWith(
                                 color: context.colors.onSurface,
                                 fontSize: 20,
@@ -751,19 +877,27 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                   // Hiển thị lý do/nội dung tinh gọn
                   if (_parsedData!['description'] != null &&
                       (_parsedData!['description'] as String).isNotEmpty &&
-                      _parsedData!['description'] != _parsedData!['category']) ...[
+                      _parsedData!['description'] !=
+                          _parsedData!['category']) ...[
                     const SizedBox(height: 8),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.black.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.7),
+                        color: isDark
+                            ? Colors.black.withValues(alpha: 0.2)
+                            : Colors.white.withValues(alpha: 0.7),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         '${isVi ? 'Lý do' : 'Note'}: ${_parsedData!['description']}',
                         style: context.textTheme.bodyMedium?.copyWith(
-                          color: isDark ? Colors.white.withValues(alpha: 0.85) : const Color(0xFF334155),
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.85)
+                              : const Color(0xFF334155),
                           fontSize: 12.5,
                           fontWeight: FontWeight.w500,
                         ),
@@ -779,44 +913,77 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                     const SizedBox(height: 10),
                     Builder(
                       builder: (context) {
-                        final expenseAmount = (_parsedData!['amount'] as num).toDouble();
-                        final projectedTotal = _todayExpenseTotal + expenseAmount;
+                        final expenseAmount = (_parsedData!['amount'] as num)
+                            .toDouble();
+                        final projectedTotal =
+                            _todayExpenseTotal + expenseAmount;
                         final isOver = projectedTotal > _dailyLimit!;
                         final diff = (projectedTotal - _dailyLimit!).abs();
 
                         return Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 7,
+                          ),
                           decoration: BoxDecoration(
                             color: isOver
-                                ? (isDark ? context.colors.error.withValues(alpha: 0.2) : const Color(0xFFFEE2E2))
-                                : (isDark ? context.colors.primary.withValues(alpha: 0.2) : const Color(0xFFE0F2FE)),
+                                ? (isDark
+                                      ? context.colors.error.withValues(
+                                          alpha: 0.2,
+                                        )
+                                      : const Color(0xFFFEE2E2))
+                                : (isDark
+                                      ? context.colors.primary.withValues(
+                                          alpha: 0.2,
+                                        )
+                                      : const Color(0xFFE0F2FE)),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: isOver
-                                  ? (isDark ? context.colors.error.withValues(alpha: 0.4) : const Color(0xFFFCA5A5))
-                                  : (isDark ? context.colors.primary.withValues(alpha: 0.4) : const Color(0xFFBAE6FD)),
+                                  ? (isDark
+                                        ? context.colors.error.withValues(
+                                            alpha: 0.4,
+                                          )
+                                        : const Color(0xFFFCA5A5))
+                                  : (isDark
+                                        ? context.colors.primary.withValues(
+                                            alpha: 0.4,
+                                          )
+                                        : const Color(0xFFBAE6FD)),
                             ),
                           ),
                           child: Row(
                             children: [
                               Icon(
-                                isOver ? Icons.warning_amber_rounded : Icons.track_changes_rounded,
+                                isOver
+                                    ? Icons.warning_amber_rounded
+                                    : Icons.track_changes_rounded,
                                 size: 16,
-                                color: isOver ? context.colors.error : const Color(0xFF0284C7),
+                                color: isOver
+                                    ? context.colors.error
+                                    : const Color(0xFF0284C7),
                               ),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
                                   isOver
-                                      ? (isVi ? 'Cảnh báo: Khoản chi này sẽ vượt hạn mức ngày ${CurrencyUtils.formatCurrency(diff)}!' : 'Warning: Expense exceeds daily limit by ${CurrencyUtils.formatCurrency(diff)}!')
-                                      : (isVi ? 'Hạn mức ngày: Còn lại ${CurrencyUtils.formatCurrency(_dailyLimit! - projectedTotal)}.' : 'Daily limit: Remaining ${CurrencyUtils.formatCurrency(_dailyLimit! - projectedTotal)}.'),
+                                      ? (isVi
+                                            ? 'Cảnh báo: Khoản chi này sẽ vượt hạn mức ngày ${CurrencyUtils.formatCurrency(diff)}!'
+                                            : 'Warning: Expense exceeds daily limit by ${CurrencyUtils.formatCurrency(diff)}!')
+                                      : (isVi
+                                            ? 'Hạn mức ngày: Còn lại ${CurrencyUtils.formatCurrency(_dailyLimit! - projectedTotal)}.'
+                                            : 'Daily limit: Remaining ${CurrencyUtils.formatCurrency(_dailyLimit! - projectedTotal)}.'),
                                   style: context.textTheme.labelSmall?.copyWith(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w600,
                                     color: isOver
-                                        ? (isDark ? Colors.redAccent : const Color(0xFFB91C1C))
-                                        : (isDark ? Colors.tealAccent : const Color(0xFF0369A1)),
+                                        ? (isDark
+                                              ? Colors.redAccent
+                                              : const Color(0xFFB91C1C))
+                                        : (isDark
+                                              ? Colors.tealAccent
+                                              : const Color(0xFF0369A1)),
                                   ),
                                 ),
                               ),
@@ -845,14 +1012,27 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                       Navigator.pop(context);
                     }
                   },
-                  icon: Icon(hasParsedData && !_isListening ? Icons.refresh_rounded : Icons.close, size: 18),
+                  icon: Icon(
+                    hasParsedData && !_isListening
+                        ? Icons.refresh_rounded
+                        : Icons.close,
+                    size: 18,
+                  ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: isDark ? Colors.white70 : const Color(0xFF334155),
+                    foregroundColor: isDark
+                        ? Colors.white70
+                        : const Color(0xFF334155),
                     side: BorderSide(color: context.borderColor),
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
-                  label: Text(hasParsedData && !_isListening ? context.tr('retry_speak') : context.tr('cancel')),
+                  label: Text(
+                    hasParsedData && !_isListening
+                        ? context.tr('retry_speak')
+                        : context.tr('cancel'),
+                  ),
                 ),
               ),
               const SizedBox(width: 14),
@@ -861,34 +1041,46 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet> with Sing
                   onPressed: _isInitializing
                       ? null
                       : (hasError
-                          ? _initAndStartListening
-                          : (_isListening
-                              ? () async {
-                                  _silenceTimer?.cancel();
-                                  await _voiceService.stopListening();
-                                  if (mounted) {
-                                    setState(() => _isListening = false);
-                                    _processText(_recognizedText);
-                                  }
-                                }
-                              : (hasParsedData ? _confirmSelection : null))),
+                            ? _initAndStartListening
+                            : (_isListening
+                                  ? () async {
+                                      _silenceTimer?.cancel();
+                                      await _voiceService.stopListening();
+                                      if (mounted) {
+                                        setState(() => _isListening = false);
+                                        _processText(_recognizedText);
+                                      }
+                                    }
+                                  : (hasParsedData
+                                        ? _confirmSelection
+                                        : null))),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: hasError
                         ? context.warning
                         : (isLimit ? context.warning : context.income),
                     foregroundColor: Colors.white,
-                    disabledBackgroundColor: isDark ? Colors.white10 : Colors.grey.shade200,
-                    disabledForegroundColor: isDark ? Colors.white30 : Colors.grey.shade400,
+                    disabledBackgroundColor: isDark
+                        ? Colors.white10
+                        : Colors.grey.shade200,
+                    disabledForegroundColor: isDark
+                        ? Colors.white30
+                        : Colors.grey.shade400,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                   child: Text(
                     hasError
                         ? (isVi ? 'Thử lại' : 'Retry')
                         : (_isListening
-                            ? (isVi ? 'Dừng nói' : 'Stop')
-                            : (isLimit ? context.tr('save') : (isVi ? 'Kiểm tra & Xác nhận' : 'Confirm & Save'))),
+                              ? (isVi ? 'Dừng nói' : 'Stop')
+                              : (isLimit
+                                    ? context.tr('save')
+                                    : (isVi
+                                          ? 'Kiểm tra & Xác nhận'
+                                          : 'Confirm & Save'))),
                     style: context.textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,

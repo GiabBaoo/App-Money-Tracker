@@ -23,8 +23,16 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
   final TransactionRepository _txRepo = TransactionRepository();
   final WalletRepository _walletRepo = WalletRepository();
 
-  DateTime _focusedMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
-  DateTime _selectedDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+  DateTime _focusedMonth = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    1,
+  );
+  DateTime _selectedDate = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+  );
 
   // Cờ chuyển trang mượt mà (tránh drop frame trong 400ms transition)
   bool _isTransitionReady = false;
@@ -63,6 +71,7 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
             if (mounted) setState(() => _isTransitionReady = true);
           }
         }
+
         route.animation!.addStatusListener(statusListener);
       }
     });
@@ -105,10 +114,13 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
     _cachedAllTx = allTx;
     _cachedMonthKey = _focusedMonth;
 
-    final monthTx = allTx.where((tx) =>
-      tx.date.year == _focusedMonth.year &&
-      tx.date.month == _focusedMonth.month
-    ).toList();
+    final monthTx = allTx
+        .where(
+          (tx) =>
+              tx.date.year == _focusedMonth.year &&
+              tx.date.month == _focusedMonth.month,
+        )
+        .toList();
 
     double income = 0;
     double expense = 0;
@@ -132,7 +144,8 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
 
   /// Memoize số dư chạy ngược chỉ khi allTx thay đổi
   Map<String, double> _ensureReverseBalances(List<TransactionModel> allTx) {
-    if (allTx.length == _lastTxCountForBalance && _cachedReverseBalances.isNotEmpty) {
+    if (allTx.length == _lastTxCountForBalance &&
+        _cachedReverseBalances.isNotEmpty) {
       return _cachedReverseBalances;
     }
 
@@ -147,7 +160,9 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
-    final primaryColor = isDark ? AppColors.primaryTealDark : AppColors.primaryTeal;
+    final primaryColor = isDark
+        ? AppColors.primaryTealDark
+        : AppColors.primaryTeal;
 
     return Scaffold(
       backgroundColor: primaryColor,
@@ -174,12 +189,18 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white24, width: 0.8),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 18,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   Expanded(
                     child: Text(
-                      LanguageScope.of(context).isVietnamese ? 'Lịch Theo Dõi Thu Chi' : 'Income & Expense Calendar',
+                      LanguageScope.of(context).isVietnamese
+                          ? 'Lịch Theo Dõi Thu Chi'
+                          : 'Income & Expense Calendar',
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -193,7 +214,10 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                   AnimatedScaleButton(
                     onTap: _jumpToToday,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(16),
@@ -201,10 +225,16 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.today_rounded, size: 15, color: Colors.white),
+                          const Icon(
+                            Icons.today_rounded,
+                            size: 15,
+                            color: Colors.white,
+                          ),
                           const SizedBox(width: 4),
                           Text(
-                            LanguageScope.of(context).isVietnamese ? 'Hôm nay' : 'Today',
+                            LanguageScope.of(context).isVietnamese
+                                ? 'Hôm nay'
+                                : 'Today',
                             style: context.textTheme.labelMedium?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
@@ -224,10 +254,14 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(32),
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.08),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.25 : 0.08,
+                      ),
                       blurRadius: 20,
                       offset: const Offset(0, -6),
                     ),
@@ -235,19 +269,26 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                 ),
                 child: StreamBuilder<List<TransactionModel>>(
                   stream: _txRepo.getTransactionsStream(),
-                  initialData: _txRepo.latestTransactions.isNotEmpty ? _txRepo.latestTransactions : null,
+                  initialData: _txRepo.latestTransactions.isNotEmpty
+                      ? _txRepo.latestTransactions
+                      : null,
                   builder: (context, snapshot) {
                     final allTx = snapshot.data ?? [];
 
                     // Tính toán và lưu cache tháng
                     _ensureMonthCalculations(allTx);
 
-                    final dayTx = (_cachedDayTxMap[_selectedDate.day] ?? [])
-                        .where((tx) =>
-                            tx.date.year == _selectedDate.year &&
-                            tx.date.month == _selectedDate.month)
-                        .toList()
-                      ..sort(CurrencyUtils.compareTransactionsChronological);
+                    final dayTx =
+                        (_cachedDayTxMap[_selectedDate.day] ?? [])
+                            .where(
+                              (tx) =>
+                                  tx.date.year == _selectedDate.year &&
+                                  tx.date.month == _selectedDate.month,
+                            )
+                            .toList()
+                          ..sort(
+                            CurrencyUtils.compareTransactionsChronological,
+                          );
 
                     double dayIncome = 0;
                     double dayExpense = 0;
@@ -267,7 +308,11 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                           child: Column(
                             children: [
                               // Thanh điều hướng tháng & Ribbon tổng quan
-                              _buildMonthHeader(isDark, _cachedMonthIncome, _cachedMonthExpense),
+                              _buildMonthHeader(
+                                isDark,
+                                _cachedMonthIncome,
+                                _cachedMonthExpense,
+                              ),
 
                               // Bảng lịch
                               _buildCalendarGrid(_cachedDayTxMap, isDark),
@@ -289,33 +334,45 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                                     height: 24,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(context.colors.primary),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        context.colors.primary,
+                                      ),
                                     ),
                                   ),
                                 )
                               : (dayTx.isEmpty
-                                  ? _buildEmptyDay(isDark)
-                                  : Builder(
-                                      builder: (context) {
-                                        final reverseBalances = _ensureReverseBalances(allTx);
-                                        final walletMap = {for (final w in _walletRepo.latestWallets) w.id: w};
-                                        return ListView.builder(
-                                          physics: const BouncingScrollPhysics(),
-                                          cacheExtent: 500,
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                          itemCount: dayTx.length,
-                                          itemBuilder: (context, index) {
-                                            final tx = dayTx[index];
-                                            return TransactionItem(
-                                              transaction: tx,
-                                              showDate: false,
-                                              runningTotal: reverseBalances[tx.id],
-                                              wallet: walletMap[tx.walletId],
-                                            );
-                                          },
-                                        );
-                                      },
-                                    )),
+                                    ? _buildEmptyDay(isDark)
+                                    : Builder(
+                                        builder: (context) {
+                                          final reverseBalances =
+                                              _ensureReverseBalances(allTx);
+                                          final walletMap = {
+                                            for (final w
+                                                in _walletRepo.latestWallets)
+                                              w.id: w,
+                                          };
+                                          return ListView.builder(
+                                            physics:
+                                                const BouncingScrollPhysics(),
+                                            cacheExtent: 500,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 8,
+                                            ),
+                                            itemCount: dayTx.length,
+                                            itemBuilder: (context, index) {
+                                              final tx = dayTx[index];
+                                              return TransactionItem(
+                                                transaction: tx,
+                                                showDate: false,
+                                                runningTotal:
+                                                    reverseBalances[tx.id],
+                                                wallet: walletMap[tx.walletId],
+                                              );
+                                            },
+                                          );
+                                        },
+                                      )),
                         ),
                       ],
                     );
@@ -356,10 +413,17 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                     color: isDark ? Colors.white10 : Colors.white,
                     shape: BoxShape.circle,
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 4,
+                      ),
                     ],
                   ),
-                  child: Icon(Icons.chevron_left_rounded, size: 24, color: context.colors.primary),
+                  child: Icon(
+                    Icons.chevron_left_rounded,
+                    size: 24,
+                    color: context.colors.primary,
+                  ),
                 ),
               ),
               Text(
@@ -378,10 +442,17 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                     color: isDark ? Colors.white10 : Colors.white,
                     shape: BoxShape.circle,
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 4,
+                      ),
                     ],
                   ),
-                  child: Icon(Icons.chevron_right_rounded, size: 24, color: context.colors.primary),
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    size: 24,
+                    color: context.colors.primary,
+                  ),
                 ),
               ),
             ],
@@ -391,11 +462,32 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Expanded(child: _buildSummaryPill(isVi ? 'Tổng thu' : 'Total Income', income, context.income, isDark)),
+              Expanded(
+                child: _buildSummaryPill(
+                  isVi ? 'Tổng thu' : 'Total Income',
+                  income,
+                  context.income,
+                  isDark,
+                ),
+              ),
               const SizedBox(width: 4),
-              Expanded(child: _buildSummaryPill(isVi ? 'Tổng chi' : 'Total Expense', expense, context.expense, isDark)),
+              Expanded(
+                child: _buildSummaryPill(
+                  isVi ? 'Tổng chi' : 'Total Expense',
+                  expense,
+                  context.expense,
+                  isDark,
+                ),
+              ),
               const SizedBox(width: 4),
-              Expanded(child: _buildSummaryPill(isVi ? 'Chênh lệch' : 'Net Cashflow', net, net >= 0 ? context.info : context.warning, isDark)),
+              Expanded(
+                child: _buildSummaryPill(
+                  isVi ? 'Chênh lệch' : 'Net Cashflow',
+                  net,
+                  net >= 0 ? context.info : context.warning,
+                  isDark,
+                ),
+              ),
             ],
           ),
         ],
@@ -403,7 +495,12 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
     );
   }
 
-  Widget _buildSummaryPill(String label, double amount, Color color, bool isDark) {
+  Widget _buildSummaryPill(
+    String label,
+    double amount,
+    Color color,
+    bool isDark,
+  ) {
     return Column(
       children: [
         Text(
@@ -429,10 +526,21 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
     );
   }
 
-  Widget _buildCalendarGrid(Map<int, List<TransactionModel>> dayTxMap, bool isDark) {
+  Widget _buildCalendarGrid(
+    Map<int, List<TransactionModel>> dayTxMap,
+    bool isDark,
+  ) {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final daysInMonth = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0).day;
-    final firstWeekday = DateTime(_focusedMonth.year, _focusedMonth.month, 1).weekday;
+    final daysInMonth = DateTime(
+      _focusedMonth.year,
+      _focusedMonth.month + 1,
+      0,
+    ).day;
+    final firstWeekday = DateTime(
+      _focusedMonth.year,
+      _focusedMonth.month,
+      1,
+    ).weekday;
     final offset = firstWeekday - 1;
 
     final weekDays = isVi
@@ -440,7 +548,8 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
         : const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     final now = DateTime.now();
-    final isCurrentMonth = now.year == _focusedMonth.year && now.month == _focusedMonth.month;
+    final isCurrentMonth =
+        now.year == _focusedMonth.year && now.month == _focusedMonth.month;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -449,14 +558,18 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
           // Tiêu đề các thứ
           Row(
             children: weekDays.map((d) {
-              final isWeekend = isVi ? (d == 'T7' || d == 'CN') : (d == 'Sat' || d == 'Sun');
+              final isWeekend = isVi
+                  ? (d == 'T7' || d == 'CN')
+                  : (d == 'Sat' || d == 'Sun');
               return Expanded(
                 child: Center(
                   child: Text(
                     d,
                     style: context.textTheme.labelSmall?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: isWeekend ? context.warning : context.colors.onSurfaceVariant,
+                      color: isWeekend
+                          ? context.warning
+                          : context.colors.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -479,21 +592,30 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                 return const SizedBox.shrink();
               }
 
-              final isSelected = _selectedDate.year == _focusedMonth.year &&
+              final isSelected =
+                  _selectedDate.year == _focusedMonth.year &&
                   _selectedDate.month == _focusedMonth.month &&
                   _selectedDate.day == dayNum;
               final isToday = isCurrentMonth && now.day == dayNum;
 
               final txList = dayTxMap[dayNum] ?? const [];
-              final hasIncome = txList.any((t) => t.type == 'income' && !t.isTransfer);
-              final hasExpense = txList.any((t) => t.type == 'expense' && !t.isTransfer);
+              final hasIncome = txList.any(
+                (t) => t.type == 'income' && !t.isTransfer,
+              );
+              final hasExpense = txList.any(
+                (t) => t.type == 'expense' && !t.isTransfer,
+              );
               final hasTransfer = txList.any((t) => t.isTransfer);
 
               return InkWell(
                 onTap: () {
                   HapticFeedback.selectionClick();
                   setState(() {
-                    _selectedDate = DateTime(_focusedMonth.year, _focusedMonth.month, dayNum);
+                    _selectedDate = DateTime(
+                      _focusedMonth.year,
+                      _focusedMonth.month,
+                      dayNum,
+                    );
                   });
                 },
                 borderRadius: BorderRadius.circular(12),
@@ -503,8 +625,14 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                     color: isSelected
                         ? context.colors.primary
                         : (isToday
-                            ? (isDark ? context.colors.primary.withValues(alpha: 0.25) : context.colors.primary.withValues(alpha: 0.12))
-                            : Colors.transparent),
+                              ? (isDark
+                                    ? context.colors.primary.withValues(
+                                        alpha: 0.25,
+                                      )
+                                    : context.colors.primary.withValues(
+                                        alpha: 0.12,
+                                      ))
+                              : Colors.transparent),
                     borderRadius: BorderRadius.circular(12),
                     border: isToday && !isSelected
                         ? Border.all(color: context.colors.primary, width: 1.2)
@@ -517,12 +645,14 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                         '$dayNum',
                         style: context.textTheme.bodyMedium?.copyWith(
                           fontSize: 13,
-                          fontWeight: isSelected || isToday ? FontWeight.w800 : FontWeight.w500,
+                          fontWeight: isSelected || isToday
+                              ? FontWeight.w800
+                              : FontWeight.w500,
                           color: isSelected
                               ? Colors.white
                               : (isToday
-                                  ? context.colors.primary
-                                  : context.colors.onSurface),
+                                    ? context.colors.primary
+                                    : context.colors.onSurface),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -535,7 +665,9 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                               height: 4,
                               margin: const EdgeInsets.symmetric(horizontal: 1),
                               decoration: BoxDecoration(
-                                color: isSelected ? Colors.white : context.income,
+                                color: isSelected
+                                    ? Colors.white
+                                    : context.income,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -545,7 +677,9 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                               height: 4,
                               margin: const EdgeInsets.symmetric(horizontal: 1),
                               decoration: BoxDecoration(
-                                color: isSelected ? Colors.white : context.expense,
+                                color: isSelected
+                                    ? Colors.white
+                                    : context.expense,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -572,17 +706,30 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
     );
   }
 
-  Widget _buildSelectedDayHeader(bool isDark, double dayIncome, double dayExpense) {
+  Widget _buildSelectedDayHeader(
+    bool isDark,
+    double dayIncome,
+    double dayExpense,
+  ) {
     final isVi = LanguageScope.of(context).isVietnamese;
     final now = DateTime.now();
-    final isToday = _selectedDate.year == now.year && _selectedDate.month == now.month && _selectedDate.day == now.day;
+    final isToday =
+        _selectedDate.year == now.year &&
+        _selectedDate.month == now.month &&
+        _selectedDate.day == now.day;
     final dayStr = isToday
-        ? (isVi ? 'Hôm nay, ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}' : 'Today, ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}')
-        : (isVi ? 'Ngày ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}' : 'Date ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}');
+        ? (isVi
+              ? 'Hôm nay, ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}'
+              : 'Today, ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}')
+        : (isVi
+              ? 'Ngày ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}'
+              : 'Date ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}');
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-      color: isDark ? context.cardBg.withValues(alpha: 0.6) : context.inputBgColor,
+      color: isDark
+          ? context.cardBg.withValues(alpha: 0.6)
+          : context.inputBgColor,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -596,13 +743,19 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                   decoration: BoxDecoration(
                     color: isToday
                         ? context.colors.primary.withValues(alpha: 0.16)
-                        : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
+                        : (isDark
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : Colors.black.withValues(alpha: 0.05)),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Icon(
-                    isToday ? Icons.today_rounded : Icons.calendar_today_rounded,
+                    isToday
+                        ? Icons.today_rounded
+                        : Icons.calendar_today_rounded,
                     size: 13,
-                    color: isToday ? context.colors.primary : context.colors.onSurfaceVariant,
+                    color: isToday
+                        ? context.colors.primary
+                        : context.colors.onSurfaceVariant,
                   ),
                 ),
                 Expanded(
@@ -630,9 +783,14 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                   if (dayIncome > 0)
                     Container(
                       margin: const EdgeInsets.only(left: 6),
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2.5,
+                      ),
                       decoration: BoxDecoration(
-                        color: context.income.withValues(alpha: isDark ? 0.2 : 0.1),
+                        color: context.income.withValues(
+                          alpha: isDark ? 0.2 : 0.1,
+                        ),
                         borderRadius: BorderRadius.circular(7),
                         border: Border.all(
                           color: context.income.withValues(alpha: 0.25),
@@ -642,7 +800,11 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.arrow_downward_rounded, size: 10, color: context.income),
+                          Icon(
+                            Icons.arrow_downward_rounded,
+                            size: 10,
+                            color: context.income,
+                          ),
                           const SizedBox(width: 2),
                           Text(
                             '+${CurrencyUtils.formatCurrency(dayIncome)}',
@@ -658,9 +820,14 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                   if (dayExpense > 0)
                     Container(
                       margin: const EdgeInsets.only(left: 6),
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2.5,
+                      ),
                       decoration: BoxDecoration(
-                        color: context.expense.withValues(alpha: isDark ? 0.2 : 0.1),
+                        color: context.expense.withValues(
+                          alpha: isDark ? 0.2 : 0.1,
+                        ),
                         borderRadius: BorderRadius.circular(7),
                         border: Border.all(
                           color: context.expense.withValues(alpha: 0.25),
@@ -670,7 +837,11 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.arrow_upward_rounded, size: 10, color: context.expense),
+                          Icon(
+                            Icons.arrow_upward_rounded,
+                            size: 10,
+                            color: context.expense,
+                          ),
                           const SizedBox(width: 2),
                           Text(
                             '-${CurrencyUtils.formatCurrency(dayExpense)}',
@@ -703,10 +874,16 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.event_busy_rounded, size: 38, color: context.colors.onSurfaceVariant.withValues(alpha: 0.3)),
+              Icon(
+                Icons.event_busy_rounded,
+                size: 38,
+                color: context.colors.onSurfaceVariant.withValues(alpha: 0.3),
+              ),
               const SizedBox(height: 8),
               Text(
-                isVi ? 'Không có giao dịch trong ngày này' : 'No transactions on this day',
+                isVi
+                    ? 'Không có giao dịch trong ngày này'
+                    : 'No transactions on this day',
                 style: context.textTheme.bodyMedium?.copyWith(
                   color: context.colors.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
@@ -722,7 +899,10 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                   );
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
                     color: context.colors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(14),
@@ -730,7 +910,11 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.add_rounded, size: 16, color: context.colors.primary),
+                      Icon(
+                        Icons.add_rounded,
+                        size: 16,
+                        color: context.colors.primary,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         isVi ? 'Thêm giao dịch' : 'Add transaction',

@@ -16,10 +16,12 @@ class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({super.key});
 
   @override
-  State<NotificationSettingsScreen> createState() => _NotificationSettingsScreenState();
+  State<NotificationSettingsScreen> createState() =>
+      _NotificationSettingsScreenState();
 }
 
-class _NotificationSettingsScreenState extends State<NotificationSettingsScreen> {
+class _NotificationSettingsScreenState
+    extends State<NotificationSettingsScreen> {
   bool _remindersEnabled = true;
   bool _spendingReportEnabled = true;
   bool _smartAdviceEnabled = true;
@@ -62,14 +64,15 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
               'smartAdvice': _smartAdviceEnabled,
               'budgetAlerts': _budgetAlertsEnabled,
               'dailyLimitEnabled': _dailyLimitEnabled,
-            }
-          }
+            },
+          },
         }, SetOptions(merge: true));
       } catch (_) {}
     }
 
     // Cập nhật toàn bộ các lịch thông báo thực tế ngoài màn hình
-    await SmartNotificationService.instance.scheduleAllBackgroundNotifications();
+    await SmartNotificationService.instance
+        .scheduleAllBackgroundNotifications();
   }
 
   Future<void> _saveDailySpendingLimit(double amount) async {
@@ -86,10 +89,7 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     if (uid != null) {
       try {
         await FirebaseFirestore.instance.collection('users').doc(uid).set({
-          'settings': {
-            'dailySpendingLimit': amount,
-            'dailyLimitEnabled': true,
-          }
+          'settings': {'dailySpendingLimit': amount, 'dailyLimitEnabled': true},
         }, SetOptions(merge: true));
       } catch (_) {}
     }
@@ -116,7 +116,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
 
     await LocalNotificationService.instance.showInstantNotification(
       id: 999,
-      title: isVi ? '🔔 Thông báo thử nghiệm từ Mono' : '🔔 Test notification from Mono',
+      title: isVi
+          ? '🔔 Thông báo thử nghiệm từ Mono'
+          : '🔔 Test notification from Mono',
       body: isVi
           ? 'Tuyệt vời! Thiết bị của bạn đã kích hoạt thành công tính năng thông báo tài chính thông minh ra màn hình khóa & thanh trạng thái.'
           : 'Awesome! Your device has successfully activated smart financial alerts on your lock screen & status bar.',
@@ -149,7 +151,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     await LocalNotificationService.instance.scheduleTestNotification(
       id: 998,
       delaySeconds: 5,
-      title: isVi ? '📝 Nhắc nhở chi tiêu Mono (Thử nghiệm 5s)' : '📝 Mono Expense Reminder (5s Test)',
+      title: isVi
+          ? '📝 Nhắc nhở chi tiêu Mono (Thử nghiệm 5s)'
+          : '📝 Mono Expense Reminder (5s Test)',
       body: isVi
           ? 'Tuyệt vời! Thông báo ngoài màn hình hoạt động hoàn hảo. Lịch hẹn 20:00 mỗi tối của bạn đã được kích hoạt!'
           : 'Awesome! Lock screen alerts work properly. Your 20:00 daily reminder is active!',
@@ -168,17 +172,18 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     final isVi = LanguageScope.of(context).isVietnamese;
     setState(() => _isAnalyzing = true);
     try {
-      final count = await SmartNotificationService.instance.generateSmartFinancialNotifications(forceRefresh: true);
+      final count = await SmartNotificationService.instance
+          .generateSmartFinancialNotifications(forceRefresh: true);
       if (!mounted) return;
       TopToast.show(
         context,
         count > 0
             ? (isVi
-                ? 'Đã tạo $count thông báo phân tích chi tiêu mới và đẩy ra điện thoại!'
-                : 'Generated $count new spending analysis alerts and sent to phone!')
+                  ? 'Đã tạo $count thông báo phân tích chi tiêu mới và đẩy ra điện thoại!'
+                  : 'Generated $count new spending analysis alerts and sent to phone!')
             : (isVi
-                ? 'Dữ liệu chi tiêu của bạn đã được phân tích mới nhất!'
-                : 'Your spending data is already up to date!'),
+                  ? 'Dữ liệu chi tiêu của bạn đã được phân tích mới nhất!'
+                  : 'Your spending data is already up to date!'),
       );
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
@@ -194,7 +199,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: context.cardBg,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
       builder: (modalCtx) => StatefulBuilder(
         builder: (modalCtx, setModalState) => Padding(
           padding: EdgeInsets.only(
@@ -212,7 +219,10 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                   width: 44,
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
               Row(
@@ -220,15 +230,28 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                 children: [
                   Text(
                     context.tr('daily_limit_title'),
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.colors.onSurface),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: context.colors.onSurface,
+                    ),
                   ),
-                  IconButton(icon: Icon(Icons.close, color: context.colors.onSurfaceVariant), onPressed: () => Navigator.pop(modalCtx)),
+                  IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                    onPressed: () => Navigator.pop(modalCtx),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
                 context.tr('daily_limit_desc'),
-                style: TextStyle(fontSize: 13, color: context.colors.onSurfaceVariant),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: context.colors.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 20),
 
@@ -237,11 +260,19 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                 controller: controller,
                 keyboardType: TextInputType.number,
                 autofocus: true,
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: context.brandColor),
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: context.brandColor,
+                ),
                 decoration: InputDecoration(
                   labelText: context.tr('daily_limit_amount'),
                   suffixText: '₫',
-                  suffixStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.brandColor),
+                  suffixStyle: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: context.brandColor,
+                  ),
                   filled: true,
                   fillColor: context.cardBg,
                   border: OutlineInputBorder(
@@ -254,7 +285,10 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: context.brandColor, width: 1.5),
+                    borderSide: BorderSide(
+                      color: context.brandColor,
+                      width: 1.5,
+                    ),
                   ),
                 ),
                 onChanged: (val) {
@@ -264,7 +298,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                     final formatted = CurrencyUtils.formatNumberOnly(num);
                     controller.value = TextEditingValue(
                       text: formatted,
-                      selection: TextSelection.collapsed(offset: formatted.length),
+                      selection: TextSelection.collapsed(
+                        offset: formatted.length,
+                      ),
                     );
                   }
                 },
@@ -276,10 +312,30 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildQuickAddChip('+50.000', 50000, controller, setModalState),
-                    _buildQuickAddChip('+100.000', 100000, controller, setModalState),
-                    _buildQuickAddChip('+200.000', 200000, controller, setModalState),
-                    _buildQuickAddChip('+500.000', 500000, controller, setModalState),
+                    _buildQuickAddChip(
+                      '+50.000',
+                      50000,
+                      controller,
+                      setModalState,
+                    ),
+                    _buildQuickAddChip(
+                      '+100.000',
+                      100000,
+                      controller,
+                      setModalState,
+                    ),
+                    _buildQuickAddChip(
+                      '+200.000',
+                      200000,
+                      controller,
+                      setModalState,
+                    ),
+                    _buildQuickAddChip(
+                      '+500.000',
+                      500000,
+                      controller,
+                      setModalState,
+                    ),
                   ],
                 ),
               ),
@@ -306,11 +362,17 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: context.brandColor,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                   child: Text(
                     context.tr('save'),
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -330,7 +392,10 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: ActionChip(
-        label: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        label: Text(
+          label,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        ),
         onPressed: () {
           final current = CurrencyUtils.parseCurrency(controller.text);
           final newVal = current + addAmount;
@@ -387,7 +452,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white24, width: 0.8),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 18,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   Text(
@@ -409,16 +478,23 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
                   padding: const EdgeInsets.fromLTRB(20, 26, 20, 40),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // ════════ PHẦN HẠN MỨC CHI TIÊU HÀNG NGÀY ════════
-                      _buildSectionTitle(context, context.tr('daily_limit_title').toUpperCase()),
+                      _buildSectionTitle(
+                        context,
+                        context.tr('daily_limit_title').toUpperCase(),
+                      ),
                       _buildInfoBox(context, [
                         _buildToggleRow(
                           context,
@@ -436,29 +512,42 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
                               decoration: BoxDecoration(
-                                color: context.brandColor.withValues(alpha: 0.1),
+                                color: context.brandColor.withValues(
+                                  alpha: 0.1,
+                                ),
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: context.brandColor.withValues(alpha: 0.2)),
+                                border: Border.all(
+                                  color: context.brandColor.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                ),
                               ),
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           context.tr('daily_limit_amount'),
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
-                                            color: context.colors.onSurfaceVariant,
+                                            color:
+                                                context.colors.onSurfaceVariant,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          CurrencyUtils.formatCurrency(_dailySpendingLimit),
+                                          CurrencyUtils.formatCurrency(
+                                            _dailySpendingLimit,
+                                          ),
                                           style: TextStyle(
                                             fontSize: 20,
                                             fontWeight: FontWeight.bold,
@@ -470,28 +559,49 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                                   ),
                                   // Nút nói giọng nói
                                   IconButton(
-                                    icon: Icon(Icons.mic, color: context.brandColor),
-                                    tooltip: context.tr('daily_limit_set_voice'),
+                                    icon: Icon(
+                                      Icons.mic,
+                                      color: context.brandColor,
+                                    ),
+                                    tooltip: context.tr(
+                                      'daily_limit_set_voice',
+                                    ),
                                     onPressed: _openVoiceSetLimit,
                                     style: IconButton.styleFrom(
-                                      backgroundColor: context.brandColor.withValues(alpha: 0.15),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      backgroundColor: context.brandColor
+                                          .withValues(alpha: 0.15),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
                                   // Nút sửa thủ công
                                   ElevatedButton.icon(
                                     onPressed: _showSetDailyLimitDialog,
-                                    icon: const Icon(Icons.edit, size: 16, color: Colors.white),
+                                    icon: const Icon(
+                                      Icons.edit,
+                                      size: 16,
+                                      color: Colors.white,
+                                    ),
                                     label: Text(
                                       isVi ? 'Sửa' : 'Edit',
-                                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: context.brandColor,
                                       elevation: 0,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -502,12 +612,19 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                       const SizedBox(height: 28),
 
                       // ════════ THÔNG BÁO TÀI CHÍNH THÔNG MINH ════════
-                      _buildSectionTitle(context, isVi ? 'THÔNG BÁO TÀI CHÍNH THÔNG MINH' : 'SMART FINANCIAL ALERTS'),
+                      _buildSectionTitle(
+                        context,
+                        isVi
+                            ? 'THÔNG BÁO TÀI CHÍNH THÔNG MINH'
+                            : 'SMART FINANCIAL ALERTS',
+                      ),
                       _buildInfoBox(context, [
                         _buildToggleRow(
                           context,
                           icon: Icons.pie_chart_rounded,
-                          title: isVi ? 'Cảnh báo ngân sách (80% & 100%)' : 'Budget Alerts (80% & 100%)',
+                          title: isVi
+                              ? 'Cảnh báo ngân sách (80% & 100%)'
+                              : 'Budget Alerts (80% & 100%)',
                           subtitle: isVi
                               ? 'Nhận thông báo khi danh mục chi tiêu chạm 80% hoặc vượt hạn mức ngân sách'
                               : 'Get notified when category spending reaches 80% or exceeds budget limit',
@@ -521,7 +638,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                         _buildToggleRow(
                           context,
                           icon: Icons.trending_up_rounded,
-                          title: isVi ? 'Báo cáo chi tiêu so kỳ trước' : 'Period Spending Report',
+                          title: isVi
+                              ? 'Báo cáo chi tiêu so kỳ trước'
+                              : 'Period Spending Report',
                           subtitle: isVi
                               ? 'So sánh chi tiêu tháng này với tháng trước (cảnh báo tăng / khen tiết kiệm)'
                               : 'Compare spending this month vs last month (growth warning / saving praise)',
@@ -535,7 +654,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                         _buildToggleRow(
                           context,
                           icon: Icons.lightbulb_outline_rounded,
-                          title: isVi ? 'Gợi ý chi tiêu khoa học' : 'Smart Spending Guidance',
+                          title: isVi
+                              ? 'Gợi ý chi tiêu khoa học'
+                              : 'Smart Spending Guidance',
                           subtitle: isVi
                               ? 'Gợi ý hạn mức chi tiêu trung bình mỗi ngày dựa trên số dư ví còn lại'
                               : 'Suggest daily spending allowance based on remaining wallet balance',
@@ -549,7 +670,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                         _buildToggleRow(
                           context,
                           icon: Icons.edit_note_rounded,
-                          title: isVi ? 'Nhắc nhở ghi chép mỗi ngày' : 'Daily Expense Reminder',
+                          title: isVi
+                              ? 'Nhắc nhở ghi chép mỗi ngày'
+                              : 'Daily Expense Reminder',
                           subtitle: isVi
                               ? 'Nhắc nhở ghi lại chi tiêu nếu hôm nay bạn chưa có giao dịch'
                               : 'Remind you to log expenses if you haven\'t recorded any transaction today',
@@ -571,32 +694,60 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: context.brandColor,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
                                 elevation: 0,
                               ),
-                              onPressed: _isAnalyzing ? null : _triggerInstantAnalysis,
+                              onPressed: _isAnalyzing
+                                  ? null
+                                  : _triggerInstantAnalysis,
                               icon: _isAnalyzing
                                   ? const SizedBox(
                                       width: 18,
                                       height: 18,
-                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
                                     )
-                                  : const Icon(Icons.auto_awesome_rounded, size: 20),
+                                  : const Icon(
+                                      Icons.auto_awesome_rounded,
+                                      size: 20,
+                                    ),
                               label: Text(
                                 _isAnalyzing
-                                    ? (isVi ? 'Đang phân tích...' : 'Analyzing...')
-                                    : (isVi ? 'Phân tích & Cập nhật thông báo ngay' : 'Analyze & Update Alerts Now'),
-                                style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600),
+                                    ? (isVi
+                                          ? 'Đang phân tích...'
+                                          : 'Analyzing...')
+                                    : (isVi
+                                          ? 'Phân tích & Cập nhật thông báo ngay'
+                                          : 'Analyze & Update Alerts Now'),
+                                style: const TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 12),
                             OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: context.income,
-                                side: BorderSide(color: context.income, width: 1.5),
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                side: BorderSide(
+                                  color: context.income,
+                                  width: 1.5,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 13,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
                               ),
                               onPressed: _testScheduledNotificationIn5Seconds,
                               icon: const Icon(Icons.timer_outlined, size: 20),
@@ -604,27 +755,45 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                                 isVi
                                     ? 'Thử nghiệm thông báo sau 5 giây (Khóa màn hình để test)'
                                     : 'Test alert in 5s (Lock screen to test)',
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 12),
                             OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: isDark ? const Color(0xFF00E5FF) : context.brandColor,
+                                foregroundColor: isDark
+                                    ? const Color(0xFF00E5FF)
+                                    : context.brandColor,
                                 side: BorderSide(
-                                  color: isDark ? const Color(0xFF00E5FF) : context.brandColor,
+                                  color: isDark
+                                      ? const Color(0xFF00E5FF)
+                                      : context.brandColor,
                                   width: 1.5,
                                 ),
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 13,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
                               ),
                               onPressed: _testSendSystemNotification,
-                              icon: const Icon(Icons.notifications_active_rounded, size: 20),
+                              icon: const Icon(
+                                Icons.notifications_active_rounded,
+                                size: 20,
+                              ),
                               label: Text(
                                 isVi
                                     ? 'Bắn thử thông báo ra màn hình điện thoại ngay'
                                     : 'Send instant test notification to phone',
-                                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+                                style: const TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ],
@@ -634,7 +803,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF1E2827) : const Color(0xFFF0FDF4),
+                          color: isDark
+                              ? const Color(0xFF1E2827)
+                              : const Color(0xFFF0FDF4),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
                             color: context.income.withValues(alpha: 0.3),
@@ -643,7 +814,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.info_outline_rounded, color: context.income, size: 20),
+                            Icon(
+                              Icons.info_outline_rounded,
+                              color: context.income,
+                              size: 20,
+                            ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
@@ -653,7 +828,9 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                                 style: TextStyle(
                                   fontSize: 12,
                                   height: 1.45,
-                                  color: isDark ? Colors.white70 : const Color(0xFF065F46),
+                                  color: isDark
+                                      ? Colors.white70
+                                      : const Color(0xFF065F46),
                                 ),
                               ),
                             ),
@@ -666,7 +843,11 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
                             ? 'Hệ thống sẽ tự động quét các giao dịch và ví tiền thực tế để tạo báo cáo chi tiêu và cảnh báo vượt hạn mức kịp thời cho bạn.'
                             : 'The system automatically scans transactions and wallet balances to generate spending reports and timely budget alerts.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: context.colors.onSurfaceVariant, height: 1.4),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: context.colors.onSurfaceVariant,
+                          height: 1.4,
+                        ),
                       ),
                     ],
                   ),
@@ -699,12 +880,12 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       decoration: BoxDecoration(
         color: context.cardBg,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: context.borderColor,
-        ),
+        border: Border.all(color: context.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: context.isDarkMode ? 0.2 : 0.03),
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.2 : 0.03,
+            ),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

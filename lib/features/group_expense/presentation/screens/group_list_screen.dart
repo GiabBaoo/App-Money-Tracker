@@ -13,10 +13,9 @@ import '../../../../utils/page_transitions.dart';
 
 // Helper function để format tiền theo kiểu Việt (200000 -> 200.000)
 String _formatMoney(double amount) {
-  return amount.toStringAsFixed(0).replaceAllMapped(
-    RegExp(r'\B(?=(\d{3})+(?!\d))'),
-    (match) => '.',
-  );
+  return amount
+      .toStringAsFixed(0)
+      .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.');
 }
 
 class GroupListScreen extends ConsumerWidget {
@@ -89,7 +88,9 @@ class GroupListScreen extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          isVi ? 'Quản lý thu chi & mục tiêu chung' : 'Collaborative expense & fund tracker',
+                          isVi
+                              ? 'Quản lý thu chi & mục tiêu chung'
+                              : 'Collaborative expense & fund tracker',
                           style: context.textTheme.bodySmall?.copyWith(
                             color: textSecondary,
                             fontSize: 12,
@@ -101,7 +102,10 @@ class GroupListScreen extends ConsumerWidget {
                   ),
                   // Quick Group Counter Chip
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: primaryColor.withValues(alpha: isDark ? 0.2 : 0.1),
                       borderRadius: BorderRadius.circular(14),
@@ -203,10 +207,7 @@ class GroupListScreen extends ConsumerWidget {
               height: 56,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
-                    primaryColor,
-                    primaryColor.withValues(alpha: 0.85),
-                  ],
+                  colors: [primaryColor, primaryColor.withValues(alpha: 0.85)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -277,23 +278,25 @@ class GroupListScreen extends ConsumerWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: isDark
-                    ? [
-                        AppColors.surfaceElevatedDark,
-                        AppColors.surfaceDark,
-                      ]
+                    ? [AppColors.surfaceElevatedDark, AppColors.surfaceDark]
                     : [
                         primaryColor,
-                        Color.lerp(primaryColor, Colors.black, 0.15) ?? primaryColor,
+                        Color.lerp(primaryColor, Colors.black, 0.15) ??
+                            primaryColor,
                       ],
               ),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.15),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.white.withValues(alpha: 0.15),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: (isDark ? Colors.black : primaryColor).withValues(alpha: 0.25),
+                  color: (isDark ? Colors.black : primaryColor).withValues(
+                    alpha: 0.25,
+                  ),
                   blurRadius: 18,
                   offset: const Offset(0, 8),
                 ),
@@ -332,13 +335,18 @@ class GroupListScreen extends ConsumerWidget {
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        isVi ? '${groups.length} Quỹ' : '${groups.length} Funds',
+                        isVi
+                            ? '${groups.length} Quỹ'
+                            : '${groups.length} Funds',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -352,7 +360,9 @@ class GroupListScreen extends ConsumerWidget {
 
                 // Highlights
                 Text(
-                  isVi ? 'Không gian tài chính minh bạch' : 'Transparent collective finance',
+                  isVi
+                      ? 'Không gian tài chính minh bạch'
+                      : 'Transparent collective finance',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
@@ -424,19 +434,29 @@ class GroupListScreen extends ConsumerWidget {
 
           // ─── 3. GROUPS LIST OR EMPTY STATE ───
           if (groups.isEmpty)
-            _buildEmptyState(context, isDark, primaryColor, cardBgColor, textPrimary, textSecondary, borderColor)
+            _buildEmptyState(
+              context,
+              isDark,
+              primaryColor,
+              cardBgColor,
+              textPrimary,
+              textSecondary,
+              borderColor,
+            )
           else
-            ...groups.map((group) => _buildGroupCard(
-                  context,
-                  ref,
-                  group,
-                  isDark,
-                  primaryColor,
-                  cardBgColor,
-                  textPrimary,
-                  textSecondary,
-                  borderColor,
-                )),
+            ...groups.map(
+              (group) => _buildGroupCard(
+                context,
+                ref,
+                group,
+                isDark,
+                primaryColor,
+                cardBgColor,
+                textPrimary,
+                textSecondary,
+                borderColor,
+              ),
+            ),
         ],
       ),
     );
@@ -550,11 +570,7 @@ class GroupListScreen extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.add_rounded,
-                    size: 16,
-                    color: primaryColor,
-                  ),
+                  Icon(Icons.add_rounded, size: 16, color: primaryColor),
                   const SizedBox(width: 6),
                   Text(
                     isVi ? 'Tạo quỹ ngay' : 'Create Fund Now',
@@ -628,11 +644,7 @@ class GroupListScreen extends ConsumerWidget {
                         color: primaryColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Icon(
-                        iconData,
-                        size: 22,
-                        color: primaryColor,
-                      ),
+                      child: Icon(iconData, size: 22, color: primaryColor),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -652,7 +664,10 @@ class GroupListScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            group.description ?? (isVi ? '${group.memberIds.length} thành viên' : '${group.memberIds.length} members'),
+                            group.description ??
+                                (isVi
+                                    ? '${group.memberIds.length} thành viên'
+                                    : '${group.memberIds.length} members'),
                             style: context.textTheme.bodySmall?.copyWith(
                               fontSize: 12,
                               color: textSecondary,
@@ -666,11 +681,18 @@ class GroupListScreen extends ConsumerWidget {
                     const SizedBox(width: 8),
                     // Role Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: isOwner
-                            ? context.warning.withValues(alpha: isDark ? 0.18 : 0.12)
-                            : context.info.withValues(alpha: isDark ? 0.18 : 0.1),
+                            ? context.warning.withValues(
+                                alpha: isDark ? 0.18 : 0.12,
+                              )
+                            : context.info.withValues(
+                                alpha: isDark ? 0.18 : 0.1,
+                              ),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isOwner
@@ -689,7 +711,9 @@ class GroupListScreen extends ConsumerWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            isOwner ? (isVi ? 'Chủ quỹ' : 'Admin') : (isVi ? 'Thành viên' : 'Member'),
+                            isOwner
+                                ? (isVi ? 'Chủ quỹ' : 'Admin')
+                                : (isVi ? 'Thành viên' : 'Member'),
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
@@ -756,15 +780,24 @@ class GroupListScreen extends ConsumerWidget {
                       children: [
                         // Members count indicator
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF1F5F9),
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : const Color(0xFFF1F5F9),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.group_outlined, size: 14, color: textSecondary),
+                              Icon(
+                                Icons.group_outlined,
+                                size: 14,
+                                color: textSecondary,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 '${group.memberIds.length}',
@@ -781,11 +814,18 @@ class GroupListScreen extends ConsumerWidget {
                         if (isOwner) ...[
                           const SizedBox(width: 8),
                           AnimatedScaleButton(
-                            onTap: () => _deleteGroup(context, ref, group.id, group.name),
+                            onTap: () => _deleteGroup(
+                              context,
+                              ref,
+                              group.id,
+                              group.name,
+                            ),
                             child: Container(
                               padding: const EdgeInsets.all(7),
                               decoration: BoxDecoration(
-                                color: context.expense.withValues(alpha: isDark ? 0.15 : 0.08),
+                                color: context.expense.withValues(
+                                  alpha: isDark ? 0.15 : 0.08,
+                                ),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
@@ -808,7 +848,12 @@ class GroupListScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _deleteGroup(BuildContext context, WidgetRef ref, String groupId, String groupName) async {
+  Future<void> _deleteGroup(
+    BuildContext context,
+    WidgetRef ref,
+    String groupId,
+    String groupName,
+  ) async {
     final confirmed = await MonoDialog.confirm(
       context,
       title: isVi ? 'Xóa quỹ' : 'Delete fund',

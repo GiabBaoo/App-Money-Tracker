@@ -23,7 +23,8 @@ class WidgetSnapshotData {
   final String weekDifference;
   final String safeDailySpend;
   final String monthVsLastMonthPercent;
-  final String monthVsLastMonthStatus; // 'positive' (chi giảm), 'negative' (chi tăng), 'neutral'
+  final String
+  monthVsLastMonthStatus; // 'positive' (chi giảm), 'negative' (chi tăng), 'neutral'
   final String sevenDaysChartJson;
   final String topCategoriesJson;
   final String walletsJson;
@@ -151,7 +152,11 @@ class WidgetSnapshotBuilder {
     double weekExpenseRaw = 0;
     double weekIncomeRaw = 0;
 
-    final startOfWeek = DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
+    final startOfWeek = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(Duration(days: now.weekday - 1));
 
     // Thống kê theo danh mục trong tháng
     final categoryExpenseMap = <String, double>{};
@@ -162,9 +167,11 @@ class WidgetSnapshotBuilder {
     double lastMonthExpenseSamePeriod = 0;
 
     for (final tx in transactions) {
-      final isSameMonth = tx.date.year == now.year && tx.date.month == now.month;
+      final isSameMonth =
+          tx.date.year == now.year && tx.date.month == now.month;
       final isSameDay = isSameMonth && tx.date.day == now.day;
-      final isThisWeek = !tx.date.isBefore(startOfWeek) && tx.date.year == now.year;
+      final isThisWeek =
+          !tx.date.isBefore(startOfWeek) && tx.date.year == now.year;
 
       if (tx.isIncome) {
         if (isSameMonth) monthIncomeRaw += tx.amount;
@@ -179,7 +186,9 @@ class WidgetSnapshotBuilder {
         if (isThisWeek) weekExpenseRaw += tx.amount;
 
         // So sánh cùng kỳ tháng trước
-        if (tx.date.year == lastMonthYear && tx.date.month == lastMonth && tx.date.day <= now.day) {
+        if (tx.date.year == lastMonthYear &&
+            tx.date.month == lastMonth &&
+            tx.date.day <= now.day) {
           lastMonthExpenseSamePeriod += tx.amount;
         }
       }
@@ -187,11 +196,13 @@ class WidgetSnapshotBuilder {
 
     final monthDiffRaw = monthIncomeRaw - monthExpenseRaw;
     final diffPrefix = monthDiffRaw > 0 ? '+' : '';
-    final monthDifference = '$diffPrefix${CurrencyUtils.formatCurrency(monthDiffRaw)}';
+    final monthDifference =
+        '$diffPrefix${CurrencyUtils.formatCurrency(monthDiffRaw)}';
 
     final weekDiffRaw = weekIncomeRaw - weekExpenseRaw;
     final weekDiffPrefix = weekDiffRaw > 0 ? '+' : '';
-    final weekDifference = '$weekDiffPrefix${CurrencyUtils.formatCurrency(weekDiffRaw)}';
+    final weekDifference =
+        '$weekDiffPrefix${CurrencyUtils.formatCurrency(weekDiffRaw)}';
 
     // 3. Tính toán "Hôm nay còn được tiêu" (Safe Daily Spend)
     final lastDayOfMonth = DateTime(now.year, now.month + 1, 0).day;
@@ -199,12 +210,17 @@ class WidgetSnapshotBuilder {
 
     final totalBudget = budgets.fold<double>(
       0.0,
-      (sum, b) => (b.month == now.month && b.year == now.year) ? sum + b.limitAmount : sum,
+      (sum, b) => (b.month == now.month && b.year == now.year)
+          ? sum + b.limitAmount
+          : sum,
     );
 
     double dailySafe = 0;
     if (totalBudget > 0) {
-      final remainingBudget = (totalBudget - monthExpenseRaw).clamp(0.0, double.infinity);
+      final remainingBudget = (totalBudget - monthExpenseRaw).clamp(
+        0.0,
+        double.infinity,
+      );
       dailySafe = remainingBudget / daysRemaining;
     } else {
       dailySafe = (totalBalanceRaw / daysRemaining).clamp(0.0, double.infinity);
@@ -217,7 +233,11 @@ class WidgetSnapshotBuilder {
     double maxDayExpense = 0;
 
     for (int i = 6; i >= 0; i--) {
-      final dayDate = DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
+      final dayDate = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).subtract(Duration(days: i));
       double dayExpense = 0;
       for (final tx in transactions) {
         if (!tx.isIncome &&
@@ -241,7 +261,9 @@ class WidgetSnapshotBuilder {
     // Tính tỷ lệ chiều cao (từ 10 đến 100%)
     for (final dayItem in sevenDaysList) {
       final amount = dayItem['amount_raw'] as double;
-      final ratio = maxDayExpense > 0 ? ((amount / maxDayExpense) * 100).round().clamp(10, 100) : 10;
+      final ratio = maxDayExpense > 0
+          ? ((amount / maxDayExpense) * 100).round().clamp(10, 100)
+          : 10;
       dayItem['ratio'] = ratio;
     }
 
@@ -250,7 +272,11 @@ class WidgetSnapshotBuilder {
     String monthVsLastMonthStatus = 'neutral';
 
     if (lastMonthExpenseSamePeriod > 0) {
-      final diffPercent = (((monthExpenseRaw - lastMonthExpenseSamePeriod) / lastMonthExpenseSamePeriod) * 100).round();
+      final diffPercent =
+          (((monthExpenseRaw - lastMonthExpenseSamePeriod) /
+                      lastMonthExpenseSamePeriod) *
+                  100)
+              .round();
       if (diffPercent < 0) {
         monthVsLastMonthPercent = '$diffPercent%';
         monthVsLastMonthStatus = 'positive'; // Chi ít hơn tháng trước (xanh)
@@ -264,13 +290,20 @@ class WidgetSnapshotBuilder {
     }
 
     // 6. Cơ cấu chi tiêu top 3 danh mục tháng này
-    final sortedCategories = categoryExpenseMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final sortedCategories = categoryExpenseMap.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
-    final topColors = ['#F59E0B', '#10B981', '#06B6D4']; // Cam, Xanh lá, Xanh ngọc
+    final topColors = [
+      '#F59E0B',
+      '#10B981',
+      '#06B6D4',
+    ]; // Cam, Xanh lá, Xanh ngọc
     final topCategories = <Map<String, dynamic>>[];
     for (int i = 0; i < sortedCategories.length && i < 3; i++) {
       final entry = sortedCategories[i];
-      final percent = monthExpenseRaw > 0 ? ((entry.value / monthExpenseRaw) * 100).round() : 0;
+      final percent = monthExpenseRaw > 0
+          ? ((entry.value / monthExpenseRaw) * 100).round()
+          : 0;
       topCategories.add({
         'name': entry.key,
         'percent': percent,
@@ -282,13 +315,19 @@ class WidgetSnapshotBuilder {
     // 7. Top 3 ngân sách theo phần trăm sử dụng cao nhất
     final sortedBudgets = List<BudgetModel>.from(budgets);
     sortedBudgets.sort((a, b) {
-      final percentA = a.limitAmount > 0 ? (a.currentSpent / a.limitAmount) : 0.0;
-      final percentB = b.limitAmount > 0 ? (b.currentSpent / b.limitAmount) : 0.0;
+      final percentA = a.limitAmount > 0
+          ? (a.currentSpent / a.limitAmount)
+          : 0.0;
+      final percentB = b.limitAmount > 0
+          ? (b.currentSpent / b.limitAmount)
+          : 0.0;
       return percentB.compareTo(percentA);
     });
 
     final topBudgets = sortedBudgets.take(3).map((b) {
-      final percent = b.limitAmount > 0 ? ((b.currentSpent / b.limitAmount) * 100).round() : 0;
+      final percent = b.limitAmount > 0
+          ? ((b.currentSpent / b.limitAmount) * 100).round()
+          : 0;
       String status = 'green';
       if (percent >= 100) {
         status = 'red';
@@ -308,8 +347,13 @@ class WidgetSnapshotBuilder {
 
     // 8. Danh sách mục tiêu tiết kiệm
     final goalsList = goals.map((g) {
-      final percent = g.targetAmount > 0 ? ((g.currentAmount / g.targetAmount) * 100).round() : 0;
-      final remaining = (g.targetAmount - g.currentAmount).clamp(0.0, double.infinity);
+      final percent = g.targetAmount > 0
+          ? ((g.currentAmount / g.targetAmount) * 100).round()
+          : 0;
+      final remaining = (g.targetAmount - g.currentAmount).clamp(
+        0.0,
+        double.infinity,
+      );
       return {
         'id': g.id,
         'name': g.title,
@@ -325,14 +369,22 @@ class WidgetSnapshotBuilder {
     sortedTxs.sort((a, b) => b.date.compareTo(a.date));
 
     final recentTxs = sortedTxs.take(3).map((tx) {
-      final isToday = tx.date.year == now.year && tx.date.month == now.month && tx.date.day == now.day;
+      final isToday =
+          tx.date.year == now.year &&
+          tx.date.month == now.month &&
+          tx.date.day == now.day;
       final timeStr = DateFormat('HH:mm').format(tx.date);
-      final dateStrFormatted = isToday ? 'Hôm nay, $timeStr' : DateFormat('dd/MM, HH:mm').format(tx.date);
+      final dateStrFormatted = isToday
+          ? 'Hôm nay, $timeStr'
+          : DateFormat('dd/MM, HH:mm').format(tx.date);
 
       final prefix = tx.isIncome ? '+' : '-';
-      final formattedAmount = '$prefix${CurrencyUtils.formatCurrency(tx.amount)}';
+      final formattedAmount =
+          '$prefix${CurrencyUtils.formatCurrency(tx.amount)}';
 
-      final title = tx.category.isNotEmpty ? tx.category : (tx.description.isNotEmpty ? tx.description : 'Giao dịch');
+      final title = tx.category.isNotEmpty
+          ? tx.category
+          : (tx.description.isNotEmpty ? tx.description : 'Giao dịch');
 
       return {
         'id': tx.id,

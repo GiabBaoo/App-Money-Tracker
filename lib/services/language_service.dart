@@ -16,8 +16,10 @@ class LanguageScope extends InheritedNotifier<LanguageService> {
   }) : super(notifier: service);
 
   static LanguageService of(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<LanguageScope>()?.notifier 
-        ?? LanguageService.instance;
+    return context
+            .dependOnInheritedWidgetOfExactType<LanguageScope>()
+            ?.notifier ??
+        LanguageService.instance;
   }
 }
 
@@ -45,7 +47,10 @@ class LanguageService extends ChangeNotifier {
       // 1. Try remote Firestore preference first if logged in
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
         if (doc.exists) {
           final settings = doc.data()?['settings'];
           if (settings != null && settings['language'] != null) {
@@ -129,8 +134,14 @@ class LanguageService extends ChangeNotifier {
     'nav_stats': {'vi': 'Thống kê', 'en': 'Statistics'},
     'nav_wallets': {'vi': 'Ví tiền', 'en': 'Wallets'},
     'nav_profile': {'vi': 'Cài đặt', 'en': 'Settings'},
-    'add_transaction_tooltip': {'vi': 'Thêm giao dịch', 'en': 'Add transaction'},
-    'press_again_to_exit': {'vi': 'Nhấn lần nữa để thoát ứng dụng', 'en': 'Press back again to exit'},
+    'add_transaction_tooltip': {
+      'vi': 'Thêm giao dịch',
+      'en': 'Add transaction',
+    },
+    'press_again_to_exit': {
+      'vi': 'Nhấn lần nữa để thoát ứng dụng',
+      'en': 'Press back again to exit',
+    },
 
     // ══════════════════════════════════════════════════
     // Home Screen & Balance Card
@@ -148,7 +159,10 @@ class LanguageService extends ChangeNotifier {
     'tx_history': {'vi': 'Lịch sử giao dịch', 'en': 'Transaction History'},
     'see_all': {'vi': 'Xem tất cả', 'en': 'See all'},
     'gallery': {'vi': 'Thư viện ảnh', 'en': 'Gallery'},
-    'no_tx_month': {'vi': 'Chưa có giao dịch trong tháng này', 'en': 'No transactions this month'},
+    'no_tx_month': {
+      'vi': 'Chưa có giao dịch trong tháng này',
+      'en': 'No transactions this month',
+    },
     'quick_transfer': {'vi': 'Chuyển tiền', 'en': 'Transfer'},
     'quick_scan': {'vi': 'Quét hóa đơn', 'en': 'Scan AI'},
     'quick_budget': {'vi': 'Ngân sách', 'en': 'Budget'},
@@ -159,17 +173,26 @@ class LanguageService extends ChangeNotifier {
     // ══════════════════════════════════════════════════
     'wallets_title': {'vi': 'Ví tiền', 'en': 'Wallets'},
     'total_net_worth': {'vi': 'Tổng tài sản', 'en': 'Total Net Worth'},
-    'personal_net_worth': {'vi': 'TỔNG TÀI SẢN CÁ NHÂN', 'en': 'TOTAL NET WORTH'},
+    'personal_net_worth': {
+      'vi': 'TỔNG TÀI SẢN CÁ NHÂN',
+      'en': 'TOTAL NET WORTH',
+    },
     'asset_allocation': {'vi': 'Phân bổ tài sản', 'en': 'Asset Allocation'},
     'account_cards': {'vi': 'Thẻ tài khoản', 'en': 'Account Cards'},
     'accounts_count': {'vi': '{count} tài khoản', 'en': '{count} accounts'},
-    'transfer_money': {'vi': 'Chuyển tiền giữa các ví', 'en': 'Transfer Between Wallets'},
+    'transfer_money': {
+      'vi': 'Chuyển tiền giữa các ví',
+      'en': 'Transfer Between Wallets',
+    },
     'add_wallet': {'vi': 'Thêm ví mới', 'en': 'Add New Wallet'},
     'create_wallet': {'vi': 'Tạo ví mới', 'en': 'Create New Wallet'},
     'edit_wallet': {'vi': 'Chỉnh sửa ví', 'en': 'Edit Wallet'},
     'wallet_name': {'vi': 'Tên ví', 'en': 'Wallet Name'},
     'wallet_name_label': {'vi': 'Tên chiếc ví', 'en': 'Wallet Name'},
-    'wallet_name_hint': {'vi': 'Nhập tên ví (VD: Tiền mặt, Techcombank...)', 'en': 'Enter wallet name (e.g. Cash, Chase...)'},
+    'wallet_name_hint': {
+      'vi': 'Nhập tên ví (VD: Tiền mặt, Techcombank...)',
+      'en': 'Enter wallet name (e.g. Cash, Chase...)',
+    },
     'initial_balance': {'vi': 'Số dư ban đầu', 'en': 'Initial Balance'},
     'initial_balance_label': {'vi': 'Số dư ban đầu', 'en': 'Initial Balance'},
     'current_balance': {'vi': 'Số dư hiện tại', 'en': 'Current Balance'},
@@ -179,16 +202,37 @@ class LanguageService extends ChangeNotifier {
     'color_label': {'vi': 'Màu sắc nhận diện', 'en': 'Wallet Color'},
     'icon_label': {'vi': 'Biểu tượng đại diện', 'en': 'Wallet Icon'},
     'default_wallet': {'vi': 'Ví mặc định', 'en': 'Default Wallet'},
-    'default_wallet_label': {'vi': 'Đặt làm ví mặc định', 'en': 'Set as Default Wallet'},
-    'note_optional_label': {'vi': 'Ghi chú (tùy chọn)', 'en': 'Note (optional)'},
+    'default_wallet_label': {
+      'vi': 'Đặt làm ví mặc định',
+      'en': 'Set as Default Wallet',
+    },
+    'note_optional_label': {
+      'vi': 'Ghi chú (tùy chọn)',
+      'en': 'Note (optional)',
+    },
     'create_wallet_btn': {'vi': 'Tạo ví ngay', 'en': 'Create Wallet'},
     'save_changes': {'vi': 'Lưu thay đổi', 'en': 'Save Changes'},
-    'enter_wallet_name_error': {'vi': 'Vui lòng nhập tên ví!', 'en': 'Please enter wallet name!'},
-    'create_wallet_success': {'vi': 'Đã tạo ví mới thành công!', 'en': 'Wallet created successfully!'},
-    'update_wallet_success': {'vi': 'Đã cập nhật thông tin ví!', 'en': 'Wallet updated successfully!'},
+    'enter_wallet_name_error': {
+      'vi': 'Vui lòng nhập tên ví!',
+      'en': 'Please enter wallet name!',
+    },
+    'create_wallet_success': {
+      'vi': 'Đã tạo ví mới thành công!',
+      'en': 'Wallet created successfully!',
+    },
+    'update_wallet_success': {
+      'vi': 'Đã cập nhật thông tin ví!',
+      'en': 'Wallet updated successfully!',
+    },
     'save_wallet': {'vi': 'Lưu ví', 'en': 'Save Wallet'},
-    'confirm_delete_wallet': {'vi': 'Bạn có chắc chắn muốn xóa ví này không?', 'en': 'Are you sure you want to delete this wallet?'},
-    'empty_wallets': {'vi': 'Chưa có ví tiền nào. Hãy bấm nút + để tạo ví đầu tiên!', 'en': 'No wallets yet. Tap + to create your first wallet!'},
+    'confirm_delete_wallet': {
+      'vi': 'Bạn có chắc chắn muốn xóa ví này không?',
+      'en': 'Are you sure you want to delete this wallet?',
+    },
+    'empty_wallets': {
+      'vi': 'Chưa có ví tiền nào. Hãy bấm nút + để tạo ví đầu tiên!',
+      'en': 'No wallets yet. Tap + to create your first wallet!',
+    },
     'wallet_cash': {'vi': 'Tiền mặt', 'en': 'Cash'},
     'wallet_bank': {'vi': 'Tài khoản ngân hàng', 'en': 'Bank Account'},
     'wallet_e_wallet': {'vi': 'Ví điện tử', 'en': 'E-Wallet'},
@@ -205,20 +249,47 @@ class LanguageService extends ChangeNotifier {
     // ══════════════════════════════════════════════════
     // Wallet Transfer & Actions
     // ══════════════════════════════════════════════════
-    'transfer_title': {'vi': 'Chuyển tiền giữa các ví', 'en': 'Transfer Between Wallets'},
+    'transfer_title': {
+      'vi': 'Chuyển tiền giữa các ví',
+      'en': 'Transfer Between Wallets',
+    },
     'transfer_from': {'vi': 'Chuyển từ ví', 'en': 'From Wallet'},
     'transfer_to': {'vi': 'Nhận vào ví', 'en': 'To Wallet'},
     'transfer_amount_label': {'vi': 'Số tiền chuyển', 'en': 'Transfer Amount'},
-    'transfer_fee_label': {'vi': 'Phí giao dịch (nếu có)', 'en': 'Transfer Fee (optional)'},
+    'transfer_fee_label': {
+      'vi': 'Phí giao dịch (nếu có)',
+      'en': 'Transfer Fee (optional)',
+    },
     'balance_prefix': {'vi': 'Số dư', 'en': 'Balance'},
-    'transfer_min_wallets_error': {'vi': 'Bạn cần ít nhất 2 ví để thực hiện chuyển tiền!', 'en': 'You need at least 2 wallets to transfer money!'},
-    'transfer_amount_error': {'vi': 'Vui lòng nhập số tiền chuyển hợp lệ!', 'en': 'Please enter a valid transfer amount!'},
-    'insufficient_balance_error': {'vi': 'Số dư trong ví nguồn không đủ để thực hiện chuyển tiền!', 'en': 'Insufficient balance in source wallet!'},
-    'same_wallet_error': {'vi': 'Ví nguồn và ví đích không được trùng nhau!', 'en': 'Source and destination wallet cannot be the same!'},
-    'transfer_success': {'vi': 'Chuyển tiền giữa các ví thành công!', 'en': 'Transfer successful!'},
-    'confirm_transfer': {'vi': 'Xác nhận chuyển tiền', 'en': 'Confirm Transfer'},
+    'transfer_min_wallets_error': {
+      'vi': 'Bạn cần ít nhất 2 ví để thực hiện chuyển tiền!',
+      'en': 'You need at least 2 wallets to transfer money!',
+    },
+    'transfer_amount_error': {
+      'vi': 'Vui lòng nhập số tiền chuyển hợp lệ!',
+      'en': 'Please enter a valid transfer amount!',
+    },
+    'insufficient_balance_error': {
+      'vi': 'Số dư trong ví nguồn không đủ để thực hiện chuyển tiền!',
+      'en': 'Insufficient balance in source wallet!',
+    },
+    'same_wallet_error': {
+      'vi': 'Ví nguồn và ví đích không được trùng nhau!',
+      'en': 'Source and destination wallet cannot be the same!',
+    },
+    'transfer_success': {
+      'vi': 'Chuyển tiền giữa các ví thành công!',
+      'en': 'Transfer successful!',
+    },
+    'confirm_transfer': {
+      'vi': 'Xác nhận chuyển tiền',
+      'en': 'Confirm Transfer',
+    },
     'delete_wallet_title': {'vi': 'Xóa ví tiền', 'en': 'Delete Wallet'},
-    'delete_wallet_confirm': {'vi': 'Bạn có chắc chắn muốn xóa ví "{name}" không?', 'en': 'Are you sure you want to delete wallet "{name}"?'},
+    'delete_wallet_confirm': {
+      'vi': 'Bạn có chắc chắn muốn xóa ví "{name}" không?',
+      'en': 'Are you sure you want to delete wallet "{name}"?',
+    },
 
     // ══════════════════════════════════════════════════
     // Add / Edit Transaction Screen
@@ -233,44 +304,101 @@ class LanguageService extends ChangeNotifier {
     'wallet': {'vi': 'Ví tiền', 'en': 'Wallet'},
     'date': {'vi': 'Ngày tháng', 'en': 'Date'},
     'note': {'vi': 'Ghi chú', 'en': 'Note'},
-    'note_hint': {'vi': 'Ghi chú nội dung giao dịch...', 'en': 'Transaction note...'},
+    'note_hint': {
+      'vi': 'Ghi chú nội dung giao dịch...',
+      'en': 'Transaction note...',
+    },
     'save_transaction': {'vi': 'Lưu giao dịch', 'en': 'Save Transaction'},
     'select_category_prompt': {'vi': 'Chọn danh mục', 'en': 'Select category'},
     'select_wallet_prompt': {'vi': 'Chọn ví thanh toán', 'en': 'Select wallet'},
-    'receipt_photo': {'vi': 'Ảnh hóa đơn / chứng từ', 'en': 'Receipt / Bill Photo'},
+    'receipt_photo': {
+      'vi': 'Ảnh hóa đơn / chứng từ',
+      'en': 'Receipt / Bill Photo',
+    },
     'take_photo': {'vi': 'Chụp ảnh ngay', 'en': 'Take Photo'},
-    'choose_from_gallery': {'vi': 'Chọn từ thư viện ảnh', 'en': 'Choose from Gallery'},
+    'choose_from_gallery': {
+      'vi': 'Chọn từ thư viện ảnh',
+      'en': 'Choose from Gallery',
+    },
     'discard_tx_title': {'vi': 'Hủy giao dịch?', 'en': 'Discard transaction?'},
-    'discard_tx_content': {'vi': 'Nội dung bạn đang nhập chưa được lưu. Bạn có chắc muốn thoát?', 'en': 'Unsaved changes will be lost. Are you sure you want to exit?'},
+    'discard_tx_content': {
+      'vi': 'Nội dung bạn đang nhập chưa được lưu. Bạn có chắc muốn thoát?',
+      'en': 'Unsaved changes will be lost. Are you sure you want to exit?',
+    },
     'keep_editing': {'vi': 'Tiếp tục nhập', 'en': 'Keep Editing'},
     'discard': {'vi': 'Thoát', 'en': 'Discard'},
-    'add_income_success': {'vi': 'Đã thêm khoản thu thành công! 💰', 'en': 'Income added successfully! 💰'},
-    'add_expense_success': {'vi': 'Đã thêm khoản chi thành công! ✨', 'en': 'Expense added successfully! ✨'},
-    'form_reset_toast': {'vi': 'Đã làm mới thông tin giao dịch', 'en': 'Form cleared'},
-    'top_expense_categories': {'vi': 'Danh mục chi phổ biến', 'en': 'Top Expense Categories'},
-    'quick_suggestions_label': {'vi': 'Gợi ý nhanh:', 'en': 'Quick suggestions:'},
-    'matching_suggestions_label': {'vi': 'Gợi ý số tiền phù hợp:', 'en': 'Suggested amounts:'},
+    'add_income_success': {
+      'vi': 'Đã thêm khoản thu thành công! 💰',
+      'en': 'Income added successfully! 💰',
+    },
+    'add_expense_success': {
+      'vi': 'Đã thêm khoản chi thành công! ✨',
+      'en': 'Expense added successfully! ✨',
+    },
+    'form_reset_toast': {
+      'vi': 'Đã làm mới thông tin giao dịch',
+      'en': 'Form cleared',
+    },
+    'top_expense_categories': {
+      'vi': 'Danh mục chi phổ biến',
+      'en': 'Top Expense Categories',
+    },
+    'quick_suggestions_label': {
+      'vi': 'Gợi ý nhanh:',
+      'en': 'Quick suggestions:',
+    },
+    'matching_suggestions_label': {
+      'vi': 'Gợi ý số tiền phù hợp:',
+      'en': 'Suggested amounts:',
+    },
     'syncing_in_progress': {'vi': 'Đang đồng bộ...', 'en': 'Syncing...'},
-    'not_synced_tap': {'vi': 'Chưa đồng bộ (Chạm để đồng bộ)', 'en': 'Not synced (Tap to sync)'},
-    'frequent_amount_auto': {'vi': 'Tự điền từ thói quen', 'en': 'Auto-filled from habit'},
-    'habit_autofilled': {'vi': 'Tự động điền theo thói quen', 'en': 'Auto-filled from habit'},
-    'top_income_categories': {'vi': 'Danh mục thu phổ biến', 'en': 'Top Income Categories'},
+    'not_synced_tap': {
+      'vi': 'Chưa đồng bộ (Chạm để đồng bộ)',
+      'en': 'Not synced (Tap to sync)',
+    },
+    'frequent_amount_auto': {
+      'vi': 'Tự điền từ thói quen',
+      'en': 'Auto-filled from habit',
+    },
+    'habit_autofilled': {
+      'vi': 'Tự động điền theo thói quen',
+      'en': 'Auto-filled from habit',
+    },
+    'top_income_categories': {
+      'vi': 'Danh mục thu phổ biến',
+      'en': 'Top Income Categories',
+    },
 
     // ══════════════════════════════════════════════════
     // All Transactions Screen
     // ══════════════════════════════════════════════════
     'all_tx_title': {'vi': 'Tất cả giao dịch', 'en': 'All Transactions'},
-    'transaction_history': {'vi': 'Lịch sử giao dịch', 'en': 'Transaction History'},
+    'transaction_history': {
+      'vi': 'Lịch sử giao dịch',
+      'en': 'Transaction History',
+    },
     'net_cashflow': {'vi': 'Dòng tiền', 'en': 'Cash Flow'},
     'view_all': {'vi': 'Xem tất cả', 'en': 'View All'},
     'edit': {'vi': 'Chỉnh sửa', 'en': 'Edit'},
     'delete': {'vi': 'Xóa', 'en': 'Delete'},
     'confirm_delete': {'vi': 'Xác nhận xóa', 'en': 'Confirm Delete'},
     'apply_filter': {'vi': 'Áp dụng bộ lọc', 'en': 'Apply Filter'},
-    'filter_transactions': {'vi': 'Bộ lọc giao dịch', 'en': 'Transaction Filter'},
-    'transaction_time_range': {'vi': 'Khoảng thời gian giao dịch', 'en': 'Transaction Time Range'},
-    'specific_date_range': {'vi': 'Tùy chọn khoảng ngày cụ thể...', 'en': 'Select specific date range...'},
-    'search_tx_hint': {'vi': 'Tìm kiếm theo danh mục, ghi chú...', 'en': 'Search by category, note...'},
+    'filter_transactions': {
+      'vi': 'Bộ lọc giao dịch',
+      'en': 'Transaction Filter',
+    },
+    'transaction_time_range': {
+      'vi': 'Khoảng thời gian giao dịch',
+      'en': 'Transaction Time Range',
+    },
+    'specific_date_range': {
+      'vi': 'Tùy chọn khoảng ngày cụ thể...',
+      'en': 'Select specific date range...',
+    },
+    'search_tx_hint': {
+      'vi': 'Tìm kiếm theo danh mục, ghi chú...',
+      'en': 'Search by category, note...',
+    },
     'preset_month_to_date': {'vi': 'Đầu tháng đến nay', 'en': 'Month to Date'},
     'preset_today': {'vi': 'Hôm nay', 'en': 'Today'},
     'preset_last_7_days': {'vi': '7 ngày qua', 'en': 'Last 7 Days'},
@@ -283,7 +411,10 @@ class LanguageService extends ChangeNotifier {
     'filter_income': {'vi': 'Thu nhập', 'en': 'Income'},
     'filter_expense': {'vi': 'Chi tiêu', 'en': 'Expense'},
     'filter_transfers': {'vi': 'Chuyển tiền', 'en': 'Transfers'},
-    'no_matching_tx': {'vi': 'Không tìm thấy giao dịch nào phù hợp', 'en': 'No matching transactions found'},
+    'no_matching_tx': {
+      'vi': 'Không tìm thấy giao dịch nào phù hợp',
+      'en': 'No matching transactions found',
+    },
     'clear_filter': {'vi': 'Xóa lọc', 'en': 'Clear Filter'},
     'clear_date_filter': {'vi': 'Bỏ lọc ngày', 'en': 'Clear Date Filter'},
     'reset_filter': {'vi': 'Đặt lại', 'en': 'Reset'},
@@ -296,29 +427,53 @@ class LanguageService extends ChangeNotifier {
     // ══════════════════════════════════════════════════
     'tx_details': {'vi': 'Chi tiết giao dịch', 'en': 'Transaction Details'},
     'synced_cloud': {'vi': 'Đã đồng bộ Cloud', 'en': 'Cloud Synced'},
-    'local_offline': {'vi': 'Lưu trên máy (Offline)', 'en': 'Saved Locally (Offline)'},
+    'local_offline': {
+      'vi': 'Lưu trên máy (Offline)',
+      'en': 'Saved Locally (Offline)',
+    },
     'sync_status': {'vi': 'Trạng thái đồng bộ', 'en': 'Sync Status'},
     'source_wallet': {'vi': 'Tiền lấy từ ví', 'en': 'Source Wallet'},
-    'destination_wallet': {'vi': 'Tiền nhận vào ví', 'en': 'Destination Wallet'},
-    'delete_tx_confirm': {'vi': 'Bạn có chắc muốn xóa giao dịch này không?', 'en': 'Are you sure you want to delete this transaction?'},
+    'destination_wallet': {
+      'vi': 'Tiền nhận vào ví',
+      'en': 'Destination Wallet',
+    },
+    'delete_tx_confirm': {
+      'vi': 'Bạn có chắc muốn xóa giao dịch này không?',
+      'en': 'Are you sure you want to delete this transaction?',
+    },
 
     // ══════════════════════════════════════════════════
     // Statistics Screen
     // ══════════════════════════════════════════════════
     'stats_title': {'vi': 'Thống kê', 'en': 'Statistics'},
-    'stats_spending_overview': {'vi': 'Tổng quan chi tiêu', 'en': 'Spending Overview'},
+    'stats_spending_overview': {
+      'vi': 'Tổng quan chi tiêu',
+      'en': 'Spending Overview',
+    },
     'stats_filter_today': {'vi': 'Hôm nay', 'en': 'Today'},
     'stats_filter_week': {'vi': 'Tuần', 'en': 'Week'},
     'stats_filter_month': {'vi': 'Tháng', 'en': 'Month'},
     'stats_filter_year': {'vi': 'Năm', 'en': 'Year'},
-    'stats_no_data': {'vi': 'Chưa có dữ liệu giao dịch trong khoảng thời gian này', 'en': 'No transaction data in this period'},
-    'category_breakdown': {'vi': 'Phân tích chi tiêu theo mục', 'en': 'Category Breakdown'},
-    'spending_breakdown': {'vi': 'Danh sách chi tiêu', 'en': 'Expense Breakdown'},
+    'stats_no_data': {
+      'vi': 'Chưa có dữ liệu giao dịch trong khoảng thời gian này',
+      'en': 'No transaction data in this period',
+    },
+    'category_breakdown': {
+      'vi': 'Phân tích chi tiêu theo mục',
+      'en': 'Category Breakdown',
+    },
+    'spending_breakdown': {
+      'vi': 'Danh sách chi tiêu',
+      'en': 'Expense Breakdown',
+    },
     'income_breakdown': {'vi': 'Danh sách thu nhập', 'en': 'Income Breakdown'},
     'total_expense_label': {'vi': 'Tổng chi tiêu', 'en': 'Total Expense'},
     'total_income_label': {'vi': 'Tổng thu nhập', 'en': 'Total Income'},
     'net_flow': {'vi': 'Dòng tiền ròng', 'en': 'Net Cash Flow'},
-    'no_tx_category': {'vi': 'Chưa có giao dịch nào trong danh mục này', 'en': 'No transactions in this category'},
+    'no_tx_category': {
+      'vi': 'Chưa có giao dịch nào trong danh mục này',
+      'en': 'No transactions in this category',
+    },
     'this_week': {'vi': 'Tuần này', 'en': 'This Week'},
     'last_week': {'vi': 'Tuần trước', 'en': 'Last Week'},
     'by_week': {'vi': 'Theo tuần', 'en': 'By Week'},
@@ -330,10 +485,19 @@ class LanguageService extends ChangeNotifier {
     'chart_trend': {'vi': 'Xu hướng', 'en': 'Trend'},
     'chart_distribution': {'vi': 'Phân bổ', 'en': 'Distribution'},
     'chart_income_expense': {'vi': 'Thu / Chi', 'en': 'Income / Expense'},
-    'no_distribution_data': {'vi': 'Chưa có dữ liệu phân bổ trong kỳ này', 'en': 'No distribution data in this period'},
-    'no_compare_data': {'vi': 'Chưa có dữ liệu so sánh Thu - Chi', 'en': 'No comparison data in this period'},
+    'no_distribution_data': {
+      'vi': 'Chưa có dữ liệu phân bổ trong kỳ này',
+      'en': 'No distribution data in this period',
+    },
+    'no_compare_data': {
+      'vi': 'Chưa có dữ liệu so sánh Thu - Chi',
+      'en': 'No comparison data in this period',
+    },
     'net_income_gap': {'vi': 'Chênh lệch thu chi', 'en': 'Net Difference'},
-    'no_transactions_period': {'vi': 'Chưa có dữ liệu giao dịch trong kỳ này', 'en': 'No transactions in this period'},
+    'no_transactions_period': {
+      'vi': 'Chưa có dữ liệu giao dịch trong kỳ này',
+      'en': 'No transactions in this period',
+    },
     'select_month_stat': {'vi': 'Chọn tháng thống kê', 'en': 'Select Month'},
     'select_year_stat': {'vi': 'Chọn năm thống kê', 'en': 'Select Year'},
     'select_week_stat': {'vi': 'Chọn tuần thống kê', 'en': 'Select Week'},
@@ -347,37 +511,64 @@ class LanguageService extends ChangeNotifier {
     // Settings Screen
     // ══════════════════════════════════════════════════
     'settings_title': {'vi': 'Cài đặt', 'en': 'Settings'},
-    'account_and_security': {'vi': 'TÀI KHOẢN & BẢO MẬT', 'en': 'ACCOUNT & SECURITY'},
+    'account_and_security': {
+      'vi': 'TÀI KHOẢN & BẢO MẬT',
+      'en': 'ACCOUNT & SECURITY',
+    },
     'application_settings': {'vi': 'ỨNG DỤNG', 'en': 'APPLICATION'},
     'support_and_others': {'vi': 'HỖ TRỢ & KHÁC', 'en': 'SUPPORT & OTHERS'},
-    'appearance_dark_mode': {'vi': 'Giao diện & Chế độ tối', 'en': 'Appearance & Dark Mode'},
+    'appearance_dark_mode': {
+      'vi': 'Giao diện & Chế độ tối',
+      'en': 'Appearance & Dark Mode',
+    },
     'language_setting': {'vi': 'Ngôn ngữ', 'en': 'Language'},
     'biometric_security': {'vi': 'Bảo mật vân tay', 'en': 'Biometric Security'},
     'privacy_policy': {'vi': 'Chính sách riêng tư', 'en': 'Privacy Policy'},
     'message_center': {'vi': 'Hòm thư tin nhắn', 'en': 'Message Center'},
     'account_info': {'vi': 'Thông tin tài khoản', 'en': 'Account Info'},
-    'login_and_security': {'vi': 'Đăng nhập và bảo mật', 'en': 'Login & Security'},
+    'login_and_security': {
+      'vi': 'Đăng nhập và bảo mật',
+      'en': 'Login & Security',
+    },
     'data_and_privacy': {'vi': 'Dữ liệu và riêng tư', 'en': 'Data & Privacy'},
     'about_app': {'vi': 'Về ứng dụng', 'en': 'About App'},
     'logout': {'vi': 'Đăng xuất', 'en': 'Log out'},
-    'logout_confirm': {'vi': 'Bạn có chắc chắn muốn đăng xuất?', 'en': 'Are you sure you want to log out?'},
+    'logout_confirm': {
+      'vi': 'Bạn có chắc chắn muốn đăng xuất?',
+      'en': 'Are you sure you want to log out?',
+    },
 
     // ══════════════════════════════════════════════════
     // Appearance Screen
     // ══════════════════════════════════════════════════
-    'appearance_header': {'vi': 'Giao diện & Chế độ tối', 'en': 'Appearance & Dark Mode'},
+    'appearance_header': {
+      'vi': 'Giao diện & Chế độ tối',
+      'en': 'Appearance & Dark Mode',
+    },
     'preview_section': {'vi': 'XEM TRƯỚC GIAO DIỆN', 'en': 'LIVE PREVIEW'},
-    'preview_sub': {'vi': 'Xem trước màu sắc & cỡ chữ theo thời gian thực', 'en': 'Preview colors & text scaling in real time'},
+    'preview_sub': {
+      'vi': 'Xem trước màu sắc & cỡ chữ theo thời gian thực',
+      'en': 'Preview colors & text scaling in real time',
+    },
     'theme_mode_section': {'vi': 'CHẾ ĐỘ MÀU SẮC', 'en': 'COLOR THEME'},
-    'theme_mode_sub': {'vi': 'Chọn tông màu phù hợp với môi trường sử dụng', 'en': 'Choose tone suitable for your environment'},
+    'theme_mode_sub': {
+      'vi': 'Chọn tông màu phù hợp với môi trường sử dụng',
+      'en': 'Choose tone suitable for your environment',
+    },
     'theme_light': {'vi': 'Sáng', 'en': 'Light'},
     'theme_light_sub': {'vi': 'Trang nhã', 'en': 'Elegant'},
     'theme_dark': {'vi': 'Tối', 'en': 'Dark'},
     'theme_dark_sub': {'vi': 'Dịu mắt', 'en': 'Eye-care'},
     'theme_system': {'vi': 'Tự động', 'en': 'Auto'},
     'theme_system_sub': {'vi': 'Hệ thống', 'en': 'System'},
-    'font_scale_section': {'vi': 'KÍCH THƯỚC CHỮ HIỂN THỊ', 'en': 'TEXT DISPLAY SIZE'},
-    'font_scale_sub': {'vi': 'Điều chỉnh tỷ lệ văn bản toàn bộ ứng dụng', 'en': 'Scale text factor across the entire app'},
+    'font_scale_section': {
+      'vi': 'KÍCH THƯỚC CHỮ HIỂN THỊ',
+      'en': 'TEXT DISPLAY SIZE',
+    },
+    'font_scale_sub': {
+      'vi': 'Điều chỉnh tỷ lệ văn bản toàn bộ ứng dụng',
+      'en': 'Scale text factor across the entire app',
+    },
 
     // ══════════════════════════════════════════════════
     // Language Screen
@@ -391,7 +582,10 @@ class LanguageService extends ChangeNotifier {
     // ══════════════════════════════════════════════════
     'profile_title': {'vi': 'Hồ sơ', 'en': 'Profile'},
     'edit_profile': {'vi': 'Chỉnh sửa thông tin', 'en': 'Edit Profile'},
-    'update_profile_success': {'vi': 'Cập nhật thông tin tài khoản thành công!', 'en': 'Profile updated successfully!'},
+    'update_profile_success': {
+      'vi': 'Cập nhật thông tin tài khoản thành công!',
+      'en': 'Profile updated successfully!',
+    },
     'full_name': {'vi': 'Họ và tên', 'en': 'Full Name'},
     'phone_number': {'vi': 'Số điện thoại', 'en': 'Phone Number'},
     'gender': {'vi': 'Giới tính', 'en': 'Gender'},
@@ -407,7 +601,10 @@ class LanguageService extends ChangeNotifier {
     'notification_title': {'vi': 'Thông báo', 'en': 'Notifications'},
     'clear_all': {'vi': 'Xóa tất cả', 'en': 'Clear all'},
     'analyze_now': {'vi': '⚡ Phân tích ngay', 'en': '⚡ Analyze now'},
-    'no_notifications': {'vi': 'Chưa có thông báo nào', 'en': 'No notifications yet'},
+    'no_notifications': {
+      'vi': 'Chưa có thông báo nào',
+      'en': 'No notifications yet',
+    },
 
     // ══════════════════════════════════════════════════
     // Category Screen
@@ -417,7 +614,10 @@ class LanguageService extends ChangeNotifier {
     'tab_income': {'vi': 'Thu nhập', 'en': 'Income'},
     'add_new_category': {'vi': 'Thêm mới', 'en': 'Add New'},
     'btn_create_category': {'vi': '+ Tạo danh mục', 'en': '+ Create Category'},
-    'create_category_title': {'vi': 'Tạo danh mục mới', 'en': 'Create New Category'},
+    'create_category_title': {
+      'vi': 'Tạo danh mục mới',
+      'en': 'Create New Category',
+    },
     'edit_category_title': {'vi': 'Chỉnh sửa danh mục', 'en': 'Edit Category'},
     'select_group': {'vi': 'Chọn nhóm phân loại', 'en': 'Select Group'},
     'category_name_hint': {'vi': 'Tên danh mục...', 'en': 'Category name...'},
@@ -425,8 +625,14 @@ class LanguageService extends ChangeNotifier {
     'select_color': {'vi': 'Chọn màu sắc', 'en': 'Select Color'},
     'save_category': {'vi': 'Lưu danh mục', 'en': 'Save Category'},
     'delete_category': {'vi': 'Xóa danh mục', 'en': 'Delete Category'},
-    'confirm_delete_category': {'vi': 'Bạn có chắc muốn xóa danh mục này không?', 'en': 'Are you sure you want to delete this category?'},
-    'empty_category_name': {'vi': 'Vui lòng nhập tên danh mục!', 'en': 'Please enter a category name!'},
+    'confirm_delete_category': {
+      'vi': 'Bạn có chắc muốn xóa danh mục này không?',
+      'en': 'Are you sure you want to delete this category?',
+    },
+    'empty_category_name': {
+      'vi': 'Vui lòng nhập tên danh mục!',
+      'en': 'Please enter a category name!',
+    },
     'custom_badge': {'vi': 'Tùy tạo', 'en': 'Custom'},
 
     // ══════════════════════════════════════════════════
@@ -463,38 +669,101 @@ class LanguageService extends ChangeNotifier {
     // Voice Input Screen & Daily Limits
     // ══════════════════════════════════════════════════
     'voice_input_title': {'vi': 'Ghi bằng giọng nói', 'en': 'Voice Input'},
-    'voice_listening': {'vi': 'Đang lắng nghe bạn nói...', 'en': 'Listening to you...'},
-    'voice_listening_ai': {'vi': 'Đang lắng nghe... Bấm mic khi nói xong', 'en': 'Listening... Tap mic when done speaking'},
-    'voice_tap_to_speak': {'vi': 'Chạm vào mic để bắt đầu nói', 'en': 'Tap mic to start speaking'},
-    'voice_suggestions_title': {'vi': 'CÂU NÓI MẪU NHANH', 'en': 'QUICK SUGGESTIONS'},
-    'voice_hint_spending': {'vi': 'Ví dụ: "Ăn phở 45k", "Cà phê 30 ngàn"', 'en': 'E.g: "Coffee 30k", "Lunch 50k"'},
-    'voice_hint_limit': {'vi': 'Hoặc đặt hạn mức: "Đặt hạn mức 200k"', 'en': 'Or set limit: "Set limit 200k"'},
+    'voice_listening': {
+      'vi': 'Đang lắng nghe bạn nói...',
+      'en': 'Listening to you...',
+    },
+    'voice_listening_ai': {
+      'vi': 'Đang lắng nghe... Bấm mic khi nói xong',
+      'en': 'Listening... Tap mic when done speaking',
+    },
+    'voice_tap_to_speak': {
+      'vi': 'Chạm vào mic để bắt đầu nói',
+      'en': 'Tap mic to start speaking',
+    },
+    'voice_suggestions_title': {
+      'vi': 'CÂU NÓI MẪU NHANH',
+      'en': 'QUICK SUGGESTIONS',
+    },
+    'voice_hint_spending': {
+      'vi': 'Ví dụ: "Ăn phở 45k", "Cà phê 30 ngàn"',
+      'en': 'E.g: "Coffee 30k", "Lunch 50k"',
+    },
+    'voice_hint_limit': {
+      'vi': 'Hoặc đặt hạn mức: "Đặt hạn mức 200k"',
+      'en': 'Or set limit: "Set limit 200k"',
+    },
     'voice_detected': {'vi': 'Đã nhận diện', 'en': 'Detected'},
-    'voice_error_mic': {'vi': 'Không nhận diện được giọng nói. Vui lòng thử lại!', 'en': 'Could not recognize speech. Please try again!'},
+    'voice_error_mic': {
+      'vi': 'Không nhận diện được giọng nói. Vui lòng thử lại!',
+      'en': 'Could not recognize speech. Please try again!',
+    },
     'retry_speak': {'vi': 'Nói lại', 'en': 'Retry'},
-    'check_and_confirm': {'vi': 'Kiểm tra & Xác nhận', 'en': 'Review & Confirm'},
-    'voice_ai_converting': {'vi': '✨ Đang chuyển giọng nói thành văn bản qua AI...', 'en': '✨ Transcribing speech via AI...'},
-    'ai_processing': {'vi': '✨ Trợ lý đang xử lý...', 'en': '✨ Assistant is processing...'},
-    'voice_initializing': {'vi': 'Đang khởi tạo nhận diện giọng nói...', 'en': 'Initializing voice recognition...'},
+    'check_and_confirm': {
+      'vi': 'Kiểm tra & Xác nhận',
+      'en': 'Review & Confirm',
+    },
+    'voice_ai_converting': {
+      'vi': '✨ Đang chuyển giọng nói thành văn bản qua AI...',
+      'en': '✨ Transcribing speech via AI...',
+    },
+    'ai_processing': {
+      'vi': '✨ Trợ lý đang xử lý...',
+      'en': '✨ Assistant is processing...',
+    },
+    'voice_initializing': {
+      'vi': 'Đang khởi tạo nhận diện giọng nói...',
+      'en': 'Initializing voice recognition...',
+    },
     'voice_settings': {'vi': 'Cài đặt giọng nói', 'en': 'Voice Settings'},
     'chat_ai': {'vi': 'Chat AI', 'en': 'AI Chat'},
-    'daily_limit_title': {'vi': 'Hạn mức chi tiêu mỗi ngày', 'en': 'Daily Spending Limit'},
-    'daily_limit_desc': {'vi': 'Cảnh báo tức thì nếu tổng chi tiêu trong ngày vượt quá mức này', 'en': 'Instant alert if daily spending exceeds this amount'},
-    'daily_limit_enabled': {'vi': 'Bật cảnh báo hạn mức', 'en': 'Enable Limit Alert'},
-    'daily_limit_amount': {'vi': 'Hạn mức mỗi ngày', 'en': 'Daily Limit Amount'},
+    'daily_limit_title': {
+      'vi': 'Hạn mức chi tiêu mỗi ngày',
+      'en': 'Daily Spending Limit',
+    },
+    'daily_limit_desc': {
+      'vi': 'Cảnh báo tức thì nếu tổng chi tiêu trong ngày vượt quá mức này',
+      'en': 'Instant alert if daily spending exceeds this amount',
+    },
+    'daily_limit_enabled': {
+      'vi': 'Bật cảnh báo hạn mức',
+      'en': 'Enable Limit Alert',
+    },
+    'daily_limit_amount': {
+      'vi': 'Hạn mức mỗi ngày',
+      'en': 'Daily Limit Amount',
+    },
     'daily_limit_set_voice': {'vi': 'Nói hạn mức', 'en': 'Voice Limit'},
-    'daily_limit_warning_title': {'vi': '⚠️ CẢNH BÁO CHI TIÊU VƯỢT HẠN MỨC', 'en': '⚠️ DAILY SPENDING LIMIT EXCEEDED'},
-    'daily_limit_warning_body': {'vi': 'Hôm nay bạn đã chi tiêu {spent}, vượt hạn mức {limit}!', 'en': 'You have spent {spent} today, exceeding limit {limit}!'},
-    'daily_limit_saved': {'vi': 'Đã cập nhật hạn mức chi tiêu mỗi ngày!', 'en': 'Daily spending limit updated!'},
+    'daily_limit_warning_title': {
+      'vi': '⚠️ CẢNH BÁO CHI TIÊU VƯỢT HẠN MỨC',
+      'en': '⚠️ DAILY SPENDING LIMIT EXCEEDED',
+    },
+    'daily_limit_warning_body': {
+      'vi': 'Hôm nay bạn đã chi tiêu {spent}, vượt hạn mức {limit}!',
+      'en': 'You have spent {spent} today, exceeding limit {limit}!',
+    },
+    'daily_limit_saved': {
+      'vi': 'Đã cập nhật hạn mức chi tiêu mỗi ngày!',
+      'en': 'Daily spending limit updated!',
+    },
 
     // ══════════════════════════════════════════════════
     // AI Assistant & Feedback
     // ══════════════════════════════════════════════════
-    'ai_assistant_title': {'vi': 'Trợ lý AI Gemini', 'en': 'Gemini AI Assistant'},
+    'ai_assistant_title': {
+      'vi': 'Trợ lý AI Gemini',
+      'en': 'Gemini AI Assistant',
+    },
     'financial_health': {'vi': 'Sức khỏe tài chính', 'en': 'Financial Health'},
     'savings_rate': {'vi': 'Tỷ lệ tiết kiệm', 'en': 'Savings Rate'},
-    'lang_switched_en': {'vi': 'Đã chuyển ngôn ngữ ứng dụng sang Tiếng Anh!', 'en': 'App language switched to English!'},
-    'lang_switched_vi': {'vi': 'Đã chuyển ngôn ngữ ứng dụng sang Tiếng Việt!', 'en': 'App language switched to Vietnamese!'},
+    'lang_switched_en': {
+      'vi': 'Đã chuyển ngôn ngữ ứng dụng sang Tiếng Anh!',
+      'en': 'App language switched to English!',
+    },
+    'lang_switched_vi': {
+      'vi': 'Đã chuyển ngôn ngữ ứng dụng sang Tiếng Việt!',
+      'en': 'App language switched to Vietnamese!',
+    },
 
     // ══════════════════════════════════════════════════
     // Common Action & Feedback
@@ -619,7 +888,9 @@ class LanguageService extends ChangeNotifier {
 /// Extension cho BuildContext để truy cập t(), tCategory(), tWallet() với cơ chế tự động đăng ký reactive rebuild
 extension LocalizationExtension on BuildContext {
   String tr(String key) => LanguageScope.of(this).t(key);
-  String trCat(String categoryName) => LanguageScope.of(this).tCategory(categoryName);
-  String trWallet(String walletName) => LanguageScope.of(this).tWallet(walletName);
+  String trCat(String categoryName) =>
+      LanguageScope.of(this).tCategory(categoryName);
+  String trWallet(String walletName) =>
+      LanguageScope.of(this).tWallet(walletName);
   LanguageService get language => LanguageScope.of(this);
 }

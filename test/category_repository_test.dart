@@ -49,16 +49,19 @@ void main() {
   });
 
   group('CategoryRepository Tests', () {
-    test('getExpenseCategories returns default categories with All option', () async {
-      final repo = CategoryRepository();
-      final list = await repo.getExpenseCategories(includeAllOption: true);
+    test(
+      'getExpenseCategories returns default categories with All option',
+      () async {
+        final repo = CategoryRepository();
+        final list = await repo.getExpenseCategories(includeAllOption: true);
 
-      expect(list.isNotEmpty, true);
-      expect(list.first.name, 'Tất cả');
-      expect(list.any((c) => c.name == 'Ăn uống'), true);
-      expect(list.any((c) => c.name == 'Mua sắm'), true);
-      expect(list.any((c) => c.name == 'Di chuyển'), true);
-    });
+        expect(list.isNotEmpty, true);
+        expect(list.first.name, 'Tất cả');
+        expect(list.any((c) => c.name == 'Ăn uống'), true);
+        expect(list.any((c) => c.name == 'Mua sắm'), true);
+        expect(list.any((c) => c.name == 'Di chuyển'), true);
+      },
+    );
 
     test('getExpenseCategories without All option excludes Tất cả', () async {
       final repo = CategoryRepository();

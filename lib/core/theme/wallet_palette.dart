@@ -22,11 +22,7 @@ class WalletColorPreset {
     Alignment begin = Alignment.topLeft,
     Alignment end = Alignment.bottomRight,
   }) {
-    return LinearGradient(
-      colors: gradient,
-      begin: begin,
-      end: end,
-    );
+    return LinearGradient(colors: gradient, begin: begin, end: end);
   }
 }
 
@@ -168,7 +164,9 @@ class WalletPalette {
   /// Tạo gradient 2 màu mượt mà từ mã màu gốc của ví
   static List<Color> getGradientFromColor(Color baseColor) {
     final hsl = HSLColor.fromColor(baseColor);
-    final darker = hsl.withLightness((hsl.lightness - 0.22).clamp(0.08, 0.95)).toColor();
+    final darker = hsl
+        .withLightness((hsl.lightness - 0.22).clamp(0.08, 0.95))
+        .toColor();
     return [baseColor, darker];
   }
 }

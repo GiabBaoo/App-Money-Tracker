@@ -7,15 +7,13 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   Widget buildTestableWidget() {
-    return const ProviderScope(
-      child: MaterialApp(
-        home: HomeScreen(),
-      ),
-    );
+    return const ProviderScope(child: MaterialApp(home: HomeScreen()));
   }
 
   group('HomeScreen Redesign Widget Tests', () {
-    testWidgets('HomeScreen renders Floating Dock and 4 Quick Action buttons', (WidgetTester tester) async {
+    testWidgets('HomeScreen renders Floating Dock and 4 Quick Action buttons', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {
@@ -65,7 +63,9 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
     });
 
-    testWidgets('Switch tab via Floating Dock works smoothly', (WidgetTester tester) async {
+    testWidgets('Switch tab via Floating Dock works smoothly', (
+      WidgetTester tester,
+    ) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() {

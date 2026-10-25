@@ -15,7 +15,10 @@ class SettlementService {
     this._debtCalculator,
   );
 
-  Future<SettlementModel> createSettlement(CreateSettlementDto dto, String requesterId) async {
+  Future<SettlementModel> createSettlement(
+    CreateSettlementDto dto,
+    String requesterId,
+  ) async {
     if (dto.payerId != requesterId) {
       throw Exception('Chỉ người trả tiền mới có thể tạo thanh toán');
     }
@@ -25,9 +28,9 @@ class SettlementService {
     }
 
     final debts = await _debtRepository.getByGroupId(dto.groupId);
-    final relevantDebt = debts.where((d) => 
-      d.debtorId == dto.payerId && d.creditorId == dto.payeeId
-    ).firstOrNull;
+    final relevantDebt = debts
+        .where((d) => d.debtorId == dto.payerId && d.creditorId == dto.payeeId)
+        .firstOrNull;
 
     if (relevantDebt == null) {
       throw Exception('Không tìm thấy khoản nợ tương ứng');
@@ -42,7 +45,7 @@ class SettlementService {
 
   Future<void> confirmSettlement(String settlementId, String userId) async {
     final settlement = await _settlementRepository.getById(settlementId);
-    
+
     if (settlement.payeeId != userId) {
       throw Exception('Chỉ người nhận tiền mới có thể xác nhận');
     }
@@ -51,14 +54,17 @@ class SettlementService {
       throw Exception('Thanh toán đã được xử lý');
     }
 
-    await _settlementRepository.updateStatus(settlementId, SettlementStatus.confirmed);
-    
+    await _settlementRepository.updateStatus(
+      settlementId,
+      SettlementStatus.confirmed,
+    );
+
     await _debtCalculator.recalculateDebts(settlement.groupId);
   }
 
   Future<void> rejectSettlement(String settlementId, String userId) async {
     final settlement = await _settlementRepository.getById(settlementId);
-    
+
     if (settlement.payeeId != userId) {
       throw Exception('Chỉ người nhận tiền mới có thể từ chối');
     }
@@ -67,7 +73,10 @@ class SettlementService {
       throw Exception('Thanh toán đã được xử lý');
     }
 
-    await _settlementRepository.updateStatus(settlementId, SettlementStatus.rejected);
+    await _settlementRepository.updateStatus(
+      settlementId,
+      SettlementStatus.rejected,
+    );
   }
 
   Future<List<SettlementModel>> getGroupSettlements(String groupId) async {
@@ -80,7 +89,7 @@ class SettlementService {
 
   Future<void> deleteSettlement(String settlementId, String userId) async {
     final settlement = await _settlementRepository.getById(settlementId);
-    
+
     if (settlement.payerId != userId) {
       throw Exception('Chỉ người tạo mới có thể xóa thanh toán');
     }

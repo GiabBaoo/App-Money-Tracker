@@ -78,7 +78,10 @@ void main() {
       );
 
       expect(bOver.isOverBudget, isTrue);
-      expect(bOver.isNearLimit, isFalse); // Khi đã vượt ngân sách thì không còn là "sắp chạm" nữa
+      expect(
+        bOver.isNearLimit,
+        isFalse,
+      ); // Khi đã vượt ngân sách thì không còn là "sắp chạm" nữa
       expect(bOver.remainingAmount, equals(-500000.0));
       expect(bOver.progressPercentage, closeTo(1.25, 0.001));
     });
@@ -148,11 +151,15 @@ void main() {
       ];
 
       // Lọc chi tiêu thuần trong tháng 10/2026
-      final monthExpenseTxs = txs.where((tx) =>
-          tx.type == 'expense' &&
-          !tx.isTransfer &&
-          tx.date.month == 10 &&
-          tx.date.year == 2026).toList();
+      final monthExpenseTxs = txs
+          .where(
+            (tx) =>
+                tx.type == 'expense' &&
+                !tx.isTransfer &&
+                tx.date.month == 10 &&
+                tx.date.year == 2026,
+          )
+          .toList();
 
       expect(monthExpenseTxs.length, equals(3));
 
@@ -163,24 +170,30 @@ void main() {
       expect(anUongSpent, equals(800000.0));
 
       // Tính tổng chi cho ngân sách 'Tất cả'
-      final totalSpent = monthExpenseTxs.fold(0.0, (sum, tx) => sum + tx.amount);
+      final totalSpent = monthExpenseTxs.fold(
+        0.0,
+        (sum, tx) => sum + tx.amount,
+      );
       expect(totalSpent, equals(1800000.0)); // 500k + 300k + 1000k
     });
 
-    test('5. BudgetModel: Ngân sách có limit = 0 xử lý an toàn không bị chia cho 0', () {
-      final zeroBudget = BudgetModel(
-        id: 'b_zero',
-        uid: 'user_1',
-        category: 'Khác',
-        limitAmount: 0,
-        month: 10,
-        year: 2026,
-        currentSpent: 50000,
-      );
+    test(
+      '5. BudgetModel: Ngân sách có limit = 0 xử lý an toàn không bị chia cho 0',
+      () {
+        final zeroBudget = BudgetModel(
+          id: 'b_zero',
+          uid: 'user_1',
+          category: 'Khác',
+          limitAmount: 0,
+          month: 10,
+          year: 2026,
+          currentSpent: 50000,
+        );
 
-      expect(zeroBudget.progressPercentage, equals(0.0));
-      expect(zeroBudget.isOverBudget, isTrue);
-      expect(zeroBudget.remainingAmount, equals(-50000.0));
-    });
+        expect(zeroBudget.progressPercentage, equals(0.0));
+        expect(zeroBudget.isOverBudget, isTrue);
+        expect(zeroBudget.remainingAmount, equals(-50000.0));
+      },
+    );
   });
 }

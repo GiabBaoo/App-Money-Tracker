@@ -72,8 +72,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _descriptionController = TextEditingController();
   final FocusNode _noteFocusNode = FocusNode();
-  final ValueNotifier<bool> _isKeypadCollapsedNotifier = ValueNotifier<bool>(false);
-  final ValueNotifier<bool> _isHabitAutofilledNotifier = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _isKeypadCollapsedNotifier = ValueNotifier<bool>(
+    false,
+  );
+  final ValueNotifier<bool> _isHabitAutofilledNotifier = ValueNotifier<bool>(
+    false,
+  );
   Timer? _debounceHabitAutofillTimer;
   String? _autoFilledCategory;
   String? _autoFilledDescription;
@@ -169,7 +173,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         selectedCategoryName = 'Chi khác';
         selectedCategoryIcon = Icons.receipt_long_outlined;
       } else {
-        selectedCategoryName = widget.initialData!['category'] ??
+        selectedCategoryName =
+            widget.initialData!['category'] ??
             (isIncome ? 'Tiền lương' : 'Ăn uống');
         if (widget.initialData!['iconCode'] != null) {
           selectedCategoryIcon = IconData(
@@ -177,8 +182,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             fontFamily: 'MaterialIcons',
           );
         } else {
-          selectedCategoryIcon =
-              CategoryUtils.getCategoryIcon(selectedCategoryName);
+          selectedCategoryIcon = CategoryUtils.getCategoryIcon(
+            selectedCategoryName,
+          );
         }
       }
 
@@ -228,7 +234,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       }
     } else {
       selectedCategoryName = isIncome ? 'Tiền lương' : 'Ăn uống';
-      selectedCategoryIcon = CategoryUtils.getCategoryIcon(selectedCategoryName);
+      selectedCategoryIcon = CategoryUtils.getCategoryIcon(
+        selectedCategoryName,
+      );
       if (!isIncome) {
         _tryAutoFetchLocation();
       }
@@ -273,18 +281,23 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           _wallets = wallets;
           WalletModel? targetWallet;
           if (widget.initialData?['walletName'] != null && wallets.isNotEmpty) {
-            final wName =
-                widget.initialData!['walletName'].toString().toLowerCase();
-            final matched =
-                wallets.where((w) => w.name.toLowerCase().contains(wName));
+            final wName = widget.initialData!['walletName']
+                .toString()
+                .toLowerCase();
+            final matched = wallets.where(
+              (w) => w.name.toLowerCase().contains(wName),
+            );
             if (matched.isNotEmpty) {
               targetWallet = matched.first;
             }
           }
-          _selectedWallet = targetWallet ??
+          _selectedWallet =
+              targetWallet ??
               (wallets.isNotEmpty
-                  ? wallets.firstWhere((w) => w.isDefault,
-                      orElse: () => wallets.first)
+                  ? wallets.firstWhere(
+                      (w) => w.isDefault,
+                      orElse: () => wallets.first,
+                    )
                   : null);
         });
       }
@@ -302,7 +315,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         if (selectedCategoryName == _autoFilledCategory) {
           setState(() {
             selectedCategoryName = isIncome ? 'Tiền lương' : 'Ăn uống';
-            selectedCategoryIcon = CategoryUtils.getCategoryIcon(selectedCategoryName);
+            selectedCategoryIcon = CategoryUtils.getCategoryIcon(
+              selectedCategoryName,
+            );
           });
         }
         if (_descriptionController.text == _autoFilledDescription) {
@@ -330,7 +345,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       if (pattern != null) {
         setState(() {
           selectedCategoryName = pattern.category;
-          selectedCategoryIcon = CategoryUtils.getCategoryIcon(pattern.category);
+          selectedCategoryIcon = CategoryUtils.getCategoryIcon(
+            pattern.category,
+          );
         });
         if (pattern.description.isNotEmpty) {
           _descriptionController.text = pattern.description;
@@ -346,7 +363,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           if (selectedCategoryName == _autoFilledCategory) {
             setState(() {
               selectedCategoryName = isIncome ? 'Tiền lương' : 'Ăn uống';
-              selectedCategoryIcon = CategoryUtils.getCategoryIcon(selectedCategoryName);
+              selectedCategoryIcon = CategoryUtils.getCategoryIcon(
+                selectedCategoryName,
+              );
             });
           }
           if (_descriptionController.text == _autoFilledDescription) {
@@ -401,7 +420,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     _onAmountChanged('');
   }
 
-
   void _onSelectKeywordTag(String keyword) {
     HapticFeedback.lightImpact();
     _descriptionController.text = keyword;
@@ -422,7 +440,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
     final amount = _currentAmountValue;
     if (amount <= 0) {
-      TopToast.show(context, context.tr('transfer_amount_error'), isError: true);
+      TopToast.show(
+        context,
+        context.tr('transfer_amount_error'),
+        isError: true,
+      );
       return;
     }
 
@@ -436,13 +458,15 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         final groupId = widget.initialData!['groupId'];
         final fundActionType =
             widget.initialData!['fundActionType'] == 'withdraw'
-                ? TransactionType.withdraw
-                : TransactionType.contribute;
+            ? TransactionType.withdraw
+            : TransactionType.contribute;
         final isPersonalGroup = widget.initialData?['isPersonalGroup'] == true;
 
         final userNameAsync = await ref.read(currentUserNameProvider.future);
 
-        await ref.read(fundTransactionRepositoryProvider).create(
+        await ref
+            .read(fundTransactionRepositoryProvider)
+            .create(
               groupId: groupId,
               userId: uid,
               userName: userNameAsync,
@@ -455,7 +479,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             );
       } else {
         if (_selectedWallet == null) {
-          TopToast.show(context, context.tr('select_wallet_prompt'), isError: true);
+          TopToast.show(
+            context,
+            context.tr('select_wallet_prompt'),
+            isError: true,
+          );
           setState(() => _isLoading = false);
           return;
         }
@@ -468,12 +496,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         String finalStoragePath = '';
 
         if (_pickedPhoto != null) {
-          final receiptRes =
-              await ReceiptStorageService().processAndUploadReceipt(
-            uid: uid,
-            transactionId: transactionId,
-            pickedFile: File(_pickedPhoto!.path),
-          );
+          final receiptRes = await ReceiptStorageService()
+              .processAndUploadReceipt(
+                uid: uid,
+                transactionId: transactionId,
+                pickedFile: File(_pickedPhoto!.path),
+              );
           permanentLocalPath = receiptRes.photoLocalPath;
           finalPhotoUrl = receiptRes.photoUrl;
           finalStoragePath = receiptRes.photoStoragePath;
@@ -508,13 +536,17 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         await TransactionBalanceService().addTransactionAtomic(transaction);
 
         // Chạy các tác vụ nền không chặn UI thread
-        unawaited(_runBackgroundPostSaveTasks(amount, isIncome, selectedCategoryName));
+        unawaited(
+          _runBackgroundPostSaveTasks(amount, isIncome, selectedCategoryName),
+        );
       }
 
       if (!mounted) return;
       TopToast.show(
         context,
-        isIncome ? context.tr('add_income_success') : context.tr('add_expense_success'),
+        isIncome
+            ? context.tr('add_income_success')
+            : context.tr('add_expense_success'),
       );
       // Đóng màn hình ngay lập tức để đạt độ mượt tối đa
       Navigator.pop(context, true);
@@ -536,10 +568,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       }
       SmartNotificationService.instance.syncDailyReminderState();
       if (!isInc) {
-        SmartNotificationService.instance
-            .checkDailySpendingLimit(newExpenseAmount: amount);
-        SmartNotificationService.instance
-            .checkMonthlySpendingLimit(newExpenseAmount: amount);
+        SmartNotificationService.instance.checkDailySpendingLimit(
+          newExpenseAmount: amount,
+        );
+        SmartNotificationService.instance.checkMonthlySpendingLimit(
+          newExpenseAmount: amount,
+        );
         SmartNotificationService.instance.checkSpendingSpike(
           amount: amount,
           category: catName,
@@ -559,7 +593,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       _longitude = null;
       _isLocating = false;
       selectedCategoryName = isIncome ? 'Tiền lương' : 'Ăn uống';
-      selectedCategoryIcon = CategoryUtils.getCategoryIcon(selectedCategoryName);
+      selectedCategoryIcon = CategoryUtils.getCategoryIcon(
+        selectedCategoryName,
+      );
       final now = DateTime.now();
       _selectedDate = DateTime(now.year, now.month, now.day);
       _selectedTime = TimeOfDay.now();
@@ -595,12 +631,15 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  isIncome ? context.tr('transfer_to') : context.tr('transfer_from'),
-                  style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: context.textPrimaryColor,
-                  ),
+                  isIncome
+                      ? context.tr('transfer_to')
+                      : context.tr('transfer_from'),
+                  style: (context.textTheme.titleMedium ?? const TextStyle())
+                      .copyWith(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: context.textPrimaryColor,
+                      ),
                 ),
                 const SizedBox(height: 14),
                 ..._wallets.map((w) {
@@ -614,9 +653,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                           : context.inputBgColor,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isSel
-                            ? context.brandColor
-                            : context.borderColor,
+                        color: isSel ? context.brandColor : context.borderColor,
                         width: 1.5,
                       ),
                     ),
@@ -731,14 +768,15 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
   Future<void> _pickTransactionPhotoFromSource(ImageSource source) async {
     _noteFocusNode.unfocus();
-    final picked =
-        await BiometricService.instance.runWithPickerSuspended(() async {
-      return await _imagePicker.pickImage(
-        source: source,
-        maxWidth: 1600,
-        imageQuality: 85,
-      );
-    });
+    final picked = await BiometricService.instance.runWithPickerSuspended(
+      () async {
+        return await _imagePicker.pickImage(
+          source: source,
+          maxWidth: 1600,
+          imageQuality: 85,
+        );
+      },
+    );
 
     if (picked == null) return;
     setState(() => _pickedPhoto = picked);
@@ -773,11 +811,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               const SizedBox(height: 16),
               Text(
                 context.tr('receipt_photo'),
-                style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
-                  color: context.textPrimaryColor,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: (context.textTheme.titleMedium ?? const TextStyle())
+                    .copyWith(
+                      color: context.textPrimaryColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
               const SizedBox(height: 18),
               ElevatedButton.icon(
@@ -790,8 +829,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   ),
                 ),
                 icon: const Icon(Icons.camera_alt_rounded),
-                label: Text(context.tr('take_photo'),
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                label: Text(
+                  context.tr('take_photo'),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 onPressed: () async {
                   Navigator.pop(context);
                   await _pickTransactionPhotoFromSource(ImageSource.camera);
@@ -802,16 +843,16 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: context.textPrimaryColor,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: BorderSide(
-                    color: context.borderColor,
-                  ),
+                  side: BorderSide(color: context.borderColor),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 icon: const Icon(Icons.photo_library_rounded),
-                label: Text(context.tr('choose_from_gallery'),
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                label: Text(
+                  context.tr('choose_from_gallery'),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 onPressed: () async {
                   Navigator.pop(context);
                   await _pickTransactionPhotoFromSource(ImageSource.gallery);
@@ -861,7 +902,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         }
       },
       child: Scaffold(
-        resizeToAvoidBottomInset: true, // Tự động cuộn êm ái khi bàn phím chữ mở
+        resizeToAvoidBottomInset:
+            true, // Tự động cuộn êm ái khi bàn phím chữ mở
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Container(
           decoration: BoxDecoration(
@@ -886,8 +928,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               children: [
                 // ════════ TOP APP BAR ════════
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 8,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -918,7 +962,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       Text(
                         widget.initialData?['isFundAction'] == true
                             ? context.tr('fund_action')
-                            : (isIncome ? context.tr('tx_income') : context.tr('tx_expense')),
+                            : (isIncome
+                                  ? context.tr('tx_income')
+                                  : context.tr('tx_expense')),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 17.5,
@@ -971,13 +1017,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                             decoration: BoxDecoration(
                               color: context.cardBgColor,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: context.borderColor,
-                              ),
+                              border: Border.all(color: context.borderColor),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(
-                                      alpha: isDark ? 0.3 : 0.04),
+                                    alpha: isDark ? 0.3 : 0.04,
+                                  ),
                                   blurRadius: 10,
                                   offset: const Offset(0, 2),
                                 ),
@@ -998,12 +1043,16 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                         isIncome = false;
                                         selectedCategoryName = 'Ăn uống';
                                         selectedCategoryIcon =
-                                            CategoryUtils.getCategoryIcon('Ăn uống');
+                                            CategoryUtils.getCategoryIcon(
+                                              'Ăn uống',
+                                            );
                                       });
                                       _isHabitAutofilledNotifier.value = false;
                                       _autoFilledCategory = null;
                                       _autoFilledDescription = null;
-                                      _onAmountChanged(_amountRawNotifier.value);
+                                      _onAmountChanged(
+                                        _amountRawNotifier.value,
+                                      );
                                     }
                                   },
                                 ),
@@ -1020,12 +1069,16 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                         isIncome = true;
                                         selectedCategoryName = 'Tiền lương';
                                         selectedCategoryIcon =
-                                            CategoryUtils.getCategoryIcon('Tiền lương');
+                                            CategoryUtils.getCategoryIcon(
+                                              'Tiền lương',
+                                            );
                                       });
                                       _isHabitAutofilledNotifier.value = false;
                                       _autoFilledCategory = null;
                                       _autoFilledDescription = null;
-                                      _onAmountChanged(_amountRawNotifier.value);
+                                      _onAmountChanged(
+                                        _amountRawNotifier.value,
+                                      );
                                     }
                                   },
                                 ),
@@ -1062,13 +1115,15 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                   borderRadius: BorderRadius.circular(18),
                                   border: Border.all(
                                     color: activeColor.withValues(
-                                        alpha: isDark ? 0.35 : 0.25),
+                                      alpha: isDark ? 0.35 : 0.25,
+                                    ),
                                     width: 1.5,
                                   ),
                                   boxShadow: [
                                     BoxShadow(
                                       color: activeColor.withValues(
-                                          alpha: isDark ? 0.12 : 0.06),
+                                        alpha: isDark ? 0.12 : 0.06,
+                                      ),
                                       blurRadius: 18,
                                       offset: const Offset(0, 6),
                                     ),
@@ -1083,8 +1138,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                       children: [
                                         Text(
                                           isIncome
-                                              ? context.tr('income').toUpperCase()
-                                              : context.tr('expense').toUpperCase(),
+                                              ? context
+                                                    .tr('income')
+                                                    .toUpperCase()
+                                              : context
+                                                    .tr('expense')
+                                                    .toUpperCase(),
                                           style: TextStyle(
                                             fontSize: 11,
                                             fontWeight: FontWeight.w800,
@@ -1098,10 +1157,12 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                             vertical: 3,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: activeColor
-                                                .withValues(alpha: 0.12),
-                                            borderRadius:
-                                                BorderRadius.circular(12),
+                                            color: activeColor.withValues(
+                                              alpha: 0.12,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
                                           ),
                                           child: Text(
                                             'VND (₫)',
@@ -1131,12 +1192,19 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                         Expanded(
                                           child: Text(
                                             formattedAmount,
-                                            style: (context.textTheme.headlineLarge ?? const TextStyle()).copyWith(
-                                              fontSize: 32,
-                                              fontWeight: FontWeight.w800,
-                                              color: context.textPrimaryColor,
-                                              letterSpacing: -0.5,
-                                            ),
+                                            style:
+                                                (context
+                                                            .textTheme
+                                                            .headlineLarge ??
+                                                        const TextStyle())
+                                                    .copyWith(
+                                                      fontSize: 32,
+                                                      fontWeight:
+                                                          FontWeight.w800,
+                                                      color: context
+                                                          .textPrimaryColor,
+                                                      letterSpacing: -0.5,
+                                                    ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -1158,8 +1226,6 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                             },
                           ),
                         ),
-
-
 
                         const SizedBox(height: 14),
 
@@ -1189,18 +1255,17 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     return Container(
                       decoration: BoxDecoration(
                         color: context.cardBgColor,
-                        borderRadius:
-                            const BorderRadius.vertical(top: Radius.circular(24)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(24),
+                        ),
                         border: Border(
-                          top: BorderSide(
-                            color: context.borderColor,
-                            width: 1,
-                          ),
+                          top: BorderSide(color: context.borderColor, width: 1),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color:
-                                Colors.black.withValues(alpha: isDark ? 0.35 : 0.06),
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.35 : 0.06,
+                            ),
                             blurRadius: 16,
                             offset: const Offset(0, -4),
                           ),
@@ -1213,7 +1278,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                           ValueListenableBuilder<bool>(
                             valueListenable: _isKeypadCollapsedNotifier,
                             builder: (context, isCollapsed, _) {
-                              final shouldShowKeypad = !isTypingNote && !isCollapsed;
+                              final shouldShowKeypad =
+                                  !isTypingNote && !isCollapsed;
                               return Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -1224,22 +1290,30 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                       if (_noteFocusNode.hasFocus) {
                                         _noteFocusNode.unfocus();
                                       } else {
-                                        _isKeypadCollapsedNotifier.value = !isCollapsed;
+                                        _isKeypadCollapsedNotifier.value =
+                                            !isCollapsed;
                                       }
                                     },
                                     borderRadius: BorderRadius.circular(16),
                                     child: Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 16),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 5,
+                                        horizontal: 16,
+                                      ),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Container(
                                             width: 32,
                                             height: 4,
                                             decoration: BoxDecoration(
-                                              color: (isDark ? Colors.white30 : context.dividerColor),
-                                              borderRadius: BorderRadius.circular(2),
+                                              color: (isDark
+                                                  ? Colors.white30
+                                                  : context.dividerColor),
+                                              borderRadius:
+                                                  BorderRadius.circular(2),
                                             ),
                                           ),
                                           const SizedBox(width: 8),
@@ -1253,8 +1327,16 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                           const SizedBox(width: 4),
                                           Text(
                                             isTypingNote || !isCollapsed
-                                                ? (LanguageService.instance.isVietnamese ? 'Ẩn bàn phím' : 'Hide keypad')
-                                                : (LanguageService.instance.isVietnamese ? 'Hiện bàn phím' : 'Show keypad'),
+                                                ? (LanguageService
+                                                          .instance
+                                                          .isVietnamese
+                                                      ? 'Ẩn bàn phím'
+                                                      : 'Hide keypad')
+                                                : (LanguageService
+                                                          .instance
+                                                          .isVietnamese
+                                                      ? 'Hiện bàn phím'
+                                                      : 'Show keypad'),
                                             style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w600,
@@ -1310,11 +1392,15 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                     colors: isIncome
                                         ? [
                                             context.income,
-                                            context.income.withValues(alpha: 0.85),
+                                            context.income.withValues(
+                                              alpha: 0.85,
+                                            ),
                                           ]
                                         : [
                                             context.expense,
-                                            context.expense.withValues(alpha: 0.85),
+                                            context.expense.withValues(
+                                              alpha: 0.85,
+                                            ),
                                           ],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
@@ -1322,7 +1408,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: activeColor.withValues(alpha: 0.35),
+                                      color: activeColor.withValues(
+                                        alpha: 0.35,
+                                      ),
                                       blurRadius: 12,
                                       offset: const Offset(0, 4),
                                     ),
@@ -1413,9 +1501,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 Icon(
                   icon,
                   size: 15,
-                  color: isSelected
-                      ? Colors.white
-                      : context.textSecondaryColor,
+                  color: isSelected ? Colors.white : context.textSecondaryColor,
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -1449,7 +1535,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             children: [
               Expanded(
                 child: Text(
-                  (isIncome ? context.tr('top_income_categories') : context.tr('top_expense_categories')).toUpperCase(),
+                  (isIncome
+                          ? context.tr('top_income_categories')
+                          : context.tr('top_expense_categories'))
+                      .toUpperCase(),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
@@ -1468,7 +1557,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   final result = await Navigator.push(
                     context,
                     PageTransitions.slideRight(
-                        CategoryScreen(isIncome: isIncome, lockType: true)),
+                      CategoryScreen(isIncome: isIncome, lockType: true),
+                    ),
                   );
                   if (result != null) {
                     _onCategorySelected(result['name'], result['icon']);
@@ -1476,7 +1566,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 },
                 borderRadius: BorderRadius.circular(8),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -1488,8 +1581,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                           color: activeColor,
                         ),
                       ),
-                      Icon(Icons.chevron_right_rounded,
-                          size: 16, color: activeColor),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 16,
+                        color: activeColor,
+                      ),
                     ],
                   ),
                 ),
@@ -1504,7 +1600,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             return Padding(
               padding: const EdgeInsets.fromLTRB(4, 2, 4, 6),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 9,
+                  vertical: 3.5,
+                ),
                 decoration: BoxDecoration(
                   color: context.income.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
@@ -1556,7 +1655,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     final result = await Navigator.push(
                       context,
                       PageTransitions.slideRight(
-                          CategoryScreen(isIncome: isIncome, lockType: true)),
+                        CategoryScreen(isIncome: isIncome, lockType: true),
+                      ),
                     );
                     if (result != null) {
                       _onCategorySelected(result['name'], result['icon']);
@@ -1567,16 +1667,16 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     decoration: BoxDecoration(
                       color: context.inputBgColor,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: context.borderColor,
-                      ),
+                      border: Border.all(color: context.borderColor),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.more_horiz_rounded,
-                            size: 16,
-                            color: context.textSecondaryColor),
+                        Icon(
+                          Icons.more_horiz_rounded,
+                          size: 16,
+                          color: context.textSecondaryColor,
+                        ),
                         const SizedBox(width: 5),
                         Text(
                           '${context.tr('other')}...',
@@ -1611,27 +1711,26 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                         : context.inputBgColor,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isSel
-                          ? vibrantColor
-                          : context.borderColor,
+                      color: isSel ? vibrantColor : context.borderColor,
                       width: isSel ? 1.5 : 1.0,
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(catIcon,
-                          size: 16,
-                          color: isSel
-                              ? vibrantColor
-                              : context.textSecondaryColor),
+                      Icon(
+                        catIcon,
+                        size: 16,
+                        color: isSel
+                            ? vibrantColor
+                            : context.textSecondaryColor,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         context.trCat(catName),
                         style: TextStyle(
                           fontSize: 12.5,
-                          fontWeight:
-                              isSel ? FontWeight.w700 : FontWeight.w600,
+                          fontWeight: isSel ? FontWeight.w700 : FontWeight.w600,
                           color: isSel
                               ? (isDark ? Colors.white : vibrantColor)
                               : context.textPrimaryColor,
@@ -1691,9 +1790,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 decoration: BoxDecoration(
                   color: context.inputBgColor,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: context.borderColor,
-                  ),
+                  border: Border.all(color: context.borderColor),
                 ),
                 child: Row(
                   children: [
@@ -1724,8 +1821,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                             color: context.textMutedColor,
                           ),
                           border: InputBorder.none,
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 12),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                          ),
                         ),
                         // Đã bỏ onChanged: setState - gõ chữ 120fps không lag
                       ),
@@ -1762,7 +1860,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           // 1. Chọn ví
           _buildQuickOptionPill(
             icon: _selectedWallet?.icon ?? Icons.account_balance_wallet_rounded,
-            label: _selectedWallet != null ? context.trWallet(_selectedWallet!.name) : context.tr('wallet'),
+            label: _selectedWallet != null
+                ? context.trWallet(_selectedWallet!.name)
+                : context.tr('wallet'),
             iconColor: Color(_selectedWallet?.colorValue ?? 0xFF438883),
             isDark: isDark,
             onTap: _pickWallet,
@@ -1795,7 +1895,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             icon: _pickedPhoto != null
                 ? Icons.check_circle_rounded
                 : Icons.add_a_photo_rounded,
-            label: _pickedPhoto != null ? context.tr('done') : context.tr('receipt_photo'),
+            label: _pickedPhoto != null
+                ? context.tr('done')
+                : context.tr('receipt_photo'),
             iconColor: _pickedPhoto != null
                 ? const Color(0xFF10B981)
                 : const Color(0xFF64748B),
@@ -1810,13 +1912,17 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             icon: _isLocating
                 ? Icons.sync_rounded
                 : (_locationName != null && _locationName!.isNotEmpty
-                    ? Icons.location_on_rounded
-                    : Icons.add_location_alt_rounded),
+                      ? Icons.location_on_rounded
+                      : Icons.add_location_alt_rounded),
             label: _isLocating
-                ? (LanguageService.instance.isVietnamese ? 'Đang định vị...' : 'Locating...')
+                ? (LanguageService.instance.isVietnamese
+                      ? 'Đang định vị...'
+                      : 'Locating...')
                 : (_locationName != null && _locationName!.isNotEmpty
-                    ? _locationName!
-                    : (LanguageService.instance.isVietnamese ? 'Vị trí' : 'Location')),
+                      ? _locationName!
+                      : (LanguageService.instance.isVietnamese
+                            ? 'Vị trí'
+                            : 'Location')),
             iconColor: _locationName != null && _locationName!.isNotEmpty
                 ? const Color(0xFFF59E0B)
                 : const Color(0xFF64748B),
@@ -1848,9 +1954,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               : context.inputBgColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isHighlighted
-                ? iconColor
-                : context.borderColor,
+            color: isHighlighted ? iconColor : context.borderColor,
           ),
         ),
         child: Row(
@@ -1934,7 +2038,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
               ),
               decoration: BoxDecoration(
                 color: context.cardBgColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1987,26 +2093,33 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                   TextField(
                     controller: textController,
                     decoration: InputDecoration(
-                      hintText: isVi ? 'Nhập tên quán / địa danh...' : 'Enter place name...',
-                      prefixIcon: Icon(Icons.place_outlined, color: context.brandColor),
+                      hintText: isVi
+                          ? 'Nhập tên quán / địa danh...'
+                          : 'Enter place name...',
+                      prefixIcon: Icon(
+                        Icons.place_outlined,
+                        color: context.brandColor,
+                      ),
                       filled: true,
                       fillColor: context.inputBgColor,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 14,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: context.borderColor,
-                        ),
+                        borderSide: BorderSide(color: context.borderColor),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: context.borderColor,
-                        ),
+                        borderSide: BorderSide(color: context.borderColor),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: context.brandColor, width: 1.5),
+                        borderSide: BorderSide(
+                          color: context.brandColor,
+                          width: 1.5,
+                        ),
                       ),
                     ),
                     style: TextStyle(
@@ -2021,19 +2134,26 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                       backgroundColor: context.brandColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                     icon: _isLocating
                         ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
                           )
                         : const Icon(Icons.my_location_rounded, size: 20),
                     label: Text(
                       _isLocating
                           ? (isVi ? 'Đang xác định GPS...' : 'Locating GPS...')
-                          : (isVi ? 'Lấy vị trí GPS hiện tại' : 'Get current GPS location'),
+                          : (isVi
+                                ? 'Lấy vị trí GPS hiện tại'
+                                : 'Get current GPS location'),
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     onPressed: _isLocating
@@ -2043,7 +2163,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                             setState(() => _isLocating = true);
 
                             // Kiểm tra dịch vụ vị trí
-                            final isServiceEnabled = await LocationService.instance.isLocationServiceEnabled();
+                            final isServiceEnabled = await LocationService
+                                .instance
+                                .isLocationServiceEnabled();
                             if (!isServiceEnabled) {
                               setState(() => _isLocating = false);
                               if (mounted) {
@@ -2053,9 +2175,11 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                             }
 
                             // Kiểm tra quyền
-                            var perm = await LocationService.instance.checkPermission();
+                            var perm = await LocationService.instance
+                                .checkPermission();
                             if (perm == LocationPermission.denied) {
-                              perm = await LocationService.instance.requestPermission();
+                              perm = await LocationService.instance
+                                  .requestPermission();
                             }
 
                             if (perm == LocationPermission.deniedForever) {
@@ -2071,16 +2195,19 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                               if (mounted) {
                                 TopToast.show(
                                   context,
-                                  isVi ? 'Chưa cấp quyền vị trí' : 'Location permission denied',
+                                  isVi
+                                      ? 'Chưa cấp quyền vị trí'
+                                      : 'Location permission denied',
                                   isError: true,
                                 );
                               }
                               return;
                             }
 
-                            final res = await LocationService.instance.getCurrentPlaceName(
-                              timeout: const Duration(seconds: 5),
-                            );
+                            final res = await LocationService.instance
+                                .getCurrentPlaceName(
+                                  timeout: const Duration(seconds: 5),
+                                );
 
                             setState(() => _isLocating = false);
 
@@ -2096,14 +2223,18 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                               if (mounted) {
                                 TopToast.show(
                                   context,
-                                  isVi ? 'Đã định vị: ${res.placeName}' : 'Located: ${res.placeName}',
+                                  isVi
+                                      ? 'Đã định vị: ${res.placeName}'
+                                      : 'Located: ${res.placeName}',
                                 );
                               }
                             } else {
                               if (mounted) {
                                 TopToast.show(
                                   context,
-                                  isVi ? 'Không thể lấy vị trí. Vui lòng nhập tay.' : 'Could not locate. Please enter manually.',
+                                  isVi
+                                      ? 'Không thể lấy vị trí. Vui lòng nhập tay.'
+                                      : 'Could not locate. Please enter manually.',
                                   isError: true,
                                 );
                               }
@@ -2116,10 +2247,10 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: context.textPrimaryColor,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(
-                        color: context.borderColor,
+                      side: BorderSide(color: context.borderColor),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                     onPressed: () {
                       final customName = textController.text.trim();

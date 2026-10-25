@@ -61,41 +61,49 @@ void main() {
     final allTxs = [txMaiLongMart2020, txCurrentMonth];
     final wallets = [walletCash, walletMomo];
 
-    test('1. Khi chưa tìm kiếm: Bộ lọc month_to_date ẩn giao dịch năm 2020', () {
-      final start = DateTime(now.year, now.month, 1);
-      final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
+    test(
+      '1. Khi chưa tìm kiếm: Bộ lọc month_to_date ẩn giao dịch năm 2020',
+      () {
+        final start = DateTime(now.year, now.month, 1);
+        final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
 
-      final filtered = allTxs.where((tx) {
-        final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
-        return !txDate.isBefore(start) && !txDate.isAfter(end);
-      }).toList();
+        final filtered = allTxs.where((tx) {
+          final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
+          return !txDate.isBefore(start) && !txDate.isAfter(end);
+        }).toList();
 
-      expect(filtered.length, 1);
-      expect(filtered.first.id, 'tx_current_month');
-      expect(filtered.any((tx) => tx.id == 'tx_mai_long_mart_2020'), isFalse);
-    });
+        expect(filtered.length, 1);
+        expect(filtered.first.id, 'tx_current_month');
+        expect(filtered.any((tx) => tx.id == 'tx_mai_long_mart_2020'), isFalse);
+      },
+    );
 
-    test('2. Khi tìm kiếm từ khóa "hảo hảo": Tự động tìm kiếm Toàn thời gian và thấy giao dịch năm 2020', () {
-      const searchQuery = 'hảo hảo';
+    test(
+      '2. Khi tìm kiếm từ khóa "hảo hảo": Tự động tìm kiếm Toàn thời gian và thấy giao dịch năm 2020',
+      () {
+        const searchQuery = 'hảo hảo';
 
-      // Logic All-Time Search: Khi có searchQuery, bỏ qua bộ lọc month_to_date
-      final filtered = allTxs.where((tx) {
-        final desc = tx.description.toLowerCase();
-        final cat = tx.category.toLowerCase();
-        final amt = tx.amount.toString();
-        final formattedAmt = CurrencyUtils.formatCurrency(tx.amount).toLowerCase();
+        // Logic All-Time Search: Khi có searchQuery, bỏ qua bộ lọc month_to_date
+        final filtered = allTxs.where((tx) {
+          final desc = tx.description.toLowerCase();
+          final cat = tx.category.toLowerCase();
+          final amt = tx.amount.toString();
+          final formattedAmt = CurrencyUtils.formatCurrency(
+            tx.amount,
+          ).toLowerCase();
 
-        return desc.contains(searchQuery) ||
-            cat.contains(searchQuery) ||
-            amt.contains(searchQuery) ||
-            formattedAmt.contains(searchQuery);
-      }).toList();
+          return desc.contains(searchQuery) ||
+              cat.contains(searchQuery) ||
+              amt.contains(searchQuery) ||
+              formattedAmt.contains(searchQuery);
+        }).toList();
 
-      expect(filtered.length, 1);
-      expect(filtered.first.id, 'tx_mai_long_mart_2020');
-      expect(filtered.first.amount, 150000);
-      expect(filtered.first.description, contains('Mỳ hảo hảo'));
-    });
+        expect(filtered.length, 1);
+        expect(filtered.first.id, 'tx_mai_long_mart_2020');
+        expect(filtered.first.amount, 150000);
+        expect(filtered.first.description, contains('Mỳ hảo hảo'));
+      },
+    );
 
     test('3. Tìm kiếm theo định dạng tiền tệ "150.000" tìm thấy giao dịch', () {
       const searchQuery = '150.000';
@@ -104,7 +112,9 @@ void main() {
         final desc = tx.description.toLowerCase();
         final cat = tx.category.toLowerCase();
         final amt = tx.amount.toString();
-        final formattedAmt = CurrencyUtils.formatCurrency(tx.amount).toLowerCase();
+        final formattedAmt = CurrencyUtils.formatCurrency(
+          tx.amount,
+        ).toLowerCase();
 
         return desc.contains(searchQuery) ||
             cat.contains(searchQuery) ||
@@ -123,9 +133,13 @@ void main() {
         final desc = tx.description.toLowerCase();
         final cat = tx.category.toLowerCase();
         final amt = tx.amount.toString();
-        final formattedAmt = CurrencyUtils.formatCurrency(tx.amount).toLowerCase();
+        final formattedAmt = CurrencyUtils.formatCurrency(
+          tx.amount,
+        ).toLowerCase();
         final walletMatches = wallets.where((w) => w.id == tx.walletId);
-        final walletName = walletMatches.isNotEmpty ? walletMatches.first.name.toLowerCase() : '';
+        final walletName = walletMatches.isNotEmpty
+            ? walletMatches.first.name.toLowerCase()
+            : '';
 
         return desc.contains(searchQuery) ||
             cat.contains(searchQuery) ||
@@ -153,7 +167,8 @@ void main() {
       );
 
       final now = DateTime.now();
-      final isOldDate = now.difference(receiptItem.date).inDays.abs() > 30 ||
+      final isOldDate =
+          now.difference(receiptItem.date).inDays.abs() > 30 ||
           receiptItem.date.year != now.year;
 
       expect(isOldDate, isTrue);
@@ -196,41 +211,61 @@ void main() {
       expect(updatedItem.date.day, today.day);
 
       // Khi chuyển sang hôm nay, nó không còn là old date nữa
-      final isOldDate = DateTime.now().difference(updatedItem.date).inDays.abs() > 30 ||
+      final isOldDate =
+          DateTime.now().difference(updatedItem.date).inDays.abs() > 30 ||
           updatedItem.date.year != DateTime.now().year;
       expect(isOldDate, isFalse);
     });
 
-    test('4. Phân giải targetWalletId chính xác khi người dùng chọn Ví MoMo', () {
-      final wallets = [
-        WalletModel(id: 'wallet_cash', uid: 'u1', name: 'Tiền mặt', type: 'cash', iconCode: 100, colorValue: 0xFF438883, balance: 500000),
-        WalletModel(id: 'wallet_momo', uid: 'u1', name: 'Ví MoMo', type: 'e_wallet', iconCode: 100, colorValue: 0xFF438883, balance: 1000000),
-      ];
+    test(
+      '4. Phân giải targetWalletId chính xác khi người dùng chọn Ví MoMo',
+      () {
+        final wallets = [
+          WalletModel(
+            id: 'wallet_cash',
+            uid: 'u1',
+            name: 'Tiền mặt',
+            type: 'cash',
+            iconCode: 100,
+            colorValue: 0xFF438883,
+            balance: 500000,
+          ),
+          WalletModel(
+            id: 'wallet_momo',
+            uid: 'u1',
+            name: 'Ví MoMo',
+            type: 'e_wallet',
+            iconCode: 100,
+            colorValue: 0xFF438883,
+            balance: 1000000,
+          ),
+        ];
 
-      final defaultWalletId = wallets.isNotEmpty ? wallets.first.id : '';
-      final item = AiTransactionItem(
-        type: 'expense',
-        category: 'Ăn uống',
-        categoryIconCode: 100,
-        amount: 150000,
-        description: 'Mỳ hảo hảo',
-        date: DateTime.now(),
-        walletName: 'Ví MoMo',
-      );
-
-      String targetWalletId = defaultWalletId;
-      if (item.walletName.isNotEmpty && wallets.isNotEmpty) {
-        final matched = wallets.where(
-          (w) => w.name.toLowerCase().contains(item.walletName.toLowerCase()),
+        final defaultWalletId = wallets.isNotEmpty ? wallets.first.id : '';
+        final item = AiTransactionItem(
+          type: 'expense',
+          category: 'Ăn uống',
+          categoryIconCode: 100,
+          amount: 150000,
+          description: 'Mỳ hảo hảo',
+          date: DateTime.now(),
+          walletName: 'Ví MoMo',
         );
-        if (matched.isNotEmpty) {
-          targetWalletId = matched.first.id;
-        }
-      }
 
-      // Đảm bảo không bị gán nhầm vào Tiền mặt mà gán chính xác vào Ví MoMo
-      expect(targetWalletId, 'wallet_momo');
-      expect(targetWalletId, isNot('wallet_cash'));
-    });
+        String targetWalletId = defaultWalletId;
+        if (item.walletName.isNotEmpty && wallets.isNotEmpty) {
+          final matched = wallets.where(
+            (w) => w.name.toLowerCase().contains(item.walletName.toLowerCase()),
+          );
+          if (matched.isNotEmpty) {
+            targetWalletId = matched.first.id;
+          }
+        }
+
+        // Đảm bảo không bị gán nhầm vào Tiền mặt mà gán chính xác vào Ví MoMo
+        expect(targetWalletId, 'wallet_momo');
+        expect(targetWalletId, isNot('wallet_cash'));
+      },
+    );
   });
 }

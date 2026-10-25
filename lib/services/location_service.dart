@@ -88,7 +88,8 @@ class LocationService {
 
       // 2. Kiểm tra hoặc xin quyền
       LocationPermission permission = await checkPermission();
-      if (permission == LocationPermission.denied && requestPermissionIfDenied) {
+      if (permission == LocationPermission.denied &&
+          requestPermissionIfDenied) {
         permission = await requestPermission();
       }
 
@@ -108,7 +109,9 @@ class LocationService {
           ),
         );
       } catch (e) {
-        debugPrint('LocationService.getCurrentPosition failed, trying last known position: $e');
+        debugPrint(
+          'LocationService.getCurrentPosition failed, trying last known position: $e',
+        );
         position = await Geolocator.getLastKnownPosition();
       }
 
@@ -118,12 +121,14 @@ class LocationService {
       }
 
       // 4. Phân giải tên địa danh bằng PlaceNameResolver
-      String? resolvedName = await PlaceNameResolver.instance.resolveDisplayName(
-        latitude: position.latitude,
-        longitude: position.longitude,
-      );
+      String? resolvedName = await PlaceNameResolver.instance
+          .resolveDisplayName(
+            latitude: position.latitude,
+            longitude: position.longitude,
+          );
 
-      final displayName = (resolvedName != null && resolvedName.trim().isNotEmpty)
+      final displayName =
+          (resolvedName != null && resolvedName.trim().isNotEmpty)
           ? resolvedName.trim()
           : '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
 

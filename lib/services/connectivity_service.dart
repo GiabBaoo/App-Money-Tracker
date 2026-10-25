@@ -66,8 +66,9 @@ class ConnectivityService {
 
     // Thử truy vấn socket DNS hoặc HTTP nhanh
     try {
-      final lookup = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 2));
+      final lookup = await InternetAddress.lookup(
+        'google.com',
+      ).timeout(const Duration(seconds: 2));
       if (lookup.isNotEmpty && lookup[0].rawAddress.isNotEmpty) {
         if (!_isOnline) {
           _isOnline = true;
@@ -77,7 +78,8 @@ class ConnectivityService {
       }
     } catch (_) {
       try {
-        final res = await http.head(Uri.parse('https://www.google.com'))
+        final res = await http
+            .head(Uri.parse('https://www.google.com'))
             .timeout(const Duration(seconds: 2));
         if (res.statusCode >= 200 && res.statusCode < 400) {
           if (!_isOnline) {

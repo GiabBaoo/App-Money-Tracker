@@ -33,12 +33,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     // Validate email
     if (email.isEmpty) {
-      _showSnackBar(isVi ? 'Vui lòng nhập email!' : 'Please enter your email!', isError: true);
+      _showSnackBar(
+        isVi ? 'Vui lòng nhập email!' : 'Please enter your email!',
+        isError: true,
+      );
       return;
     }
 
     if (!email.contains('@') || !email.contains('.')) {
-      _showSnackBar(isVi ? 'Email không hợp lệ!' : 'Invalid email address!', isError: true);
+      _showSnackBar(
+        isVi ? 'Email không hợp lệ!' : 'Invalid email address!',
+        isError: true,
+      );
       return;
     }
 
@@ -81,40 +87,49 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = context.isDark;
-    
+
     return Scaffold(
-      backgroundColor: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
+      backgroundColor: isDark
+          ? AppColors.primaryTealDark
+          : AppColors.primaryTeal,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Row(children: [
-                AnimatedScaleButton(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    Navigator.pop(context);
-                  },
-                  child: Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: context.colors.onPrimary.withValues(alpha: 0.15),
-                      border: Border.all(color: context.colors.onPrimary.withValues(alpha: 0.24), width: 1),
-                    ),
-                    child: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: context.colors.onPrimary,
-                      size: 18,
+              child: Row(
+                children: [
+                  AnimatedScaleButton(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: context.colors.onPrimary.withValues(alpha: 0.15),
+                        border: Border.all(
+                          color: context.colors.onPrimary.withValues(
+                            alpha: 0.24,
+                          ),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: context.colors.onPrimary,
+                        size: 18,
+                      ),
                     ),
                   ),
-                ),
-                const Spacer(),
-                AppLogo.wordmark(height: 32, color: context.colors.onPrimary),
-                const Spacer(flex: 2),
-              ]),
+                  const Spacer(),
+                  AppLogo.wordmark(height: 32, color: context.colors.onPrimary),
+                  const Spacer(flex: 2),
+                ],
+              ),
             ),
             const SizedBox(height: 20),
             Expanded(
@@ -122,11 +137,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: context.colors.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                   boxShadow: AppShadows.modal(isDark),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 40,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -168,20 +188,33 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         decoration: InputDecoration(
                           filled: true,
                           fillColor: context.inputBgColor,
-                          hintText: isVi ? 'Nhập email của bạn' : 'Enter your email',
+                          hintText: isVi
+                              ? 'Nhập email của bạn'
+                              : 'Enter your email',
                           hintStyle: context.textTheme.bodyMedium?.copyWith(
-                            color: context.colors.onSurfaceVariant.withValues(alpha: 0.7),
+                            color: context.colors.onSurfaceVariant.withValues(
+                              alpha: 0.7,
+                            ),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide(color: context.borderColor),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: context.colors.primary, width: 1.8),
+                            borderSide: BorderSide(
+                              color: context.colors.primary,
+                              width: 1.8,
+                            ),
                           ),
-                          suffixIcon: Icon(Icons.mail_outline, color: context.colors.onSurfaceVariant),
+                          suffixIcon: Icon(
+                            Icons.mail_outline,
+                            color: context.colors.onSurfaceVariant,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 50),
@@ -192,7 +225,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             Navigator.pop(context);
                           },
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
                             child: Text(
                               isVi ? 'Quay lại Đăng nhập' : 'Back to Login',
                               style: context.textTheme.bodyMedium?.copyWith(
@@ -217,13 +253,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: _isLoading
-                                  ? [context.colors.surfaceContainerHighest, context.colors.surfaceContainerHighest]
-                                  : [AppColors.primaryTealLight, AppColors.primaryTeal],
+                                  ? [
+                                      context.colors.surfaceContainerHighest,
+                                      context.colors.surfaceContainerHighest,
+                                    ]
+                                  : [
+                                      AppColors.primaryTealLight,
+                                      AppColors.primaryTeal,
+                                    ],
                             ),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: context.colors.primary.withValues(alpha: 0.3),
+                                color: context.colors.primary.withValues(
+                                  alpha: 0.3,
+                                ),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -240,11 +284,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                     ),
                                   )
                                 : Text(
-                                    isVi ? 'Gửi email đặt lại mật khẩu' : 'Send Reset Link',
-                                    style: context.textTheme.titleMedium?.copyWith(
-                                      color: context.colors.onPrimary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    isVi
+                                        ? 'Gửi email đặt lại mật khẩu'
+                                        : 'Send Reset Link',
+                                    style: context.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: context.colors.onPrimary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                   ),
                           ),
                         ),

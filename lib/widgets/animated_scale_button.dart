@@ -18,7 +18,8 @@ class AnimatedScaleButton extends StatefulWidget {
   State<AnimatedScaleButton> createState() => _AnimatedScaleButtonState();
 }
 
-class _AnimatedScaleButtonState extends State<AnimatedScaleButton> with SingleTickerProviderStateMixin {
+class _AnimatedScaleButtonState extends State<AnimatedScaleButton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -26,9 +27,10 @@ class _AnimatedScaleButtonState extends State<AnimatedScaleButton> with SingleTi
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: widget.duration);
-    _scaleAnimation = Tween<double>(begin: 1.0, end: widget.scaleDown).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutQuad),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: widget.scaleDown,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutQuad));
   }
 
   @override
@@ -63,10 +65,7 @@ class _AnimatedScaleButtonState extends State<AnimatedScaleButton> with SingleTi
       onTapCancel: _onTapCancel,
       behavior: HitTestBehavior.opaque,
       child: RepaintBoundary(
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: widget.child,
-        ),
+        child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
       ),
     );
   }

@@ -21,7 +21,8 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
   final GoalRepository _goalRepo = GoalRepository();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _targetAmountController = TextEditingController();
-  final TextEditingController _currentAmountController = TextEditingController();
+  final TextEditingController _currentAmountController =
+      TextEditingController();
 
   DateTime _deadline = DateTime.now().add(const Duration(days: 90));
   int _selectedColor = 0xFF438883;
@@ -54,8 +55,14 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
     if (widget.existingGoal != null) {
       final g = widget.existingGoal!;
       _titleController.text = g.title;
-      _targetAmountController.text = NumberFormat.currency(locale: 'vi_VN', symbol: '').format(g.targetAmount).trim();
-      _currentAmountController.text = NumberFormat.currency(locale: 'vi_VN', symbol: '').format(g.currentAmount).trim();
+      _targetAmountController.text = NumberFormat.currency(
+        locale: 'vi_VN',
+        symbol: '',
+      ).format(g.targetAmount).trim();
+      _currentAmountController.text = NumberFormat.currency(
+        locale: 'vi_VN',
+        symbol: '',
+      ).format(g.currentAmount).trim();
       _deadline = g.deadline;
       _selectedColor = g.colorValue;
       _selectedIconCode = g.iconCode;
@@ -74,18 +81,32 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
     final isVi = LanguageScope.of(context).isVietnamese;
     final title = _titleController.text.trim();
     if (title.isEmpty) {
-      TopToast.show(context, isVi ? 'Vui lòng nhập tên mục tiêu' : 'Please enter a goal name');
+      TopToast.show(
+        context,
+        isVi ? 'Vui lòng nhập tên mục tiêu' : 'Please enter a goal name',
+      );
       return;
     }
 
-    final cleanTarget = _targetAmountController.text.replaceAll(RegExp(r'[^\d]'), '');
+    final cleanTarget = _targetAmountController.text.replaceAll(
+      RegExp(r'[^\d]'),
+      '',
+    );
     final target = double.tryParse(cleanTarget) ?? 0.0;
     if (target <= 0) {
-      TopToast.show(context, isVi ? 'Số tiền mục tiêu phải lớn hơn 0' : 'Target amount must be greater than 0');
+      TopToast.show(
+        context,
+        isVi
+            ? 'Số tiền mục tiêu phải lớn hơn 0'
+            : 'Target amount must be greater than 0',
+      );
       return;
     }
 
-    final cleanCurrent = _currentAmountController.text.replaceAll(RegExp(r'[^\d]'), '');
+    final cleanCurrent = _currentAmountController.text.replaceAll(
+      RegExp(r'[^\d]'),
+      '',
+    );
     final current = double.tryParse(cleanCurrent) ?? 0.0;
 
     final goal = GoalModel(
@@ -101,10 +122,20 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
 
     if (widget.existingGoal != null) {
       await _goalRepo.updateGoal(goal);
-      if (mounted) TopToast.show(context, isVi ? 'Đã cập nhật mục tiêu!' : 'Goal updated successfully!');
+      if (mounted)
+        TopToast.show(
+          context,
+          isVi ? 'Đã cập nhật mục tiêu!' : 'Goal updated successfully!',
+        );
     } else {
       await _goalRepo.addGoal(goal);
-      if (mounted) TopToast.show(context, isVi ? 'Đã tạo mục tiêu mới thành công!' : 'New savings goal created successfully!');
+      if (mounted)
+        TopToast.show(
+          context,
+          isVi
+              ? 'Đã tạo mục tiêu mới thành công!'
+              : 'New savings goal created successfully!',
+        );
     }
 
     if (mounted) Navigator.pop(context, true);
@@ -130,7 +161,9 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                 child: Text(
                   widget.existingGoal != null
                       ? (isVi ? 'Sửa Mục Tiêu' : 'Edit Goal')
-                      : (isVi ? 'Mục Tiêu Tài Chính Mới' : 'New Financial Goal'),
+                      : (isVi
+                            ? 'Mục Tiêu Tài Chính Mới'
+                            : 'New Financial Goal'),
                   style: context.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: context.colors.onSurface,
@@ -140,7 +173,11 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.close, size: 20, color: context.colors.onSurfaceVariant),
+                icon: Icon(
+                  Icons.close,
+                  size: 20,
+                  color: context.colors.onSurfaceVariant,
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -163,7 +200,9 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               color: isDark ? AppColors.inputBgDark : context.inputBgColor,
               borderRadius: AppRadius.button,
               border: Border.all(
-                color: isDark ? context.colors.outline.withValues(alpha: 0.3) : context.borderColor,
+                color: isDark
+                    ? context.colors.outline.withValues(alpha: 0.3)
+                    : context.borderColor,
                 width: 1,
               ),
             ),
@@ -175,9 +214,13 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                 color: context.colors.onSurface,
               ),
               decoration: InputDecoration(
-                hintText: isVi ? 'Ví dụ: Mua xe máy mới, Du lịch Đà Lạt...' : 'e.g. Buy new bike, Travel...',
+                hintText: isVi
+                    ? 'Ví dụ: Mua xe máy mới, Du lịch Đà Lạt...'
+                    : 'e.g. Buy new bike, Travel...',
                 hintStyle: context.textTheme.bodyMedium?.copyWith(
-                  color: isDark ? AppColors.textMutedDark : context.colors.onSurfaceVariant.withValues(alpha: 0.7),
+                  color: isDark
+                      ? AppColors.textMutedDark
+                      : context.colors.onSurfaceVariant.withValues(alpha: 0.7),
                 ),
                 border: InputBorder.none,
               ),
@@ -202,7 +245,9 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               color: isDark ? AppColors.inputBgDark : context.inputBgColor,
               borderRadius: AppRadius.button,
               border: Border.all(
-                color: isDark ? context.colors.outline.withValues(alpha: 0.3) : context.borderColor,
+                color: isDark
+                    ? context.colors.outline.withValues(alpha: 0.3)
+                    : context.borderColor,
                 width: 1,
               ),
             ),
@@ -212,7 +257,9 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                   child: TextField(
                     controller: _targetAmountController,
                     keyboardType: TextInputType.number,
-                    cursorColor: isDark ? AppColors.primaryTealVibrant : primaryColor,
+                    cursorColor: isDark
+                        ? AppColors.primaryTealVibrant
+                        : primaryColor,
                     style: context.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: context.colors.onSurface,
@@ -220,7 +267,11 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                     decoration: InputDecoration(
                       hintText: isVi ? 'Ví dụ: 30.000.000' : 'e.g. 30,000,000',
                       hintStyle: context.textTheme.bodyMedium?.copyWith(
-                        color: isDark ? AppColors.textMutedDark : context.colors.onSurfaceVariant.withValues(alpha: 0.7),
+                        color: isDark
+                            ? AppColors.textMutedDark
+                            : context.colors.onSurfaceVariant.withValues(
+                                alpha: 0.7,
+                              ),
                       ),
                       border: InputBorder.none,
                       suffixText: 'đ',
@@ -253,7 +304,9 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
               color: isDark ? AppColors.inputBgDark : context.inputBgColor,
               borderRadius: AppRadius.button,
               border: Border.all(
-                color: isDark ? context.colors.outline.withValues(alpha: 0.3) : context.borderColor,
+                color: isDark
+                    ? context.colors.outline.withValues(alpha: 0.3)
+                    : context.borderColor,
                 width: 1,
               ),
             ),
@@ -265,9 +318,13 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                 color: context.colors.onSurface,
               ),
               decoration: InputDecoration(
-                hintText: isVi ? 'Ví dụ: 5.000.000 (mặc định 0đ)' : 'e.g. 5,000,000 (default 0)',
+                hintText: isVi
+                    ? 'Ví dụ: 5.000.000 (mặc định 0đ)'
+                    : 'e.g. 5,000,000 (default 0)',
                 hintStyle: context.textTheme.bodyMedium?.copyWith(
-                  color: isDark ? AppColors.textMutedDark : context.colors.onSurfaceVariant.withValues(alpha: 0.7),
+                  color: isDark
+                      ? AppColors.textMutedDark
+                      : context.colors.onSurfaceVariant.withValues(alpha: 0.7),
                 ),
                 border: InputBorder.none,
                 suffixText: 'đ',
@@ -308,7 +365,9 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                 color: isDark ? AppColors.inputBgDark : context.inputBgColor,
                 borderRadius: AppRadius.button,
                 border: Border.all(
-                  color: isDark ? context.colors.outline.withValues(alpha: 0.3) : context.borderColor,
+                  color: isDark
+                      ? context.colors.outline.withValues(alpha: 0.3)
+                      : context.borderColor,
                   width: 1,
                 ),
               ),
@@ -353,25 +412,34 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                 final icon = _icons[index];
                 final isSelected = icon.codePoint == _selectedIconCode;
                 return InkWell(
-                  onTap: () => setState(() => _selectedIconCode = icon.codePoint),
+                  onTap: () =>
+                      setState(() => _selectedIconCode = icon.codePoint),
                   borderRadius: BorderRadius.circular(10),
                   child: Container(
                     width: 44,
                     decoration: BoxDecoration(
                       color: isSelected
                           ? primaryColor.withValues(alpha: 0.2)
-                          : (isDark ? AppColors.inputBgDark : context.inputBgColor),
+                          : (isDark
+                                ? AppColors.inputBgDark
+                                : context.inputBgColor),
                       borderRadius: BorderRadius.circular(10),
                       border: isSelected
                           ? Border.all(color: primaryColor, width: 2)
                           : Border.all(
-                              color: isDark ? context.colors.outline.withValues(alpha: 0.3) : context.borderColor,
+                              color: isDark
+                                  ? context.colors.outline.withValues(
+                                      alpha: 0.3,
+                                    )
+                                  : context.borderColor,
                               width: 1,
                             ),
                     ),
                     child: Icon(
                       icon,
-                      color: isSelected ? primaryColor : context.colors.onSurfaceVariant,
+                      color: isSelected
+                          ? primaryColor
+                          : context.colors.onSurfaceVariant,
                       size: 22,
                     ),
                   ),
@@ -408,7 +476,9 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                     decoration: BoxDecoration(
                       color: Color(colorVal),
                       shape: BoxShape.circle,
-                      border: isSelected ? Border.all(color: Colors.white, width: 3) : null,
+                      border: isSelected
+                          ? Border.all(color: Colors.white, width: 3)
+                          : null,
                     ),
                     child: isSelected
                         ? const Icon(Icons.check, color: Colors.white, size: 18)

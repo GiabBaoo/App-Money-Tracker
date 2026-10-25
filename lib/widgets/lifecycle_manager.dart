@@ -22,7 +22,8 @@ class LifecycleManager extends StatefulWidget {
   State<LifecycleManager> createState() => _LifecycleManagerState();
 }
 
-class _LifecycleManagerState extends State<LifecycleManager> with WidgetsBindingObserver {
+class _LifecycleManagerState extends State<LifecycleManager>
+    with WidgetsBindingObserver {
   bool _wasInBackground = false;
   bool _isLocked = false;
 
@@ -50,7 +51,8 @@ class _LifecycleManagerState extends State<LifecycleManager> with WidgetsBinding
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
       // Chỉ ghi nhận vào background nếu app KHÔNG phải đang hiển thị hộp thoại quét vân tay của hệ thống
       // VÀ KHÔNG PHẢI đang mở camera/thư viện ảnh hệ thống bên ngoài
       if (!BiometricService.instance.isAuthenticating &&
@@ -80,7 +82,8 @@ class _LifecycleManagerState extends State<LifecycleManager> with WidgetsBinding
 
     final effectiveUid = AuthService().currentUid;
     if (effectiveUid != null) {
-      final enabled = await BiometricService.instance.isFingerprintEnabledForUser(effectiveUid);
+      final enabled = await BiometricService.instance
+          .isFingerprintEnabledForUser(effectiveUid);
       if (enabled && !_isLocked && mounted) {
         _lockApp();
       }
@@ -102,7 +105,7 @@ class _LifecycleManagerState extends State<LifecycleManager> with WidgetsBinding
       }
       return;
     }
-    
+
     nav.push(
       PageTransitions.fade(
         FingerprintUnlockScreen(

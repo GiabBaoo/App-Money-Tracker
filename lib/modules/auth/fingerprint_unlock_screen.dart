@@ -9,6 +9,7 @@ import '../../services/biometric_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/language_service.dart';
 import '../../widgets/animated_scale_button.dart';
+import '../../core/session/session_manager.dart';
 import 'login_screen.dart';
 
 /// Màn hình mở khóa bằng sinh trắc học (Vân tay / FaceID)
@@ -17,11 +18,7 @@ class FingerprintUnlockScreen extends StatefulWidget {
   final Widget? destination;
   final VoidCallback? onUnlock;
 
-  const FingerprintUnlockScreen({
-    super.key,
-    this.destination,
-    this.onUnlock,
-  });
+  const FingerprintUnlockScreen({super.key, this.destination, this.onUnlock});
 
   @override
   State<FingerprintUnlockScreen> createState() =>
@@ -61,7 +58,9 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
 
     final isVi = LanguageScope.of(context).isVietnamese;
     final ok = await BiometricService.instance.authenticateFingerprint(
-      localizedReason: isVi ? 'Chạm cảm biến để mở khóa ứng dụng Mono' : 'Touch sensor to unlock Mono app',
+      localizedReason: isVi
+          ? 'Chạm cảm biến để mở khóa ứng dụng Mono'
+          : 'Touch sensor to unlock Mono app',
     );
     if (!mounted) return;
 
@@ -69,18 +68,26 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
       HapticFeedback.mediumImpact();
       final effectiveUid = AuthService().currentUid;
       if (effectiveUid != null) {
-        unawaited(BiometricService.instance
-            .recordFingerprintLogin(uid: effectiveUid)
-            .catchError((_) {}));
+        if (SessionManager.instance.uidOrNull != effectiveUid) {
+          SessionManager.instance.activate(effectiveUid);
+        }
         unawaited(
-            AuthService().silentReauthenticateIfNeeded().catchError((_) => false));
+          BiometricService.instance
+              .recordFingerprintLogin(uid: effectiveUid)
+              .catchError((_) {}),
+        );
+        unawaited(
+          AuthService().silentReauthenticateIfNeeded().catchError((_) => false),
+        );
       }
       _goNext();
     } else {
       HapticFeedback.selectionClick();
       setState(() {
         _isAuthenticating = false;
-        _errorMessage = isVi ? 'Chưa nhận diện được vân tay. Vui lòng chạm lại!' : 'Fingerprint not recognized. Please try again!';
+        _errorMessage = isVi
+            ? 'Chưa nhận diện được vân tay. Vui lòng chạm lại!'
+            : 'Fingerprint not recognized. Please try again!';
       });
     }
   }
@@ -140,17 +147,21 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
                       shape: BoxShape.circle,
                       gradient: LinearGradient(
                         colors: _errorMessage != null
-                            ? [context.colors.error, context.colors.error.withValues(alpha: 0.8)]
+                            ? [
+                                context.colors.error,
+                                context.colors.error.withValues(alpha: 0.8),
+                              ]
                             : [primaryColor, AppColors.primaryTealVibrant],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: (_errorMessage != null
-                                  ? context.colors.error
-                                  : primaryColor)
-                              .withValues(alpha: isDark ? 0.35 : 0.22),
+                          color:
+                              (_errorMessage != null
+                                      ? context.colors.error
+                                      : primaryColor)
+                                  .withValues(alpha: isDark ? 0.35 : 0.22),
                           blurRadius: 24,
                           offset: const Offset(0, 8),
                         ),
@@ -181,7 +192,10 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  _errorMessage ?? (isVi ? 'Chạm vào cảm biến vân tay để mở khóa ứng dụng' : 'Touch the fingerprint sensor to unlock the app'),
+                  _errorMessage ??
+                      (isVi
+                          ? 'Chạm vào cảm biến vân tay để mở khóa ứng dụng'
+                          : 'Touch the fingerprint sensor to unlock the app'),
                   textAlign: TextAlign.center,
                   style: context.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w500,
@@ -197,7 +211,10 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
                   TextButton.icon(
                     style: TextButton.styleFrom(
                       foregroundColor: primaryColor,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                     ),
                     onPressed: _authenticate,
                     icon: const Icon(Icons.refresh_rounded, size: 18),
@@ -222,9 +239,7 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
                     decoration: BoxDecoration(
                       color: context.cardBg,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: context.borderColor,
-                      ),
+                      border: Border.all(color: context.borderColor),
                       boxShadow: AppShadows.card(isDark),
                     ),
                     child: Row(
@@ -237,7 +252,9 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          isVi ? 'Đăng nhập bằng mật khẩu' : 'Log in with password',
+                          isVi
+                              ? 'Đăng nhập bằng mật khẩu'
+                              : 'Log in with password',
                           style: context.textTheme.labelLarge?.copyWith(
                             color: context.colors.onSurface,
                             fontWeight: FontWeight.w600,

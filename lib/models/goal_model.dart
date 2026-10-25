@@ -15,6 +15,8 @@ class GoalModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String syncStatus;
+  final bool isDeleted;
+  final DateTime? deletedAt;
 
   GoalModel({
     required this.id,
@@ -30,14 +32,18 @@ class GoalModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     this.syncStatus = 'synced',
-  })  : createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+    this.isDeleted = false,
+    this.deletedAt,
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   IconData get icon => IconData(iconCode, fontFamily: 'MaterialIcons');
   Color get color => Color(colorValue);
 
-  double get progress => targetAmount > 0 ? (currentAmount / targetAmount).clamp(0.0, 1.0) : 0.0;
-  double get remainingAmount => (targetAmount - currentAmount) > 0 ? (targetAmount - currentAmount) : 0.0;
+  double get progress =>
+      targetAmount > 0 ? (currentAmount / targetAmount).clamp(0.0, 1.0) : 0.0;
+  double get remainingAmount =>
+      (targetAmount - currentAmount) > 0 ? (targetAmount - currentAmount) : 0.0;
   bool get isCompleted => currentAmount >= targetAmount;
 
   int get daysRemaining {
@@ -73,6 +79,8 @@ class GoalModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     String? syncStatus,
+    bool? isDeleted,
+    DateTime? deletedAt,
   }) {
     return GoalModel(
       id: id ?? this.id,
@@ -88,6 +96,8 @@ class GoalModel {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       syncStatus: syncStatus ?? this.syncStatus,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
     );
   }
 
@@ -106,6 +116,8 @@ class GoalModel {
       'createdAt': createdAt.millisecondsSinceEpoch,
       'updatedAt': updatedAt.millisecondsSinceEpoch,
       'syncStatus': syncStatus,
+      'isDeleted': isDeleted ? 1 : 0,
+      'deletedAt': deletedAt?.millisecondsSinceEpoch,
     };
   }
 
@@ -116,14 +128,24 @@ class GoalModel {
       title: map['title'] as String? ?? '',
       targetAmount: (map['targetAmount'] as num?)?.toDouble() ?? 0.0,
       currentAmount: (map['currentAmount'] as num?)?.toDouble() ?? 0.0,
-      deadline: DateTime.fromMillisecondsSinceEpoch(map['deadline'] as int? ?? DateTime.now().millisecondsSinceEpoch),
+      deadline: DateTime.fromMillisecondsSinceEpoch(
+        map['deadline'] as int? ?? DateTime.now().millisecondsSinceEpoch,
+      ),
       iconCode: map['iconCode'] as int? ?? 0xe532,
       colorValue: map['colorValue'] as int? ?? 0xFF438883,
       walletId: map['walletId'] as String? ?? '',
       note: map['note'] as String? ?? '',
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int? ?? 0),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt'] as int? ?? 0),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+        map['createdAt'] as int? ?? 0,
+      ),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(
+        map['updatedAt'] as int? ?? 0,
+      ),
       syncStatus: map['syncStatus'] as String? ?? 'synced',
+      isDeleted: (map['isDeleted'] as int? ?? 0) == 1,
+      deletedAt: map['deletedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['deletedAt'] as int)
+          : null,
     );
   }
 
@@ -140,6 +162,8 @@ class GoalModel {
       'note': note,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
+      'isDeleted': isDeleted,
+      if (deletedAt != null) 'deletedAt': Timestamp.fromDate(deletedAt!),
     };
   }
 
@@ -165,6 +189,10 @@ class GoalModel {
           ? (data['updatedAt'] as Timestamp).toDate()
           : DateTime.now(),
       syncStatus: 'synced',
+      isDeleted: data['isDeleted'] as bool? ?? false,
+      deletedAt: data['deletedAt'] != null
+          ? (data['deletedAt'] as Timestamp).toDate()
+          : null,
     );
   }
 }

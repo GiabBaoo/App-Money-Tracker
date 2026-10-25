@@ -21,7 +21,10 @@ class MonoDialog {
       transitionDuration: const Duration(milliseconds: 220),
       pageBuilder: (ctx, anim1, anim2) => child,
       transitionBuilder: (ctx, anim1, anim2, child) {
-        final curvedVal = CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic);
+        final curvedVal = CurvedAnimation(
+          parent: anim1,
+          curve: Curves.easeOutCubic,
+        );
         return Transform.scale(
           scale: Tween<double>(begin: 0.92, end: 1.0).evaluate(curvedVal),
           child: FadeTransition(
@@ -47,7 +50,11 @@ class MonoDialog {
     final isVi = LanguageScope.of(context).isVietnamese;
     final finalConfirmText = confirmText ?? (isVi ? 'Xác nhận' : 'Confirm');
     final finalCancelText = cancelText ?? (isVi ? 'Hủy' : 'Cancel');
-    final finalIcon = icon ?? (isDestructive ? Icons.warning_amber_rounded : Icons.help_outline_rounded);
+    final finalIcon =
+        icon ??
+        (isDestructive
+            ? Icons.warning_amber_rounded
+            : Icons.help_outline_rounded);
 
     return showCustom<bool>(
       context: context,
@@ -144,7 +151,10 @@ class MonoDialogContainer extends StatelessWidget {
         child: Dialog(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 24,
+          ),
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxWidth),
             child: ClipRRect(
@@ -159,10 +169,7 @@ class MonoDialogContainer extends StatelessWidget {
                     border: Border.all(color: borderColor, width: 1.2),
                     boxShadow: AppShadows.modal(isDark),
                   ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: child,
-                  ),
+                  child: Material(color: Colors.transparent, child: child),
                 ),
               ),
             ),
@@ -194,8 +201,8 @@ class _MonoConfirmationDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor = iconColor ??
-        (isDestructive ? context.expense : context.colors.primary);
+    final effectiveColor =
+        iconColor ?? (isDestructive ? context.expense : context.colors.primary);
 
     return MonoDialogContainer(
       child: Column(
@@ -236,9 +243,7 @@ class _MonoConfirmationDialog extends StatelessWidget {
                   onPressed: () => Navigator.of(context).pop(false),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 13),
-                    side: BorderSide(
-                      color: context.borderColor,
-                    ),
+                    side: BorderSide(color: context.borderColor),
                     shape: const RoundedRectangleBorder(
                       borderRadius: AppRadius.button,
                     ),
@@ -436,10 +441,12 @@ class _MonoStandardDialog extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: actions!
-                  .map((a) => Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
-                        child: a,
-                      ))
+                  .map(
+                    (a) => Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: a,
+                    ),
+                  )
                   .toList(),
             ),
           ],

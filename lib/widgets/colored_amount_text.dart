@@ -34,14 +34,23 @@ class ColoredAmountText extends StatelessWidget {
   /// Màu chuẩn hóa toàn app (Tương thích ngược)
   static const Color expenseColor = AppColors.expenseRose; // Đỏ san hô Rose
   static const Color incomeColor = AppColors.incomeEmerald; // Xanh ngọc Emerald
-  static const Color transferColor = AppColors.transferIndigo; // Xanh dương Indigo
+  static const Color transferColor =
+      AppColors.transferIndigo; // Xanh dương Indigo
 
-  static Color getColor(bool isIncome, {bool isTransfer = false, bool isDark = false}) {
+  static Color getColor(
+    bool isIncome, {
+    bool isTransfer = false,
+    bool isDark = false,
+  }) {
     if (isTransfer) {
-      return isDark ? AppColors.transferIndigoLight : AppColors.transferIndigoDark;
+      return isDark
+          ? AppColors.transferIndigoLight
+          : AppColors.transferIndigoDark;
     }
     if (isIncome) {
-      return isDark ? AppColors.incomeEmeraldLight : AppColors.incomeEmeraldDark;
+      return isDark
+          ? AppColors.incomeEmeraldLight
+          : AppColors.incomeEmeraldDark;
     }
     return isDark ? AppColors.expenseRoseLight : AppColors.expenseRoseDark;
   }
@@ -54,7 +63,11 @@ class ColoredAmountText extends StatelessWidget {
     bool? isDarkOverride,
     BuildContext? context,
   }) {
-    final bool isDark = isDarkOverride ?? (context != null ? Theme.of(context).brightness == Brightness.dark : false);
+    final bool isDark =
+        isDarkOverride ??
+        (context != null
+            ? Theme.of(context).brightness == Brightness.dark
+            : false);
     final color = getColor(isIncome, isTransfer: isTransfer, isDark: isDark);
     final isVi = LanguageService.instance.isVietnamese;
 
@@ -79,10 +92,7 @@ class ColoredAmountText extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: AppTextStyles.badge.copyWith(
-          fontSize: fontSize,
-          color: color,
-        ),
+        style: AppTextStyles.badge.copyWith(fontSize: fontSize, color: color),
       ),
     );
   }
@@ -90,7 +100,9 @@ class ColoredAmountText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = colorOverride ?? getColor(isIncome, isTransfer: isTransfer, isDark: isDark);
+    final color =
+        colorOverride ??
+        getColor(isIncome, isTransfer: isTransfer, isDark: isDark);
 
     String text;
     if (isTransfer) {

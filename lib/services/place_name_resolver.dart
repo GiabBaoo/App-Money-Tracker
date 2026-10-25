@@ -76,12 +76,7 @@ class PlaceNameResolver {
         'accept-language': 'vi,en',
       });
       final res = await http
-          .get(
-            uri,
-            headers: {
-              'User-Agent': 'MoneyTrackerApp/1.0 (Flutter)',
-            },
-          )
+          .get(uri, headers: {'User-Agent': 'MoneyTrackerApp/1.0 (Flutter)'})
           .timeout(const Duration(seconds: 12));
       if (res.statusCode != 200) return null;
       final map = jsonDecode(res.body);

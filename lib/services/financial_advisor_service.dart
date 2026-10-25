@@ -234,7 +234,8 @@ class RecurringDetectionResult {
 
 /// Dịch vụ Cố vấn Tài chính Cá nhân Thông minh của Trợ lý Mono
 class FinancialAdvisorService {
-  static final FinancialAdvisorService _instance = FinancialAdvisorService._internal();
+  static final FinancialAdvisorService _instance =
+      FinancialAdvisorService._internal();
   factory FinancialAdvisorService() => _instance;
   FinancialAdvisorService._internal();
 
@@ -254,34 +255,57 @@ class FinancialAdvisorService {
     // Lấy tất cả giao dịch trong tháng hiện tại
     final startOfMonth = DateTime(now.year, now.month, 1);
     final allTx = await _txRepo.getAllTransactions();
-    final thisMonthTx = allTx.where((tx) => tx.date.isAfter(startOfMonth.subtract(const Duration(seconds: 1)))).toList();
+    final thisMonthTx = allTx
+        .where(
+          (tx) => tx.date.isAfter(
+            startOfMonth.subtract(const Duration(seconds: 1)),
+          ),
+        )
+        .toList();
 
     final monthExpenses = thisMonthTx.where((tx) => tx.type == 'expense');
-    final totalSpentThisMonth = monthExpenses.fold(0.0, (sum, tx) => sum + tx.amount);
+    final totalSpentThisMonth = monthExpenses.fold(
+      0.0,
+      (sum, tx) => sum + tx.amount,
+    );
 
     final todayStart = DateTime(now.year, now.month, now.day);
     final todaySpent = monthExpenses
-        .where((tx) => tx.date.isAfter(todayStart.subtract(const Duration(seconds: 1))))
+        .where(
+          (tx) =>
+              tx.date.isAfter(todayStart.subtract(const Duration(seconds: 1))),
+        )
         .fold(0.0, (sum, tx) => sum + tx.amount);
 
     // Lấy ngân sách đã thiết lập cho tháng này
-    final budgets = await _budgetRepo.getBudgetsWithSpent(month: now.month, year: now.year);
+    final budgets = await _budgetRepo.getBudgetsWithSpent(
+      month: now.month,
+      year: now.year,
+    );
     double totalBudget = budgets.fold(0.0, (sum, b) => sum + b.limitAmount);
 
     // Nếu người dùng chưa tạo Budget, tham chiếu theo tổng thu nhập tháng hoặc số dư hiện có
     if (totalBudget <= 0) {
-      final monthIncome = thisMonthTx.where((tx) => tx.type == 'income').fold(0.0, (sum, tx) => sum + tx.amount);
+      final monthIncome = thisMonthTx
+          .where((tx) => tx.type == 'income')
+          .fold(0.0, (sum, tx) => sum + tx.amount);
       if (monthIncome > 0) {
         totalBudget = monthIncome * 0.8; // Khuyến nghị chi tối đa 80% thu nhập
       } else {
         // Dùng số dư các ví
         final wallets = await _walletRepo.getWallets();
-        final totalWalletBalance = wallets.fold(0.0, (sum, w) => sum + w.balance);
+        final totalWalletBalance = wallets.fold(
+          0.0,
+          (sum, w) => sum + w.balance,
+        );
         totalBudget = totalWalletBalance > 0 ? totalWalletBalance : 10000000;
       }
     }
 
-    final remainingBudget = (totalBudget - totalSpentThisMonth).clamp(0.0, double.infinity);
+    final remainingBudget = (totalBudget - totalSpentThisMonth).clamp(
+      0.0,
+      double.infinity,
+    );
     final rawSafePerDay = remainingBudget / remainingDays;
     final safeDaily = (rawSafePerDay / 1000).floor() * 1000.0;
 
@@ -290,13 +314,16 @@ class FinancialAdvisorService {
 
     if (totalSpentThisMonth > totalBudget) {
       status = 'danger';
-      advice = '⚠️ Bạn đã chi vượt ngân sách tháng **${CurrencyUtils.formatCurrency(totalSpentThisMonth - totalBudget)}**. Hãy thắt chặt các khoản không thiết yếu!';
+      advice =
+          '⚠️ Bạn đã chi vượt ngân sách tháng **${CurrencyUtils.formatCurrency(totalSpentThisMonth - totalBudget)}**. Hãy thắt chặt các khoản không thiết yếu!';
     } else if (todaySpent > safeDaily && safeDaily > 0) {
       status = 'warning';
-      advice = '⚡ Hôm nay bạn đã tiêu **${CurrencyUtils.formatCurrency(todaySpent)}**, vượt định mức an toàn ngày (${CurrencyUtils.formatCurrency(safeDaily)}). Cân nhắc giảm chi vào ngày mai nhé!';
+      advice =
+          '⚡ Hôm nay bạn đã tiêu **${CurrencyUtils.formatCurrency(todaySpent)}**, vượt định mức an toàn ngày (${CurrencyUtils.formatCurrency(safeDaily)}). Cân nhắc giảm chi vào ngày mai nhé!';
     } else {
       status = 'healthy';
-      advice = '✅ Bạn đang kiểm soát chi tiêu rất tốt! Định mức an toàn hôm nay là **${CurrencyUtils.formatCurrency(safeDaily)}**.';
+      advice =
+          '✅ Bạn đang kiểm soát chi tiêu rất tốt! Định mức an toàn hôm nay là **${CurrencyUtils.formatCurrency(safeDaily)}**.';
     }
 
     return SafeDailySpendResult(
@@ -323,10 +350,20 @@ class FinancialAdvisorService {
 
     final startOfMonth = DateTime(now.year, now.month, 1);
     final allTx = await _txRepo.getAllTransactions();
-    final thisMonthTx = allTx.where((tx) => tx.date.isAfter(startOfMonth.subtract(const Duration(seconds: 1)))).toList();
+    final thisMonthTx = allTx
+        .where(
+          (tx) => tx.date.isAfter(
+            startOfMonth.subtract(const Duration(seconds: 1)),
+          ),
+        )
+        .toList();
 
-    final currentExpense = thisMonthTx.where((tx) => tx.type == 'expense').fold(0.0, (sum, tx) => sum + tx.amount);
-    final currentIncome = thisMonthTx.where((tx) => tx.type == 'income').fold(0.0, (sum, tx) => sum + tx.amount);
+    final currentExpense = thisMonthTx
+        .where((tx) => tx.type == 'expense')
+        .fold(0.0, (sum, tx) => sum + tx.amount);
+    final currentIncome = thisMonthTx
+        .where((tx) => tx.type == 'income')
+        .fold(0.0, (sum, tx) => sum + tx.amount);
 
     // Tốc độ đốt tiền (Burn rate) trung bình/ngày từ đầu tháng tới giờ
     final dailyBurnRate = currentExpense / daysPassed;
@@ -334,7 +371,9 @@ class FinancialAdvisorService {
     final projectedTotalExpense = currentExpense + projectedAdditionalExpense;
 
     // Dự kiến thu nhập cuối tháng
-    final expectedIncome = currentIncome > 0 ? currentIncome : (projectedTotalExpense * 1.2);
+    final expectedIncome = currentIncome > 0
+        ? currentIncome
+        : (projectedTotalExpense * 1.2);
     final projectedBalance = expectedIncome - projectedTotalExpense;
     final isDeficit = projectedBalance < 0;
 
@@ -344,16 +383,26 @@ class FinancialAdvisorService {
     if (isDeficit) {
       burnRateStatus = 'critical';
       summaryBuffer.writeln('🚨 **CẢNH BÁO NGUY CƠ THÂM HỤT CUỐI THÁNG!**');
-      summaryBuffer.writeln('Với tốc độ tiêu trung bình **${CurrencyUtils.formatCurrency(dailyBurnRate)}/ngày**, bạn dự kiến sẽ chi hết **${CurrencyUtils.formatCurrency(projectedTotalExpense)}** trong tháng này.');
-      summaryBuffer.writeln('Dự kiến thiếu hụt khoảng **${CurrencyUtils.formatCurrency(projectedBalance.abs())}** so với thu nhập. Hãy xem xét cắt giảm các khoản mua sắm và giải trí ngay hôm nay.');
+      summaryBuffer.writeln(
+        'Với tốc độ tiêu trung bình **${CurrencyUtils.formatCurrency(dailyBurnRate)}/ngày**, bạn dự kiến sẽ chi hết **${CurrencyUtils.formatCurrency(projectedTotalExpense)}** trong tháng này.',
+      );
+      summaryBuffer.writeln(
+        'Dự kiến thiếu hụt khoảng **${CurrencyUtils.formatCurrency(projectedBalance.abs())}** so với thu nhập. Hãy xem xét cắt giảm các khoản mua sắm và giải trí ngay hôm nay.',
+      );
     } else if (dailyBurnRate > (expectedIncome / daysInMonth * 0.9)) {
       burnRateStatus = 'high';
       summaryBuffer.writeln('⚠️ **Tốc độ chi tiêu đang ở mức cao!**');
-      summaryBuffer.writeln('Bạn đang tiêu trung bình **${CurrencyUtils.formatCurrency(dailyBurnRate)}/ngày**. Dự kiến cuối tháng bạn chỉ còn giữ lại được khoảng **${CurrencyUtils.formatCurrency(projectedBalance)}**.');
+      summaryBuffer.writeln(
+        'Bạn đang tiêu trung bình **${CurrencyUtils.formatCurrency(dailyBurnRate)}/ngày**. Dự kiến cuối tháng bạn chỉ còn giữ lại được khoảng **${CurrencyUtils.formatCurrency(projectedBalance)}**.',
+      );
     } else {
       burnRateStatus = 'low';
-      summaryBuffer.writeln('🎉 **Tình hình tài chính cuối tháng rất khả quan!**');
-      summaryBuffer.writeln('Với mức chi trung bình **${CurrencyUtils.formatCurrency(dailyBurnRate)}/ngày**, bạn dự kiến giữ lại được số dư an toàn **${CurrencyUtils.formatCurrency(projectedBalance)}** khi hết tháng.');
+      summaryBuffer.writeln(
+        '🎉 **Tình hình tài chính cuối tháng rất khả quan!**',
+      );
+      summaryBuffer.writeln(
+        'Với mức chi trung bình **${CurrencyUtils.formatCurrency(dailyBurnRate)}/ngày**, bạn dự kiến giữ lại được số dư an toàn **${CurrencyUtils.formatCurrency(projectedBalance)}** khi hết tháng.',
+      );
     }
 
     return MonthEndForecastResult(
@@ -380,9 +429,13 @@ class FinancialAdvisorService {
     // Các khoản tiêu vặt: <= 70.000đ thuộc các danh mục dễ phát sinh tiêu vặt
     final snackCategories = {'Ăn uống', 'Giải trí', 'Mua sắm', 'Chi khác'};
     final smallExpenses = allTx.where((tx) {
-      final isSmall = tx.type == 'expense' && tx.amount > 0 && tx.amount <= 70000;
-      final inMonth = tx.date.isAfter(startOfMonth.subtract(const Duration(seconds: 1)));
-      final isSnackCategory = snackCategories.contains(tx.category) ||
+      final isSmall =
+          tx.type == 'expense' && tx.amount > 0 && tx.amount <= 70000;
+      final inMonth = tx.date.isAfter(
+        startOfMonth.subtract(const Duration(seconds: 1)),
+      );
+      final isSnackCategory =
+          snackCategories.contains(tx.category) ||
           tx.description.toLowerCase().contains('cafe') ||
           tx.description.toLowerCase().contains('trà sữa') ||
           tx.description.toLowerCase().contains('quà vặt') ||
@@ -390,7 +443,10 @@ class FinancialAdvisorService {
       return isSmall && inMonth && isSnackCategory;
     }).toList();
 
-    final totalSmallExpenses = smallExpenses.fold(0.0, (sum, tx) => sum + tx.amount);
+    final totalSmallExpenses = smallExpenses.fold(
+      0.0,
+      (sum, tx) => sum + tx.amount,
+    );
     final count = smallExpenses.length;
 
     // Dự tính 1 năm (nhân 12 tháng)
@@ -409,10 +465,12 @@ class FinancialAdvisorService {
 
     String advice = '';
     if (count > 0) {
-      advice = '💡 Trong tháng này bạn đã có **$count lần** chi tiêu lặt vặt (dưới 70.000đ), tích tụ thành **${CurrencyUtils.formatCurrency(totalSmallExpenses)}**. '
+      advice =
+          '💡 Trong tháng này bạn đã có **$count lần** chi tiêu lặt vặt (dưới 70.000đ), tích tụ thành **${CurrencyUtils.formatCurrency(totalSmallExpenses)}**. '
           'Nếu giảm bớt 1 ly trà sữa hoặc cà phê mỗi ngày, bạn sẽ tiết kiệm được khoảng **${CurrencyUtils.formatCurrency(yearlySavings)}/năm** ($comparison)!';
     } else {
-      advice = '👏 Tuyệt vời! Bạn không có nhiều khoản chi tiêu vặt gây rò rỉ ví tiền trong tháng này. Hãy tiếp tục duy trì thói quen kiểm soát này!';
+      advice =
+          '👏 Tuyệt vời! Bạn không có nhiều khoản chi tiêu vặt gây rò rỉ ví tiền trong tháng này. Hãy tiếp tục duy trì thói quen kiểm soát này!';
     }
 
     return LatteFactorResult(
@@ -429,7 +487,9 @@ class FinancialAdvisorService {
   // 4. PHÁT HIỆN TRÙNG LẶP & GIAO DỊCH BẤT THƯỜNG
   // ════════════════════════════════════════════════════════════════════════════
 
-  Future<AnomalyCheckResult> detectDuplicateOrAnomaly(TransactionModel newTx) async {
+  Future<AnomalyCheckResult> detectDuplicateOrAnomaly(
+    TransactionModel newTx,
+  ) async {
     final recentTxList = await _txRepo.getAllTransactions(limit: 30);
 
     // 1. Kiểm tra trùng lặp trong vòng 30 phút
@@ -439,26 +499,34 @@ class FinancialAdvisorService {
       if (timeDiff.inMinutes <= 30 &&
           (tx.amount - newTx.amount).abs() < 1 &&
           tx.type == newTx.type &&
-          (tx.category == newTx.category || tx.description.toLowerCase() == newTx.description.toLowerCase())) {
+          (tx.category == newTx.category ||
+              tx.description.toLowerCase() ==
+                  newTx.description.toLowerCase())) {
         return AnomalyCheckResult(
           isDuplicate: true,
           duplicateTx: tx,
           isAnomaly: false,
-          anomalyReason: 'Bạn vừa lưu một giao dịch tương tự "${tx.description}" (${CurrencyUtils.formatCurrency(tx.amount)}) cách đây ${timeDiff.inMinutes} phút.',
+          anomalyReason:
+              'Bạn vừa lưu một giao dịch tương tự "${tx.description}" (${CurrencyUtils.formatCurrency(tx.amount)}) cách đây ${timeDiff.inMinutes} phút.',
         );
       }
     }
 
     // 2. Kiểm tra bất thường (Anomaly): Giao dịch chi tiêu đột biến > 3x trung bình danh mục
     if (newTx.type == 'expense' && newTx.amount >= 500000) {
-      final categoryTxs = recentTxList.where((tx) => tx.category == newTx.category && tx.type == 'expense');
+      final categoryTxs = recentTxList.where(
+        (tx) => tx.category == newTx.category && tx.type == 'expense',
+      );
       if (categoryTxs.length >= 3) {
-        final avg = categoryTxs.fold(0.0, (sum, tx) => sum + tx.amount) / categoryTxs.length;
+        final avg =
+            categoryTxs.fold(0.0, (sum, tx) => sum + tx.amount) /
+            categoryTxs.length;
         if (newTx.amount >= avg * 3.0 && newTx.amount >= 1000000) {
           return AnomalyCheckResult(
             isDuplicate: false,
             isAnomaly: true,
-            anomalyReason: 'Khoản chi ${CurrencyUtils.formatCurrency(newTx.amount)} cho [${newTx.category}] cao gấp ${(newTx.amount / avg).toStringAsFixed(1)} lần mức chi tiêu trung bình (${CurrencyUtils.formatCurrency(avg)})!',
+            anomalyReason:
+                'Khoản chi ${CurrencyUtils.formatCurrency(newTx.amount)} cho [${newTx.category}] cao gấp ${(newTx.amount / avg).toStringAsFixed(1)} lần mức chi tiêu trung bình (${CurrencyUtils.formatCurrency(avg)})!',
           );
         }
       }
@@ -488,12 +556,15 @@ class FinancialAdvisorService {
 
     final Map<String, double> categoryTotals = {};
     for (final tx in expenseTx) {
-      categoryTotals[tx.category] = (categoryTotals[tx.category] ?? 0) + tx.amount;
+      categoryTotals[tx.category] =
+          (categoryTotals[tx.category] ?? 0) + tx.amount;
     }
 
     final suggestions = <String>[];
     if ((categoryTotals['Ăn uống'] ?? 0) > monthlyTarget * 0.5) {
-      suggestions.add('Cắt giảm bớt 20% tiền ăn ngoài/cafe (tiết kiệm ~${CurrencyUtils.formatCurrency((categoryTotals['Ăn uống'] ?? 0) * 0.2)}/tháng)');
+      suggestions.add(
+        'Cắt giảm bớt 20% tiền ăn ngoài/cafe (tiết kiệm ~${CurrencyUtils.formatCurrency((categoryTotals['Ăn uống'] ?? 0) * 0.2)}/tháng)',
+      );
     }
     if ((categoryTotals['Mua sắm'] ?? 0) > 500000) {
       suggestions.add('Áp dụng quy tắc chờ 48 giờ trước khi mua sắm online');
@@ -502,16 +573,28 @@ class FinancialAdvisorService {
       suggestions.add('Hạn chế 1 buổi xem phim/nhậu cuối tuần để bù vào quỹ');
     }
     if (suggestions.isEmpty) {
-      suggestions.add('Tự động trích ${CurrencyUtils.formatCurrency(monthlyTarget)} vào tài khoản tiết kiệm ngay khi nhận lương.');
+      suggestions.add(
+        'Tự động trích ${CurrencyUtils.formatCurrency(monthlyTarget)} vào tài khoản tiết kiệm ngay khi nhận lương.',
+      );
       suggestions.add('Tích lũy các khoản tiền lẻ hàng ngày.');
     }
 
     final explanationBuffer = StringBuffer();
-    explanationBuffer.writeln('🎯 **LỘ TRÌNH TIẾT KIỆM CHO: ${goalTitle.toUpperCase()}**');
-    explanationBuffer.writeln('• Mục tiêu cần đạt: **${CurrencyUtils.formatCurrency(targetAmount)}**');
-    explanationBuffer.writeln('• Thời hạn dự kiến: **$months tháng** (hoàn thành trước ${deadline.day}/${deadline.month}/${deadline.year})');
-    explanationBuffer.writeln('• Số tiền cần để dành mỗi tháng: **${CurrencyUtils.formatCurrency(monthlyTarget)}**');
-    explanationBuffer.writeln('• Tương đương mỗi ngày: **${CurrencyUtils.formatCurrency(dailyTarget)}/ngày** (bằng khoảng 1 ly cafe).');
+    explanationBuffer.writeln(
+      '🎯 **LỘ TRÌNH TIẾT KIỆM CHO: ${goalTitle.toUpperCase()}**',
+    );
+    explanationBuffer.writeln(
+      '• Mục tiêu cần đạt: **${CurrencyUtils.formatCurrency(targetAmount)}**',
+    );
+    explanationBuffer.writeln(
+      '• Thời hạn dự kiến: **$months tháng** (hoàn thành trước ${deadline.day}/${deadline.month}/${deadline.year})',
+    );
+    explanationBuffer.writeln(
+      '• Số tiền cần để dành mỗi tháng: **${CurrencyUtils.formatCurrency(monthlyTarget)}**',
+    );
+    explanationBuffer.writeln(
+      '• Tương đương mỗi ngày: **${CurrencyUtils.formatCurrency(dailyTarget)}/ngày** (bằng khoảng 1 ly cafe).',
+    );
     explanationBuffer.writeln('\n💡 **Gợi ý hành động từ Mono:**');
     for (final s in suggestions) {
       explanationBuffer.writeln('• $s');
@@ -526,7 +609,8 @@ class FinancialAdvisorService {
       deadline: deadline,
       iconCode: Icons.savings_rounded.codePoint,
       colorValue: 0xFF438883,
-      note: 'Lộ trình do Trợ lý Mono tạo: Cần tiết kiệm ${CurrencyUtils.formatCurrency(monthlyTarget)}/tháng',
+      note:
+          'Lộ trình do Trợ lý Mono tạo: Cần tiết kiệm ${CurrencyUtils.formatCurrency(monthlyTarget)}/tháng',
     );
 
     return SavingsRoadmapResult(
@@ -543,7 +627,9 @@ class FinancialAdvisorService {
   // 6. TRA CỨU CHI TIÊU CÁ NHÂN TRỰC TIẾP TỪ SQLITE (Offline 0ms)
   // ════════════════════════════════════════════════════════════════════════════
 
-  Future<PersonalSpendingQueryResult> queryPersonalSpending(String query) async {
+  Future<PersonalSpendingQueryResult> queryPersonalSpending(
+    String query,
+  ) async {
     final lower = query.toLowerCase();
     final now = DateTime.now();
 
@@ -553,15 +639,24 @@ class FinancialAdvisorService {
     int? customDays;
 
     // 1. Nhận diện các khoảng thời gian tùy biến: "3 ngày qua", "5 ngày gần đây", "7 ngày trước"...
-    final daysMatch = RegExp(r'(\d+)\s+ngày\s+(?:qua|gần\s+đây|trước)', caseSensitive: false).firstMatch(lower);
+    final daysMatch = RegExp(
+      r'(\d+)\s+ngày\s+(?:qua|gần\s+đây|trước)',
+      caseSensitive: false,
+    ).firstMatch(lower);
     if (daysMatch != null) {
       customDays = int.tryParse(daysMatch.group(1)!);
-    } else if (lower.contains('vài ngày qua') || lower.contains('mấy ngày qua') || lower.contains('mấy ngày nay')) {
+    } else if (lower.contains('vài ngày qua') ||
+        lower.contains('mấy ngày qua') ||
+        lower.contains('mấy ngày nay')) {
       customDays = 3;
     }
 
     if (customDays != null && customDays > 0) {
-      startDate = DateTime(now.year, now.month, now.day).subtract(Duration(days: customDays - 1));
+      startDate = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).subtract(Duration(days: customDays - 1));
       periodText = '$customDays ngày qua';
     } else if (lower.contains('hôm nay') || lower.contains('hom nay')) {
       startDate = DateTime(now.year, now.month, now.day);
@@ -569,7 +664,14 @@ class FinancialAdvisorService {
     } else if (lower.contains('hôm qua') || lower.contains('hom qua')) {
       final yesterday = now.subtract(const Duration(days: 1));
       startDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
-      endDate = DateTime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59);
+      endDate = DateTime(
+        yesterday.year,
+        yesterday.month,
+        yesterday.day,
+        23,
+        59,
+        59,
+      );
       periodText = 'hôm qua';
     } else if (lower.contains('tuần này') || lower.contains('tuan nay')) {
       startDate = now.subtract(Duration(days: now.weekday - 1));
@@ -579,12 +681,26 @@ class FinancialAdvisorService {
       final lastWeek = now.subtract(Duration(days: now.weekday + 6));
       startDate = DateTime(lastWeek.year, lastWeek.month, lastWeek.day);
       final endLastWeek = startDate.add(const Duration(days: 6));
-      endDate = DateTime(endLastWeek.year, endLastWeek.month, endLastWeek.day, 23, 59, 59);
+      endDate = DateTime(
+        endLastWeek.year,
+        endLastWeek.month,
+        endLastWeek.day,
+        23,
+        59,
+        59,
+      );
       periodText = 'tuần trước';
     } else if (lower.contains('tháng trước') || lower.contains('thang truoc')) {
       startDate = DateTime(now.year, now.month - 1, 1);
       final lastDayPrevMonth = DateTime(now.year, now.month, 0);
-      endDate = DateTime(lastDayPrevMonth.year, lastDayPrevMonth.month, lastDayPrevMonth.day, 23, 59, 59);
+      endDate = DateTime(
+        lastDayPrevMonth.year,
+        lastDayPrevMonth.month,
+        lastDayPrevMonth.day,
+        23,
+        59,
+        59,
+      );
       periodText = 'tháng trước';
     } else if (lower.contains('năm nay') || lower.contains('nam nay')) {
       startDate = DateTime(now.year, 1, 1);
@@ -605,13 +721,23 @@ class FinancialAdvisorService {
 
     // 3. Lọc theo danh mục nếu người dùng có hỏi danh mục cụ thể
     String? categoryFilter;
-    if (lower.contains('ăn uống') || lower.contains('an uong') || lower.contains('cơm') || lower.contains('cafe')) {
+    if (lower.contains('ăn uống') ||
+        lower.contains('an uong') ||
+        lower.contains('cơm') ||
+        lower.contains('cafe')) {
       categoryFilter = 'Ăn uống';
-    } else if (lower.contains('di chuyển') || lower.contains('grab') || lower.contains('xăng') || lower.contains('taxi')) {
+    } else if (lower.contains('di chuyển') ||
+        lower.contains('grab') ||
+        lower.contains('xăng') ||
+        lower.contains('taxi')) {
       categoryFilter = 'Di chuyển';
-    } else if (lower.contains('mua sắm') || lower.contains('shopping') || lower.contains('shopee')) {
+    } else if (lower.contains('mua sắm') ||
+        lower.contains('shopping') ||
+        lower.contains('shopee')) {
       categoryFilter = 'Mua sắm';
-    } else if (lower.contains('tiền nhà') || lower.contains('tiền phòng') || lower.contains('tiền trọ')) {
+    } else if (lower.contains('tiền nhà') ||
+        lower.contains('tiền phòng') ||
+        lower.contains('tiền trọ')) {
       categoryFilter = 'Tiền nhà';
     } else if (lower.contains('tiền điện') || lower.contains('điện nước')) {
       categoryFilter = 'Tiền điện';
@@ -619,12 +745,21 @@ class FinancialAdvisorService {
 
     if (categoryFilter != null) {
       final filter = categoryFilter.toLowerCase();
-      filtered = filtered.where((tx) => tx.category == categoryFilter || tx.description.toLowerCase().contains(filter)).toList();
+      filtered = filtered
+          .where(
+            (tx) =>
+                tx.category == categoryFilter ||
+                tx.description.toLowerCase().contains(filter),
+          )
+          .toList();
     }
 
     // 4. Phân tích bóc tách các khoản chi tiêu (Expense)
     final expenseTxs = filtered.where((tx) => tx.type == 'expense').toList();
-    final double totalAmount = expenseTxs.fold(0.0, (sum, tx) => sum + tx.amount);
+    final double totalAmount = expenseTxs.fold(
+      0.0,
+      (sum, tx) => sum + tx.amount,
+    );
     final count = expenseTxs.length;
 
     // Tổng hợp chi tiêu theo từng danh mục
@@ -636,7 +771,8 @@ class FinancialAdvisorService {
     }
 
     // Sắp xếp danh mục chi nhiều nhất giảm dần
-    final sortedCats = catMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final sortedCats = catMap.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
     String? topCat;
     double topCatAmount = 0.0;
@@ -655,7 +791,8 @@ class FinancialAdvisorService {
 
     // 5. Nếu chưa có giao dịch nào trong khoảng thời gian này
     if (expenseTxs.isEmpty) {
-      final emptyAnswer = '🔍 Trong **$periodText**, bạn chưa có ghi chép chi tiêu nào trong sổ. Hãy ghi chép đều đặn để Mono giúp bạn kiểm soát và phân tích tài chính chính xác nhé! ✨';
+      final emptyAnswer =
+          '🔍 Trong **$periodText**, bạn chưa có ghi chép chi tiêu nào trong sổ. Hãy ghi chép đều đặn để Mono giúp bạn kiểm soát và phân tích tài chính chính xác nhé! ✨';
       return PersonalSpendingQueryResult(
         queryText: query,
         totalAmount: 0.0,
@@ -672,7 +809,8 @@ class FinancialAdvisorService {
     final sb = StringBuffer();
     final totalFormatted = CurrencyUtils.formatCurrency(totalAmount);
 
-    final bool isAskingTopCategory = lower.contains('nhiều nhất') ||
+    final bool isAskingTopCategory =
+        lower.contains('nhiều nhất') ||
         lower.contains('lớn nhất') ||
         lower.contains('việc nào') ||
         lower.contains('cái gì') ||
@@ -682,25 +820,39 @@ class FinancialAdvisorService {
     if (isAskingTopCategory && topCat != null) {
       final topCatFormatted = CurrencyUtils.formatCurrency(topCatAmount);
       final pctStr = topCatPct.toStringAsFixed(1);
-      sb.writeln('📊 Trong **$periodText**, bạn chi tiêu nhiều nhất cho việc **$topCat** với tổng cộng **$topCatFormatted** (chiếm **$pctStr%** trên tổng chi **$totalFormatted**, gồm **$topCatCount giao dịch**).');
-      
+      sb.writeln(
+        '📊 Trong **$periodText**, bạn chi tiêu nhiều nhất cho việc **$topCat** với tổng cộng **$topCatFormatted** (chiếm **$pctStr%** trên tổng chi **$totalFormatted**, gồm **$topCatCount giao dịch**).',
+      );
+
       if (topTx != null) {
-        sb.writeln('\n• 📌 Khoản chi lớn nhất: **${CurrencyUtils.formatCurrency(topTx.amount)}** cho "${topTx.description}" ngày ${topTx.date.day}/${topTx.date.month}.');
+        sb.writeln(
+          '\n• 📌 Khoản chi lớn nhất: **${CurrencyUtils.formatCurrency(topTx.amount)}** cho "${topTx.description}" ngày ${topTx.date.day}/${topTx.date.month}.',
+        );
       }
 
       if (sortedCats.length > 1) {
         sb.writeln('• 📋 Các danh mục chi tiêu tiếp theo:');
         for (var i = 1; i < sortedCats.length && i < 4; i++) {
           final entry = sortedCats[i];
-          final p = totalAmount > 0 ? (entry.value / totalAmount * 100).toStringAsFixed(0) : '0';
-          sb.writeln('   - ${entry.key}: **${CurrencyUtils.formatCurrency(entry.value)}** ($p%)');
+          final p = totalAmount > 0
+              ? (entry.value / totalAmount * 100).toStringAsFixed(0)
+              : '0';
+          sb.writeln(
+            '   - ${entry.key}: **${CurrencyUtils.formatCurrency(entry.value)}** ($p%)',
+          );
         }
       }
     } else {
-      final catText = categoryFilter != null ? 'cho danh mục **$categoryFilter** ' : '';
-      sb.writeln('📊 Trong **$periodText**, tổng chi tiêu của bạn là **$totalFormatted** $catText(gồm **$count giao dịch**).');
+      final catText = categoryFilter != null
+          ? 'cho danh mục **$categoryFilter** '
+          : '';
+      sb.writeln(
+        '📊 Trong **$periodText**, tổng chi tiêu của bạn là **$totalFormatted** $catText(gồm **$count giao dịch**).',
+      );
       if (topCat != null) {
-        sb.writeln('• Danh mục chi nhiều nhất: **$topCat** (${CurrencyUtils.formatCurrency(topCatAmount)}, chiếm ${topCatPct.toStringAsFixed(0)}%).');
+        sb.writeln(
+          '• Danh mục chi nhiều nhất: **$topCat** (${CurrencyUtils.formatCurrency(topCatAmount)}, chiếm ${topCatPct.toStringAsFixed(0)}%).',
+        );
       }
     }
 
@@ -725,11 +877,15 @@ class FinancialAdvisorService {
   /// ════════════════════════════════════════════════════════════════════════════
   /// 6. PHÂN TÍCH XU HƯỚNG CHI TIÊU & CẢNH BÁO BẤT THƯỜNG (Spending Trends)
   /// ════════════════════════════════════════════════════════════════════════════
-  Future<SpendingTrendResult> analyzeSpendingTrends({String period = 'week'}) async {
+  Future<SpendingTrendResult> analyzeSpendingTrends({
+    String period = 'week',
+  }) async {
     final allTx = await _txRepo.getAllTransactions();
     final now = DateTime.now();
 
-    final isMonth = period.toLowerCase().contains('tháng') || period.toLowerCase().contains('month');
+    final isMonth =
+        period.toLowerCase().contains('tháng') ||
+        period.toLowerCase().contains('month');
     final periodName = isMonth ? 'tháng này' : 'tuần này';
 
     DateTime curStart;
@@ -747,8 +903,17 @@ class FinancialAdvisorService {
       prevEnd = curStart;
     }
 
-    final curTx = allTx.where((tx) => tx.type == 'expense' && tx.date.isAfter(curStart.subtract(const Duration(seconds: 1))));
-    final prevTx = allTx.where((tx) => tx.type == 'expense' && tx.date.isAfter(prevStart.subtract(const Duration(seconds: 1))) && tx.date.isBefore(prevEnd));
+    final curTx = allTx.where(
+      (tx) =>
+          tx.type == 'expense' &&
+          tx.date.isAfter(curStart.subtract(const Duration(seconds: 1))),
+    );
+    final prevTx = allTx.where(
+      (tx) =>
+          tx.type == 'expense' &&
+          tx.date.isAfter(prevStart.subtract(const Duration(seconds: 1))) &&
+          tx.date.isBefore(prevEnd),
+    );
 
     final curExpense = curTx.fold(0.0, (sum, tx) => sum + tx.amount);
     final prevExpense = prevTx.fold(0.0, (sum, tx) => sum + tx.amount);
@@ -773,12 +938,18 @@ class FinancialAdvisorService {
     final List<String> anomalies = [];
     curCatMap.forEach((cat, amount) {
       final prevAmount = prevCatMap[cat] ?? 0.0;
-      if (prevAmount > 0 && amount >= prevAmount * 1.35 && (amount - prevAmount) >= 100000) {
+      if (prevAmount > 0 &&
+          amount >= prevAmount * 1.35 &&
+          (amount - prevAmount) >= 100000) {
         final diff = amount - prevAmount;
         final growth = ((amount - prevAmount) / prevAmount) * 100;
-        anomalies.add('$cat (+${CurrencyUtils.formatCurrency(diff)}, tăng ${growth.toStringAsFixed(0)}%)');
+        anomalies.add(
+          '$cat (+${CurrencyUtils.formatCurrency(diff)}, tăng ${growth.toStringAsFixed(0)}%)',
+        );
       } else if (prevAmount == 0 && amount >= 200000) {
-        anomalies.add('$cat (mới phát sinh ${CurrencyUtils.formatCurrency(amount)})');
+        anomalies.add(
+          '$cat (mới phát sinh ${CurrencyUtils.formatCurrency(amount)})',
+        );
       }
     });
 
@@ -786,13 +957,16 @@ class FinancialAdvisorService {
     String advice = '';
     if (percentChange > 15) {
       trendStatus = 'increased';
-      advice = '⚠️ Chi tiêu $periodName tăng **${percentChange.toStringAsFixed(1)}%** (+${CurrencyUtils.formatCurrency(curExpense - prevExpense)}) so với kỳ trước. Bạn nên cân nhắc thắt chặt các khoản chi không thiết yếu!';
+      advice =
+          '⚠️ Chi tiêu $periodName tăng **${percentChange.toStringAsFixed(1)}%** (+${CurrencyUtils.formatCurrency(curExpense - prevExpense)}) so với kỳ trước. Bạn nên cân nhắc thắt chặt các khoản chi không thiết yếu!';
     } else if (percentChange < -10) {
       trendStatus = 'decreased';
-      advice = '🎉 Rất tốt! Bạn đã tiết kiệm và giảm chi tiêu **${percentChange.abs().toStringAsFixed(1)}%** (-${CurrencyUtils.formatCurrency(prevExpense - curExpense)}) so với kỳ trước. Tiếp tục phát huy nhé!';
+      advice =
+          '🎉 Rất tốt! Bạn đã tiết kiệm và giảm chi tiêu **${percentChange.abs().toStringAsFixed(1)}%** (-${CurrencyUtils.formatCurrency(prevExpense - curExpense)}) so với kỳ trước. Tiếp tục phát huy nhé!';
     } else {
       trendStatus = 'stable';
-      advice = '⚖️ Mức chi tiêu của bạn duy trì ổn định (${percentChange >= 0 ? '+' : ''}${percentChange.toStringAsFixed(1)}% so với kỳ trước).';
+      advice =
+          '⚖️ Mức chi tiêu của bạn duy trì ổn định (${percentChange >= 0 ? '+' : ''}${percentChange.toStringAsFixed(1)}% so với kỳ trước).';
     }
 
     return SpendingTrendResult(
@@ -817,10 +991,16 @@ class FinancialAdvisorService {
 
     final now = DateTime.now();
     final thirtyDaysAgo = now.subtract(const Duration(days: 30));
-    final recentTx = allTx.where((tx) => tx.date.isAfter(thirtyDaysAgo)).toList();
+    final recentTx = allTx
+        .where((tx) => tx.date.isAfter(thirtyDaysAgo))
+        .toList();
 
-    final totalIncome = recentTx.where((tx) => tx.type == 'income').fold(0.0, (s, tx) => s + tx.amount);
-    final totalExpense = recentTx.where((tx) => tx.type == 'expense').fold(0.0, (s, tx) => s + tx.amount);
+    final totalIncome = recentTx
+        .where((tx) => tx.type == 'income')
+        .fold(0.0, (s, tx) => s + tx.amount);
+    final totalExpense = recentTx
+        .where((tx) => tx.type == 'expense')
+        .fold(0.0, (s, tx) => s + tx.amount);
     final totalBalance = wallets.fold(0.0, (s, w) => s + w.balance);
 
     final List<HealthScoreMetric> metrics = [];
@@ -833,28 +1013,39 @@ class FinancialAdvisorService {
       final rate = ((totalIncome - totalExpense) / totalIncome) * 100;
       if (rate >= 20) {
         savingsScore = 25;
-        savingsDetail = 'Tiết kiệm ${rate.toStringAsFixed(0)}% thu nhập (Rất tốt)';
+        savingsDetail =
+            'Tiết kiệm ${rate.toStringAsFixed(0)}% thu nhập (Rất tốt)';
       } else if (rate >= 10) {
         savingsScore = 18;
         savingsDetail = 'Tiết kiệm ${rate.toStringAsFixed(0)}% thu nhập (Khá)';
-        recommendations.add('Nâng tỷ lệ tiết kiệm lên mức chuẩn 20% thu nhập hàng tháng.');
+        recommendations.add(
+          'Nâng tỷ lệ tiết kiệm lên mức chuẩn 20% thu nhập hàng tháng.',
+        );
       } else if (rate > 0) {
         savingsScore = 12;
         savingsDetail = 'Tiết kiệm ${rate.toStringAsFixed(0)}% thu nhập (Thấp)';
-        recommendations.add('Cắt giảm bớt các chi phí không cần thiết để tạo khoản tích lũy.');
+        recommendations.add(
+          'Cắt giảm bớt các chi phí không cần thiết để tạo khoản tích lũy.',
+        );
       } else {
         savingsScore = 5;
         savingsDetail = 'Bội chi (Chi vượt thu)';
-        recommendations.add('Báo động: Đang chi tiêu vượt thu nhập! Cần rà soát ngay các khoản chi lớn.');
+        recommendations.add(
+          'Báo động: Đang chi tiêu vượt thu nhập! Cần rà soát ngay các khoản chi lớn.',
+        );
       }
     }
-    metrics.add(HealthScoreMetric(
-      name: 'Tỷ lệ tiết kiệm',
-      score: savingsScore,
-      maxScore: 25,
-      status: savingsScore >= 20 ? 'excellent' : (savingsScore >= 15 ? 'good' : 'warning'),
-      detail: savingsDetail,
-    ));
+    metrics.add(
+      HealthScoreMetric(
+        name: 'Tỷ lệ tiết kiệm',
+        score: savingsScore,
+        maxScore: 25,
+        status: savingsScore >= 20
+            ? 'excellent'
+            : (savingsScore >= 15 ? 'good' : 'warning'),
+        detail: savingsDetail,
+      ),
+    );
 
     // Tiêu chí 2: Tuân thủ ngân sách (Max 25đ)
     int budgetScore = 25;
@@ -870,24 +1061,34 @@ class FinancialAdvisorService {
       } else if (exceededCount == 1) {
         budgetScore = 15;
         budgetDetail = 'Có 1 ngân sách bị bội chi';
-        recommendations.add('Điều chỉnh lại định mức chi tiêu cho danh mục đang vượt hạn mức.');
+        recommendations.add(
+          'Điều chỉnh lại định mức chi tiêu cho danh mục đang vượt hạn mức.',
+        );
       } else {
         budgetScore = 8;
         budgetDetail = 'Có $exceededCount ngân sách bị vượt';
-        recommendations.add('Cần thiết lập lại ngân sách chi tiêu thực tế hơn để tránh bội chi.');
+        recommendations.add(
+          'Cần thiết lập lại ngân sách chi tiêu thực tế hơn để tránh bội chi.',
+        );
       }
     } else {
       budgetScore = 18;
       budgetDetail = 'Chưa thiết lập ngân sách chi tiêu';
-      recommendations.add('Hãy tạo hạn mức ngân sách tháng để kiểm soát chi tiêu chủ động hơn.');
+      recommendations.add(
+        'Hãy tạo hạn mức ngân sách tháng để kiểm soát chi tiêu chủ động hơn.',
+      );
     }
-    metrics.add(HealthScoreMetric(
-      name: 'Kỷ luật ngân sách',
-      score: budgetScore,
-      maxScore: 25,
-      status: budgetScore >= 20 ? 'excellent' : (budgetScore >= 15 ? 'good' : 'warning'),
-      detail: budgetDetail,
-    ));
+    metrics.add(
+      HealthScoreMetric(
+        name: 'Kỷ luật ngân sách',
+        score: budgetScore,
+        maxScore: 25,
+        status: budgetScore >= 20
+            ? 'excellent'
+            : (budgetScore >= 15 ? 'good' : 'warning'),
+        detail: budgetDetail,
+      ),
+    );
 
     // Tiêu chí 3: Tần suất ghi chép đều đặn (Max 20đ)
     final fourteenDaysAgo = now.subtract(const Duration(days: 14));
@@ -907,15 +1108,21 @@ class FinancialAdvisorService {
     } else {
       consistencyScore = 8;
       consistencyDetail = 'Ghi chép gián đoạn ($distinctDays/14 ngày)';
-      recommendations.add('Tập thói quen mở Mono ghi lại ngay mỗi khi phát sinh chi tiêu.');
+      recommendations.add(
+        'Tập thói quen mở Mono ghi lại ngay mỗi khi phát sinh chi tiêu.',
+      );
     }
-    metrics.add(HealthScoreMetric(
-      name: 'Thói quen ghi chép',
-      score: consistencyScore,
-      maxScore: 20,
-      status: consistencyScore >= 18 ? 'excellent' : (consistencyScore >= 14 ? 'good' : 'warning'),
-      detail: consistencyDetail,
-    ));
+    metrics.add(
+      HealthScoreMetric(
+        name: 'Thói quen ghi chép',
+        score: consistencyScore,
+        maxScore: 20,
+        status: consistencyScore >= 18
+            ? 'excellent'
+            : (consistencyScore >= 14 ? 'good' : 'warning'),
+        detail: consistencyDetail,
+      ),
+    );
 
     // Tiêu chí 4: Quỹ dự phòng khẩn cấp (Max 15đ)
     int emergencyScore = 10;
@@ -924,23 +1131,33 @@ class FinancialAdvisorService {
     final monthsCoverage = totalBalance / monthlyExpense;
     if (monthsCoverage >= 3) {
       emergencyScore = 15;
-      emergencyDetail = 'Đủ chi trả ${monthsCoverage.toStringAsFixed(1)} tháng (An toàn)';
+      emergencyDetail =
+          'Đủ chi trả ${monthsCoverage.toStringAsFixed(1)} tháng (An toàn)';
     } else if (monthsCoverage >= 1) {
       emergencyScore = 11;
-      emergencyDetail = 'Đủ chi trả ${monthsCoverage.toStringAsFixed(1)} tháng (Khá)';
-      recommendations.add('Tích lũy thêm quỹ khẩn cấp để đạt mục tiêu bảo đảm 3-6 tháng sinh hoạt.');
+      emergencyDetail =
+          'Đủ chi trả ${monthsCoverage.toStringAsFixed(1)} tháng (Khá)';
+      recommendations.add(
+        'Tích lũy thêm quỹ khẩn cấp để đạt mục tiêu bảo đảm 3-6 tháng sinh hoạt.',
+      );
     } else {
       emergencyScore = 5;
       emergencyDetail = 'Dưới 1 tháng sinh hoạt (Thấp)';
-      recommendations.add('Ưu tiên xây dựng quỹ khẩn cấp tối thiểu 1 tháng chi tiêu phòng rủi ro.');
+      recommendations.add(
+        'Ưu tiên xây dựng quỹ khẩn cấp tối thiểu 1 tháng chi tiêu phòng rủi ro.',
+      );
     }
-    metrics.add(HealthScoreMetric(
-      name: 'Dự phòng rủi ro',
-      score: emergencyScore,
-      maxScore: 15,
-      status: emergencyScore >= 14 ? 'excellent' : (emergencyScore >= 10 ? 'good' : 'poor'),
-      detail: emergencyDetail,
-    ));
+    metrics.add(
+      HealthScoreMetric(
+        name: 'Dự phòng rủi ro',
+        score: emergencyScore,
+        maxScore: 15,
+        status: emergencyScore >= 14
+            ? 'excellent'
+            : (emergencyScore >= 10 ? 'good' : 'poor'),
+        detail: emergencyDetail,
+      ),
+    );
 
     // Tiêu chí 5: Cân đối cấu trúc chi tiêu (Max 15đ)
     int balanceScore = 15;
@@ -955,19 +1172,23 @@ class FinancialAdvisorService {
       if (maxCatRatio > 0.65) {
         balanceScore = 8;
         balanceDetail = 'Chi quá tập trung vào một nhóm (>65%)';
-        recommendations.add('Đa dạng hóa và cân nhắc các khoản chi cho danh mục chiếm tỷ trọng lớn.');
+        recommendations.add(
+          'Đa dạng hóa và cân nhắc các khoản chi cho danh mục chiếm tỷ trọng lớn.',
+        );
       } else {
         balanceScore = 15;
         balanceDetail = 'Phân bổ danh mục chi tiêu hợp lý';
       }
     }
-    metrics.add(HealthScoreMetric(
-      name: 'Cân đối cơ cấu chi',
-      score: balanceScore,
-      maxScore: 15,
-      status: balanceScore >= 12 ? 'excellent' : 'warning',
-      detail: balanceDetail,
-    ));
+    metrics.add(
+      HealthScoreMetric(
+        name: 'Cân đối cơ cấu chi',
+        score: balanceScore,
+        maxScore: 15,
+        status: balanceScore >= 12 ? 'excellent' : 'warning',
+        detail: balanceDetail,
+      ),
+    );
 
     final totalScore = metrics.fold(0, (s, m) => s + m.score);
 
@@ -978,19 +1199,23 @@ class FinancialAdvisorService {
     if (totalScore >= 85) {
       rating = 'Xuất sắc';
       statusColor = const Color(0xFF10B981);
-      summaryAdvice = '🌟 Chúc mừng! Bạn đang quản lý tài chính rất khoa học và có kỷ luật xuất sắc. Hãy tiếp tục duy trì đà này!';
+      summaryAdvice =
+          '🌟 Chúc mừng! Bạn đang quản lý tài chính rất khoa học và có kỷ luật xuất sắc. Hãy tiếp tục duy trì đà này!';
     } else if (totalScore >= 70) {
       rating = 'Tốt';
       statusColor = const Color(0xFF3B82F6);
-      summaryAdvice = '👍 Sức khỏe tài chính của bạn ở mức tốt! Cải thiện thêm vài điểm khuyến nghị để đạt mức xuất sắc nhé.';
+      summaryAdvice =
+          '👍 Sức khỏe tài chính của bạn ở mức tốt! Cải thiện thêm vài điểm khuyến nghị để đạt mức xuất sắc nhé.';
     } else if (totalScore >= 50) {
       rating = 'Cần cải thiện';
       statusColor = const Color(0xFFF59E0B);
-      summaryAdvice = '⚠️ Tài chính của bạn đang ở mức trung bình. Hãy chú ý kiểm soát ngân sách và xây dựng quỹ dự phòng.';
+      summaryAdvice =
+          '⚠️ Tài chính của bạn đang ở mức trung bình. Hãy chú ý kiểm soát ngân sách và xây dựng quỹ dự phòng.';
     } else {
       rating = 'Báo động';
       statusColor = const Color(0xFFEF4444);
-      summaryAdvice = '🚨 Báo động: Bạn đang gặp rủi ro tài chính cao (bội chi hoặc cạn quỹ dự phòng). Cần rà soát và cắt giảm ngay!';
+      summaryAdvice =
+          '🚨 Báo động: Bạn đang gặp rủi ro tài chính cao (bội chi hoặc cạn quỹ dự phòng). Cần rà soát và cắt giảm ngay!';
     }
 
     return FinancialHealthScoreResult(
@@ -1030,8 +1255,10 @@ class FinancialAdvisorService {
         for (int i = 1; i < txList.length; i++) {
           intervals.add(txList[i].date.difference(txList[i - 1].date).inDays);
         }
-        final avgInterval = intervals.reduce((a, b) => a + b) / intervals.length;
-        final avgAmount = txList.fold(0.0, (s, tx) => s + tx.amount) / txList.length;
+        final avgInterval =
+            intervals.reduce((a, b) => a + b) / intervals.length;
+        final avgAmount =
+            txList.fold(0.0, (s, tx) => s + tx.amount) / txList.length;
 
         String frequency = '';
         if (avgInterval >= 20 && avgInterval <= 40) {
@@ -1041,7 +1268,8 @@ class FinancialAdvisorService {
         }
 
         final lastTx = txList.last;
-        final isFixedExpenseKeyword = lastTx.category == 'Tiền nhà' ||
+        final isFixedExpenseKeyword =
+            lastTx.category == 'Tiền nhà' ||
             lastTx.category == 'Tiền điện' ||
             lastTx.category == 'Điện thoại' ||
             lastTx.description.toLowerCase().contains('tiền phòng') ||
@@ -1056,14 +1284,18 @@ class FinancialAdvisorService {
           final daysToAdd = freq == 'Hàng tháng' ? 30 : 7;
           final nextEst = lastTx.date.add(Duration(days: daysToAdd));
 
-          items.add(RecurringTransactionItem(
-            title: lastTx.description.isNotEmpty ? lastTx.description : lastTx.category,
-            category: lastTx.category,
-            amount: avgAmount,
-            frequency: freq,
-            occurrences: txList.length,
-            nextEstimatedDate: nextEst,
-          ));
+          items.add(
+            RecurringTransactionItem(
+              title: lastTx.description.isNotEmpty
+                  ? lastTx.description
+                  : lastTx.category,
+              category: lastTx.category,
+              amount: avgAmount,
+              frequency: freq,
+              occurrences: txList.length,
+              nextEstimatedDate: nextEst,
+            ),
+          );
         }
       }
     });

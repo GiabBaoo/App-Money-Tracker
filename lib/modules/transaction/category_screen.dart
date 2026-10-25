@@ -38,32 +38,73 @@ class _CategoryScreenState extends State<CategoryScreen> {
   final FocusNode _searchFocusNode = FocusNode();
 
   final List<IconData> _expenseIcons = [
-    Icons.restaurant_outlined, Icons.medical_services_outlined, Icons.directions_car_outlined,
-    Icons.local_parking_outlined, Icons.two_wheeler_outlined,
-    Icons.menu_book_outlined, Icons.shopping_bag_outlined, Icons.home_outlined,
-    Icons.pets_outlined, Icons.receipt_long_outlined, Icons.local_activity_outlined,
-    Icons.flight_outlined, Icons.favorite_outline, Icons.card_giftcard_outlined,
-    Icons.spa_outlined, Icons.water_drop_outlined, Icons.flash_on_outlined,
-    Icons.child_care_outlined, Icons.checkroom_outlined, Icons.phone_android_outlined,
-    Icons.coffee_outlined, Icons.sports_esports_outlined, Icons.fitness_center_outlined,
-    Icons.movie_outlined, Icons.sports_soccer_outlined, Icons.local_gas_station_outlined,
-    Icons.build_outlined, Icons.savings_outlined, Icons.volunteer_activism_outlined,
-    Icons.shield_outlined, Icons.devices_other_outlined, Icons.credit_card_outlined,
-    Icons.celebration_outlined, Icons.school_outlined, Icons.home_repair_service_outlined,
+    Icons.restaurant_outlined,
+    Icons.medical_services_outlined,
+    Icons.directions_car_outlined,
+    Icons.local_parking_outlined,
+    Icons.two_wheeler_outlined,
+    Icons.menu_book_outlined,
+    Icons.shopping_bag_outlined,
+    Icons.home_outlined,
+    Icons.pets_outlined,
+    Icons.receipt_long_outlined,
+    Icons.local_activity_outlined,
+    Icons.flight_outlined,
+    Icons.favorite_outline,
+    Icons.card_giftcard_outlined,
+    Icons.spa_outlined,
+    Icons.water_drop_outlined,
+    Icons.flash_on_outlined,
+    Icons.child_care_outlined,
+    Icons.checkroom_outlined,
+    Icons.phone_android_outlined,
+    Icons.coffee_outlined,
+    Icons.sports_esports_outlined,
+    Icons.fitness_center_outlined,
+    Icons.movie_outlined,
+    Icons.sports_soccer_outlined,
+    Icons.local_gas_station_outlined,
+    Icons.build_outlined,
+    Icons.savings_outlined,
+    Icons.volunteer_activism_outlined,
+    Icons.shield_outlined,
+    Icons.devices_other_outlined,
+    Icons.credit_card_outlined,
+    Icons.celebration_outlined,
+    Icons.school_outlined,
+    Icons.home_repair_service_outlined,
   ];
 
   final List<IconData> _incomeIcons = [
-    Icons.work_outline, Icons.bar_chart_outlined, Icons.storefront_outlined,
-    Icons.volunteer_activism_outlined, Icons.sell_outlined, Icons.account_balance_wallet_outlined,
-    Icons.savings_outlined, Icons.payments_outlined, Icons.trending_up_outlined,
-    Icons.monetization_on_outlined, Icons.redeem_outlined, Icons.attach_money_outlined,
-    Icons.price_change_outlined, Icons.account_balance_outlined, Icons.real_estate_agent_outlined,
-    Icons.currency_exchange_outlined, Icons.currency_bitcoin_outlined,
-    Icons.handshake_outlined, Icons.laptop_chromebook_outlined, Icons.school_outlined,
+    Icons.work_outline,
+    Icons.bar_chart_outlined,
+    Icons.storefront_outlined,
+    Icons.volunteer_activism_outlined,
+    Icons.sell_outlined,
+    Icons.account_balance_wallet_outlined,
+    Icons.savings_outlined,
+    Icons.payments_outlined,
+    Icons.trending_up_outlined,
+    Icons.monetization_on_outlined,
+    Icons.redeem_outlined,
+    Icons.attach_money_outlined,
+    Icons.price_change_outlined,
+    Icons.account_balance_outlined,
+    Icons.real_estate_agent_outlined,
+    Icons.currency_exchange_outlined,
+    Icons.currency_bitcoin_outlined,
+    Icons.handshake_outlined,
+    Icons.laptop_chromebook_outlined,
+    Icons.school_outlined,
     Icons.replay_circle_filled_rounded,
   ];
 
-  final List<String> _expenseGroups = ['Thiết yếu', 'Phát triển', 'Hưởng thụ', 'Khác'];
+  final List<String> _expenseGroups = [
+    'Thiết yếu',
+    'Phát triển',
+    'Hưởng thụ',
+    'Khác',
+  ];
   final List<String> _incomeGroups = ['Thu nhập chính', 'Thu nhập phụ', 'Khác'];
 
   final List<Color> _paletteColors = [
@@ -98,56 +139,231 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
   Map<String, List<Map<String, dynamic>>> get _defaultExpenseGroups => {
     'Thiết yếu': [
-      {'name': 'Ăn uống', 'icon': Icons.restaurant_outlined, 'group': 'Thiết yếu', 'desc': 'Ăn sáng, trưa, tối, cafe'},
-      {'name': 'Sức khỏe', 'icon': Icons.medical_services_outlined, 'group': 'Thiết yếu', 'desc': 'Thuốc, khám bệnh, vitamin'},
-      {'name': 'Di chuyển', 'icon': Icons.directions_car_outlined, 'group': 'Thiết yếu', 'desc': 'Xăng, xe bus, grab'},
-      {'name': 'Tiền nhà', 'icon': Icons.home_outlined, 'group': 'Thiết yếu', 'desc': 'Thuê nhà, chung cư'},
-      {'name': 'Tiền điện', 'icon': Icons.water_drop_outlined, 'group': 'Thiết yếu', 'desc': 'Điện, nước, internet'},
-      {'name': 'Điện thoại', 'icon': Icons.phone_android_outlined, 'group': 'Thiết yếu', 'desc': 'Cước, nạp thẻ'},
-      {'name': 'Sửa chữa', 'icon': Icons.build_outlined, 'group': 'Thiết yếu', 'desc': 'Sửa xe, sửa nhà, bảo dưỡng'},
+      {
+        'name': 'Ăn uống',
+        'icon': Icons.restaurant_outlined,
+        'group': 'Thiết yếu',
+        'desc': 'Ăn sáng, trưa, tối, cafe',
+      },
+      {
+        'name': 'Sức khỏe',
+        'icon': Icons.medical_services_outlined,
+        'group': 'Thiết yếu',
+        'desc': 'Thuốc, khám bệnh, vitamin',
+      },
+      {
+        'name': 'Di chuyển',
+        'icon': Icons.directions_car_outlined,
+        'group': 'Thiết yếu',
+        'desc': 'Xăng, xe bus, grab',
+      },
+      {
+        'name': 'Tiền nhà',
+        'icon': Icons.home_outlined,
+        'group': 'Thiết yếu',
+        'desc': 'Thuê nhà, chung cư',
+      },
+      {
+        'name': 'Tiền điện',
+        'icon': Icons.water_drop_outlined,
+        'group': 'Thiết yếu',
+        'desc': 'Điện, nước, internet',
+      },
+      {
+        'name': 'Điện thoại',
+        'icon': Icons.phone_android_outlined,
+        'group': 'Thiết yếu',
+        'desc': 'Cước, nạp thẻ',
+      },
+      {
+        'name': 'Sửa chữa',
+        'icon': Icons.build_outlined,
+        'group': 'Thiết yếu',
+        'desc': 'Sửa xe, sửa nhà, bảo dưỡng',
+      },
     ],
     'Phát triển': [
-      {'name': 'Học tập', 'icon': Icons.menu_book_outlined, 'group': 'Phát triển', 'desc': 'Sách, khóa học, học phí'},
-      {'name': 'Thể thao', 'icon': Icons.fitness_center_outlined, 'group': 'Phát triển', 'desc': 'Gym, bơi, yoga'},
-      {'name': 'Tiết kiệm', 'icon': Icons.savings_outlined, 'group': 'Phát triển', 'desc': 'Gửi ngân hàng, heo đất'},
-      {'name': 'Bảo hiểm', 'icon': Icons.shield_outlined, 'group': 'Phát triển', 'desc': 'Bảo hiểm nhân thọ, xe'},
-      {'name': 'Trả nợ', 'icon': Icons.credit_card_outlined, 'group': 'Phát triển', 'desc': 'Trả góp, trả nợ vay'},
+      {
+        'name': 'Học tập',
+        'icon': Icons.menu_book_outlined,
+        'group': 'Phát triển',
+        'desc': 'Sách, khóa học, học phí',
+      },
+      {
+        'name': 'Thể thao',
+        'icon': Icons.fitness_center_outlined,
+        'group': 'Phát triển',
+        'desc': 'Gym, bơi, yoga',
+      },
+      {
+        'name': 'Tiết kiệm',
+        'icon': Icons.savings_outlined,
+        'group': 'Phát triển',
+        'desc': 'Gửi ngân hàng, heo đất',
+      },
+      {
+        'name': 'Bảo hiểm',
+        'icon': Icons.shield_outlined,
+        'group': 'Phát triển',
+        'desc': 'Bảo hiểm nhân thọ, xe',
+      },
+      {
+        'name': 'Trả nợ',
+        'icon': Icons.credit_card_outlined,
+        'group': 'Phát triển',
+        'desc': 'Trả góp, trả nợ vay',
+      },
     ],
     'Hưởng thụ': [
-      {'name': 'Mua sắm', 'icon': Icons.shopping_bag_outlined, 'group': 'Hưởng thụ', 'desc': 'Quần áo, giày dép'},
-      {'name': 'Giải trí', 'icon': Icons.local_activity_outlined, 'group': 'Hưởng thụ', 'desc': 'Phim, game, karaoke'},
-      {'name': 'Du lịch', 'icon': Icons.flight_outlined, 'group': 'Hưởng thụ', 'desc': 'Khách sạn, tour'},
-      {'name': 'Quà tặng', 'icon': Icons.card_giftcard_outlined, 'group': 'Hưởng thụ', 'desc': 'Sinh nhật, lễ, đám cưới'},
-      {'name': 'Làm đẹp', 'icon': Icons.spa_outlined, 'group': 'Hưởng thụ', 'desc': 'Spa, cắt tóc, nail'},
-      {'name': 'Đồ công nghệ', 'icon': Icons.devices_other_outlined, 'group': 'Hưởng thụ', 'desc': 'Laptop, điện thoại, phụ kiện'},
+      {
+        'name': 'Mua sắm',
+        'icon': Icons.shopping_bag_outlined,
+        'group': 'Hưởng thụ',
+        'desc': 'Quần áo, giày dép',
+      },
+      {
+        'name': 'Giải trí',
+        'icon': Icons.local_activity_outlined,
+        'group': 'Hưởng thụ',
+        'desc': 'Phim, game, karaoke',
+      },
+      {
+        'name': 'Du lịch',
+        'icon': Icons.flight_outlined,
+        'group': 'Hưởng thụ',
+        'desc': 'Khách sạn, tour',
+      },
+      {
+        'name': 'Quà tặng',
+        'icon': Icons.card_giftcard_outlined,
+        'group': 'Hưởng thụ',
+        'desc': 'Sinh nhật, lễ, đám cưới',
+      },
+      {
+        'name': 'Làm đẹp',
+        'icon': Icons.spa_outlined,
+        'group': 'Hưởng thụ',
+        'desc': 'Spa, cắt tóc, nail',
+      },
+      {
+        'name': 'Đồ công nghệ',
+        'icon': Icons.devices_other_outlined,
+        'group': 'Hưởng thụ',
+        'desc': 'Laptop, điện thoại, phụ kiện',
+      },
     ],
     'Khác': [
-      {'name': 'Thú cưng', 'icon': Icons.pets_outlined, 'group': 'Khác', 'desc': 'Thức ăn, thú y'},
-      {'name': 'Con cái', 'icon': Icons.child_care_outlined, 'group': 'Khác', 'desc': 'Bỉm, sữa, học phí'},
-      {'name': 'Từ thiện', 'icon': Icons.volunteer_activism_outlined, 'group': 'Khác', 'desc': 'Quyên góp, ủng hộ'},
-      {'name': 'Chi khác', 'icon': Icons.receipt_long_outlined, 'group': 'Khác', 'desc': 'Các khoản chi khác'},
+      {
+        'name': 'Thú cưng',
+        'icon': Icons.pets_outlined,
+        'group': 'Khác',
+        'desc': 'Thức ăn, thú y',
+      },
+      {
+        'name': 'Con cái',
+        'icon': Icons.child_care_outlined,
+        'group': 'Khác',
+        'desc': 'Bỉm, sữa, học phí',
+      },
+      {
+        'name': 'Từ thiện',
+        'icon': Icons.volunteer_activism_outlined,
+        'group': 'Khác',
+        'desc': 'Quyên góp, ủng hộ',
+      },
+      {
+        'name': 'Chi khác',
+        'icon': Icons.receipt_long_outlined,
+        'group': 'Khác',
+        'desc': 'Các khoản chi khác',
+      },
     ],
   };
 
   Map<String, List<Map<String, dynamic>>> get _defaultIncomeGroups => {
     'Thu nhập chính': [
-      {'name': 'Tiền lương', 'icon': Icons.work_outline, 'group': 'Thu nhập chính', 'desc': 'Lương tháng, tiền công'},
-      {'name': 'Tiền thưởng', 'icon': Icons.card_giftcard_outlined, 'group': 'Thu nhập chính', 'desc': 'KPI, bonus, hoa hồng'},
-      {'name': 'Kinh doanh', 'icon': Icons.storefront_outlined, 'group': 'Thu nhập chính', 'desc': 'Doanh thu, lợi nhuận'},
-      {'name': 'Đầu tư', 'icon': Icons.trending_up_outlined, 'group': 'Thu nhập chính', 'desc': 'Chứng khoán, cổ tức, crypto'},
+      {
+        'name': 'Tiền lương',
+        'icon': Icons.work_outline,
+        'group': 'Thu nhập chính',
+        'desc': 'Lương tháng, tiền công',
+      },
+      {
+        'name': 'Tiền thưởng',
+        'icon': Icons.card_giftcard_outlined,
+        'group': 'Thu nhập chính',
+        'desc': 'KPI, bonus, hoa hồng',
+      },
+      {
+        'name': 'Kinh doanh',
+        'icon': Icons.storefront_outlined,
+        'group': 'Thu nhập chính',
+        'desc': 'Doanh thu, lợi nhuận',
+      },
+      {
+        'name': 'Đầu tư',
+        'icon': Icons.trending_up_outlined,
+        'group': 'Thu nhập chính',
+        'desc': 'Chứng khoán, cổ tức, crypto',
+      },
     ],
     'Thu nhập phụ': [
-      {'name': 'Được cho/Tặng', 'icon': Icons.volunteer_activism_outlined, 'group': 'Thu nhập phụ', 'desc': 'Lì xì, cho tiền, biếu'},
-      {'name': 'Bán đồ', 'icon': Icons.sell_outlined, 'group': 'Thu nhập phụ', 'desc': 'Thanh lý, pass lại'},
-      {'name': 'Tiền thuê nhà', 'icon': Icons.real_estate_agent_outlined, 'group': 'Thu nhập phụ', 'desc': 'Cho thuê nhà, trọ'},
-      {'name': 'Tiền lãi', 'icon': Icons.monetization_on_outlined, 'group': 'Thu nhập phụ', 'desc': 'Lãi tiết kiệm ngân hàng'},
-      {'name': 'Thu nợ', 'icon': Icons.handshake_outlined, 'group': 'Thu nhập phụ', 'desc': 'Được trả nợ, đòi được nợ'},
-      {'name': 'Làm thêm', 'icon': Icons.laptop_chromebook_outlined, 'group': 'Thu nhập phụ', 'desc': 'Freelance, việc bán thời gian'},
+      {
+        'name': 'Được cho/Tặng',
+        'icon': Icons.volunteer_activism_outlined,
+        'group': 'Thu nhập phụ',
+        'desc': 'Lì xì, cho tiền, biếu',
+      },
+      {
+        'name': 'Bán đồ',
+        'icon': Icons.sell_outlined,
+        'group': 'Thu nhập phụ',
+        'desc': 'Thanh lý, pass lại',
+      },
+      {
+        'name': 'Tiền thuê nhà',
+        'icon': Icons.real_estate_agent_outlined,
+        'group': 'Thu nhập phụ',
+        'desc': 'Cho thuê nhà, trọ',
+      },
+      {
+        'name': 'Tiền lãi',
+        'icon': Icons.monetization_on_outlined,
+        'group': 'Thu nhập phụ',
+        'desc': 'Lãi tiết kiệm ngân hàng',
+      },
+      {
+        'name': 'Thu nợ',
+        'icon': Icons.handshake_outlined,
+        'group': 'Thu nhập phụ',
+        'desc': 'Được trả nợ, đòi được nợ',
+      },
+      {
+        'name': 'Làm thêm',
+        'icon': Icons.laptop_chromebook_outlined,
+        'group': 'Thu nhập phụ',
+        'desc': 'Freelance, việc bán thời gian',
+      },
     ],
     'Khác': [
-      {'name': 'Trợ cấp', 'icon': Icons.school_outlined, 'group': 'Khác', 'desc': 'Học bổng, tiền trợ cấp'},
-      {'name': 'Hoàn tiền', 'icon': Icons.replay_circle_filled_rounded, 'group': 'Khác', 'desc': 'Cashback, hoàn voucher'},
-      {'name': 'Thu khác', 'icon': Icons.account_balance_wallet_outlined, 'group': 'Khác', 'desc': 'Trúng số, nhặt được'},
+      {
+        'name': 'Trợ cấp',
+        'icon': Icons.school_outlined,
+        'group': 'Khác',
+        'desc': 'Học bổng, tiền trợ cấp',
+      },
+      {
+        'name': 'Hoàn tiền',
+        'icon': Icons.replay_circle_filled_rounded,
+        'group': 'Khác',
+        'desc': 'Cashback, hoàn voucher',
+      },
+      {
+        'name': 'Thu khác',
+        'icon': Icons.account_balance_wallet_outlined,
+        'group': 'Khác',
+        'desc': 'Trúng số, nhặt được',
+      },
     ],
   };
 
@@ -175,7 +391,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
             children: [
               // ════════ TOP APP BAR (FINTECH GLASSMORPHISM) ════════
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
                 child: Row(
                   children: [
                     AnimatedScaleButton(
@@ -224,7 +443,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     AnimatedScaleButton(
                       onTap: () => _showAddOrEditCategoryModal(context),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(20),
@@ -236,7 +458,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.add_rounded, color: Colors.white, size: 18),
+                            const Icon(
+                              Icons.add_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               isVi ? 'Tạo' : 'New',
@@ -258,119 +484,139 @@ class _CategoryScreenState extends State<CategoryScreen> {
               if (!widget.lockType)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
-                child: Container(
-                  height: 46,
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      width: 1.0,
+                  child: Container(
+                    height: 46,
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              if (_isIncomeTab) {
+                                HapticFeedback.selectionClick();
+                                setState(() => _isIncomeTab = false);
+                              }
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeInOut,
+                              decoration: BoxDecoration(
+                                color: !_isIncomeTab
+                                    ? context.expense
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: !_isIncomeTab
+                                    ? [
+                                        BoxShadow(
+                                          color: context.expense.withValues(
+                                            alpha: 0.35,
+                                          ),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Center(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.arrow_upward_rounded,
+                                      size: 16,
+                                      color: !_isIncomeTab
+                                          ? Colors.white
+                                          : Colors.white70,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      context.tr('expense'),
+                                      style: TextStyle(
+                                        color: !_isIncomeTab
+                                            ? Colors.white
+                                            : Colors.white70,
+                                        fontWeight: !_isIncomeTab
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                        fontSize: 13.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              if (!_isIncomeTab) {
+                                HapticFeedback.selectionClick();
+                                setState(() => _isIncomeTab = true);
+                              }
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeInOut,
+                              decoration: BoxDecoration(
+                                color: _isIncomeTab
+                                    ? context.income
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: _isIncomeTab
+                                    ? [
+                                        BoxShadow(
+                                          color: context.income.withValues(
+                                            alpha: 0.35,
+                                          ),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Center(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.arrow_downward_rounded,
+                                      size: 16,
+                                      color: _isIncomeTab
+                                          ? Colors.white
+                                          : Colors.white70,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      context.tr('income'),
+                                      style: TextStyle(
+                                        color: _isIncomeTab
+                                            ? Colors.white
+                                            : Colors.white70,
+                                        fontWeight: _isIncomeTab
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                        fontSize: 13.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            if (_isIncomeTab) {
-                              HapticFeedback.selectionClick();
-                              setState(() => _isIncomeTab = false);
-                            }
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.easeInOut,
-                            decoration: BoxDecoration(
-                              color: !_isIncomeTab ? context.expense : Colors.transparent,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: !_isIncomeTab
-                                  ? [
-                                      BoxShadow(
-                                        color: context.expense.withValues(alpha: 0.35),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: Center(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.arrow_upward_rounded,
-                                    size: 16,
-                                    color: !_isIncomeTab ? Colors.white : Colors.white70,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    context.tr('expense'),
-                                    style: TextStyle(
-                                      color: !_isIncomeTab ? Colors.white : Colors.white70,
-                                      fontWeight: !_isIncomeTab ? FontWeight.w700 : FontWeight.w500,
-                                      fontSize: 13.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            if (!_isIncomeTab) {
-                              HapticFeedback.selectionClick();
-                              setState(() => _isIncomeTab = true);
-                            }
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.easeInOut,
-                            decoration: BoxDecoration(
-                              color: _isIncomeTab ? context.income : Colors.transparent,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: _isIncomeTab
-                                  ? [
-                                      BoxShadow(
-                                        color: context.income.withValues(alpha: 0.35),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: Center(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.arrow_downward_rounded,
-                                    size: 16,
-                                    color: _isIncomeTab ? Colors.white : Colors.white70,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    context.tr('income'),
-                                    style: TextStyle(
-                                      color: _isIncomeTab ? Colors.white : Colors.white70,
-                                      fontWeight: _isIncomeTab ? FontWeight.w700 : FontWeight.w500,
-                                      fontSize: 13.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
-              ),
 
               const SizedBox(height: 4),
 
@@ -380,17 +626,23 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Theme.of(context).scaffoldBackgroundColor,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(32),
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.06),
+                        color: Colors.black.withValues(
+                          alpha: isDark ? 0.4 : 0.06,
+                        ),
                         blurRadius: 20,
                         offset: const Offset(0, -6),
                       ),
                     ],
                   ),
                   child: ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(32),
+                    ),
                     child: Column(
                       children: [
                         // THANH TÌM KIẾM
@@ -401,35 +653,50 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             decoration: BoxDecoration(
                               color: context.inputBgColor,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: context.borderColor,
-                              ),
+                              border: Border.all(color: context.borderColor),
                             ),
                             child: TextField(
                               controller: _searchController,
                               focusNode: _searchFocusNode,
-                              onChanged: (val) => setState(() => _searchQuery = val.toLowerCase().trim()),
-                              style: (context.textTheme.bodyMedium ?? const TextStyle()).copyWith(
-                                color: context.textPrimaryColor,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                              onChanged: (val) => setState(
+                                () => _searchQuery = val.toLowerCase().trim(),
                               ),
+                              style:
+                                  (context.textTheme.bodyMedium ??
+                                          const TextStyle())
+                                      .copyWith(
+                                        color: context.textPrimaryColor,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                               decoration: InputDecoration(
-                                hintText: isVi ? 'Tìm kiếm danh mục nhanh...' : 'Search categories quickly...',
-                                hintStyle: (context.textTheme.bodyMedium ?? const TextStyle()).copyWith(
-                                  color: context.textMutedColor,
-                                  fontSize: 14,
-                                ),
+                                hintText: isVi
+                                    ? 'Tìm kiếm danh mục nhanh...'
+                                    : 'Search categories quickly...',
+                                hintStyle:
+                                    (context.textTheme.bodyMedium ??
+                                            const TextStyle())
+                                        .copyWith(
+                                          color: context.textMutedColor,
+                                          fontSize: 14,
+                                        ),
                                 prefixIcon: Icon(
                                   Icons.search_rounded,
                                   color: context.textSecondaryColor,
                                   size: 20,
                                 ),
                                 border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
                                 suffixIcon: _searchQuery.isNotEmpty
                                     ? IconButton(
-                                        icon: Icon(Icons.close_rounded, color: context.textSecondaryColor, size: 18),
+                                        icon: Icon(
+                                          Icons.close_rounded,
+                                          color: context.textSecondaryColor,
+                                          size: 18,
+                                        ),
                                         onPressed: () {
                                           _searchController.clear();
                                           setState(() => _searchQuery = '');
@@ -448,12 +715,21 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             stream: _userRepo.getUserStream(),
                             builder: (context, snapshot) {
                               final user = snapshot.data;
-                              final customCategories = user?.customCategories ?? [];
+                              final customCategories =
+                                  user?.customCategories ?? [];
 
                               if (!_isIncomeTab) {
-                                return _buildExpenseCategoryList(customCategories, user, isDark);
+                                return _buildExpenseCategoryList(
+                                  customCategories,
+                                  user,
+                                  isDark,
+                                );
                               } else {
-                                return _buildIncomeCategoryList(customCategories, user, isDark);
+                                return _buildIncomeCategoryList(
+                                  customCategories,
+                                  user,
+                                  isDark,
+                                );
                               }
                             },
                           ),
@@ -471,7 +747,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   // ════════ EXPENSE LIST ════════
-  Widget _buildExpenseCategoryList(List<dynamic> customCategories, UserModel? user, bool isDark) {
+  Widget _buildExpenseCategoryList(
+    List<dynamic> customCategories,
+    UserModel? user,
+    bool isDark,
+  ) {
     // Trích xuất các override màu / icon của danh mục hệ thống
     final Map<String, Map<String, dynamic>> overrideMap = {};
     for (int idx = 0; idx < customCategories.length; idx++) {
@@ -511,14 +791,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
     for (int idx = 0; idx < customCategories.length; idx++) {
       final item = customCategories[idx];
-      if (item is Map && item['isOverride'] == true) continue; // Bỏ qua override, đã gộp vào nhóm mặc định
+      if (item is Map && item['isOverride'] == true)
+        continue; // Bỏ qua override, đã gộp vào nhóm mặc định
       if (item['isIncome'] == false) {
         String group = item['group'] ?? 'Khác';
         if (!groupedData.containsKey(group)) groupedData[group] = [];
         groupedData[group]!.add({
           'name': item['name'],
           'icon': IconData(item['iconCode'], fontFamily: 'MaterialIcons'),
-          'color': item['colorValue'] != null ? Color(item['colorValue']) : null,
+          'color': item['colorValue'] != null
+              ? Color(item['colorValue'])
+              : null,
           'isCustom': true,
           'customIndex': idx,
           'group': group,
@@ -549,11 +832,18 @@ class _CategoryScreenState extends State<CategoryScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.search_off_rounded, size: 48, color: isDark ? Colors.white24 : Colors.grey.shade300),
+                  Icon(
+                    Icons.search_off_rounded,
+                    size: 48,
+                    color: isDark ? Colors.white24 : Colors.grey.shade300,
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     'Không tìm thấy danh mục "$_searchQuery"',
-                    style: TextStyle(color: isDark ? Colors.white38 : Colors.grey, fontSize: 14),
+                    style: TextStyle(
+                      color: isDark ? Colors.white38 : Colors.grey,
+                      fontSize: 14,
+                    ),
                   ),
                 ],
               ),
@@ -566,10 +856,16 @@ class _CategoryScreenState extends State<CategoryScreen> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
               child: InkWell(
-                onTap: () => Navigator.push(context, PageTransitions.slideRight(const GroupListScreen())),
+                onTap: () => Navigator.push(
+                  context,
+                  PageTransitions.slideRight(const GroupListScreen()),
+                ),
                 borderRadius: BorderRadius.circular(18),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: isDark
@@ -577,7 +873,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           : [const Color(0xFFE8F5F3), const Color(0xFFD5EDE9)],
                     ),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: context.brandColor.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: context.brandColor.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -588,7 +886,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           color: context.brandColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(14),
                         ),
-                        child: Icon(Icons.group_rounded, color: context.brandColor, size: 22),
+                        child: Icon(
+                          Icons.group_rounded,
+                          color: context.brandColor,
+                          size: 22,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -597,24 +899,36 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           children: [
                             Text(
                               isVi ? 'Nhóm Chi Tiêu' : 'Group Fund',
-                              style: (context.textTheme.titleSmall ?? const TextStyle()).copyWith(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: context.textPrimaryColor,
-                              ),
+                              style:
+                                  (context.textTheme.titleSmall ??
+                                          const TextStyle())
+                                      .copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: context.textPrimaryColor,
+                                      ),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              isVi ? 'Quản lý chi tiêu nhóm, quỹ chung' : 'Manage shared group expenses & funds',
-                              style: (context.textTheme.bodySmall ?? const TextStyle()).copyWith(
-                                fontSize: 12,
-                                color: context.textSecondaryColor,
-                              ),
+                              isVi
+                                  ? 'Quản lý chi tiêu nhóm, quỹ chung'
+                                  : 'Manage shared group expenses & funds',
+                              style:
+                                  (context.textTheme.bodySmall ??
+                                          const TextStyle())
+                                      .copyWith(
+                                        fontSize: 12,
+                                        color: context.textSecondaryColor,
+                                      ),
                             ),
                           ],
                         ),
                       ),
-                      Icon(Icons.arrow_forward_ios_rounded, size: 16, color: context.textSecondaryColor),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 16,
+                        color: context.textSecondaryColor,
+                      ),
                     ],
                   ),
                 ),
@@ -629,12 +943,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, i) {
-                    return _buildCategoryListItem(context, groupedData[group]![i], user, isDark);
-                  },
-                  childCount: groupedData[group]!.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, i) {
+                  return _buildCategoryListItem(
+                    context,
+                    groupedData[group]![i],
+                    user,
+                    isDark,
+                  );
+                }, childCount: groupedData[group]!.length),
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 12)),
@@ -646,7 +962,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   // ════════ INCOME LIST ════════
-  Widget _buildIncomeCategoryList(List<dynamic> customCategories, UserModel? user, bool isDark) {
+  Widget _buildIncomeCategoryList(
+    List<dynamic> customCategories,
+    UserModel? user,
+    bool isDark,
+  ) {
     // Trích xuất các override màu / icon của danh mục hệ thống
     final Map<String, Map<String, dynamic>> overrideMap = {};
     for (int idx = 0; idx < customCategories.length; idx++) {
@@ -686,14 +1006,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
     for (int idx = 0; idx < customCategories.length; idx++) {
       final item = customCategories[idx];
-      if (item is Map && item['isOverride'] == true) continue; // Bỏ qua override, đã gộp vào nhóm mặc định
+      if (item is Map && item['isOverride'] == true)
+        continue; // Bỏ qua override, đã gộp vào nhóm mặc định
       if (item['isIncome'] == true) {
         String group = item['group'] ?? 'Khác';
         if (!groupedData.containsKey(group)) groupedData[group] = [];
         groupedData[group]!.add({
           'name': item['name'],
           'icon': IconData(item['iconCode'], fontFamily: 'MaterialIcons'),
-          'color': item['colorValue'] != null ? Color(item['colorValue']) : null,
+          'color': item['colorValue'] != null
+              ? Color(item['colorValue'])
+              : null,
           'isCustom': true,
           'customIndex': idx,
           'group': group,
@@ -724,11 +1047,18 @@ class _CategoryScreenState extends State<CategoryScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.search_off_rounded, size: 48, color: isDark ? Colors.white24 : Colors.grey.shade300),
+                  Icon(
+                    Icons.search_off_rounded,
+                    size: 48,
+                    color: isDark ? Colors.white24 : Colors.grey.shade300,
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     'Không tìm thấy danh mục "$_searchQuery"',
-                    style: TextStyle(color: isDark ? Colors.white38 : Colors.grey, fontSize: 14),
+                    style: TextStyle(
+                      color: isDark ? Colors.white38 : Colors.grey,
+                      fontSize: 14,
+                    ),
                   ),
                 ],
               ),
@@ -741,12 +1071,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, i) {
-                    return _buildCategoryListItem(context, groupedData[group]![i], user, isDark);
-                  },
-                  childCount: groupedData[group]!.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, i) {
+                  return _buildCategoryListItem(
+                    context,
+                    groupedData[group]![i],
+                    user,
+                    isDark,
+                  );
+                }, childCount: groupedData[group]!.length),
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 12)),
@@ -784,11 +1116,18 @@ class _CategoryScreenState extends State<CategoryScreen> {
         final isVi = LanguageScope.of(context).isVietnamese;
         return SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.only(left: 24, right: 24, bottom: 8, top: 8),
+            padding: const EdgeInsets.only(
+              left: 24,
+              right: 24,
+              bottom: 8,
+              top: 8,
+            ),
             child: Text(
               _getGroupDisplay(title, isVi),
               style: TextStyle(
-                color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF94A3B8)
+                    : const Color(0xFF64748B),
                 fontSize: 11.5,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.2,
@@ -801,11 +1140,19 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   /// List Item kiểu mới: 2 cột (icon + tên + mô tả) — thiết kế premium
-  Widget _buildCategoryListItem(BuildContext context, Map<String, dynamic> cat, UserModel? user, bool isDark) {
+  Widget _buildCategoryListItem(
+    BuildContext context,
+    Map<String, dynamic> cat,
+    UserModel? user,
+    bool isDark,
+  ) {
     final isCustom = cat['isCustom'] == true;
     final isOverridden = cat['isOverridden'] == true;
-    final Color color = cat['color'] ?? CategoryUtils.getVibrantColor(cat['name']);
-    final Color bgColor = isDark ? color.withValues(alpha: 0.18) : color.withValues(alpha: 0.08);
+    final Color color =
+        cat['color'] ?? CategoryUtils.getVibrantColor(cat['name']);
+    final Color bgColor = isDark
+        ? color.withValues(alpha: 0.18)
+        : color.withValues(alpha: 0.08);
     final String desc = cat['desc'] ?? '';
 
     return Padding(
@@ -868,11 +1215,14 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           Flexible(
                             child: Text(
                               context.trCat(cat['name']),
-                              style: (context.textTheme.bodyLarge ?? const TextStyle()).copyWith(
-                                color: context.textPrimaryColor,
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style:
+                                  (context.textTheme.bodyLarge ??
+                                          const TextStyle())
+                                      .copyWith(
+                                        color: context.textPrimaryColor,
+                                        fontSize: 14.5,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -880,14 +1230,27 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           if (isCustom || isOverridden) ...[
                             const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: color.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                isCustom ? (LanguageScope.of(context).isVietnamese ? 'Tùy chỉnh' : 'Custom') : (LanguageScope.of(context).isVietnamese ? 'Đã sửa' : 'Edited'),
-                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: color),
+                                isCustom
+                                    ? (LanguageScope.of(context).isVietnamese
+                                          ? 'Tùy chỉnh'
+                                          : 'Custom')
+                                    : (LanguageScope.of(context).isVietnamese
+                                          ? 'Đã sửa'
+                                          : 'Edited'),
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: color,
+                                ),
                               ),
                             ),
                           ],
@@ -898,7 +1261,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         Text(
                           desc,
                           style: TextStyle(
-                            color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade600,
+                            color: isDark
+                                ? const Color(0xFF94A3B8)
+                                : Colors.grey.shade600,
                             fontSize: 12,
                           ),
                           maxLines: 1,
@@ -908,7 +1273,13 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, color: isDark ? const Color(0xFF94A3B8) : Colors.grey.shade400, size: 20),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: isDark
+                      ? const Color(0xFF94A3B8)
+                      : Colors.grey.shade400,
+                  size: 20,
+                ),
               ],
             ),
           ),
@@ -917,12 +1288,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
     );
   }
 
-
   /// Hiển thị tùy chọn Sửa / Xóa cho danh mục tự tạo
-  void _showCustomCategoryOptions(BuildContext context, Map<String, dynamic> cat, UserModel user) {
+  void _showCustomCategoryOptions(
+    BuildContext context,
+    Map<String, dynamic> cat,
+    UserModel user,
+  ) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
@@ -933,23 +1309,36 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 width: 40,
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
               Row(
                 children: [
-                  Icon(cat['icon'], color: cat['color'] ?? const Color(0xFF438883), size: 28),
+                  Icon(
+                    cat['icon'],
+                    color: cat['color'] ?? const Color(0xFF438883),
+                    size: 28,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       cat['name'],
-                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
               ),
               const Divider(height: 24),
               ListTile(
-                leading: const Icon(Icons.edit_outlined, color: Color(0xFF438883)),
+                leading: const Icon(
+                  Icons.edit_outlined,
+                  color: Color(0xFF438883),
+                ),
                 title: Text(context.tr('edit_category_title')),
                 onTap: () {
                   Navigator.pop(sheetContext);
@@ -960,14 +1349,19 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     initialName: cat['name'],
                     initialIcon: cat['icon'],
                     initialColor: cat['color'],
-                    initialGroup: cat['group'] ?? (_isIncomeTab ? _incomeGroups[0] : _expenseGroups[0]),
+                    initialGroup:
+                        cat['group'] ??
+                        (_isIncomeTab ? _incomeGroups[0] : _expenseGroups[0]),
                     initialIsIncome: _isIncomeTab,
                   );
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.delete_outline, color: Colors.red),
-                title: Text(context.tr('delete_category'), style: const TextStyle(color: Colors.red)),
+                title: Text(
+                  context.tr('delete_category'),
+                  style: const TextStyle(color: Colors.red),
+                ),
                 onTap: () async {
                   Navigator.pop(sheetContext);
                   final confirm = await MonoDialog.confirm(
@@ -996,14 +1390,20 @@ class _CategoryScreenState extends State<CategoryScreen> {
   }
 
   /// Hiển thị tùy chọn Tùy chỉnh màu & icon / Khôi phục cho danh mục hệ thống
-  void _showDefaultCategoryOptions(BuildContext context, Map<String, dynamic> cat, UserModel user) {
+  void _showDefaultCategoryOptions(
+    BuildContext context,
+    Map<String, dynamic> cat,
+    UserModel user,
+  ) {
     final bool isOverridden = cat['isOverridden'] == true;
     final color = cat['color'] ?? CategoryUtils.getVibrantColor(cat['name']);
     final icon = cat['icon'] ?? CategoryUtils.getCategoryIcon(cat['name']);
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
@@ -1014,7 +1414,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 width: 40,
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
               Row(
                 children: [
@@ -1034,12 +1437,24 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       children: [
                         Text(
                           context.trCat(cat['name']),
-                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          isOverridden ? (isVi ? 'Danh mục hệ thống (đã tùy chỉnh)' : 'System category (customized)') : (isVi ? 'Danh mục hệ thống mặc định' : 'Default system category'),
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                          isOverridden
+                              ? (isVi
+                                    ? 'Danh mục hệ thống (đã tùy chỉnh)'
+                                    : 'System category (customized)')
+                              : (isVi
+                                    ? 'Danh mục hệ thống mặc định'
+                                    : 'Default system category'),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
+                          ),
                         ),
                       ],
                     ),
@@ -1048,9 +1463,19 @@ class _CategoryScreenState extends State<CategoryScreen> {
               ),
               const Divider(height: 24),
               ListTile(
-                leading: const Icon(Icons.palette_outlined, color: Color(0xFF438883)),
-                title: Text(isVi ? 'Đổi màu & biểu tượng' : 'Change Color & Icon'),
-                subtitle: Text(isVi ? 'Cập nhật màu và icon trên trang thống kê và toàn bộ app' : 'Update color and icon across statistics and app', style: const TextStyle(fontSize: 12)),
+                leading: const Icon(
+                  Icons.palette_outlined,
+                  color: Color(0xFF438883),
+                ),
+                title: Text(
+                  isVi ? 'Đổi màu & biểu tượng' : 'Change Color & Icon',
+                ),
+                subtitle: Text(
+                  isVi
+                      ? 'Cập nhật màu và icon trên trang thống kê và toàn bộ app'
+                      : 'Update color and icon across statistics and app',
+                  style: const TextStyle(fontSize: 12),
+                ),
                 onTap: () {
                   Navigator.pop(sheetContext);
                   _showAddOrEditCategoryModal(
@@ -1060,21 +1485,39 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     initialName: cat['name'],
                     initialIcon: icon,
                     initialColor: color,
-                    initialGroup: cat['group'] ?? (_isIncomeTab ? _incomeGroups[0] : _expenseGroups[0]),
+                    initialGroup:
+                        cat['group'] ??
+                        (_isIncomeTab ? _incomeGroups[0] : _expenseGroups[0]),
                     initialIsIncome: _isIncomeTab,
                   );
                 },
               ),
               if (isOverridden)
                 ListTile(
-                  leading: const Icon(Icons.restart_alt_rounded, color: Colors.orange),
-                  title: Text(isVi ? 'Khôi phục mặc định' : 'Reset to Default', style: const TextStyle(color: Colors.orange)),
-                  subtitle: Text(isVi ? 'Trở về màu sắc và biểu tượng gốc của hệ thống' : 'Revert to original system color and icon', style: const TextStyle(fontSize: 12)),
+                  leading: const Icon(
+                    Icons.restart_alt_rounded,
+                    color: Colors.orange,
+                  ),
+                  title: Text(
+                    isVi ? 'Khôi phục mặc định' : 'Reset to Default',
+                    style: const TextStyle(color: Colors.orange),
+                  ),
+                  subtitle: Text(
+                    isVi
+                        ? 'Trở về màu sắc và biểu tượng gốc của hệ thống'
+                        : 'Revert to original system color and icon',
+                    style: const TextStyle(fontSize: 12),
+                  ),
                   onTap: () async {
                     Navigator.pop(sheetContext);
                     await _resetDefaultCategory(cat['name']);
                     if (context.mounted) {
-                      TopToast.show(context, isVi ? 'Đã khôi phục mặc định' : 'Reset to default successfully');
+                      TopToast.show(
+                        context,
+                        isVi
+                            ? 'Đã khôi phục mặc định'
+                            : 'Reset to default successfully',
+                      );
                     }
                   },
                 ),
@@ -1100,7 +1543,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final nameController = TextEditingController(text: initialName ?? '');
     bool isIncomeLocal = initialIsIncome ?? _isIncomeTab;
-    String selectedGroup = initialGroup ?? (isIncomeLocal ? _incomeGroups[0] : _expenseGroups[0]);
+    String selectedGroup =
+        initialGroup ?? (isIncomeLocal ? _incomeGroups[0] : _expenseGroups[0]);
     Color selectedColor = initialColor ?? _paletteColors[0];
 
     final icons = isIncomeLocal ? _incomeIcons : _expenseIcons;
@@ -1112,7 +1556,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
       backgroundColor: Colors.transparent,
       builder: (modalCtx) => StatefulBuilder(
         builder: (modalCtx, setModalState) {
-          final currentIcons = List<IconData>.from(isIncomeLocal ? _incomeIcons : _expenseIcons);
+          final currentIcons = List<IconData>.from(
+            isIncomeLocal ? _incomeIcons : _expenseIcons,
+          );
           if (!currentIcons.contains(selectedIcon)) {
             currentIcons.insert(0, selectedIcon);
           }
@@ -1135,7 +1581,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
             ),
             decoration: BoxDecoration(
               color: Theme.of(modalCtx).scaffoldBackgroundColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(32),
+              ),
             ),
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -1163,8 +1611,13 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       Text(
                         isDefaultEdit
                             ? 'Tùy chỉnh danh mục'
-                            : (isEdit ? context.tr('edit_category_title') : context.tr('create_category_title')),
-                        style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+                            : (isEdit
+                                  ? context.tr('edit_category_title')
+                                  : context.tr('create_category_title')),
+                        style: const TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close),
@@ -1180,7 +1633,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       height: 42,
                       padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFEEEEEE),
+                        color: isDark
+                            ? const Color(0xFF2C2C2C)
+                            : const Color(0xFFEEEEEE),
                         borderRadius: BorderRadius.circular(22),
                       ),
                       child: Row(
@@ -1194,14 +1649,18 @@ class _CategoryScreenState extends State<CategoryScreen> {
                               }),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: !isIncomeLocal ? const Color(0xFF438883) : Colors.transparent,
+                                  color: !isIncomeLocal
+                                      ? const Color(0xFF438883)
+                                      : Colors.transparent,
                                   borderRadius: BorderRadius.circular(18),
                                 ),
                                 alignment: Alignment.center,
                                 child: Text(
                                   context.tr('tab_expense'),
                                   style: TextStyle(
-                                    color: !isIncomeLocal ? Colors.white : Colors.grey,
+                                    color: !isIncomeLocal
+                                        ? Colors.white
+                                        : Colors.grey,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
                                   ),
@@ -1218,14 +1677,18 @@ class _CategoryScreenState extends State<CategoryScreen> {
                               }),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: isIncomeLocal ? const Color(0xFF438883) : Colors.transparent,
+                                  color: isIncomeLocal
+                                      ? const Color(0xFF438883)
+                                      : Colors.transparent,
                                   borderRadius: BorderRadius.circular(18),
                                 ),
                                 alignment: Alignment.center,
                                 child: Text(
                                   context.tr('tab_income'),
                                   style: TextStyle(
-                                    color: isIncomeLocal ? Colors.white : Colors.grey,
+                                    color: isIncomeLocal
+                                        ? Colors.white
+                                        : Colors.grey,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
                                   ),
@@ -1241,7 +1704,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     // Group Choice Chips
                     Text(
                       context.tr('select_group'),
-                      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: Colors.grey),
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     SingleChildScrollView(
@@ -1254,15 +1721,26 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             child: ChoiceChip(
                               label: Text(context.trCat(group)),
                               selected: isSelected,
-                              onSelected: (_) => setModalState(() => selectedGroup = group),
+                              onSelected: (_) =>
+                                  setModalState(() => selectedGroup = group),
                               selectedColor: const Color(0xFF438883),
                               labelStyle: TextStyle(
-                                color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                color: isSelected
+                                    ? Colors.white
+                                    : (isDark
+                                          ? Colors.white70
+                                          : Colors.black87),
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
                                 fontSize: 13,
                               ),
-                              backgroundColor: isDark ? context.colors.surfaceContainerHighest : context.inputBgColor,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              backgroundColor: isDark
+                                  ? context.colors.surfaceContainerHighest
+                                  : context.inputBgColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           );
                         }).toList(),
@@ -1275,18 +1753,26 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   TextField(
                     controller: nameController,
                     readOnly: isDefaultEdit,
-                    style: (context.textTheme.bodyMedium ?? const TextStyle()).copyWith(
-                      color: context.textPrimaryColor,
-                      fontSize: 14,
-                    ),
+                    style: (context.textTheme.bodyMedium ?? const TextStyle())
+                        .copyWith(
+                          color: context.textPrimaryColor,
+                          fontSize: 14,
+                        ),
                     decoration: InputDecoration(
                       hintText: context.tr('category_name_hint'),
-                      hintStyle: (context.textTheme.bodyMedium ?? const TextStyle()).copyWith(
+                      hintStyle:
+                          (context.textTheme.bodyMedium ?? const TextStyle())
+                              .copyWith(
+                                color: context.textMutedColor,
+                                fontSize: 14,
+                              ),
+                      helperText: isDefaultEdit
+                          ? 'Tên danh mục mặc định của hệ thống không thể thay đổi'
+                          : null,
+                      helperStyle: TextStyle(
+                        fontSize: 11.5,
                         color: context.textMutedColor,
-                        fontSize: 14,
                       ),
-                      helperText: isDefaultEdit ? 'Tên danh mục mặc định của hệ thống không thể thay đổi' : null,
-                      helperStyle: TextStyle(fontSize: 11.5, color: context.textMutedColor),
                       filled: true,
                       fillColor: context.inputBgColor,
                       prefixIcon: Icon(selectedIcon, color: selectedColor),
@@ -1298,7 +1784,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(color: context.borderColor),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -1306,7 +1795,10 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   // Bảng chọn Màu sắc
                   Text(
                     context.tr('select_color'),
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   SizedBox(
@@ -1314,7 +1806,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: palette.length,
-                      separatorBuilder: (context, index) => const SizedBox(width: 10),
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 10),
                       itemBuilder: (ctx, i) {
                         final c = palette[i];
                         final isSel = selectedColor == c;
@@ -1328,15 +1821,27 @@ class _CategoryScreenState extends State<CategoryScreen> {
                               color: c,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isSel ? Colors.white : Colors.transparent,
+                                color: isSel
+                                    ? Colors.white
+                                    : Colors.transparent,
                                 width: 2.5,
                               ),
                               boxShadow: isSel
-                                  ? [BoxShadow(color: c.withValues(alpha: 0.6), blurRadius: 8, spreadRadius: 1)]
+                                  ? [
+                                      BoxShadow(
+                                        color: c.withValues(alpha: 0.6),
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                      ),
+                                    ]
                                   : null,
                             ),
                             child: isSel
-                                ? const Icon(Icons.check, color: Colors.white, size: 20)
+                                ? const Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 20,
+                                  )
                                 : null,
                           ),
                         );
@@ -1348,18 +1853,22 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   // Bảng chọn Icon
                   Text(
                     context.tr('select_icon'),
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
                     height: 160,
                     child: GridView.builder(
                       physics: const BouncingScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 5,
-                        mainAxisSpacing: 10,
-                        crossAxisSpacing: 10,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 5,
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 10,
+                          ),
                       itemCount: currentIcons.length,
                       itemBuilder: (ctx, i) {
                         final icon = currentIcons[i];
@@ -1372,15 +1881,26 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? selectedColor
-                                  : (isDark ? const Color(0xFF2E2E2E) : const Color(0xFFF3F4F6)),
+                                  : (isDark
+                                        ? const Color(0xFF2E2E2E)
+                                        : const Color(0xFFF3F4F6)),
                               borderRadius: BorderRadius.circular(14),
                               boxShadow: isSelected
-                                  ? [BoxShadow(color: selectedColor.withValues(alpha: 0.4), blurRadius: 6)]
+                                  ? [
+                                      BoxShadow(
+                                        color: selectedColor.withValues(
+                                          alpha: 0.4,
+                                        ),
+                                        blurRadius: 6,
+                                      ),
+                                    ]
                                   : null,
                             ),
                             child: Icon(
                               icon,
-                              color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black54),
+                              color: isSelected
+                                  ? Colors.white
+                                  : (isDark ? Colors.white70 : Colors.black54),
                               size: 24,
                             ),
                           ),
@@ -1398,24 +1918,40 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       onPressed: () async {
                         final name = nameController.text.trim();
                         if (name.isEmpty) {
-                          TopToast.show(context, context.tr('empty_category_name'), isError: true);
+                          TopToast.show(
+                            context,
+                            context.tr('empty_category_name'),
+                            isError: true,
+                          );
                           return;
                         }
 
                         // Kiểm tra trùng tên nếu là danh mục tự tạo
                         if (!isDefaultEdit) {
                           final user = await _userRepo.getUser();
-                          final currentCustom = List<dynamic>.from(user?.customCategories ?? []);
-                          final isDup = currentCustom.asMap().entries.any((entry) {
-                            if (isEdit && entry.key == editCategoryIndex) return false;
+                          final currentCustom = List<dynamic>.from(
+                            user?.customCategories ?? [],
+                          );
+                          final isDup = currentCustom.asMap().entries.any((
+                            entry,
+                          ) {
+                            if (isEdit && entry.key == editCategoryIndex)
+                              return false;
                             final c = entry.value;
                             return c is Map &&
                                 c['isOverride'] != true &&
-                                (c['name'] as String? ?? '').toLowerCase().trim() == name.toLowerCase();
+                                (c['name'] as String? ?? '')
+                                        .toLowerCase()
+                                        .trim() ==
+                                    name.toLowerCase();
                           });
                           if (isDup) {
                             if (context.mounted) {
-                              TopToast.show(context, 'Tên danh mục "$name" đã tồn tại', isError: true);
+                              TopToast.show(
+                                context,
+                                'Tên danh mục "$name" đã tồn tại',
+                                isError: true,
+                              );
                             }
                             return;
                           }
@@ -1459,11 +1995,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF438883),
                         elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
                       child: Text(
                         context.tr('save_category'),
-                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -1496,7 +2038,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
     await _userRepo.updateUserProfile({'customCategories': currentCustom});
     try {
-      await _firestoreService.updateUserProfile({'customCategories': currentCustom});
+      await _firestoreService.updateUserProfile({
+        'customCategories': currentCustom,
+      });
     } catch (_) {}
     CategoryStyleService.instance.applyCustomCategories(currentCustom);
   }
@@ -1525,7 +2069,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
       };
       await _userRepo.updateUserProfile({'customCategories': currentCustom});
       try {
-        await _firestoreService.updateUserProfile({'customCategories': currentCustom});
+        await _firestoreService.updateUserProfile({
+          'customCategories': currentCustom,
+        });
       } catch (_) {}
       CategoryStyleService.instance.applyCustomCategories(currentCustom);
 
@@ -1574,7 +2120,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
     await _userRepo.updateUserProfile({'customCategories': currentCustom});
     try {
-      await _firestoreService.updateUserProfile({'customCategories': currentCustom});
+      await _firestoreService.updateUserProfile({
+        'customCategories': currentCustom,
+      });
     } catch (_) {}
     CategoryStyleService.instance.applyCustomCategories(currentCustom);
   }
@@ -1589,7 +2137,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
 
     await _userRepo.updateUserProfile({'customCategories': currentCustom});
     try {
-      await _firestoreService.updateUserProfile({'customCategories': currentCustom});
+      await _firestoreService.updateUserProfile({
+        'customCategories': currentCustom,
+      });
     } catch (_) {}
     CategoryStyleService.instance.applyCustomCategories(currentCustom);
   }
@@ -1602,7 +2152,9 @@ class _CategoryScreenState extends State<CategoryScreen> {
       currentCustom.removeAt(index);
       await _userRepo.updateUserProfile({'customCategories': currentCustom});
       try {
-        await _firestoreService.updateUserProfile({'customCategories': currentCustom});
+        await _firestoreService.updateUserProfile({
+          'customCategories': currentCustom,
+        });
       } catch (_) {}
       CategoryStyleService.instance.applyCustomCategories(currentCustom);
     }

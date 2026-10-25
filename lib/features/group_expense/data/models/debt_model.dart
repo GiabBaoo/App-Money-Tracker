@@ -23,18 +23,34 @@ class DebtModel {
     required this.updatedAt,
   });
 
+  int get amountVnd => amount.round();
+
   factory DebtModel.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(dynamic val) {
+      if (val is Timestamp) return val.toDate();
+      if (val is int)
+        return DateTime.fromMillisecondsSinceEpoch(val, isUtc: true);
+      if (val is String) return DateTime.tryParse(val) ?? DateTime.now();
+      return DateTime.now();
+    }
+
+    final statusStr = json['status'] as String? ?? 'active';
+    final status = DebtStatus.values.firstWhere(
+      (e) =>
+          e.toString().split('.').last.toLowerCase() ==
+          statusStr.replaceAll('_', '').toLowerCase(),
+      orElse: () => DebtStatus.active,
+    );
+
     return DebtModel(
       id: json['id'] as String,
       groupId: json['groupId'] as String,
       debtorId: json['debtorId'] as String,
       creditorId: json['creditorId'] as String,
       amount: (json['amount'] as num).toDouble(),
-      status: DebtStatus.values.firstWhere(
-        (e) => e.toString() == 'DebtStatus.${json['status']}',
-      ),
-      createdAt: (json['createdAt'] as Timestamp).toDate(),
-      updatedAt: (json['updatedAt'] as Timestamp).toDate(),
+      status: status,
+      createdAt: parseDate(json['createdAt']),
+      updatedAt: parseDate(json['updatedAt']),
     );
   }
 

@@ -1,18 +1,21 @@
-import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../widgets/animated_scale_button.dart';
 import '../../../../widgets/mono_toast.dart';
-import '../providers/group_expense_providers.dart';
+import '../../../../data/repositories/notification_repository.dart';
+import '../../../../data/repositories/user_repository.dart';
 import '../../../../models/notification_model.dart';
+import '../../../../models/user_model.dart';
+import '../../../../services/notification_service.dart';
+import '../providers/group_expense_providers.dart';
 import 'group_detail_screen.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../utils/page_transitions.dart';
 import '../../../../utils/category_utils.dart';
+import '../../../../services/language_service.dart';
 
 class JoinGroupScreen extends ConsumerStatefulWidget {
   final String groupId;
@@ -52,22 +55,17 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
     if (widget.notificationId == null) return;
 
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('notifications')
-          .doc(widget.notificationId)
-          .get();
-
-      if (doc.exists && mounted) {
-        final status = doc.get('status') as String?;
-        if (status == 'accepted') {
+      final noti = await NotificationRepository().getById(
+        widget.notificationId!,
+      );
+      if (noti != null && mounted) {
+        if (noti.status == 'accepted') {
           setState(() => _isAccepted = true);
-        } else if (status == 'rejected') {
+        } else if (noti.status == 'rejected') {
           setState(() => _isRejected = true);
         }
       }
-    } catch (e) {
-      debugPrint('Error checking notification status: $e');
-    }
+    } catch (_) {}
   }
 
   Future<void> _sendNotificationToAdmin({
@@ -88,54 +86,35 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
         groupName: groupName,
       );
 
-      await FirebaseFirestore.instance
-          .collection('notifications')
-          .add(notification.toFirestore());
-
-      debugPrint('Notification sent to admin: $adminId');
-    } catch (e) {
-      debugPrint('Error sending notification to admin: $e');
-    }
+      await NotificationService().dispatchNotification(
+        notification: notification,
+        pushStatusBar: false,
+      );
+    } catch (_) {}
   }
 
   Future<String?> _getCurrentUserName() async {
     try {
-      final userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId == null) return null;
-
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .get();
-
-      if (userDoc.exists) {
-        return userDoc.get('name') as String?;
-      }
-    } catch (e) {
-      debugPrint('Error getting user name: $e');
+      final user = await UserRepository().getUser();
+      return user?.name;
+    } catch (_) {
+      return null;
     }
-    return null;
   }
 
   Future<void> _checkUserAuth() async {
-    // Sử dụng FirebaseAuth trực tiếp để đảm bảo có user
     final firebaseUser = FirebaseAuth.instance.currentUser;
     final userId = firebaseUser?.uid;
-
-    debugPrint(
-      'DEBUG: Checking user - Firebase: ${firebaseUser?.uid}, Provider: ${ref.read(currentUserIdProvider)}',
-    );
 
     if (userId == null) {
       // Chưa đăng nhập - lưu groupId vào SharedPreferences và chuyển đến login
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('pendingGroupId', widget.groupId);
-      debugPrint(
-        'DEBUG: Saved pendingGroupId to SharedPreferences: ${widget.groupId}',
-      );
 
       setState(() {
-        _errorMessage = isVi ? 'Đang chuyển đến trang đăng nhập...' : 'Redirecting to login...';
+        _errorMessage = isVi
+            ? 'Đang chuyển đến trang đăng nhập...'
+            : 'Redirecting to login...';
       });
 
       // Chờ 1 giây rồi chuyển đến login
@@ -186,24 +165,26 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
       await groupRepository.addMember(widget.groupId, userId);
 
       // Lấy tên người dùng hiện tại
-      final userName = await _getCurrentUserName() ?? (isVi ? 'Một người dùng' : 'A user');
+      final userName =
+          await _getCurrentUserName() ?? (isVi ? 'Một người dùng' : 'A user');
 
       // Gửi thông báo tới admin về việc chấp nhận lời mời
       await _sendNotificationToAdmin(
         adminId: group.adminId,
         groupName: group.name,
         title: isVi ? '✅ Chấp nhận lời mời' : '✅ Accepted invitation',
-        description:
-            isVi ? '$userName đã chấp nhận lời mời tham gia quỹ "${group.name}"' : '$userName accepted invitation to join "${group.name}"',
+        description: isVi
+            ? '$userName đã chấp nhận lời mời tham gia quỹ "${group.name}"'
+            : '$userName accepted invitation to join "${group.name}"',
         iconCode: Icons.check_circle.codePoint,
       );
 
       // Cập nhật trạng thái thông báo hiện tại
       if (widget.notificationId != null) {
-        await FirebaseFirestore.instance
-            .collection('notifications')
-            .doc(widget.notificationId)
-            .update({'status': 'accepted'});
+        await NotificationRepository().updateStatus(
+          widget.notificationId!,
+          'accepted',
+        );
       }
 
       if (mounted) {
@@ -214,7 +195,9 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
 
         MonoToast.success(
           context,
-          isVi ? '🎉 Đã tham gia quỹ "${group.name}" thành công!' : '🎉 Joined fund "${group.name}" successfully!',
+          isVi
+              ? '🎉 Đã tham gia quỹ "${group.name}" thành công!'
+              : '🎉 Joined fund "${group.name}" successfully!',
         );
 
         // Chuyển hướng vào trong quỹ sau 2 giây
@@ -230,9 +213,9 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
         });
       }
     } catch (e) {
-      debugPrint('DEBUG ERROR in _joinGroup: $e');
+      debugPrint('Error joining group');
       setState(() {
-        _errorMessage = '${isVi ? 'Lỗi' : 'Error'}: $e';
+        _errorMessage = isVi ? 'Lỗi khi tham gia quỹ' : 'Error joining fund';
         _isJoining = false;
       });
     }
@@ -245,23 +228,26 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
 
     try {
       // Lấy tên người dùng hiện tại
-      final userName = await _getCurrentUserName() ?? (isVi ? 'Một người dùng' : 'A user');
+      final userName =
+          await _getCurrentUserName() ?? (isVi ? 'Một người dùng' : 'A user');
 
       // Gửi thông báo tới admin về việc từ chối lời mời
       await _sendNotificationToAdmin(
         adminId: adminId,
         groupName: groupName,
         title: isVi ? '❌ Từ chối lời mời' : '❌ Declined invitation',
-        description: isVi ? '$userName đã từ chối lời mời tham gia quỹ "$groupName"' : '$userName declined invitation to join "$groupName"',
+        description: isVi
+            ? '$userName đã từ chối lời mời tham gia quỹ "$groupName"'
+            : '$userName declined invitation to join "$groupName"',
         iconCode: Icons.cancel.codePoint,
       );
 
       // Cập nhật trạng thái thông báo hiện tại
       if (widget.notificationId != null) {
-        await FirebaseFirestore.instance
-            .collection('notifications')
-            .doc(widget.notificationId)
-            .update({'status': 'rejected'});
+        await NotificationRepository().updateStatus(
+          widget.notificationId!,
+          'rejected',
+        );
       }
 
       if (mounted) {
@@ -276,7 +262,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
         );
       }
     } catch (e) {
-      debugPrint('Error rejecting invitation: $e');
+      debugPrint('Error rejecting invitation');
       if (mounted) {
         Navigator.pop(context);
         MonoToast.info(
@@ -334,12 +320,11 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        isVi ? 'Lời mời có thể đã hết hạn hoặc quỹ đã bị xóa' : 'Invitation might have expired or fund was deleted',
+                        isVi
+                            ? 'Lời mời có thể đã hết hạn hoặc quỹ đã bị xóa'
+                            : 'Invitation might have expired or fund was deleted',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: textSecondary,
-                        ),
+                        style: TextStyle(fontSize: 14, color: textSecondary),
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton(
@@ -407,7 +392,10 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: Colors.white.withValues(alpha: 0.2),
-                                border: Border.all(color: Colors.white30, width: 1),
+                                border: Border.all(
+                                  color: Colors.white30,
+                                  width: 1,
+                                ),
                               ),
                               child: const Icon(
                                 Icons.arrow_back_ios_new_rounded,
@@ -505,38 +493,39 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                               const SizedBox(height: 32),
 
                               // Admin info
-                              FutureBuilder<DocumentSnapshot>(
-                                future: FirebaseFirestore.instance
-                                    .collection('users')
-                                    .doc(group.adminId)
-                                    .get(),
+                              FutureBuilder<UserModel?>(
+                                future: UserRepository().getUserById(
+                                  group.adminId,
+                                ),
                                 builder: (context, snapshot) {
-                                  if (!snapshot.hasData ||
-                                      !snapshot.data!.exists) {
+                                  final admin = snapshot.data;
+                                  if (admin == null) {
                                     return const SizedBox.shrink();
                                   }
 
-                                  final adminData =
-                                      snapshot.data!.data()
-                                          as Map<String, dynamic>;
-                                  final adminName =
-                                      adminData['name'] as String? ?? 'Admin';
-                                  final adminAvatar =
-                                      adminData['avatarUrl'] as String?;
+                                  final adminName = admin.name.isNotEmpty
+                                      ? admin.name
+                                      : 'Admin';
+                                  final adminAvatar = admin.avatarUrl;
 
                                   return Container(
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                       color: cardBgColor,
                                       borderRadius: BorderRadius.circular(18),
-                                      border: Border.all(color: borderColor, width: 1),
+                                      border: Border.all(
+                                        color: borderColor,
+                                        width: 1,
+                                      ),
                                     ),
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          isVi ? 'Người tạo quỹ' : 'Fund Creator',
+                                          isVi
+                                              ? 'Người tạo quỹ'
+                                              : 'Fund Creator',
                                           style: TextStyle(
                                             fontSize: 13,
                                             color: textSecondary,
@@ -551,10 +540,10 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                               radius: 24,
                                               backgroundColor: groupColor,
                                               backgroundImage:
-                                                  adminAvatar != null
+                                                  adminAvatar.isNotEmpty
                                                   ? NetworkImage(adminAvatar)
                                                   : null,
-                                              child: adminAvatar == null
+                                              child: adminAvatar.isEmpty
                                                   ? Text(
                                                       adminName.isNotEmpty
                                                           ? adminName[0]
@@ -640,7 +629,9 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: context.colors.error.withValues(alpha: 0.1),
+                                    color: context.colors.error.withValues(
+                                      alpha: 0.1,
+                                    ),
                                     borderRadius: BorderRadius.circular(18),
                                     border: Border.all(
                                       color: context.colors.error,
@@ -690,7 +681,9 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                   child: Container(
                     decoration: BoxDecoration(
                       color: cardBgColor,
-                      border: Border(top: BorderSide(color: borderColor, width: 1)),
+                      border: Border(
+                        top: BorderSide(color: borderColor, width: 1),
+                      ),
                     ),
                     padding: const EdgeInsets.all(16),
                     child: _isAccepted || _isRejected
@@ -702,7 +695,9 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                   : context.expense.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(18),
                               border: Border.all(
-                                color: _isAccepted ? context.income : context.expense,
+                                color: _isAccepted
+                                    ? context.income
+                                    : context.expense,
                                 width: 1,
                               ),
                             ),
@@ -720,8 +715,12 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   _isAccepted
-                                      ? (isVi ? 'Bạn đã chấp nhận lời mời' : 'You accepted the invitation')
-                                      : (isVi ? 'Bạn đã từ chối lời mời' : 'You declined the invitation'),
+                                      ? (isVi
+                                            ? 'Bạn đã chấp nhận lời mời'
+                                            : 'You accepted the invitation')
+                                      : (isVi
+                                            ? 'Bạn đã từ chối lời mời'
+                                            : 'You declined the invitation'),
                                   style: TextStyle(
                                     color: _isAccepted
                                         ? context.income
@@ -746,7 +745,9 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                         ),
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(
-                                      color: context.colors.error.withValues(alpha: 0.5),
+                                      color: context.colors.error.withValues(
+                                        alpha: 0.5,
+                                      ),
                                       width: 1.5,
                                     ),
                                     padding: const EdgeInsets.symmetric(
@@ -763,9 +764,8 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                           child: CircularProgressIndicator(
                                             valueColor:
                                                 AlwaysStoppedAnimation<Color>(
-                                                  context.colors.error.withValues(
-                                                    alpha: 0.7,
-                                                  ),
+                                                  context.colors.error
+                                                      .withValues(alpha: 0.7),
                                                 ),
                                             strokeWidth: 2,
                                           ),
@@ -803,9 +803,9 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                                           width: 20,
                                           child: CircularProgressIndicator(
                                             valueColor:
-                                                AlwaysStoppedAnimation<
-                                                  Color
-                                                >(Colors.white),
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Colors.white,
+                                                ),
                                             strokeWidth: 2,
                                           ),
                                         )
@@ -837,10 +837,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                 const SizedBox(height: 16),
                 Text(
                   isVi ? 'Đang tải thông tin quỹ...' : 'Loading fund info...',
-                  style: TextStyle(
-                    color: textSecondary,
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(color: textSecondary, fontSize: 16),
                 ),
               ],
             ),
@@ -869,11 +866,17 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                   const SizedBox(height: 16),
                   Text(
                     isVi ? 'Lỗi tải quỹ' : 'Failed to load fund',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textPrimary),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: textPrimary,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    isVi ? 'Không thể tải thông tin quỹ. Vui lòng thử lại sau.' : 'Cannot load fund info. Please try again later.',
+                    isVi
+                        ? 'Không thể tải thông tin quỹ. Vui lòng thử lại sau.'
+                        : 'Cannot load fund info. Please try again later.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 14, color: textSecondary),
                   ),
@@ -881,7 +884,9 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
                     ),
                     child: Text(isVi ? 'Quay lại' : 'Go back'),
                   ),

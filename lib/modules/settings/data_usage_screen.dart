@@ -35,12 +35,20 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                    icon: const Icon(
+                      Icons.arrow_back_ios,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                   Text(
                     isVi ? 'Sử dụng dữ liệu' : 'Data Usage',
-                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(width: 48),
                 ],
@@ -52,50 +60,70 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: StreamBuilder<UserModel?>(
                   stream: _firestoreService.getUserStream(),
                   builder: (context, snapshot) {
                     final user = snapshot.data;
-                    if (user == null) return const Center(child: CircularProgressIndicator());
+                    if (user == null)
+                      return const Center(child: CircularProgressIndicator());
 
                     final isLocation = user.dataUsage['location'] == true;
                     final isContacts = user.dataUsage['contacts'] == true;
                     final isMicrophone = user.dataUsage['microphone'] == true;
 
                     return SingleChildScrollView(
-                      padding: const EdgeInsets.only(top: 30, bottom: 40, left: 24, right: 24),
+                      padding: const EdgeInsets.only(
+                        top: 30,
+                        bottom: 40,
+                        left: 24,
+                        right: 24,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildSectionTitle(context, isVi ? 'QUYỀN TRUY CẬP' : 'APP PERMISSIONS'),
+                          _buildSectionTitle(
+                            context,
+                            isVi ? 'QUYỀN TRUY CẬP' : 'APP PERMISSIONS',
+                          ),
                           _buildInfoBox(context, [
                             _buildToggleItem(
                               context,
                               icon: Icons.location_on_outlined,
                               title: isVi ? 'Vị trí' : 'Location',
-                              subtitle: isVi ? 'Tối ưu hóa gợi ý địa phương' : 'Optimize local suggestions',
+                              subtitle: isVi
+                                  ? 'Tối ưu hóa gợi ý địa phương'
+                                  : 'Optimize local suggestions',
                               value: isLocation,
-                              onChanged: (val) => _updatePermission(user, 'location', val),
+                              onChanged: (val) =>
+                                  _updatePermission(user, 'location', val),
                               showDivider: true,
                             ),
                             _buildToggleItem(
                               context,
                               icon: Icons.contacts_outlined,
                               title: isVi ? 'Danh bạ' : 'Contacts',
-                              subtitle: isVi ? 'Kết nối nhanh với bạn bè' : 'Quickly connect with contacts',
+                              subtitle: isVi
+                                  ? 'Kết nối nhanh với bạn bè'
+                                  : 'Quickly connect with contacts',
                               value: isContacts,
-                              onChanged: (val) => _updatePermission(user, 'contacts', val),
+                              onChanged: (val) =>
+                                  _updatePermission(user, 'contacts', val),
                               showDivider: true,
                             ),
                             _buildToggleItem(
                               context,
                               icon: Icons.mic_none_outlined,
                               title: 'Microphone',
-                              subtitle: isVi ? 'Sử dụng giọng nói để nhập liệu' : 'Use voice commands for entry',
+                              subtitle: isVi
+                                  ? 'Sử dụng giọng nói để nhập liệu'
+                                  : 'Use voice commands for entry',
                               value: isMicrophone,
-                              onChanged: (val) => _updatePermission(user, 'microphone', val),
+                              onChanged: (val) =>
+                                  _updatePermission(user, 'microphone', val),
                               showDivider: false,
                             ),
                           ]),
@@ -116,10 +144,13 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
     try {
       if (val) {
         if (key == 'contacts') {
-          final granted = await DeviceContactsService.instance.requestPermission();
+          final granted = await DeviceContactsService.instance
+              .requestPermission();
           if (!granted) return;
         } else {
-          Permission perm = key == 'location' ? Permission.location : Permission.microphone;
+          Permission perm = key == 'location'
+              ? Permission.location
+              : Permission.microphone;
           final status = await perm.request();
           if (!status.isGranted) return;
           if (key == 'microphone') await VoiceService().init();
@@ -179,7 +210,9 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: context.brandColor.withValues(alpha: isDark ? 0.2 : 0.12),
+                  color: context.brandColor.withValues(
+                    alpha: isDark ? 0.2 : 0.12,
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: context.brandColor, size: 24),
@@ -217,7 +250,12 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
           ),
         ),
         if (showDivider)
-          Divider(height: 1, color: context.dividerColor, indent: 70, endIndent: 16),
+          Divider(
+            height: 1,
+            color: context.dividerColor,
+            indent: 70,
+            endIndent: 16,
+          ),
       ],
     );
   }

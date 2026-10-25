@@ -22,8 +22,10 @@ class AppWidgetService {
   static final AppWidgetService instance = AppWidgetService._internal();
 
   // 4 Cỡ Widget tinh gọn & Báo cáo
-  static const String mediumWidgetProvider = 'MoneyTrackerWidgetProvider'; // 4x2 Vừa: Số dư & Chi 7 ngày
-  static const String budgetWidgetProvider = 'BudgetWidgetProvider'; // 4x2 Vừa: Tiến độ Ngân sách
+  static const String mediumWidgetProvider =
+      'MoneyTrackerWidgetProvider'; // 4x2 Vừa: Số dư & Chi 7 ngày
+  static const String budgetWidgetProvider =
+      'BudgetWidgetProvider'; // 4x2 Vừa: Tiến độ Ngân sách
   static const String smallWidgetProvider = 'SmallWidgetProvider'; // 2x2 Nhỏ
   static const String largeWidgetProvider = 'LargeWidgetProvider'; // 4x4 Lớn
 
@@ -95,7 +97,9 @@ class AppWidgetService {
   }
 
   void _flushPendingAction() {
-    if (_pendingAction != null && _isNavigationReady && _navigatorKey?.currentState != null) {
+    if (_pendingAction != null &&
+        _isNavigationReady &&
+        _navigatorKey?.currentState != null) {
       final action = _pendingAction!;
       _pendingAction = null;
       _navigateToAction(action);
@@ -134,17 +138,14 @@ class AppWidgetService {
       case WidgetActionType.scanReceipt:
         nav.push(
           MaterialPageRoute(
-            builder: (_) => const AiAssistantScreen(initialAction: 'scanReceipt'),
+            builder: (_) =>
+                const AiAssistantScreen(initialAction: 'scanReceipt'),
           ),
         );
         break;
 
       case WidgetActionType.openWallet:
-        nav.push(
-          MaterialPageRoute(
-            builder: (_) => const WalletScreen(),
-          ),
-        );
+        nav.push(MaterialPageRoute(builder: (_) => const WalletScreen()));
         break;
 
       case WidgetActionType.openBudget:
@@ -165,18 +166,12 @@ class AppWidgetService {
 
       case WidgetActionType.openTransactions:
         nav.push(
-          MaterialPageRoute(
-            builder: (_) => const AllTransactionsScreen(),
-          ),
+          MaterialPageRoute(builder: (_) => const AllTransactionsScreen()),
         );
         break;
 
       case WidgetActionType.openReport:
-        nav.push(
-          MaterialPageRoute(
-            builder: (_) => const StatisticsScreen(),
-          ),
-        );
+        nav.push(MaterialPageRoute(builder: (_) => const StatisticsScreen()));
         break;
 
       case WidgetActionType.openApp:
@@ -206,9 +201,15 @@ class AppWidgetService {
       final dataMap = snapshot.toMap();
       for (final entry in dataMap.entries) {
         if (entry.value is String) {
-          await HomeWidget.saveWidgetData<String>(entry.key, entry.value as String);
+          await HomeWidget.saveWidgetData<String>(
+            entry.key,
+            entry.value as String,
+          );
         } else if (entry.value is double) {
-          await HomeWidget.saveWidgetData<double>(entry.key, entry.value as double);
+          await HomeWidget.saveWidgetData<double>(
+            entry.key,
+            entry.value as double,
+          );
         } else if (entry.value is int) {
           await HomeWidget.saveWidgetData<int>(entry.key, entry.value as int);
         } else if (entry.value is bool) {
@@ -218,10 +219,7 @@ class AppWidgetService {
 
       // Cập nhật tất cả các Widget Provider đã đăng ký
       for (final provider in allWidgetProviders) {
-        await HomeWidget.updateWidget(
-          name: provider,
-          androidName: provider,
-        );
+        await HomeWidget.updateWidget(name: provider, androidName: provider);
       }
 
       debugPrint('AppWidgetService: Đồng bộ thành công 5 Widgets.');
@@ -240,22 +238,27 @@ class AppWidgetService {
 
       for (final entry in dataMap.entries) {
         if (entry.value is String) {
-          await HomeWidget.saveWidgetData<String>(entry.key, entry.value as String);
+          await HomeWidget.saveWidgetData<String>(
+            entry.key,
+            entry.value as String,
+          );
         } else if (entry.value is double) {
-          await HomeWidget.saveWidgetData<double>(entry.key, entry.value as double);
+          await HomeWidget.saveWidgetData<double>(
+            entry.key,
+            entry.value as double,
+          );
         } else if (entry.value is bool) {
           await HomeWidget.saveWidgetData<bool>(entry.key, entry.value as bool);
         }
       }
 
       for (final provider in allWidgetProviders) {
-        await HomeWidget.updateWidget(
-          name: provider,
-          androidName: provider,
-        );
+        await HomeWidget.updateWidget(name: provider, androidName: provider);
       }
 
-      debugPrint('AppWidgetService: Đã xóa dữ liệu nhạy cảm trên Widgets sau khi đăng xuất.');
+      debugPrint(
+        'AppWidgetService: Đã xóa dữ liệu nhạy cảm trên Widgets sau khi đăng xuất.',
+      );
     } catch (e) {
       debugPrint('AppWidgetService clearOnLogout error: $e');
     }

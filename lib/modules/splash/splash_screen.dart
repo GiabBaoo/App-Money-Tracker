@@ -74,15 +74,13 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
-    _textSlideAnimation = Tween<Offset>(
-      begin: const Offset(0.0, 0.35),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animController,
-        curve: const Interval(0.45, 0.95, curve: Curves.easeOutCubic),
-      ),
-    );
+    _textSlideAnimation =
+        Tween<Offset>(begin: const Offset(0.0, 0.35), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animController,
+            curve: const Interval(0.45, 0.95, curve: Curves.easeOutCubic),
+          ),
+        );
 
     _startLaunchFlow();
   }
@@ -122,7 +120,9 @@ class _SplashScreenState extends State<SplashScreen>
         // Kiểm tra phiên đăng nhập ngoại tuyến an toàn
         String? lastUid;
         try {
-          lastUid = await const FlutterSecureStorage().read(key: 'last_offline_uid');
+          lastUid = await const FlutterSecureStorage().read(
+            key: 'last_offline_uid',
+          );
         } catch (e) {
           debugPrint('SplashScreen: Error reading secure storage: $e');
         }
@@ -159,9 +159,7 @@ class _SplashScreenState extends State<SplashScreen>
       }
 
       if (fingerprintEnabled) {
-        return FingerprintUnlockScreen(
-          destination: const HomeScreen(),
-        );
+        return FingerprintUnlockScreen(destination: const HomeScreen());
       }
 
       return const HomeScreen();
@@ -203,7 +201,9 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Nền Aura thích ứng OLED Dark Mode và Light Mode (Tông màu xanh Teal đặc trưng của MONO)
     final bgColor = isDark ? AppColors.bgDark : AppColors.bgLight;
-    final auraCenterColor = AppColors.logoAura.withValues(alpha: isDark ? 0.32 : 0.22);
+    final auraCenterColor = AppColors.logoAura.withValues(
+      alpha: isDark ? 0.32 : 0.22,
+    );
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -275,16 +275,18 @@ class _SplashScreenState extends State<SplashScreen>
                             const SizedBox(height: 8),
                             Text(
                               'FINANCIAL TRACKER',
-                              style: context.textTheme.labelSmall?.copyWith(
-                                color: context.brandColor,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 3.2,
-                              ) ?? TextStyle(
-                                color: context.brandColor,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 3.2,
-                              ),
+                              style:
+                                  context.textTheme.labelSmall?.copyWith(
+                                    color: context.brandColor,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 3.2,
+                                  ) ??
+                                  TextStyle(
+                                    color: context.brandColor,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 3.2,
+                                  ),
                             ),
                           ],
                         ),
@@ -306,16 +308,22 @@ class _SplashScreenState extends State<SplashScreen>
               child: Center(
                 child: Text(
                   'v${AppConstants.appVersion}',
-                  style: context.textTheme.bodySmall?.copyWith(
-                    color: context.colors.onSurfaceVariant.withValues(alpha: 0.5),
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.8,
-                  ) ?? TextStyle(
-                    color: context.colors.onSurfaceVariant.withValues(alpha: 0.5),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.8,
-                  ),
+                  style:
+                      context.textTheme.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceVariant.withValues(
+                          alpha: 0.5,
+                        ),
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.8,
+                      ) ??
+                      TextStyle(
+                        color: context.colors.onSurfaceVariant.withValues(
+                          alpha: 0.5,
+                        ),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.8,
+                      ),
                 ),
               ),
             ),

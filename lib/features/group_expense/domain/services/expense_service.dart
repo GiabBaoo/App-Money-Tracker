@@ -3,6 +3,7 @@ import '../../data/models/expense_model.dart';
 import '../repositories/i_expense_repository.dart';
 import '../repositories/i_group_repository.dart';
 import 'debt_calculator.dart';
+import 'vnd_split_calculator.dart';
 
 class ExpenseService {
   final IExpenseRepository _expenseRepository;
@@ -15,9 +16,12 @@ class ExpenseService {
     this._debtCalculator,
   );
 
-  Future<ExpenseModel> createExpense(CreateExpenseDto dto, String createdBy) async {
+  Future<ExpenseModel> createExpense(
+    CreateExpenseDto dto,
+    String createdBy,
+  ) async {
     final group = await _groupRepository.getById(dto.groupId);
-    
+
     if (!group.memberIds.contains(createdBy)) {
       throw Exception('Bạn không phải thành viên của nhóm này');
     }
@@ -44,9 +48,9 @@ class ExpenseService {
     }
 
     final expense = await _expenseRepository.create(dto, createdBy);
-    
+
     await _debtCalculator.recalculateDebts(dto.groupId);
-    
+
     return expense;
   }
 
@@ -61,7 +65,7 @@ class ExpenseService {
   Future<void> deleteExpense(String expenseId, String userId) async {
     final expense = await _expenseRepository.getById(expenseId);
     final group = await _groupRepository.getById(expense.groupId);
-    
+
     if (expense.createdBy != userId && group.adminId != userId) {
       throw Exception('Chỉ người tạo hoặc admin mới có thể xóa chi tiêu');
     }
@@ -70,8 +74,19 @@ class ExpenseService {
     await _debtCalculator.recalculateDebts(expense.groupId);
   }
 
-  Map<String, double> calculateEqualSplit(double amount, List<String> participantIds) {
-    final shareAmount = amount / participantIds.length;
-    return {for (var id in participantIds) id: shareAmount};
+  Map<String, double> calculateEqualSplit(
+    double amount,
+    List<String> participantIds, {
+    String payerId = '',
+  }) {
+    if (participantIds.isEmpty) return {};
+    final intAmount = amount.round();
+    final pId = payerId.isNotEmpty ? payerId : participantIds.first;
+    final splits = VndSplitCalculator.calculateEqualSplit(
+      totalAmountVnd: intAmount,
+      participantIds: participantIds,
+      payerId: pId,
+    );
+    return splits.map((key, value) => MapEntry(key, value.toDouble()));
   }
 }

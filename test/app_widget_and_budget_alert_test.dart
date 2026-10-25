@@ -13,12 +13,15 @@ void main() {
       expect(CurrencyUtils.formatCurrency(24500000), equals('24.500.000đ'));
     });
 
-    test('2. AppWidgetService: Khởi tạo singleton an toàn và không ném exception', () async {
-      final service = AppWidgetService.instance;
-      expect(service, isNotNull);
-      // Trên test runner không ném exception
-      await service.updateWidgetBalance(500000);
-    });
+    test(
+      '2. AppWidgetService: Khởi tạo singleton an toàn và không ném exception',
+      () async {
+        final service = AppWidgetService.instance;
+        expect(service, isNotNull);
+        // Trên test runner không ném exception
+        await service.updateWidgetBalance(500000);
+      },
+    );
 
     test('3. Logic chống spam thông báo ngân sách (Anti-spam key format)', () {
       final budget = BudgetModel(
@@ -31,8 +34,10 @@ void main() {
         currentSpent: 2400000, // Đúng 80%
       );
 
-      final key80 = 'budget_warned_80_${budget.id}_${budget.year}_${budget.month}';
-      final key100 = 'budget_warned_100_${budget.id}_${budget.year}_${budget.month}';
+      final key80 =
+          'budget_warned_80_${budget.id}_${budget.year}_${budget.month}';
+      final key100 =
+          'budget_warned_100_${budget.id}_${budget.year}_${budget.month}';
 
       expect(key80, equals('budget_warned_80_budget_food_123_2026_10'));
       expect(key100, equals('budget_warned_100_budget_food_123_2026_10'));

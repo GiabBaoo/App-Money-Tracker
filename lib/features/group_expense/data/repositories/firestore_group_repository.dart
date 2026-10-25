@@ -15,7 +15,7 @@ class FirestoreGroupRepository implements IGroupRepository {
   Future<GroupModel> create(CreateGroupDto dto, String adminId) async {
     final id = const Uuid().v4();
     final now = DateTime.now();
-    
+
     final group = GroupModel(
       id: id,
       name: dto.name,
@@ -52,7 +52,7 @@ class FirestoreGroupRepository implements IGroupRepository {
         .map((doc) => GroupModel.fromJson(doc.data()))
         .where((group) => group.isDeleted == false)
         .toList();
-    
+
     groups.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     return groups;
   }
@@ -69,7 +69,7 @@ class FirestoreGroupRepository implements IGroupRepository {
               .map((doc) => GroupModel.fromJson(doc.data()))
               .where((group) => group.isDeleted == false)
               .toList();
-          
+
           groups.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
           return groups;
         });

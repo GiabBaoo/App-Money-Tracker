@@ -36,13 +36,13 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   bool get isVi => LanguageService.instance.isVietnamese;
   final WalletRepository _walletRepo = WalletRepository();
   final ImagePicker _imagePicker = ImagePicker();
-  
+
   late TextEditingController _amountController;
   late TextEditingController _descriptionController;
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
   late bool _isIncome;
-  
+
   late String _currentCategory;
   late int _currentIconCode;
 
@@ -53,7 +53,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   late String _currentPhotoLocalPath;
   late String _currentPhotoStoragePath;
   late bool _hasPhoto;
-  
+
   WalletModel? _selectedWallet;
   List<WalletModel> _wallets = [];
   bool _isLoading = false;
@@ -62,7 +62,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   String? _locationName;
   double? _latitude;
   double? _longitude;
-  bool _isLocating = false; 
+  bool _isLocating = false;
 
   @override
   void initState() {
@@ -74,19 +74,23 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     _descriptionController = TextEditingController(
       text: widget.transaction.description,
     );
-    
-    _selectedDate = DateTime(widget.transaction.date.year, widget.transaction.date.month, widget.transaction.date.day);
-    
+
+    _selectedDate = DateTime(
+      widget.transaction.date.year,
+      widget.transaction.date.month,
+      widget.transaction.date.day,
+    );
+
     final timeParts = widget.transaction.time.split(':');
     if (timeParts.length >= 2) {
       _selectedTime = TimeOfDay(
-        hour: int.tryParse(timeParts[0]) ?? DateTime.now().hour, 
+        hour: int.tryParse(timeParts[0]) ?? DateTime.now().hour,
         minute: int.tryParse(timeParts[1]) ?? DateTime.now().minute,
       );
     } else {
       _selectedTime = TimeOfDay.now();
     }
-    
+
     _currentCategory = widget.transaction.category;
     _currentIconCode = CategoryUtils.getCategoryIcon(
       _currentCategory,
@@ -127,7 +131,8 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
 
   Future<void> _loadWallets() async {
     try {
-      final uid = FirebaseAuth.instance.currentUser?.uid ?? AuthService().currentUid;
+      final uid =
+          FirebaseAuth.instance.currentUser?.uid ?? AuthService().currentUid;
       if (uid != null) {
         _walletRepo.setUid(uid);
         final wallets = await _walletRepo.getWallets();
@@ -136,12 +141,15 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
             _wallets = wallets;
             if (widget.transaction.walletId.isNotEmpty) {
               _selectedWallet = wallets.cast<WalletModel?>().firstWhere(
-                (w) => w?.id == widget.transaction.walletId, 
+                (w) => w?.id == widget.transaction.walletId,
                 orElse: () => null,
               );
             }
             if (_selectedWallet == null && wallets.isNotEmpty) {
-              _selectedWallet = wallets.firstWhere((w) => w.isDefault, orElse: () => wallets.first);
+              _selectedWallet = wallets.firstWhere(
+                (w) => w.isDefault,
+                orElse: () => wallets.first,
+              );
             }
           });
         }
@@ -152,13 +160,15 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   }
 
   Future<void> _pickTransactionPhotoFromSource(ImageSource source) async {
-    final picked = await BiometricService.instance.runWithPickerSuspended(() async {
-      return await _imagePicker.pickImage(
-        source: source,
-        maxWidth: 1600,
-        imageQuality: 85,
-      );
-    });
+    final picked = await BiometricService.instance.runWithPickerSuspended(
+      () async {
+        return await _imagePicker.pickImage(
+          source: source,
+          maxWidth: 1600,
+          imageQuality: 85,
+        );
+      },
+    );
 
     if (picked == null) return;
     setState(() {
@@ -185,22 +195,28 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
               const SizedBox(height: 4),
               Text(
                 isVi ? 'Ảnh hóa đơn, chứng từ' : 'Receipt / Invoice Photo',
-                style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
-                  color: context.textPrimaryColor,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: (context.textTheme.titleMedium ?? const TextStyle())
+                    .copyWith(
+                      color: context.textPrimaryColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
               const SizedBox(height: 18),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.brandColor,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 icon: const Icon(Icons.camera_alt_outlined),
-                label: Text(isVi ? 'Chụp ảnh mới' : 'Take new photo', style: const TextStyle(fontWeight: FontWeight.w600)),
+                label: Text(
+                  isVi ? 'Chụp ảnh mới' : 'Take new photo',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 onPressed: () async {
                   Navigator.pop(context);
                   await _pickTransactionPhotoFromSource(ImageSource.camera);
@@ -209,12 +225,23 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   side: BorderSide(color: context.brandColor),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                icon: Icon(Icons.photo_library_outlined, color: context.brandColor),
-                label: Text(isVi ? 'Chọn từ thư viện' : 'Choose from gallery', style: TextStyle(fontWeight: FontWeight.w600, color: context.brandColor)),
+                icon: Icon(
+                  Icons.photo_library_outlined,
+                  color: context.brandColor,
+                ),
+                label: Text(
+                  isVi ? 'Chọn từ thư viện' : 'Choose from gallery',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: context.brandColor,
+                  ),
+                ),
                 onPressed: () async {
                   Navigator.pop(context);
                   await _pickTransactionPhotoFromSource(ImageSource.gallery);
@@ -231,13 +258,22 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   bool get _hasUnsavedData {
     final currentAmount = CurrencyUtils.parseCurrency(_amountController.text);
     final isAmountChanged = currentAmount != widget.transaction.amount;
-    final isDescChanged = _descriptionController.text.trim() != widget.transaction.description;
+    final isDescChanged =
+        _descriptionController.text.trim() != widget.transaction.description;
     final isCatChanged = _currentCategory != widget.transaction.category;
-    final isWalletChanged = (_selectedWallet?.id ?? '') != widget.transaction.walletId;
+    final isWalletChanged =
+        (_selectedWallet?.id ?? '') != widget.transaction.walletId;
     final isDateChanged = !_isSameDay(_selectedDate, widget.transaction.date);
-    final isTypeChanged = (_isIncome ? 'income' : 'expense') != widget.transaction.type;
+    final isTypeChanged =
+        (_isIncome ? 'income' : 'expense') != widget.transaction.type;
     final isPhotoChanged = _newPickedPhoto != null || _photoRemoved;
-    return isAmountChanged || isDescChanged || isCatChanged || isWalletChanged || isDateChanged || isTypeChanged || isPhotoChanged;
+    return isAmountChanged ||
+        isDescChanged ||
+        isCatChanged ||
+        isWalletChanged ||
+        isDateChanged ||
+        isTypeChanged ||
+        isPhotoChanged;
   }
 
   Future<bool> _confirmExit() async {
@@ -262,7 +298,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? const Color(0xFF162523) : Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (ctx) {
         return SafeArea(
           child: Padding(
@@ -286,7 +324,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     child: Center(
                       child: Text(
                         'Chưa có ví tiền nào',
-                        style: TextStyle(color: isDark ? Colors.white60 : Colors.grey),
+                        style: TextStyle(
+                          color: isDark ? Colors.white60 : Colors.grey,
+                        ),
                       ),
                     ),
                   )
@@ -313,9 +353,19 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                       ),
                       subtitle: Text(
                         'Số dư: ${CurrencyUtils.formatCurrency(w.balance)} • ${w.typeDisplayName}',
-                        style: TextStyle(fontSize: 12, color: isDark ? Colors.white60 : Colors.grey.shade600),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.white60 : Colors.grey.shade600,
+                        ),
                       ),
-                      trailing: isSel ? Icon(Icons.check_circle_rounded, color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)) : null,
+                      trailing: isSel
+                          ? Icon(
+                              Icons.check_circle_rounded,
+                              color: isDark
+                                  ? const Color(0xFF2DD4BF)
+                                  : const Color(0xFF438883),
+                            )
+                          : null,
                       onTap: () {
                         setState(() => _selectedWallet = w);
                         Navigator.pop(ctx);
@@ -388,10 +438,12 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
 
   Future<void> _selectCategory() async {
     final result = await Navigator.push(
-      context, 
-      PageTransitions.slideRight(CategoryScreen(isIncome: _isIncome, lockType: true))
+      context,
+      PageTransitions.slideRight(
+        CategoryScreen(isIncome: _isIncome, lockType: true),
+      ),
     );
-    
+
     if (result != null) {
       setState(() {
         _currentCategory = result['name'];
@@ -410,9 +462,13 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final uid = FirebaseAuth.instance.currentUser?.uid ?? AuthService().currentUid ?? widget.transaction.uid;
-      final timeStr = '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
-      
+      final uid =
+          FirebaseAuth.instance.currentUser?.uid ??
+          AuthService().currentUid ??
+          widget.transaction.uid;
+      final timeStr =
+          '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
+
       final newType = _isIncome ? 'income' : 'expense';
       final newAmount = amount;
       final newWalletId = _selectedWallet?.id ?? '';
@@ -432,11 +488,12 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         finalHasPhoto = true;
 
         try {
-          final uploadRes = await ReceiptStorageService().processAndUploadReceipt(
-            uid: uid,
-            transactionId: widget.transaction.id,
-            pickedFile: File(_newPickedPhoto!.path),
-          );
+          final uploadRes = await ReceiptStorageService()
+              .processAndUploadReceipt(
+                uid: uid,
+                transactionId: widget.transaction.id,
+                pickedFile: File(_newPickedPhoto!.path),
+              );
           finalPhotoLocalPath = uploadRes.photoLocalPath;
           finalPhotoUrl = uploadRes.photoUrl;
           finalPhotoStoragePath = uploadRes.photoStoragePath;
@@ -453,7 +510,11 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         category: _currentCategory,
         categoryIconCode: _currentIconCode,
         amount: newAmount,
-        date: DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day),
+        date: DateTime(
+          _selectedDate.year,
+          _selectedDate.month,
+          _selectedDate.day,
+        ),
         time: timeStr,
         description: _descriptionController.text.trim(),
         createdAt: widget.transaction.createdAt,
@@ -483,10 +544,10 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
           SyncService().syncNow();
         } catch (_) {}
       }
-      
+
       if (!mounted) return;
       // Đã bỏ thông báo thành công theo yêu cầu của người dùng
-      Navigator.pop(context, true); 
+      Navigator.pop(context, true);
     } catch (e) {
       TopToast.show(context, 'Lỗi cập nhật: $e', isError: true);
     } finally {
@@ -513,7 +574,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     setState(() => _isLoading = true);
     try {
       // Xóa trong SQLite và hoàn lại số dư ví trong 1 transaction nguyên tử
-      await TransactionBalanceService().deleteTransactionAtomic(widget.transaction);
+      await TransactionBalanceService().deleteTransactionAtomic(
+        widget.transaction,
+      );
 
       // Đồng bộ ngay lên Firestore nếu có mạng
       try {
@@ -522,7 +585,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
 
       if (!mounted) return;
       TopToast.show(context, 'Đã xóa giao dịch!');
-      Navigator.pop(context, true); 
+      Navigator.pop(context, true);
     } catch (e) {
       if (mounted) TopToast.show(context, 'Lỗi khi xóa: $e', isError: true);
     } finally {
@@ -549,16 +612,25 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isVi = LanguageScope.of(context).isVietnamese;
-    final dateStr = '${_selectedDate.day.toString().padLeft(2, '0')}/${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.year}';
-    final timeStr = '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
-    final currentIcon = CategoryUtils.getCategoryIcon(_currentCategory, fallbackCode: _currentIconCode);
+    final dateStr =
+        '${_selectedDate.day.toString().padLeft(2, '0')}/${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.year}';
+    final timeStr =
+        '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
+    final currentIcon = CategoryUtils.getCategoryIcon(
+      _currentCategory,
+      fallbackCode: _currentIconCode,
+    );
 
-    final bool hasActivePhoto = _newPickedPhoto != null ||
+    final bool hasActivePhoto =
+        _newPickedPhoto != null ||
         (!_photoRemoved &&
-            ((_currentPhotoLocalPath.isNotEmpty && File(_currentPhotoLocalPath).existsSync()) ||
+            ((_currentPhotoLocalPath.isNotEmpty &&
+                    File(_currentPhotoLocalPath).existsSync()) ||
                 _currentPhotoUrl.isNotEmpty));
 
-    final semanticColor = _isIncome ? AppColors.incomeGreen : AppColors.expenseCoral;
+    final semanticColor = _isIncome
+        ? AppColors.incomeGreen
+        : AppColors.expenseCoral;
     final typeColor = _isIncome ? context.income : context.expense;
     final headerBgColor = context.brandColor;
     final activeAccentColor = context.brandColor;
@@ -590,8 +662,15 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
-                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
                         padding: EdgeInsets.zero,
                         onPressed: () async {
                           final navigator = Navigator.of(context);
@@ -624,17 +703,27 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.18),
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.0),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            width: 1.0,
+                          ),
                         ),
                         child: _isLoading
                             ? const Center(
                                 child: SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
                                 ),
                               )
-                            : const Icon(Icons.check_rounded, color: Colors.white, size: 21),
+                            : const Icon(
+                                Icons.check_rounded,
+                                color: Colors.white,
+                                size: 21,
+                              ),
                       ),
                     ),
                   ],
@@ -644,18 +733,25 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
               // ══════ LUỒNG CUỘN THỐNG NHẤT KHÔNG BỊ CẮT GÓC ══════
               Expanded(
                 child: SingleChildScrollView(
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   physics: const BouncingScrollPhysics(),
                   child: Column(
                     children: [
                       // SỐ TIỀN & CHUYỂN ĐỔI THU/CHI
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
                         child: Column(
                           children: [
                             Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 16,
+                              ),
                               decoration: BoxDecoration(
                                 color: context.colors.surface,
                                 borderRadius: BorderRadius.circular(20),
@@ -667,7 +763,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.08),
+                                    color: Colors.black.withValues(
+                                      alpha: isDark ? 0.25 : 0.08,
+                                    ),
                                     blurRadius: 16,
                                     offset: const Offset(0, 4),
                                   ),
@@ -676,12 +774,15 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                               child: Column(
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         _isIncome
-                                            ? (isVi ? 'Khoản thu' : 'Income').toUpperCase()
-                                            : (isVi ? 'Khoản chi' : 'Expense').toUpperCase(),
+                                            ? (isVi ? 'Khoản thu' : 'Income')
+                                                  .toUpperCase()
+                                            : (isVi ? 'Khoản chi' : 'Expense')
+                                                  .toUpperCase(),
                                         style: TextStyle(
                                           color: semanticColor,
                                           fontSize: 11.5,
@@ -690,10 +791,17 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                         ),
                                       ),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
                                         decoration: BoxDecoration(
-                                          color: semanticColor.withValues(alpha: 0.12),
-                                          borderRadius: BorderRadius.circular(10),
+                                          color: semanticColor.withValues(
+                                            alpha: 0.12,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                         ),
                                         child: Text(
                                           'VND (₫)',
@@ -709,7 +817,8 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                   const SizedBox(height: 10),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
                                       Text(
                                         _isIncome ? '+' : '-',
@@ -725,15 +834,23 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                           child: TextFormField(
                                             controller: _amountController,
                                             keyboardType: TextInputType.number,
-                                            inputFormatters: [CurrencyInputFormatter()],
+                                            inputFormatters: [
+                                              CurrencyInputFormatter(),
+                                            ],
                                             textAlign: TextAlign.center,
                                             cursorColor: semanticColor,
-                                            style: (context.textTheme.headlineLarge ?? const TextStyle()).copyWith(
-                                              color: semanticColor,
-                                              fontSize: 32,
-                                              fontWeight: FontWeight.w900,
-                                              letterSpacing: -0.5,
-                                            ),
+                                            style:
+                                                (context
+                                                            .textTheme
+                                                            .headlineLarge ??
+                                                        const TextStyle())
+                                                    .copyWith(
+                                                      color: semanticColor,
+                                                      fontSize: 32,
+                                                      fontWeight:
+                                                          FontWeight.w900,
+                                                      letterSpacing: -0.5,
+                                                    ),
                                             decoration: InputDecoration(
                                               border: InputBorder.none,
                                               contentPadding: EdgeInsets.zero,
@@ -775,20 +892,30 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                         setState(() {
                                           _isIncome = false;
                                           _currentCategory = 'Chi khác';
-                                          _currentIconCode = Icons.receipt_long_outlined.codePoint;
+                                          _currentIconCode = Icons
+                                              .receipt_long_outlined
+                                              .codePoint;
                                         });
                                       }
                                     },
                                     child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 8,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: !_isIncome ? Colors.white : Colors.transparent,
+                                        color: !_isIncome
+                                            ? Colors.white
+                                            : Colors.transparent,
                                         borderRadius: BorderRadius.circular(20),
                                         boxShadow: !_isIncome
                                             ? [
                                                 BoxShadow(
-                                                  color: Colors.black.withValues(alpha: 0.1),
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.1),
                                                   blurRadius: 4,
                                                   offset: const Offset(0, 1),
                                                 ),
@@ -800,7 +927,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                         style: TextStyle(
                                           color: !_isIncome
                                               ? AppColors.expenseCoral
-                                              : Colors.white.withValues(alpha: 0.85),
+                                              : Colors.white.withValues(
+                                                  alpha: 0.85,
+                                                ),
                                           fontWeight: FontWeight.w700,
                                           fontSize: 13,
                                         ),
@@ -813,20 +942,29 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                         setState(() {
                                           _isIncome = true;
                                           _currentCategory = 'Tiền lương';
-                                          _currentIconCode = Icons.work_outline.codePoint;
+                                          _currentIconCode =
+                                              Icons.work_outline.codePoint;
                                         });
                                       }
                                     },
                                     child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 8,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: _isIncome ? Colors.white : Colors.transparent,
+                                        color: _isIncome
+                                            ? Colors.white
+                                            : Colors.transparent,
                                         borderRadius: BorderRadius.circular(20),
                                         boxShadow: _isIncome
                                             ? [
                                                 BoxShadow(
-                                                  color: Colors.black.withValues(alpha: 0.1),
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.1),
                                                   blurRadius: 4,
                                                   offset: const Offset(0, 1),
                                                 ),
@@ -838,7 +976,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                         style: TextStyle(
                                           color: _isIncome
                                               ? AppColors.incomeGreen
-                                              : Colors.white.withValues(alpha: 0.85),
+                                              : Colors.white.withValues(
+                                                  alpha: 0.85,
+                                                ),
                                           fontWeight: FontWeight.w700,
                                           fontSize: 13,
                                         ),
@@ -862,7 +1002,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: Theme.of(context).scaffoldBackgroundColor,
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(32),
+                          ),
                         ),
                         padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
                         child: Column(
@@ -882,15 +1024,24 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                     onTap: _selectCategory,
                                     borderRadius: BorderRadius.circular(16),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 12,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: context.inputBgColor,
                                         borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(color: context.borderColor),
+                                        border: Border.all(
+                                          color: context.borderColor,
+                                        ),
                                       ),
                                       child: Row(
                                         children: [
-                                          Icon(currentIcon, color: typeColor, size: 20),
+                                          Icon(
+                                            currentIcon,
+                                            color: typeColor,
+                                            size: 20,
+                                          ),
                                           const SizedBox(width: 10),
                                           Expanded(
                                             child: Text(
@@ -902,7 +1053,11 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                               ),
                                             ),
                                           ),
-                                          Icon(Icons.chevron_right_rounded, color: context.textMutedColor, size: 20),
+                                          Icon(
+                                            Icons.chevron_right_rounded,
+                                            color: context.textMutedColor,
+                                            size: 20,
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -913,55 +1068,92 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                 // Ví tiền
                                 _buildFieldRow(
                                   icon: Icons.account_balance_wallet_rounded,
-                                  iconColor: Color(_selectedWallet?.colorValue ?? 0xFF438883),
-                                  label: _isIncome ? (isVi ? 'Nhận vào ví' : 'Receive into wallet') : (isVi ? 'Chi từ ví' : 'Pay from wallet'),
+                                  iconColor: Color(
+                                    _selectedWallet?.colorValue ?? 0xFF438883,
+                                  ),
+                                  label: _isIncome
+                                      ? (isVi
+                                            ? 'Nhận vào ví'
+                                            : 'Receive into wallet')
+                                      : (isVi
+                                            ? 'Chi từ ví'
+                                            : 'Pay from wallet'),
                                   isDark: isDark,
                                   child: InkWell(
                                     onTap: _pickWallet,
                                     borderRadius: BorderRadius.circular(16),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 12,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: context.inputBgColor,
                                         borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(color: context.borderColor),
+                                        border: Border.all(
+                                          color: context.borderColor,
+                                        ),
                                       ),
                                       child: Row(
                                         children: [
                                           Container(
                                             padding: const EdgeInsets.all(6),
                                             decoration: BoxDecoration(
-                                              color: Color(_selectedWallet?.colorValue ?? 0xFF438883).withValues(alpha: 0.12),
-                                              borderRadius: BorderRadius.circular(8),
+                                              color: Color(
+                                                _selectedWallet?.colorValue ??
+                                                    0xFF438883,
+                                              ).withValues(alpha: 0.12),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                             ),
                                             child: Icon(
-                                              _selectedWallet?.icon ?? Icons.account_balance_wallet_rounded,
-                                              color: Color(_selectedWallet?.colorValue ?? 0xFF438883),
+                                              _selectedWallet?.icon ??
+                                                  Icons
+                                                      .account_balance_wallet_rounded,
+                                              color: Color(
+                                                _selectedWallet?.colorValue ??
+                                                    0xFF438883,
+                                              ),
                                               size: 16,
                                             ),
                                           ),
                                           const SizedBox(width: 10),
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  _selectedWallet?.name ?? (isVi ? 'Chọn ví tiền' : 'Select wallet'),
+                                                  _selectedWallet?.name ??
+                                                      (isVi
+                                                          ? 'Chọn ví tiền'
+                                                          : 'Select wallet'),
                                                   style: TextStyle(
                                                     fontSize: 14,
                                                     fontWeight: FontWeight.w600,
-                                                    color: context.textPrimaryColor,
+                                                    color: context
+                                                        .textPrimaryColor,
                                                   ),
                                                 ),
                                                 if (_selectedWallet != null)
                                                   Text(
-                                                    CurrencyUtils.formatCurrency(_selectedWallet!.balance),
-                                                    style: TextStyle(fontSize: 11.5, color: context.textMutedColor),
+                                                    CurrencyUtils.formatCurrency(
+                                                      _selectedWallet!.balance,
+                                                    ),
+                                                    style: TextStyle(
+                                                      fontSize: 11.5,
+                                                      color: context
+                                                          .textMutedColor,
+                                                    ),
                                                   ),
                                               ],
                                             ),
                                           ),
-                                          Icon(Icons.chevron_right_rounded, color: context.textMutedColor, size: 20),
+                                          Icon(
+                                            Icons.chevron_right_rounded,
+                                            color: context.textMutedColor,
+                                            size: 20,
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -1007,18 +1199,52 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                   scrollDirection: Axis.horizontal,
                                   child: Row(
                                     children: [
-                                      _buildQuickTimeChip(isVi ? 'Hôm nay' : 'Today', () {
-                                        final now = DateTime.now();
-                                        setState(() => _selectedDate = DateTime(now.year, now.month, now.day));
-                                      }, isSelected: _isSameDay(_selectedDate, DateTime.now())),
-                                      _buildQuickTimeChip(isVi ? 'Hôm qua' : 'Yesterday', () {
-                                        final yesterday = DateTime.now().subtract(const Duration(days: 1));
-                                        setState(() => _selectedDate = DateTime(yesterday.year, yesterday.month, yesterday.day));
-                                      }, isSelected: _isSameDay(_selectedDate, DateTime.now().subtract(const Duration(days: 1)))),
-                                      _buildQuickTimeChip(isVi ? 'Bây giờ' : 'Now', () {
-                                        final now = TimeOfDay.now();
-                                        setState(() => _selectedTime = now);
-                                      }),
+                                      _buildQuickTimeChip(
+                                        isVi ? 'Hôm nay' : 'Today',
+                                        () {
+                                          final now = DateTime.now();
+                                          setState(
+                                            () => _selectedDate = DateTime(
+                                              now.year,
+                                              now.month,
+                                              now.day,
+                                            ),
+                                          );
+                                        },
+                                        isSelected: _isSameDay(
+                                          _selectedDate,
+                                          DateTime.now(),
+                                        ),
+                                      ),
+                                      _buildQuickTimeChip(
+                                        isVi ? 'Hôm qua' : 'Yesterday',
+                                        () {
+                                          final yesterday = DateTime.now()
+                                              .subtract(
+                                                const Duration(days: 1),
+                                              );
+                                          setState(
+                                            () => _selectedDate = DateTime(
+                                              yesterday.year,
+                                              yesterday.month,
+                                              yesterday.day,
+                                            ),
+                                          );
+                                        },
+                                        isSelected: _isSameDay(
+                                          _selectedDate,
+                                          DateTime.now().subtract(
+                                            const Duration(days: 1),
+                                          ),
+                                        ),
+                                      ),
+                                      _buildQuickTimeChip(
+                                        isVi ? 'Bây giờ' : 'Now',
+                                        () {
+                                          final now = TimeOfDay.now();
+                                          setState(() => _selectedTime = now);
+                                        },
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -1044,23 +1270,39 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                       color: context.textPrimaryColor,
                                     ),
                                     decoration: InputDecoration(
-                                      hintText: isVi ? 'Nhập ghi chú...' : 'Enter note...',
-                                      hintStyle: TextStyle(color: context.textMutedColor, fontSize: 13.5),
+                                      hintText: isVi
+                                          ? 'Nhập ghi chú...'
+                                          : 'Enter note...',
+                                      hintStyle: TextStyle(
+                                        color: context.textMutedColor,
+                                        fontSize: 13.5,
+                                      ),
                                       filled: true,
                                       fillColor: context.inputBgColor,
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(16),
-                                        borderSide: BorderSide(color: context.borderColor),
+                                        borderSide: BorderSide(
+                                          color: context.borderColor,
+                                        ),
                                       ),
                                       enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(16),
-                                        borderSide: BorderSide(color: context.borderColor),
+                                        borderSide: BorderSide(
+                                          color: context.borderColor,
+                                        ),
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(16),
-                                        borderSide: BorderSide(color: context.brandColor, width: 1.5),
+                                        borderSide: BorderSide(
+                                          color: context.brandColor,
+                                          width: 1.5,
+                                        ),
                                       ),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 14,
+                                            vertical: 12,
+                                          ),
                                       isDense: true,
                                     ),
                                   ),
@@ -1076,8 +1318,12 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                   child: hasActivePhoto
                                       ? Container(
                                           decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(16),
-                                            border: Border.all(color: context.borderColor),
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
+                                            border: Border.all(
+                                              color: context.borderColor,
+                                            ),
                                           ),
                                           child: Column(
                                             children: [
@@ -1085,48 +1331,120 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                                 onTap: () {
                                                   ReceiptStorageService.showFullScreenViewer(
                                                     context,
-                                                    photoLocalPath: _newPickedPhoto?.path ?? _currentPhotoLocalPath,
-                                                    photoUrl: _newPickedPhoto != null ? '' : _currentPhotoUrl,
-                                                    title: isVi ? 'Hóa đơn xem chi tiết' : 'Receipt Detail View',
+                                                    photoLocalPath:
+                                                        _newPickedPhoto?.path ??
+                                                        _currentPhotoLocalPath,
+                                                    photoUrl:
+                                                        _newPickedPhoto != null
+                                                        ? ''
+                                                        : _currentPhotoUrl,
+                                                    title: isVi
+                                                        ? 'Hóa đơn xem chi tiết'
+                                                        : 'Receipt Detail View',
                                                   );
                                                 },
                                                 child: ClipRRect(
-                                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                                                  borderRadius:
+                                                      const BorderRadius.vertical(
+                                                        top: Radius.circular(
+                                                          16,
+                                                        ),
+                                                      ),
                                                   child: Container(
-                                                    constraints: const BoxConstraints(maxHeight: 200, minHeight: 100),
+                                                    constraints:
+                                                        const BoxConstraints(
+                                                          maxHeight: 200,
+                                                          minHeight: 100,
+                                                        ),
                                                     width: double.infinity,
-                                                    color: isDark ? const Color(0xFF0D1615) : const Color(0xFFF1F5F9),
-                                                    child: _buildPhotoPreviewWidget(),
+                                                    color: isDark
+                                                        ? const Color(
+                                                            0xFF0D1615,
+                                                          )
+                                                        : const Color(
+                                                            0xFFF1F5F9,
+                                                          ),
+                                                    child:
+                                                        _buildPhotoPreviewWidget(),
                                                   ),
                                                 ),
                                               ),
                                               Padding(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4,
+                                                    ),
                                                 child: Row(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
                                                   children: [
                                                     TextButton.icon(
                                                       style: TextButton.styleFrom(
-                                                        foregroundColor: activeAccentColor,
-                                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                        visualDensity: VisualDensity.compact,
+                                                        foregroundColor:
+                                                            activeAccentColor,
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 4,
+                                                            ),
+                                                        visualDensity:
+                                                            VisualDensity
+                                                                .compact,
                                                       ),
-                                                      icon: const Icon(Icons.camera_alt_outlined, size: 16),
-                                                      label: Text(isVi ? 'Đổi ảnh' : 'Change', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                                                      onPressed: _showPhotoPickerSheet,
+                                                      icon: const Icon(
+                                                        Icons
+                                                            .camera_alt_outlined,
+                                                        size: 16,
+                                                      ),
+                                                      label: Text(
+                                                        isVi
+                                                            ? 'Đổi ảnh'
+                                                            : 'Change',
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                      ),
+                                                      onPressed:
+                                                          _showPhotoPickerSheet,
                                                     ),
                                                     TextButton.icon(
                                                       style: TextButton.styleFrom(
-                                                        foregroundColor: isDark ? const Color(0xFFF87171) : Colors.redAccent,
-                                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                                        visualDensity: VisualDensity.compact,
+                                                        foregroundColor: isDark
+                                                            ? const Color(
+                                                                0xFFF87171,
+                                                              )
+                                                            : Colors.redAccent,
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                              horizontal: 8,
+                                                              vertical: 4,
+                                                            ),
+                                                        visualDensity:
+                                                            VisualDensity
+                                                                .compact,
                                                       ),
-                                                      icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                                                      label: Text(isVi ? 'Xóa' : 'Delete', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                                      icon: const Icon(
+                                                        Icons
+                                                            .delete_outline_rounded,
+                                                        size: 16,
+                                                      ),
+                                                      label: Text(
+                                                        isVi ? 'Xóa' : 'Delete',
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                      ),
                                                       onPressed: () {
                                                         setState(() {
                                                           _photoRemoved = true;
-                                                          _newPickedPhoto = null;
+                                                          _newPickedPhoto =
+                                                              null;
                                                           _hasPhoto = false;
                                                         });
                                                       },
@@ -1139,23 +1457,39 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                         )
                                       : InkWell(
                                           onTap: _showPhotoPickerSheet,
-                                          borderRadius: BorderRadius.circular(16),
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
                                           child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 14,
+                                              vertical: 12,
+                                            ),
                                             decoration: BoxDecoration(
                                               color: context.inputBgColor,
-                                              borderRadius: BorderRadius.circular(16),
-                                              border: Border.all(color: context.borderColor),
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              border: Border.all(
+                                                color: context.borderColor,
+                                              ),
                                             ),
                                             child: Row(
                                               children: [
-                                                Icon(Icons.add_photo_alternate_outlined, color: context.textMutedColor, size: 20),
+                                                Icon(
+                                                  Icons
+                                                      .add_photo_alternate_outlined,
+                                                  color: context.textMutedColor,
+                                                  size: 20,
+                                                ),
                                                 const SizedBox(width: 10),
                                                 Text(
-                                                  isVi ? 'Thêm ảnh chứng từ...' : 'Add receipt photo...',
+                                                  isVi
+                                                      ? 'Thêm ảnh chứng từ...'
+                                                      : 'Add receipt photo...',
                                                   style: TextStyle(
                                                     fontSize: 13.5,
-                                                    color: context.textMutedColor,
+                                                    color:
+                                                        context.textMutedColor,
                                                   ),
                                                 ),
                                               ],
@@ -1175,19 +1509,28 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                     onTap: _handleLocationTap,
                                     borderRadius: BorderRadius.circular(16),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 12,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: context.inputBgColor,
                                         borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(color: context.borderColor),
+                                        border: Border.all(
+                                          color: context.borderColor,
+                                        ),
                                       ),
                                       child: Row(
                                         children: [
                                           Icon(
-                                            _locationName != null && _locationName!.isNotEmpty
+                                            _locationName != null &&
+                                                    _locationName!.isNotEmpty
                                                 ? Icons.place_rounded
-                                                : Icons.add_location_alt_outlined,
-                                            color: _locationName != null && _locationName!.isNotEmpty
+                                                : Icons
+                                                      .add_location_alt_outlined,
+                                            color:
+                                                _locationName != null &&
+                                                    _locationName!.isNotEmpty
                                                 ? const Color(0xFFF59E0B)
                                                 : context.textMutedColor,
                                             size: 20,
@@ -1195,15 +1538,24 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                           const SizedBox(width: 10),
                                           Expanded(
                                             child: Text(
-                                              _locationName != null && _locationName!.isNotEmpty
+                                              _locationName != null &&
+                                                      _locationName!.isNotEmpty
                                                   ? _locationName!
-                                                  : (isVi ? 'Thêm vị trí địa danh...' : 'Add location...'),
+                                                  : (isVi
+                                                        ? 'Thêm vị trí địa danh...'
+                                                        : 'Add location...'),
                                               style: TextStyle(
                                                 fontSize: 13.5,
-                                                fontWeight: _locationName != null && _locationName!.isNotEmpty
+                                                fontWeight:
+                                                    _locationName != null &&
+                                                        _locationName!
+                                                            .isNotEmpty
                                                     ? FontWeight.w600
                                                     : FontWeight.normal,
-                                                color: _locationName != null && _locationName!.isNotEmpty
+                                                color:
+                                                    _locationName != null &&
+                                                        _locationName!
+                                                            .isNotEmpty
                                                     ? context.textPrimaryColor
                                                     : context.textMutedColor,
                                               ),
@@ -1211,13 +1563,19 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
-                                          if (_locationName != null && _locationName!.isNotEmpty)
+                                          if (_locationName != null &&
+                                              _locationName!.isNotEmpty)
                                             IconButton(
-                                              icon: const Icon(Icons.clear_rounded, size: 18),
+                                              icon: const Icon(
+                                                Icons.clear_rounded,
+                                                size: 18,
+                                              ),
                                               color: context.textMutedColor,
-                                              visualDensity: VisualDensity.compact,
+                                              visualDensity:
+                                                  VisualDensity.compact,
                                               padding: EdgeInsets.zero,
-                                              constraints: const BoxConstraints(),
+                                              constraints:
+                                                  const BoxConstraints(),
                                               onPressed: () {
                                                 setState(() {
                                                   _locationName = null;
@@ -1229,7 +1587,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                           else
                                             Icon(
                                               Icons.chevron_right_rounded,
-                                              color: isDark ? Colors.white38 : Colors.grey.shade400,
+                                              color: isDark
+                                                  ? Colors.white38
+                                                  : Colors.grey.shade400,
                                               size: 20,
                                             ),
                                         ],
@@ -1246,16 +1606,30 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                             Center(
                               child: TextButton.icon(
                                 style: TextButton.styleFrom(
-                                  foregroundColor: isDark ? const Color(0xFFF87171) : const Color(0xFFEF4444),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  foregroundColor: isDark
+                                      ? const Color(0xFFF87171)
+                                      : const Color(0xFFEF4444),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
                                 ),
-                                icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                                label: Text(isVi ? 'Xóa giao dịch này' : 'Delete this transaction', style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
+                                icon: const Icon(
+                                  Icons.delete_outline_rounded,
+                                  size: 18,
+                                ),
+                                label: Text(
+                                  isVi
+                                      ? 'Xóa giao dịch này'
+                                      : 'Delete this transaction',
+                                  style: const TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                                 onPressed: _handleDelete,
                               ),
                             ),
-
-
                           ],
                         ),
                       ),
@@ -1267,7 +1641,12 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
           ),
         ),
         bottomNavigationBar: Container(
-          padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.paddingOf(context).bottom + 10),
+          padding: EdgeInsets.fromLTRB(
+            20,
+            10,
+            20,
+            MediaQuery.paddingOf(context).bottom + 10,
+          ),
           decoration: BoxDecoration(
             color: Theme.of(context).scaffoldBackgroundColor,
             boxShadow: [
@@ -1284,7 +1663,10 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
               height: 50,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [context.brandColor, context.brandColor.withValues(alpha: 0.85)],
+                  colors: [
+                    context.brandColor,
+                    context.brandColor.withValues(alpha: 0.85),
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -1302,12 +1684,19 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     ? const SizedBox(
                         width: 22,
                         height: 22,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
                       )
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             isVi ? 'Cập nhật giao dịch' : 'Update Transaction',
@@ -1330,15 +1719,16 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
 
   // ══════ CARD HELPER WIDGETS ══════
 
-  Widget _buildFormCard({required bool isDark, required List<Widget> children}) {
+  Widget _buildFormCard({
+    required bool isDark,
+    required List<Widget> children,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: context.cardBgColor,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: context.borderColor,
-        ),
+        border: Border.all(color: context.borderColor),
         boxShadow: [
           if (!isDark)
             BoxShadow(
@@ -1402,9 +1792,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         decoration: BoxDecoration(
           color: context.inputBgColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: context.borderColor,
-          ),
+          border: Border.all(color: context.borderColor),
         ),
         child: Row(
           children: [
@@ -1460,10 +1848,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   Widget _buildFieldDivider(bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Divider(
-        height: 1,
-        color: context.dividerColor,
-      ),
+      child: Divider(height: 1, color: context.dividerColor),
     );
   }
 
@@ -1471,7 +1856,11 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
-  Widget _buildQuickTimeChip(String label, VoidCallback onTap, {bool isSelected = false}) {
+  Widget _buildQuickTimeChip(
+    String label,
+    VoidCallback onTap, {
+    bool isSelected = false,
+  }) {
     final activeColor = context.brandColor;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
@@ -1481,14 +1870,12 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected 
-                ? activeColor.withValues(alpha: 0.15) 
+            color: isSelected
+                ? activeColor.withValues(alpha: 0.15)
                 : context.inputBgColor,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected 
-                  ? activeColor 
-                  : context.borderColor,
+              color: isSelected ? activeColor : context.borderColor,
             ),
           ),
           child: Text(
@@ -1496,9 +1883,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected 
-                  ? activeColor 
-                  : context.textSecondaryColor,
+              color: isSelected ? activeColor : context.textSecondaryColor,
             ),
           ),
         ),
@@ -1525,7 +1910,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
               ),
               decoration: BoxDecoration(
                 color: context.cardBgColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1547,11 +1934,13 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     children: [
                       Text(
                         isVi ? 'Vị trí giao dịch' : 'Transaction Location',
-                        style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: context.textPrimaryColor,
-                        ),
+                        style:
+                            (context.textTheme.titleMedium ?? const TextStyle())
+                                .copyWith(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: context.textPrimaryColor,
+                                ),
                       ),
                       if (_locationName != null && _locationName!.isNotEmpty)
                         TextButton.icon(
@@ -1577,26 +1966,33 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                   TextField(
                     controller: textController,
                     decoration: InputDecoration(
-                      hintText: isVi ? 'Nhập tên quán / địa danh...' : 'Enter place name...',
-                      prefixIcon: Icon(Icons.place_outlined, color: context.brandColor),
+                      hintText: isVi
+                          ? 'Nhập tên quán / địa danh...'
+                          : 'Enter place name...',
+                      prefixIcon: Icon(
+                        Icons.place_outlined,
+                        color: context.brandColor,
+                      ),
                       filled: true,
                       fillColor: context.inputBgColor,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 14,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: context.borderColor,
-                        ),
+                        borderSide: BorderSide(color: context.borderColor),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: context.borderColor,
-                        ),
+                        borderSide: BorderSide(color: context.borderColor),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: context.brandColor, width: 1.5),
+                        borderSide: BorderSide(
+                          color: context.brandColor,
+                          width: 1.5,
+                        ),
                       ),
                     ),
                     style: TextStyle(
@@ -1611,19 +2007,26 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                       backgroundColor: context.brandColor,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                     icon: _isLocating
                         ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
                           )
                         : const Icon(Icons.my_location_rounded, size: 20),
                     label: Text(
                       _isLocating
                           ? (isVi ? 'Đang xác định GPS...' : 'Locating GPS...')
-                          : (isVi ? 'Lấy vị trí GPS hiện tại' : 'Get current GPS location'),
+                          : (isVi
+                                ? 'Lấy vị trí GPS hiện tại'
+                                : 'Get current GPS location'),
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     onPressed: _isLocating
@@ -1632,21 +2035,26 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                             setModalState(() {});
                             setState(() => _isLocating = true);
 
-                            final isServiceEnabled = await LocationService.instance.isLocationServiceEnabled();
+                            final isServiceEnabled = await LocationService
+                                .instance
+                                .isLocationServiceEnabled();
                             if (!isServiceEnabled) {
                               setState(() => _isLocating = false);
                               if (mounted) _showGpsDisabledDialog(isVi);
                               return;
                             }
 
-                            var perm = await LocationService.instance.checkPermission();
+                            var perm = await LocationService.instance
+                                .checkPermission();
                             if (perm == LocationPermission.denied) {
-                              perm = await LocationService.instance.requestPermission();
+                              perm = await LocationService.instance
+                                  .requestPermission();
                             }
 
                             if (perm == LocationPermission.deniedForever) {
                               setState(() => _isLocating = false);
-                              if (mounted) _showPermissionPermanentlyDeniedDialog(isVi);
+                              if (mounted)
+                                _showPermissionPermanentlyDeniedDialog(isVi);
                               return;
                             }
 
@@ -1655,16 +2063,19 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                               if (mounted) {
                                 TopToast.show(
                                   context,
-                                  isVi ? 'Chưa cấp quyền vị trí' : 'Location permission denied',
+                                  isVi
+                                      ? 'Chưa cấp quyền vị trí'
+                                      : 'Location permission denied',
                                   isError: true,
                                 );
                               }
                               return;
                             }
 
-                            final res = await LocationService.instance.getCurrentPlaceName(
-                              timeout: const Duration(seconds: 5),
-                            );
+                            final res = await LocationService.instance
+                                .getCurrentPlaceName(
+                                  timeout: const Duration(seconds: 5),
+                                );
 
                             setState(() => _isLocating = false);
 
@@ -1680,14 +2091,18 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                               if (mounted) {
                                 TopToast.show(
                                   context,
-                                  isVi ? 'Đã định vị: ${res.placeName}' : 'Located: ${res.placeName}',
+                                  isVi
+                                      ? 'Đã định vị: ${res.placeName}'
+                                      : 'Located: ${res.placeName}',
                                 );
                               }
                             } else {
                               if (mounted) {
                                 TopToast.show(
                                   context,
-                                  isVi ? 'Không thể lấy vị trí. Vui lòng nhập tay.' : 'Could not locate. Please enter manually.',
+                                  isVi
+                                      ? 'Không thể lấy vị trí. Vui lòng nhập tay.'
+                                      : 'Could not locate. Please enter manually.',
                                   isError: true,
                                 );
                               }
@@ -1700,10 +2115,10 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: context.textPrimaryColor,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(
-                        color: context.borderColor,
+                      side: BorderSide(color: context.borderColor),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                     onPressed: () {
                       final customName = textController.text.trim();

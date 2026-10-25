@@ -8,7 +8,8 @@ void main() {
     final parser = BankSmsParserService();
 
     test('Bóc tách biến động số dư Vietcombank', () {
-      const sms = 'VCB 12/05/26 14:30 TK 0123456789 -500,000 VND Ref 987654. ND: Phuc Long Coffee. So du: 15,200,000 VND';
+      const sms =
+          'VCB 12/05/26 14:30 TK 0123456789 -500,000 VND Ref 987654. ND: Phuc Long Coffee. So du: 15,200,000 VND';
       expect(parser.isBankSmsOrNotification(sms), isTrue);
 
       final result = parser.parse(sms);
@@ -21,7 +22,8 @@ void main() {
     });
 
     test('Bóc tách biến động số dư MB Bank tiền vào', () {
-      const sms = 'MB: TK 1234567890 +15,000,000VND vao 05/09/2026. ND: Cong ty ABC tra luong T8. SD: 25,000,000VND';
+      const sms =
+          'MB: TK 1234567890 +15,000,000VND vao 05/09/2026. ND: Cong ty ABC tra luong T8. SD: 25,000,000VND';
       expect(parser.isBankSmsOrNotification(sms), isTrue);
 
       final result = parser.parse(sms);
@@ -34,7 +36,8 @@ void main() {
     });
 
     test('Bóc tách biến động số dư MoMo chi tiêu Grab', () {
-      const sms = 'Giao dịch MoMo: Bạn đã thanh toán 42.000đ cho Grab Bike. Mã GD: 998877';
+      const sms =
+          'Giao dịch MoMo: Bạn đã thanh toán 42.000đ cho Grab Bike. Mã GD: 998877';
       expect(parser.isBankSmsOrNotification(sms), isTrue);
 
       final result = parser.parse(sms);
@@ -74,25 +77,35 @@ void main() {
     final smartCat = SmartCategoryService();
 
     test('Nhận diện thương hiệu trà sữa và cà phê', () async {
-      final resPhucLong = await smartCat.predictCategory(text: 'Uống Phúc Long với bạn');
+      final resPhucLong = await smartCat.predictCategory(
+        text: 'Uống Phúc Long với bạn',
+      );
       expect(resPhucLong.category, equals('Ăn uống'));
 
-      final resKatinat = await smartCat.predictCategory(text: 'Katinat Saigon Cafe');
+      final resKatinat = await smartCat.predictCategory(
+        text: 'Katinat Saigon Cafe',
+      );
       expect(resKatinat.category, equals('Ăn uống'));
     });
 
     test('Nhận diện dịch vụ di chuyển công nghệ', () async {
-      final resXanhSM = await smartCat.predictCategory(text: 'Đi Xanh SM đến công ty');
+      final resXanhSM = await smartCat.predictCategory(
+        text: 'Đi Xanh SM đến công ty',
+      );
       expect(resXanhSM.category, equals('Di chuyển'));
     });
 
     test('Nhận diện mua sắm thương mại điện tử', () async {
-      final resShopee = await smartCat.predictCategory(text: 'Đơn hàng Shopee áo sơ mi');
+      final resShopee = await smartCat.predictCategory(
+        text: 'Đơn hàng Shopee áo sơ mi',
+      );
       expect(resShopee.category, equals('Mua sắm'));
     });
 
     test('Nhận diện hiệu thuốc sức khỏe', () async {
-      final resPharmacity = await smartCat.predictCategory(text: 'Mua vitamin tại Pharmacity');
+      final resPharmacity = await smartCat.predictCategory(
+        text: 'Mua vitamin tại Pharmacity',
+      );
       expect(resPharmacity.category, equals('Sức khỏe'));
     });
   });

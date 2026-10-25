@@ -22,7 +22,8 @@ class StatisticsScreen extends StatefulWidget {
   StatisticsScreenState createState() => StatisticsScreenState();
 }
 
-class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAliveClientMixin {
+class StatisticsScreenState extends State<StatisticsScreen>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
@@ -33,6 +34,7 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
       });
     }
   }
+
   late Stream<List<TransactionModel>> _transactionStream;
 
   int _selectedMainTab = 0; // Mặc định là Tuần (0)
@@ -76,13 +78,15 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
   bool _isExpense = true;
   bool _isDescending = true;
-  int _selectedChartType = 0; // 0: Đường xu hướng, 1: Tròn phân bổ, 2: Cột đôi Thu vs Chi
+  int _selectedChartType =
+      0; // 0: Đường xu hướng, 1: Tròn phân bổ, 2: Cột đôi Thu vs Chi
   int _touchedPieIndex = -1;
 
   // ════════ ĐIỀU HƯỚNG THỜI GIAN THEO BỘ LỌC ════════
 
   bool _canGoPrevMonth() {
-    return (_selectedYear > 2000) || (_selectedYear == 2000 && _selectedMonth > 1);
+    return (_selectedYear > 2000) ||
+        (_selectedYear == 2000 && _selectedMonth > 1);
   }
 
   bool _canGoNextMonth() {
@@ -195,9 +199,12 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
   String _getFilterLabel() {
     if (_selectedMainTab == 0) {
       final range = _getRangeFromFilter();
-      final rangeStr = '${range.start.day.toString().padLeft(2, '0')}/${range.start.month.toString().padLeft(2, '0')} - ${range.end.day.toString().padLeft(2, '0')}/${range.end.month.toString().padLeft(2, '0')}';
-      if (_selectedWeekOffset == 0) return '${context.tr('this_week')} ($rangeStr)';
-      if (_selectedWeekOffset == 1) return '${context.tr('last_week')} ($rangeStr)';
+      final rangeStr =
+          '${range.start.day.toString().padLeft(2, '0')}/${range.start.month.toString().padLeft(2, '0')} - ${range.end.day.toString().padLeft(2, '0')}/${range.end.month.toString().padLeft(2, '0')}';
+      if (_selectedWeekOffset == 0)
+        return '${context.tr('this_week')} ($rangeStr)';
+      if (_selectedWeekOffset == 1)
+        return '${context.tr('last_week')} ($rangeStr)';
       return '$rangeStr (${range.start.year})';
     } else if (_selectedMainTab == 1) {
       return '${context.tr('month')} $_selectedMonth/$_selectedYear';
@@ -210,8 +217,12 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     if (_selectedMainTab == 0) {
-      final startOfWeek = today.subtract(Duration(days: today.weekday - 1 + _selectedWeekOffset * 7));
-      final endOfWeek = startOfWeek.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+      final startOfWeek = today.subtract(
+        Duration(days: today.weekday - 1 + _selectedWeekOffset * 7),
+      );
+      final endOfWeek = startOfWeek.add(
+        const Duration(days: 6, hours: 23, minutes: 59, seconds: 59),
+      );
       return (start: startOfWeek, end: endOfWeek);
     } else if (_selectedMainTab == 1) {
       final start = DateTime(_selectedYear, _selectedMonth, 1);
@@ -270,29 +281,71 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           StreamBuilder<List<TransactionModel>>(
             stream: _transactionStream,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                return Center(child: CircularProgressIndicator(color: context.colors.primary));
+              if (snapshot.connectionState == ConnectionState.waiting &&
+                  !snapshot.hasData) {
+                return Center(
+                  child: CircularProgressIndicator(
+                    color: context.colors.primary,
+                  ),
+                );
               }
 
               final allTx = snapshot.data ?? [];
               final range = _getRangeFromFilter();
 
               final filteredAll = allTx.where((tx) {
-                return !tx.date.isBefore(range.start) && !tx.date.isAfter(range.end);
+                return !tx.date.isBefore(range.start) &&
+                    !tx.date.isAfter(range.end);
               }).toList();
 
-              // Lọc bỏ các giao dịch chuyển tiền nội bộ giữa các ví để không làm lệch số liệu
-              final actualTx = filteredAll.where((tx) => !tx.isTransfer).toList();
+              // Lọc bỏ các giao dịch chuyển tiền nội bộ và phân lập dòng tiền mục tiêu tiết kiệm
+              final actualTx = filteredAll
+                  .where(
+                    (tx) =>
+                        !tx.isTransfer &&
+                        (tx.goalId == null || tx.goalId!.isEmpty),
+                  )
+                  .toList();
 
-              final filtered = actualTx.where((tx) => _isExpense ? !tx.isIncome : tx.isIncome).toList();
+              // Tính toán bóc tách phí chuyển tiền thực tế phát sinh (Expense_transfer - Income_transfer)
+              final transferTx = filteredAll
+                  .where((tx) => tx.isTransfer)
+                  .toList();
+              final transferExpense = transferTx
+                  .where((tx) => !tx.isIncome)
+                  .fold<double>(0, (s, tx) => s + tx.amount);
+              final transferIncome = transferTx
+                  .where((tx) => tx.isIncome)
+                  .fold<double>(0, (s, tx) => s + tx.amount);
+              final transferFeeTotal = (transferExpense - transferIncome).clamp(
+                0.0,
+                double.infinity,
+              );
+
+              final filtered = actualTx
+                  .where((tx) => _isExpense ? !tx.isIncome : tx.isIncome)
+                  .toList();
               final chartPoints = _buildChartData(filtered, range);
-              final total = filtered.fold<double>(0, (sum, tx) => sum + tx.amount);
+              final total =
+                  filtered.fold<double>(0, (sum, tx) => sum + tx.amount) +
+                  (_isExpense ? transferFeeTotal : 0.0);
               final categoryGroups = _getCategoryGroups(filtered);
 
-              // Tính toán các chỉ số tài chính thông minh dựa trên thu/chi thực tế
-              final totalIncome = actualTx.where((tx) => tx.isIncome).fold<double>(0, (s, tx) => s + tx.amount);
-              final totalExpense = actualTx.where((tx) => !tx.isIncome).fold<double>(0, (s, tx) => s + tx.amount);
-              final savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome * 100).clamp(-100.0, 100.0) : 0.0;
+              // Tính toán các chỉ số tài chính thông minh dựa trên thu/chi thực tế (+ phí chuyển tiền)
+              final totalIncome = actualTx
+                  .where((tx) => tx.isIncome)
+                  .fold<double>(0, (s, tx) => s + tx.amount);
+              final totalExpense =
+                  actualTx
+                      .where((tx) => !tx.isIncome)
+                      .fold<double>(0, (s, tx) => s + tx.amount) +
+                  transferFeeTotal;
+              final savingsRate = totalIncome > 0
+                  ? ((totalIncome - totalExpense) / totalIncome * 100).clamp(
+                      -100.0,
+                      100.0,
+                    )
+                  : 0.0;
 
               return SingleChildScrollView(
                 controller: _scrollController,
@@ -343,8 +396,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                           child: _selectedChartType == 0
                               ? _buildWaveChart(chartPoints, total)
                               : (_selectedChartType == 1
-                                  ? _buildPieChart(categoryGroups, total)
-                                  : _buildDoubleBarChart(actualTx, range)),
+                                    ? _buildPieChart(categoryGroups, total)
+                                    : _buildDoubleBarChart(actualTx, range)),
                         ),
                       ),
                     ),
@@ -354,13 +407,22 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                     // 2.4 ĐÁNH GIÁ SỨC KHỎE TÀI CHÍNH & TỶ LỆ TIẾT KIỆM
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _buildFinancialHealthCard(totalIncome, totalExpense, savingsRate, isDark),
+                      child: _buildFinancialHealthCard(
+                        totalIncome,
+                        totalExpense,
+                        savingsRate,
+                        isDark,
+                      ),
                     ),
 
                     // 2.5 PHÂN BỔ THEO HẠNG MỤC
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _buildEnhancedTopSection(categoryGroups, total, actualTx),
+                      child: _buildEnhancedTopSection(
+                        categoryGroups,
+                        total,
+                        actualTx,
+                      ),
                     ),
                   ],
                 ),
@@ -381,7 +443,11 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
   }
 
   // === STICKY TOP APP BAR (FROSTED GLASSMORPHISM) ===
-  Widget _buildStickyHeader(BuildContext context, bool isDark, double topPadding) {
+  Widget _buildStickyHeader(
+    BuildContext context,
+    bool isDark,
+    double topPadding,
+  ) {
     return ValueListenableBuilder<bool>(
       valueListenable: _isScrolledNotifier,
       builder: (context, isScrolled, _) {
@@ -396,18 +462,24 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
             ),
             decoration: BoxDecoration(
               color: isScrolled
-                  ? (isDark ? AppColors.primaryTealDark.withValues(alpha: 0.95) : AppColors.primaryTeal.withValues(alpha: 0.95))
+                  ? (isDark
+                        ? AppColors.primaryTealDark.withValues(alpha: 0.95)
+                        : AppColors.primaryTeal.withValues(alpha: 0.95))
                   : Colors.transparent,
               border: Border(
                 bottom: BorderSide(
-                  color: isScrolled ? Colors.white.withValues(alpha: 0.15) : Colors.transparent,
+                  color: isScrolled
+                      ? Colors.white.withValues(alpha: 0.15)
+                      : Colors.transparent,
                   width: 1,
                 ),
               ),
               boxShadow: isScrolled
                   ? [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.12),
+                        color: Colors.black.withValues(
+                          alpha: isDark ? 0.35 : 0.12,
+                        ),
                         blurRadius: 10,
                         offset: const Offset(0, 3),
                       ),
@@ -449,7 +521,12 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 AnimatedScaleButton(
                   onTap: () {
                     HapticFeedback.selectionClick();
-                    Navigator.push(context, PageTransitions.slideRight(const CalendarTrackingScreen()));
+                    Navigator.push(
+                      context,
+                      PageTransitions.slideRight(
+                        const CalendarTrackingScreen(),
+                      ),
+                    );
                   },
                   child: Container(
                     width: 40,
@@ -469,7 +546,11 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                         ),
                       ],
                     ),
-                    child: const Icon(Icons.calendar_month_rounded, size: 19, color: Colors.white),
+                    child: const Icon(
+                      Icons.calendar_month_rounded,
+                      size: 19,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ],
@@ -515,8 +596,11 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           ),
           boxShadow: [
             BoxShadow(
-              color: (isDark ? AppColors.primaryTealVibrant : AppColors.primaryTeal)
-                  .withValues(alpha: isDark ? 0.22 : 0.28),
+              color:
+                  (isDark
+                          ? AppColors.primaryTealVibrant
+                          : AppColors.primaryTeal)
+                      .withValues(alpha: isDark ? 0.22 : 0.28),
               blurRadius: 22,
               offset: const Offset(0, 8),
             ),
@@ -559,9 +643,21 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                       ),
                       child: Row(
                         children: [
-                          _buildHeroPeriodTab(0, context.tr('stats_filter_week'), isDark),
-                          _buildHeroPeriodTab(1, context.tr('stats_filter_month'), isDark),
-                          _buildHeroPeriodTab(2, context.tr('stats_filter_year'), isDark),
+                          _buildHeroPeriodTab(
+                            0,
+                            context.tr('stats_filter_week'),
+                            isDark,
+                          ),
+                          _buildHeroPeriodTab(
+                            1,
+                            context.tr('stats_filter_month'),
+                            isDark,
+                          ),
+                          _buildHeroPeriodTab(
+                            2,
+                            context.tr('stats_filter_year'),
+                            isDark,
+                          ),
                         ],
                       ),
                     ),
@@ -592,7 +688,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                               icon: Icon(
                                 Icons.chevron_left_rounded,
                                 size: 20,
-                                color: _canGoPrev ? Colors.white : Colors.white30,
+                                color: _canGoPrev
+                                    ? Colors.white
+                                    : Colors.white30,
                               ),
                               onPressed: _canGoPrev
                                   ? () {
@@ -655,7 +753,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                               icon: Icon(
                                 Icons.chevron_right_rounded,
                                 size: 20,
-                                color: _canGoNext ? Colors.white : Colors.white30,
+                                color: _canGoNext
+                                    ? Colors.white
+                                    : Colors.white30,
                               ),
                               onPressed: _canGoNext
                                   ? () {
@@ -685,27 +785,37 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                     width: 7,
                                     height: 7,
                                     decoration: BoxDecoration(
-                                      color: _isExpense ? AppColors.expenseRose : AppColors.incomeEmerald,
+                                      color: _isExpense
+                                          ? AppColors.expenseRose
+                                          : AppColors.incomeEmerald,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    _isExpense ? context.tr('expense') : context.tr('income'),
-                                    style: context.textTheme.labelMedium?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.8),
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.2,
-                                    ),
+                                    _isExpense
+                                        ? context.tr('expense')
+                                        : context.tr('income'),
+                                    style: context.textTheme.labelMedium
+                                        ?.copyWith(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.8,
+                                          ),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 0.2,
+                                        ),
                                   ),
                                   Text(
                                     ' (${_getPeriodSummaryLabel()})',
-                                    style: context.textTheme.bodySmall?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.6),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                    style: context.textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.6,
+                                          ),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                   ),
                                 ],
                               ),
@@ -729,7 +839,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
                         // Badge số lượng giao dịch
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(12),
@@ -741,7 +854,11 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.receipt_long_rounded, size: 13, color: Colors.white70),
+                              const Icon(
+                                Icons.receipt_long_rounded,
+                                size: 13,
+                                color: Colors.white70,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 '$transactionCount gd',
@@ -830,7 +947,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.12),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.25 : 0.12,
+                      ),
                       blurRadius: 4,
                       offset: const Offset(0, 1),
                     ),
@@ -844,7 +963,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 label,
                 style: context.textTheme.labelSmall?.copyWith(
                   color: isSelected
-                      ? (isDark ? AppColors.primaryTealVibrant : AppColors.primaryTealDark)
+                      ? (isDark
+                            ? AppColors.primaryTealVibrant
+                            : AppColors.primaryTealDark)
                       : Colors.white.withValues(alpha: 0.8),
                   fontSize: 12.5,
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
@@ -863,8 +984,12 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     required double amount,
     required bool isDark,
   }) {
-    final activeTextColor = isExpensePill ? AppColors.expenseRose : AppColors.incomeEmerald;
-    final activeIconColor = isExpensePill ? AppColors.expenseRose : AppColors.incomeEmerald;
+    final activeTextColor = isExpensePill
+        ? AppColors.expenseRose
+        : AppColors.incomeEmerald;
+    final activeIconColor = isExpensePill
+        ? AppColors.expenseRose
+        : AppColors.incomeEmerald;
 
     return Expanded(
       child: AnimatedScaleButton(
@@ -891,7 +1016,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.12),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.25 : 0.12,
+                      ),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -906,13 +1033,15 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 decoration: BoxDecoration(
                   color: isSelected
                       ? (isExpensePill
-                          ? AppColors.expenseRose.withValues(alpha: 0.2)
-                          : AppColors.incomeEmerald.withValues(alpha: 0.2))
+                            ? AppColors.expenseRose.withValues(alpha: 0.2)
+                            : AppColors.incomeEmerald.withValues(alpha: 0.2))
                       : Colors.white.withValues(alpha: 0.18),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  isExpensePill ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                  isExpensePill
+                      ? Icons.arrow_upward_rounded
+                      : Icons.arrow_downward_rounded,
                   color: isSelected ? activeIconColor : Colors.white,
                   size: 13,
                 ),
@@ -927,9 +1056,13 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        isExpensePill ? context.tr('expense') : context.tr('income'),
+                        isExpensePill
+                            ? context.tr('expense')
+                            : context.tr('income'),
                         style: context.textTheme.labelSmall?.copyWith(
-                          color: isSelected ? activeTextColor : Colors.white.withValues(alpha: 0.8),
+                          color: isSelected
+                              ? activeTextColor
+                              : Colors.white.withValues(alpha: 0.8),
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
                         ),
@@ -973,7 +1106,11 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
   // ════════ DANH SÁCH THỐNG KÊ THEO HẠNG MỤC (NHẤN VÀO ĐỂ XEM CHI TIẾT) ════════
 
-  Widget _buildEnhancedTopSection(List<_CategoryGroup> groups, double total, List<TransactionModel> allTx) {
+  Widget _buildEnhancedTopSection(
+    List<_CategoryGroup> groups,
+    double total,
+    List<TransactionModel> allTx,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
@@ -984,8 +1121,13 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           children: [
             Expanded(
               child: Text(
-                _isExpense ? context.tr('spending_breakdown') : context.tr('income_breakdown'),
-                style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
+                _isExpense
+                    ? context.tr('spending_breakdown')
+                    : context.tr('income_breakdown'),
+                style: const TextStyle(
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w800,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -1001,14 +1143,18 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                   Text(
                     context.tr(_isDescending ? 'highest' : 'lowest'),
                     style: TextStyle(
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF64748B),
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Icon(
                     _isDescending ? Icons.expand_more : Icons.expand_less,
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    color: isDark
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF64748B),
                     size: 20,
                   ),
                 ],
@@ -1027,16 +1173,27 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
             itemCount: groups.length,
             itemBuilder: (context, index) {
               final group = groups[index];
-              final double percent = total > 0 ? (group.totalAmount / total) : 0;
+              final double percent = total > 0
+                  ? (group.totalAmount / total)
+                  : 0;
               final color = CategoryUtils.getVibrantColor(group.category);
-              final bgColor = CategoryUtils.getLightBgColor(group.category, isDark);
+              final bgColor = CategoryUtils.getLightBgColor(
+                group.category,
+                isDark,
+              );
 
               return StaggeredListItem(
                 index: index,
                 child: AnimatedScaleButton(
                   onTap: () {
                     HapticFeedback.selectionClick();
-                    _showCategoryDetailSheet(context, group, total, isDark, allTransactions: allTx);
+                    _showCategoryDetailSheet(
+                      context,
+                      group,
+                      total,
+                      isDark,
+                      allTransactions: allTx,
+                    );
                   },
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 10),
@@ -1058,7 +1215,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                             Container(
                               width: 48,
                               height: 48,
-                              decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(15)),
+                              decoration: BoxDecoration(
+                                color: bgColor,
+                                borderRadius: BorderRadius.circular(15),
+                              ),
                               child: Icon(group.icon, color: color, size: 22),
                             ),
                             const SizedBox(width: 14),
@@ -1069,12 +1229,21 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                 children: [
                                   Text(
                                     context.trCat(group.category),
-                                    style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800, fontSize: 15, color: context.textPrimaryColor),
+                                    style: context.textTheme.titleSmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 15,
+                                          color: context.textPrimaryColor,
+                                        ),
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
                                     '${group.transactionCount} ${context.tr('tx_history').toLowerCase()}',
-                                    style: context.textTheme.bodySmall?.copyWith(color: context.textMutedColor, fontSize: 12),
+                                    style: context.textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: context.textMutedColor,
+                                          fontSize: 12,
+                                        ),
                                   ),
                                 ],
                               ),
@@ -1087,16 +1256,24 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      CurrencyUtils.formatCurrency(group.totalAmount),
-                                      style: context.textTheme.titleSmall?.copyWith(
-                                        color: context.textPrimaryColor,
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 15,
+                                      CurrencyUtils.formatCurrency(
+                                        group.totalAmount,
                                       ),
+                                      style: context.textTheme.titleSmall
+                                          ?.copyWith(
+                                            color: context.textPrimaryColor,
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 15,
+                                          ),
                                     ),
                                     Text(
                                       '${(percent * 100).toStringAsFixed(1)}%',
-                                      style: context.textTheme.labelSmall?.copyWith(color: color, fontSize: 11, fontWeight: FontWeight.bold),
+                                      style: context.textTheme.labelSmall
+                                          ?.copyWith(
+                                            color: color,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -1118,7 +1295,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                               height: 6,
                               width: double.infinity,
                               decoration: BoxDecoration(
-                                color: isDark ? AppColors.borderDark : AppColors.inputBgLight,
+                                color: isDark
+                                    ? AppColors.borderDark
+                                    : AppColors.inputBgLight,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
@@ -1127,7 +1306,12 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                               child: Container(
                                 height: 6,
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.6)]),
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      color,
+                                      color.withValues(alpha: 0.6),
+                                    ],
+                                  ),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                               ),
@@ -1167,30 +1351,58 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           stream: TransactionRepository().getTransactionsStream(),
           initialData: initialAll.isNotEmpty ? initialAll : null,
           builder: (context, snapshot) {
-            final allTx = (snapshot.hasData && snapshot.data != null && snapshot.data!.isNotEmpty)
+            final allTx =
+                (snapshot.hasData &&
+                    snapshot.data != null &&
+                    snapshot.data!.isNotEmpty)
                 ? snapshot.data!
                 : initialAll;
             final range = _getRangeFromFilter();
 
             final filteredAll = allTx.where((tx) {
-              return !tx.date.isBefore(range.start) && !tx.date.isAfter(range.end);
+              return !tx.date.isBefore(range.start) &&
+                  !tx.date.isAfter(range.end);
             }).toList();
 
-            final actualTx = filteredAll.where((tx) => !tx.isTransfer).toList();
-            final filteredByType = actualTx.where((tx) => _isExpense ? !tx.isIncome : tx.isIncome).toList();
-            final currentTotalAll = filteredByType.fold<double>(0, (sum, tx) => sum + tx.amount);
+            final actualTx = filteredAll
+                .where(
+                  (tx) =>
+                      !tx.isTransfer &&
+                      (tx.goalId == null || tx.goalId!.isEmpty),
+                )
+                .toList();
+            final filteredByType = actualTx
+                .where((tx) => _isExpense ? !tx.isIncome : tx.isIncome)
+                .toList();
+            final currentTotalAll = filteredByType.fold<double>(
+              0,
+              (sum, tx) => sum + tx.amount,
+            );
 
-            var currentCategoryTx = filteredByType.where((tx) => tx.category == initialGroup.category).toList();
+            var currentCategoryTx = filteredByType
+                .where((tx) => tx.category == initialGroup.category)
+                .toList();
             // Nếu stream lọc chưa có kết quả (hoặc rỗng do lọc) thì lấy danh sách ban đầu đã lọc của group
-            if (currentCategoryTx.isEmpty && initialGroup.transactions.isNotEmpty) {
+            if (currentCategoryTx.isEmpty &&
+                initialGroup.transactions.isNotEmpty) {
               currentCategoryTx = initialGroup.transactions;
             }
-            final currentCategoryTotal = currentCategoryTx.fold<double>(0, (sum, tx) => sum + tx.amount);
+            final currentCategoryTotal = currentCategoryTx.fold<double>(
+              0,
+              (sum, tx) => sum + tx.amount,
+            );
 
-            final effectiveTotalAll = currentTotalAll > 0 ? currentTotalAll : initialTotalAll;
-            final percent = effectiveTotalAll > 0 ? (currentCategoryTotal / effectiveTotalAll) * 100 : 0.0;
+            final effectiveTotalAll = currentTotalAll > 0
+                ? currentTotalAll
+                : initialTotalAll;
+            final percent = effectiveTotalAll > 0
+                ? (currentCategoryTotal / effectiveTotalAll) * 100
+                : 0.0;
             final color = CategoryUtils.getVibrantColor(initialGroup.category);
-            final bgColor = CategoryUtils.getLightBgColor(initialGroup.category, isDark);
+            final bgColor = CategoryUtils.getLightBgColor(
+              initialGroup.category,
+              isDark,
+            );
 
             return Container(
               constraints: BoxConstraints(
@@ -1198,7 +1410,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               ),
               decoration: BoxDecoration(
                 color: Theme.of(context).scaffoldBackgroundColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(30),
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1227,7 +1441,11 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                             color: bgColor,
                             borderRadius: BorderRadius.circular(18),
                           ),
-                          child: Icon(initialGroup.icon, color: color, size: 26),
+                          child: Icon(
+                            initialGroup.icon,
+                            color: color,
+                            size: 26,
+                          ),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
@@ -1249,26 +1467,31 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                 crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: color.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
                                       '${percent.toStringAsFixed(1)}%',
-                                      style: context.textTheme.labelSmall?.copyWith(
-                                        color: color,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 11,
-                                      ),
+                                      style: context.textTheme.labelSmall
+                                          ?.copyWith(
+                                            color: color,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 11,
+                                          ),
                                     ),
                                   ),
                                   Text(
                                     '${currentCategoryTx.length} ${context.tr('tx_history').toLowerCase()}',
-                                    style: context.textTheme.bodySmall?.copyWith(
-                                      color: context.textMutedColor,
-                                      fontSize: 11.5,
-                                    ),
+                                    style: context.textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: context.textMutedColor,
+                                          fontSize: 11.5,
+                                        ),
                                   ),
                                 ],
                               ),
@@ -1285,15 +1508,20 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                 fit: BoxFit.scaleDown,
                                 alignment: Alignment.centerRight,
                                 child: Text(
-                                  CurrencyUtils.formatAmountWithSign(currentCategoryTotal, !_isExpense),
-                                  style: context.textTheme.titleMedium?.copyWith(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w900,
-                                    color: _isExpense ? AppColors.expenseRose : AppColors.incomeEmerald,
+                                  CurrencyUtils.formatAmountWithSign(
+                                    currentCategoryTotal,
+                                    !_isExpense,
                                   ),
+                                  style: context.textTheme.titleMedium
+                                      ?.copyWith(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w900,
+                                        color: _isExpense
+                                            ? AppColors.expenseRose
+                                            : AppColors.incomeEmerald,
+                                      ),
                                 ),
                               ),
-
                             ],
                           ),
                         ),
@@ -1328,7 +1556,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                       child: Center(
                         child: Text(
                           context.tr('no_tx_category'),
-                          style: context.textTheme.bodyMedium?.copyWith(color: context.textMutedColor, fontSize: 13),
+                          style: context.textTheme.bodyMedium?.copyWith(
+                            color: context.textMutedColor,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     )
@@ -1336,21 +1567,28 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                     Builder(
                       builder: (context) {
                         // Sắp xếp theo thời gian tăng dần để tính lũy kế theo dòng thời gian
-                        final sortedAsc = List<TransactionModel>.from(currentCategoryTx)
-                          ..sort((a, b) => a.date.compareTo(b.date));
+                        final sortedAsc = List<TransactionModel>.from(
+                          currentCategoryTx,
+                        )..sort((a, b) => a.date.compareTo(b.date));
                         final Map<String, double> runningTotals = {};
                         double cumulative = 0;
                         for (int i = 0; i < sortedAsc.length; i++) {
                           final t = sortedAsc[i];
                           cumulative += t.amount;
-                          final key = t.id.isNotEmpty ? t.id : '${t.date.millisecondsSinceEpoch}_$i';
+                          final key = t.id.isNotEmpty
+                              ? t.id
+                              : '${t.date.millisecondsSinceEpoch}_$i';
                           runningTotals[key] = cumulative;
                         }
 
                         // Hiển thị danh sách mới nhất lên đầu
-                        final displayList = List<TransactionModel>.from(currentCategoryTx)
-                          ..sort((a, b) => b.date.compareTo(a.date));
-                        final walletMap = {for (final w in WalletRepository().latestWallets) w.id: w};
+                        final displayList = List<TransactionModel>.from(
+                          currentCategoryTx,
+                        )..sort((a, b) => b.date.compareTo(a.date));
+                        final walletMap = {
+                          for (final w in WalletRepository().latestWallets)
+                            w.id: w,
+                        };
 
                         return Flexible(
                           child: ListView.separated(
@@ -1359,10 +1597,13 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                             padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
                             shrinkWrap: true,
                             itemCount: displayList.length,
-                            separatorBuilder: (context, index) => const SizedBox(height: 6),
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 6),
                             itemBuilder: (context, idx) {
                               final tx = displayList[idx];
-                              final key = tx.id.isNotEmpty ? tx.id : '${tx.date.millisecondsSinceEpoch}_$idx';
+                              final key = tx.id.isNotEmpty
+                                  ? tx.id
+                                  : '${tx.date.millisecondsSinceEpoch}_$idx';
                               return TransactionItem(
                                 transaction: tx,
                                 showDate: true,
@@ -1396,15 +1637,21 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
             width: 58,
             height: 58,
             decoration: BoxDecoration(
-              color: (isDark ? AppColors.primaryTealVibrant : AppColors.primaryTeal)
-                  .withValues(alpha: 0.1),
+              color:
+                  (isDark
+                          ? AppColors.primaryTealVibrant
+                          : AppColors.primaryTeal)
+                      .withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.receipt_long_rounded,
               size: 28,
-              color: (isDark ? AppColors.primaryTealVibrant : AppColors.primaryTeal)
-                  .withValues(alpha: 0.6),
+              color:
+                  (isDark
+                          ? AppColors.primaryTealVibrant
+                          : AppColors.primaryTeal)
+                      .withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 12),
@@ -1452,7 +1699,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           return Container(
             decoration: BoxDecoration(
               color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(32),
+              ),
             ),
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -1482,9 +1731,14 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                     ),
                     // Bộ chọn năm: [<] Năm YYYY [>]
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.surfaceElevatedDark : AppColors.inputBgLight,
+                        color: isDark
+                            ? AppColors.surfaceElevatedDark
+                            : AppColors.inputBgLight,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -1493,7 +1747,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                           IconButton(
                             visualDensity: VisualDensity.compact,
                             padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                            constraints: const BoxConstraints(
+                              minWidth: 28,
+                              minHeight: 28,
+                            ),
                             icon: Icon(
                               Icons.chevron_left_rounded,
                               size: 20,
@@ -1507,12 +1764,18 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                           ),
                           Text(
                             '$tempYear',
-                            style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, fontSize: 14),
+                            style: context.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
                           IconButton(
                             visualDensity: VisualDensity.compact,
                             padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                            constraints: const BoxConstraints(
+                              minWidth: 28,
+                              minHeight: 28,
+                            ),
                             icon: Icon(
                               Icons.chevron_right_rounded,
                               size: 20,
@@ -1544,7 +1807,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                   itemCount: 12,
                   itemBuilder: (context, idx) {
                     final month = idx + 1;
-                    final isFutureMonth = tempYear == now.year && month > now.month;
+                    final isFutureMonth =
+                        tempYear == now.year && month > now.month;
                     final isDisabled = (tempYear > now.year) || isFutureMonth;
                     final isSelected =
                         (month == _selectedMonth && tempYear == _selectedYear);
@@ -1565,18 +1829,19 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                           color: isSelected
                               ? primaryColor
                               : isDisabled
-                                  ? (isDark
-                                      ? Colors.white.withValues(alpha: 0.03)
-                                      : AppColors.inputBgLight)
-                                  : (isDark
-                                      ? AppColors.surfaceElevatedDark
-                                      : AppColors.inputBgLight),
+                              ? (isDark
+                                    ? Colors.white.withValues(alpha: 0.03)
+                                    : AppColors.inputBgLight)
+                              : (isDark
+                                    ? AppColors.surfaceElevatedDark
+                                    : AppColors.inputBgLight),
                           borderRadius: BorderRadius.circular(14),
                           border: isDisabled
                               ? Border.all(
                                   color: isDark
                                       ? Colors.white.withValues(alpha: 0.05)
-                                      : context.borderColor)
+                                      : context.borderColor,
+                                )
                               : null,
                         ),
                         alignment: Alignment.center,
@@ -1593,10 +1858,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                 color: isSelected
                                     ? Colors.white
                                     : isDisabled
-                                        ? (isDark
-                                            ? Colors.white24
-                                            : context.textMutedColor)
-                                        : context.textPrimaryColor,
+                                    ? (isDark
+                                          ? Colors.white24
+                                          : context.textMutedColor)
+                                    : context.textPrimaryColor,
                               ),
                             ),
                             if (isDisabled) ...[
@@ -1605,7 +1870,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                 context.tr('not_yet'),
                                 style: context.textTheme.labelSmall?.copyWith(
                                   fontSize: 9,
-                                  color: isDark ? Colors.white24 : context.textMutedColor,
+                                  color: isDark
+                                      ? Colors.white24
+                                      : context.textMutedColor,
                                 ),
                               ),
                             ],
@@ -1691,11 +1958,16 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                       },
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
                         decoration: BoxDecoration(
                           color: isSelected
                               ? primaryColor
-                              : (isDark ? AppColors.surfaceElevatedDark : AppColors.inputBgLight),
+                              : (isDark
+                                    ? AppColors.surfaceElevatedDark
+                                    : AppColors.inputBgLight),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Row(
@@ -1707,12 +1979,18 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                 color: isSelected
                                     ? Colors.white
                                     : context.textPrimaryColor,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.w600,
                                 fontSize: 15,
                               ),
                             ),
                             if (isSelected)
-                              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                              const Icon(
+                                Icons.check_circle_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                           ],
                         ),
                       ),
@@ -1737,16 +2015,21 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
     final weeks = <({int offset, String label})>[];
     for (int offset = 0; offset < 12; offset++) {
-      final startOfWeek = today.subtract(Duration(days: today.weekday - 1 + offset * 7));
+      final startOfWeek = today.subtract(
+        Duration(days: today.weekday - 1 + offset * 7),
+      );
       final endOfWeek = startOfWeek.add(const Duration(days: 6));
 
       String label;
       if (offset == 0) {
-        label = '${context.tr('this_week')} (${startOfWeek.day}/${startOfWeek.month} - ${endOfWeek.day}/${endOfWeek.month})';
+        label =
+            '${context.tr('this_week')} (${startOfWeek.day}/${startOfWeek.month} - ${endOfWeek.day}/${endOfWeek.month})';
       } else if (offset == 1) {
-        label = '${context.tr('last_week')} (${startOfWeek.day}/${startOfWeek.month} - ${endOfWeek.day}/${endOfWeek.month})';
+        label =
+            '${context.tr('last_week')} (${startOfWeek.day}/${startOfWeek.month} - ${endOfWeek.day}/${endOfWeek.month})';
       } else {
-        label = '${startOfWeek.day}/${startOfWeek.month} - ${endOfWeek.day}/${endOfWeek.month}/${startOfWeek.year}';
+        label =
+            '${startOfWeek.day}/${startOfWeek.month} - ${endOfWeek.day}/${endOfWeek.month}/${startOfWeek.year}';
       }
       weeks.add((offset: offset, label: label));
     }
@@ -1805,11 +2088,16 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                       },
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
                         decoration: BoxDecoration(
                           color: isSelected
                               ? primaryColor
-                              : (isDark ? AppColors.surfaceElevatedDark : AppColors.inputBgLight),
+                              : (isDark
+                                    ? AppColors.surfaceElevatedDark
+                                    : AppColors.inputBgLight),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Row(
@@ -1821,12 +2109,18 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                                 color: isSelected
                                     ? Colors.white
                                     : context.textPrimaryColor,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.w600,
                                 fontSize: 14,
                               ),
                             ),
                             if (isSelected)
-                              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+                              const Icon(
+                                Icons.check_circle_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                           ],
                         ),
                       ),
@@ -1842,7 +2136,6 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     );
   }
 
-
   // ════════ BIỂU ĐỒ LƯỢN SÓNG (CHART) ════════
 
   Widget _buildChartTypeSelector(bool isDark) {
@@ -1851,22 +2144,39 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
       decoration: BoxDecoration(
         color: isDark ? AppColors.inputBgDark : AppColors.inputBgLight,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: context.borderColor,
-          width: 1.0,
-        ),
+        border: Border.all(color: context.borderColor, width: 1.0),
       ),
       child: Row(
         children: [
-          _buildChartTypeTab(0, Icons.show_chart_rounded, context.tr('chart_trend'), isDark),
-          _buildChartTypeTab(1, Icons.pie_chart_rounded, context.tr('chart_distribution'), isDark),
-          _buildChartTypeTab(2, Icons.bar_chart_rounded, context.tr('chart_income_expense'), isDark),
+          _buildChartTypeTab(
+            0,
+            Icons.show_chart_rounded,
+            context.tr('chart_trend'),
+            isDark,
+          ),
+          _buildChartTypeTab(
+            1,
+            Icons.pie_chart_rounded,
+            context.tr('chart_distribution'),
+            isDark,
+          ),
+          _buildChartTypeTab(
+            2,
+            Icons.bar_chart_rounded,
+            context.tr('chart_income_expense'),
+            isDark,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildChartTypeTab(int index, IconData icon, String label, bool isDark) {
+  Widget _buildChartTypeTab(
+    int index,
+    IconData icon,
+    String label,
+    bool isDark,
+  ) {
     final isSelected = _selectedChartType == index;
     final primaryColor = context.colors.primary;
     return Expanded(
@@ -1889,7 +2199,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.25 : 0.06,
+                      ),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -1914,7 +2226,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                     label,
                     style: context.textTheme.labelSmall?.copyWith(
                       fontSize: 12,
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      fontWeight: isSelected
+                          ? FontWeight.w800
+                          : FontWeight.w600,
                       color: isSelected
                           ? (isDark ? AppColors.textPrimaryDark : primaryColor)
                           : context.textMutedColor,
@@ -1936,11 +2250,18 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
         height: 240,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: context.isDark ? AppColors.surfaceElevatedDark : AppColors.inputBgLight,
+          color: context.isDark
+              ? AppColors.surfaceElevatedDark
+              : AppColors.inputBgLight,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
-          child: Text(context.tr('no_distribution_data'), style: context.textTheme.bodyMedium?.copyWith(color: context.textMutedColor)),
+          child: Text(
+            context.tr('no_distribution_data'),
+            style: context.textTheme.bodyMedium?.copyWith(
+              color: context.textMutedColor,
+            ),
+          ),
         ),
       );
     }
@@ -1981,7 +2302,8 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                       _touchedPieIndex = -1;
                       return;
                     }
-                    _touchedPieIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                    _touchedPieIndex =
+                        pieTouchResponse.touchedSection!.touchedSectionIndex;
                   });
                 },
               ),
@@ -2003,7 +2325,14 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
             return Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(width: 9, height: 9, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+                Container(
+                  width: 9,
+                  height: 9,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
                 const SizedBox(width: 4),
                 Text(
                   '${context.trCat(g.category)} ($percent%)',
@@ -2021,17 +2350,27 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     );
   }
 
-  Widget _buildDoubleBarChart(List<TransactionModel> allFilteredTx, ({DateTime start, DateTime end}) range) {
+  Widget _buildDoubleBarChart(
+    List<TransactionModel> allFilteredTx,
+    ({DateTime start, DateTime end}) range,
+  ) {
     if (allFilteredTx.isEmpty) {
       return Container(
         height: 240,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: context.isDark ? AppColors.surfaceElevatedDark : AppColors.inputBgLight,
+          color: context.isDark
+              ? AppColors.surfaceElevatedDark
+              : AppColors.inputBgLight,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
-          child: Text(context.tr('no_compare_data'), style: context.textTheme.bodyMedium?.copyWith(color: context.textMutedColor)),
+          child: Text(
+            context.tr('no_compare_data'),
+            style: context.textTheme.bodyMedium?.copyWith(
+              color: context.textMutedColor,
+            ),
+          ),
         ),
       );
     }
@@ -2041,14 +2380,28 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
     if (_selectedMainTab == 0) {
       final isEn = LanguageService.instance.currentLanguage == 'en';
-      final dayNames = isEn ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] : ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+      final dayNames = isEn
+          ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+          : ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
       for (int i = 0; i < 7; i++) {
         final d = range.start.add(Duration(days: i));
-        final dayTx = allFilteredTx.where((tx) =>
-          tx.date.year == d.year && tx.date.month == d.month && tx.date.day == d.day);
-        final inc = dayTx.where((t) => t.isIncome).fold<double>(0, (s, t) => s + t.amount);
-        final exp = dayTx.where((t) => !t.isIncome).fold<double>(0, (s, t) => s + t.amount);
-        barData.add((label: dayNames[d.weekday % 7], income: inc, expense: exp));
+        final dayTx = allFilteredTx.where(
+          (tx) =>
+              tx.date.year == d.year &&
+              tx.date.month == d.month &&
+              tx.date.day == d.day,
+        );
+        final inc = dayTx
+            .where((t) => t.isIncome)
+            .fold<double>(0, (s, t) => s + t.amount);
+        final exp = dayTx
+            .where((t) => !t.isIncome)
+            .fold<double>(0, (s, t) => s + t.amount);
+        barData.add((
+          label: dayNames[d.weekday % 7],
+          income: inc,
+          expense: exp,
+        ));
       }
     } else if (_selectedMainTab == 1) {
       final daysInMonth = DateTime(_selectedYear, _selectedMonth + 1, 0).day;
@@ -2059,20 +2412,32 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
         (start: 22, end: daysInMonth, label: 'W4'),
       ];
       for (final itv in intervals) {
-        final itvTx = allFilteredTx.where((tx) =>
-          tx.date.year == _selectedYear &&
-          tx.date.month == _selectedMonth &&
-          tx.date.day >= itv.start &&
-          tx.date.day <= itv.end);
-        final inc = itvTx.where((t) => t.isIncome).fold<double>(0, (s, t) => s + t.amount);
-        final exp = itvTx.where((t) => !t.isIncome).fold<double>(0, (s, t) => s + t.amount);
+        final itvTx = allFilteredTx.where(
+          (tx) =>
+              tx.date.year == _selectedYear &&
+              tx.date.month == _selectedMonth &&
+              tx.date.day >= itv.start &&
+              tx.date.day <= itv.end,
+        );
+        final inc = itvTx
+            .where((t) => t.isIncome)
+            .fold<double>(0, (s, t) => s + t.amount);
+        final exp = itvTx
+            .where((t) => !t.isIncome)
+            .fold<double>(0, (s, t) => s + t.amount);
         barData.add((label: itv.label, income: inc, expense: exp));
       }
     } else {
       for (int i = 1; i <= 12; i++) {
-        final monthTx = allFilteredTx.where((tx) => tx.date.year == _selectedYear && tx.date.month == i);
-        final inc = monthTx.where((t) => t.isIncome).fold<double>(0, (s, t) => s + t.amount);
-        final exp = monthTx.where((t) => !t.isIncome).fold<double>(0, (s, t) => s + t.amount);
+        final monthTx = allFilteredTx.where(
+          (tx) => tx.date.year == _selectedYear && tx.date.month == i,
+        );
+        final inc = monthTx
+            .where((t) => t.isIncome)
+            .fold<double>(0, (s, t) => s + t.amount);
+        final exp = monthTx
+            .where((t) => !t.isIncome)
+            .fold<double>(0, (s, t) => s + t.amount);
         final isEn = LanguageService.instance.currentLanguage == 'en';
         barData.add((label: isEn ? 'M$i' : 'T$i', income: inc, expense: exp));
       }
@@ -2112,13 +2477,41 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(width: 9, height: 9, decoration: BoxDecoration(color: AppColors.incomeEmerald, shape: BoxShape.circle)),
+            Container(
+              width: 9,
+              height: 9,
+              decoration: BoxDecoration(
+                color: AppColors.incomeEmerald,
+                shape: BoxShape.circle,
+              ),
+            ),
             const SizedBox(width: 4),
-            Text(context.tr('income'), style: context.textTheme.labelSmall?.copyWith(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.incomeEmerald)),
+            Text(
+              context.tr('income'),
+              style: context.textTheme.labelSmall?.copyWith(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: AppColors.incomeEmerald,
+              ),
+            ),
             const SizedBox(width: 16),
-            Container(width: 9, height: 9, decoration: BoxDecoration(color: AppColors.expenseRose, shape: BoxShape.circle)),
+            Container(
+              width: 9,
+              height: 9,
+              decoration: BoxDecoration(
+                color: AppColors.expenseRose,
+                shape: BoxShape.circle,
+              ),
+            ),
             const SizedBox(width: 4),
-            Text(context.tr('expense'), style: context.textTheme.labelSmall?.copyWith(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.expenseRose)),
+            Text(
+              context.tr('expense'),
+              style: context.textTheme.labelSmall?.copyWith(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: AppColors.expenseRose,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -2130,9 +2523,12 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
               maxY: maxY,
               barTouchData: BarTouchData(
                 touchTooltipData: BarTouchTooltipData(
-                  getTooltipColor: (_) => isDark ? AppColors.surfaceElevatedDark : Colors.white,
+                  getTooltipColor: (_) =>
+                      isDark ? AppColors.surfaceElevatedDark : Colors.white,
                   tooltipBorder: BorderSide(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    color: isDark
+                        ? AppColors.borderDark
+                        : AppColors.borderLight,
                     width: 1,
                   ),
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
@@ -2140,23 +2536,34 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                     return BarTooltipItem(
                       '${isInc ? context.tr('flow_income') : context.tr('flow_expense')}: ${CurrencyUtils.formatCurrency(rod.toY)}',
                       context.textTheme.labelMedium?.copyWith(
-                        color: isInc ? AppColors.incomeEmerald : AppColors.expenseRose,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ) ?? TextStyle(
-                        color: isInc ? AppColors.incomeEmerald : AppColors.expenseRose,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
+                            color: isInc
+                                ? AppColors.incomeEmerald
+                                : AppColors.expenseRose,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ) ??
+                          TextStyle(
+                            color: isInc
+                                ? AppColors.incomeEmerald
+                                : AppColors.expenseRose,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
                     );
                   },
                 ),
               ),
               titlesData: FlTitlesData(
                 show: true,
-                leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                leftTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                rightTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                topTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
@@ -2170,7 +2577,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                           style: context.textTheme.labelSmall?.copyWith(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
                           ),
                         ),
                       );
@@ -2188,7 +2597,12 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     );
   }
 
-  Widget _buildFinancialHealthCard(double income, double expense, double savingsRate, bool isDark) {
+  Widget _buildFinancialHealthCard(
+    double income,
+    double expense,
+    double savingsRate,
+    bool isDark,
+  ) {
     String healthStatus = context.tr('health_fair');
     Color healthColor = AppColors.incomeEmerald;
     IconData healthIcon = Icons.sentiment_satisfied_alt;
@@ -2233,7 +2647,14 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 children: [
                   Icon(healthIcon, color: healthColor, size: 20),
                   const SizedBox(width: 8),
-                  Text(context.tr('financial_health'), style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, fontSize: 14, color: context.textPrimaryColor)),
+                  Text(
+                    context.tr('financial_health'),
+                    style: context.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: context.textPrimaryColor,
+                    ),
+                  ),
                 ],
               ),
               Container(
@@ -2244,7 +2665,11 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 ),
                 child: Text(
                   healthStatus,
-                  style: context.textTheme.labelSmall?.copyWith(color: healthColor, fontWeight: FontWeight.bold, fontSize: 11.5),
+                  style: context.textTheme.labelSmall?.copyWith(
+                    color: healthColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11.5,
+                  ),
                 ),
               ),
             ],
@@ -2266,7 +2691,11 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                     const SizedBox(height: 2),
                     Text(
                       '${savingsRate >= 0 ? "+" : ""}${savingsRate.toStringAsFixed(1)}%',
-                      style: context.textTheme.titleMedium?.copyWith(fontSize: 17, fontWeight: FontWeight.w800, color: healthColor),
+                      style: context.textTheme.titleMedium?.copyWith(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: healthColor,
+                      ),
                     ),
                   ],
                 ),
@@ -2290,7 +2719,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                       style: context.textTheme.titleSmall?.copyWith(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: (income - expense) >= 0 ? AppColors.incomeEmerald : AppColors.expenseRose,
+                        color: (income - expense) >= 0
+                            ? AppColors.incomeEmerald
+                            : AppColors.expenseRose,
                       ),
                     ),
                   ],
@@ -2305,19 +2736,25 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
 
   Widget _buildWaveChart(List<_ChartPoint> data, double total) {
     final isDark = context.isDark;
-    final chartColor = _isExpense ? AppColors.expenseRose : (isDark ? AppColors.primaryTealVibrant : AppColors.primaryTeal);
+    final chartColor = _isExpense
+        ? AppColors.expenseRose
+        : (isDark ? AppColors.primaryTealVibrant : AppColors.primaryTeal);
     if (data.isEmpty || total == 0) {
       return Container(
         height: 240,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceElevatedDark : AppColors.inputBgLight,
+          color: isDark
+              ? AppColors.surfaceElevatedDark
+              : AppColors.inputBgLight,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Center(
           child: Text(
             context.tr('no_transactions_period'),
-            style: context.textTheme.bodyMedium?.copyWith(color: context.textMutedColor),
+            style: context.textTheme.bodyMedium?.copyWith(
+              color: context.textMutedColor,
+            ),
           ),
         ),
       );
@@ -2335,9 +2772,15 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           minY: 0,
           maxY: safeMaxY,
           titlesData: FlTitlesData(
-            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
@@ -2351,7 +2794,9 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                     child: Text(
                       data[idx].label,
                       style: context.textTheme.labelSmall?.copyWith(
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
                       ),
@@ -2363,24 +2808,37 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
           ),
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) => isDark ? AppColors.surfaceElevatedDark : Colors.white,
+              getTooltipColor: (_) =>
+                  isDark ? AppColors.surfaceElevatedDark : Colors.white,
               tooltipBorder: BorderSide(
                 color: isDark ? AppColors.borderDark : AppColors.borderLight,
                 width: 1,
               ),
               getTooltipItems: (spots) => spots
-                  .map((s) => LineTooltipItem(
-                        CurrencyUtils.formatCurrency(s.y),
-                        context.textTheme.labelMedium?.copyWith(color: chartColor, fontWeight: FontWeight.bold) ??
-                            TextStyle(color: chartColor, fontWeight: FontWeight.bold),
-                      ))
+                  .map(
+                    (s) => LineTooltipItem(
+                      CurrencyUtils.formatCurrency(s.y),
+                      context.textTheme.labelMedium?.copyWith(
+                            color: chartColor,
+                            fontWeight: FontWeight.bold,
+                          ) ??
+                          TextStyle(
+                            color: chartColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  )
                   .toList(),
             ),
             handleBuiltInTouches: true,
           ),
           lineBarsData: [
             LineChartBarData(
-              spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.value)).toList(),
+              spots: data
+                  .asMap()
+                  .entries
+                  .map((e) => FlSpot(e.key.toDouble(), e.value.value))
+                  .toList(),
               isCurved: true,
               color: chartColor,
               barWidth: 3,
@@ -2390,7 +2848,10 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [chartColor.withValues(alpha: 0.25), chartColor.withValues(alpha: 0)],
+                  colors: [
+                    chartColor.withValues(alpha: 0.25),
+                    chartColor.withValues(alpha: 0),
+                  ],
                 ),
               ),
             ),
@@ -2400,14 +2861,22 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     );
   }
 
-  List<_ChartPoint> _buildChartData(List<TransactionModel> transactions, ({DateTime start, DateTime end}) range) {
+  List<_ChartPoint> _buildChartData(
+    List<TransactionModel> transactions,
+    ({DateTime start, DateTime end}) range,
+  ) {
     List<_ChartPoint> result = [];
     if (_selectedMainTab == 0) {
       final dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
       for (int i = 0; i < 7; i++) {
         final d = range.start.add(Duration(days: i));
         final val = transactions
-            .where((tx) => tx.date.year == d.year && tx.date.month == d.month && tx.date.day == d.day)
+            .where(
+              (tx) =>
+                  tx.date.year == d.year &&
+                  tx.date.month == d.month &&
+                  tx.date.day == d.day,
+            )
             .fold<double>(0, (s, tx) => s + tx.amount);
         result.add(_ChartPoint(label: dayNames[d.weekday % 7], value: val));
       }
@@ -2421,11 +2890,13 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
       ];
       for (final interval in intervals) {
         final val = transactions
-            .where((tx) =>
-                tx.date.year == _selectedYear &&
-                tx.date.month == _selectedMonth &&
-                tx.date.day >= interval.start &&
-                tx.date.day <= interval.end)
+            .where(
+              (tx) =>
+                  tx.date.year == _selectedYear &&
+                  tx.date.month == _selectedMonth &&
+                  tx.date.day >= interval.start &&
+                  tx.date.day <= interval.end,
+            )
             .fold<double>(0, (s, tx) => s + tx.amount);
         result.add(_ChartPoint(label: interval.label, value: val));
       }
@@ -2449,13 +2920,19 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
     }
 
     final list = map.entries.map((e) {
-      final sortedTxs = List<TransactionModel>.from(e.value)..sort((a, b) => b.date.compareTo(a.date));
-      final sum = sortedTxs.fold<double>(0, (prev, element) => prev + element.amount);
+      final sortedTxs = List<TransactionModel>.from(e.value)
+        ..sort((a, b) => b.date.compareTo(a.date));
+      final sum = sortedTxs.fold<double>(
+        0,
+        (prev, element) => prev + element.amount,
+      );
       // Ưu tiên icon theo cấu hình danh mục hiện tại (user có thể đã đổi icon).
       // Icon lưu trong giao dịch chỉ dùng khi danh mục không còn tồn tại.
       final IconData icon = CategoryUtils.getCategoryIcon(
         e.key,
-        fallbackCode: sortedTxs.isNotEmpty ? sortedTxs.first.categoryIconCode : null,
+        fallbackCode: sortedTxs.isNotEmpty
+            ? sortedTxs.first.categoryIconCode
+            : null,
       );
       return _CategoryGroup(
         category: e.key,
@@ -2466,8 +2943,11 @@ class StatisticsScreenState extends State<StatisticsScreen> with AutomaticKeepAl
       );
     }).toList();
 
-    list.sort((a, b) =>
-        _isDescending ? b.totalAmount.compareTo(a.totalAmount) : a.totalAmount.compareTo(b.totalAmount));
+    list.sort(
+      (a, b) => _isDescending
+          ? b.totalAmount.compareTo(a.totalAmount)
+          : a.totalAmount.compareTo(b.totalAmount),
+    );
     return list;
   }
 }

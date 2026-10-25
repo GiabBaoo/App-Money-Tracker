@@ -3,10 +3,11 @@ import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../widgets/animated_scale_button.dart';
 import '../../../../widgets/mono_dialog.dart';
 import '../../../../widgets/mono_toast.dart';
+import '../../../../data/repositories/user_repository.dart';
+import '../../../../models/user_model.dart';
 import '../providers/group_expense_providers.dart';
 
 class GroupMembersScreen extends ConsumerWidget {
@@ -110,7 +111,9 @@ class GroupMembersScreen extends ConsumerWidget {
                   if (group == null) {
                     return Center(
                       child: Text(
-                        isVi ? 'Không tìm thấy dữ liệu nhóm' : 'Group data not found',
+                        isVi
+                            ? 'Không tìm thấy dữ liệu nhóm'
+                            : 'Group data not found',
                         style: TextStyle(color: textSecondary),
                       ),
                     );
@@ -178,8 +181,8 @@ class GroupMembersScreen extends ConsumerWidget {
     Color borderColor,
     Color primaryColor,
   ) {
-    return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance.collection('users').doc(memberId).get(),
+    return FutureBuilder<UserModel?>(
+      future: UserRepository().getUserById(memberId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Container(
@@ -190,19 +193,23 @@ class GroupMembersScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: borderColor, width: 1),
             ),
-            child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            child: const Center(
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
           );
         }
 
-        if (!snapshot.hasData || !snapshot.data!.exists) {
+        final user = snapshot.data;
+        if (user == null) {
           return const SizedBox.shrink();
         }
 
-        final userData = snapshot.data!.data() as Map<String, dynamic>;
-        final name = userData['name'] as String? ?? (isVi ? 'Người dùng' : 'User');
-        final email = userData['email'] as String? ?? '';
-        final phone = userData['phone'] as String? ?? '';
-        final avatarUrl = userData['avatarUrl'] as String?;
+        final name = user.name.isNotEmpty
+            ? user.name
+            : (isVi ? 'Người dùng' : 'User');
+        final email = user.email;
+        final phone = user.phone;
+        final avatarUrl = user.avatarUrl;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -219,8 +226,10 @@ class GroupMembersScreen extends ConsumerWidget {
               CircleAvatar(
                 radius: 24,
                 backgroundColor: primaryColor.withValues(alpha: 0.15),
-                backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
-                child: avatarUrl == null
+                backgroundImage: avatarUrl.isNotEmpty
+                    ? NetworkImage(avatarUrl)
+                    : null,
+                child: avatarUrl.isEmpty
                     ? Text(
                         name.isNotEmpty ? name[0].toUpperCase() : 'U',
                         style: TextStyle(
@@ -255,21 +264,34 @@ class GroupMembersScreen extends ConsumerWidget {
                           const SizedBox(width: 6),
                           Text(
                             isVi ? '(Bạn)' : '(You)',
-                            style: context.textTheme.bodySmall?.copyWith(fontSize: 12, color: textSecondary, fontWeight: FontWeight.w600),
+                            style: context.textTheme.bodySmall?.copyWith(
+                              fontSize: 12,
+                              color: textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                         if (isOwner) ...[
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
-                              color: context.warning.withValues(alpha: isDark ? 0.2 : 0.12),
+                              color: context.warning.withValues(
+                                alpha: isDark ? 0.2 : 0.12,
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.star_rounded, size: 12, color: context.warning),
+                                Icon(
+                                  Icons.star_rounded,
+                                  size: 12,
+                                  color: context.warning,
+                                ),
                                 const SizedBox(width: 2),
                                 Text(
                                   isVi ? 'Chủ quỹ' : 'Admin',
@@ -289,12 +311,19 @@ class GroupMembersScreen extends ConsumerWidget {
                       const SizedBox(height: 3),
                       Row(
                         children: [
-                          Icon(Icons.email_outlined, size: 13, color: textSecondary),
+                          Icon(
+                            Icons.email_outlined,
+                            size: 13,
+                            color: textSecondary,
+                          ),
                           const SizedBox(width: 5),
                           Expanded(
                             child: Text(
                               email,
-                              style: context.textTheme.bodySmall?.copyWith(fontSize: 12, color: textSecondary),
+                              style: context.textTheme.bodySmall?.copyWith(
+                                fontSize: 12,
+                                color: textSecondary,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -305,11 +334,18 @@ class GroupMembersScreen extends ConsumerWidget {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          Icon(Icons.phone_outlined, size: 13, color: textSecondary),
+                          Icon(
+                            Icons.phone_outlined,
+                            size: 13,
+                            color: textSecondary,
+                          ),
                           const SizedBox(width: 5),
                           Text(
                             phone,
-                            style: context.textTheme.bodySmall?.copyWith(fontSize: 12, color: textSecondary),
+                            style: context.textTheme.bodySmall?.copyWith(
+                              fontSize: 12,
+                              color: textSecondary,
+                            ),
                           ),
                         ],
                       ),
@@ -331,9 +367,16 @@ class GroupMembersScreen extends ConsumerWidget {
                       value: 'leave',
                       child: Row(
                         children: [
-                          const Icon(Icons.exit_to_app_rounded, color: Colors.redAccent, size: 18),
+                          const Icon(
+                            Icons.exit_to_app_rounded,
+                            color: Colors.redAccent,
+                            size: 18,
+                          ),
                           const SizedBox(width: 8),
-                          Text(isVi ? 'Rời nhóm' : 'Leave Group', style: const TextStyle(color: Colors.redAccent)),
+                          Text(
+                            isVi ? 'Rời nhóm' : 'Leave Group',
+                            style: const TextStyle(color: Colors.redAccent),
+                          ),
                         ],
                       ),
                     ),
@@ -344,14 +387,26 @@ class GroupMembersScreen extends ConsumerWidget {
                       shape: BoxShape.circle,
                       color: textSecondary.withValues(alpha: 0.1),
                     ),
-                    child: Icon(Icons.more_vert, color: textSecondary, size: 18),
+                    child: Icon(
+                      Icons.more_vert,
+                      color: textSecondary,
+                      size: 18,
+                    ),
                   ),
                 )
-              else if (!isCurrentUser && ref.watch(currentUserIdProvider) == adminId && !isOwner)
+              else if (!isCurrentUser &&
+                  ref.watch(currentUserIdProvider) == adminId &&
+                  !isOwner)
                 PopupMenuButton<String>(
                   onSelected: (value) {
                     if (value == 'remove') {
-                      _showRemoveConfirmDialog(context, ref, groupId, memberId, name);
+                      _showRemoveConfirmDialog(
+                        context,
+                        ref,
+                        groupId,
+                        memberId,
+                        name,
+                      );
                     }
                   },
                   itemBuilder: (BuildContext context) => [
@@ -359,9 +414,16 @@ class GroupMembersScreen extends ConsumerWidget {
                       value: 'remove',
                       child: Row(
                         children: [
-                          const Icon(Icons.person_remove_rounded, color: Colors.redAccent, size: 18),
+                          const Icon(
+                            Icons.person_remove_rounded,
+                            color: Colors.redAccent,
+                            size: 18,
+                          ),
                           const SizedBox(width: 8),
-                          Text(isVi ? 'Xóa khỏi nhóm' : 'Remove from Group', style: const TextStyle(color: Colors.redAccent)),
+                          Text(
+                            isVi ? 'Xóa khỏi nhóm' : 'Remove from Group',
+                            style: const TextStyle(color: Colors.redAccent),
+                          ),
                         ],
                       ),
                     ),
@@ -372,7 +434,11 @@ class GroupMembersScreen extends ConsumerWidget {
                       shape: BoxShape.circle,
                       color: textSecondary.withValues(alpha: 0.1),
                     ),
-                    child: Icon(Icons.more_vert, color: textSecondary, size: 18),
+                    child: Icon(
+                      Icons.more_vert,
+                      color: textSecondary,
+                      size: 18,
+                    ),
                   ),
                 ),
             ],
@@ -382,7 +448,12 @@ class GroupMembersScreen extends ConsumerWidget {
     );
   }
 
-  static void _showLeaveConfirmDialog(BuildContext context, WidgetRef ref, String groupId, String memberName) async {
+  static void _showLeaveConfirmDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String groupId,
+    String memberName,
+  ) async {
     final confirmed = await MonoDialog.confirm(
       context,
       title: isVi ? 'Rời Nhóm' : 'Leave Group',
@@ -399,11 +470,9 @@ class GroupMembersScreen extends ConsumerWidget {
       final currentUserId = ref.read(currentUserIdProvider);
       if (currentUserId != null) {
         try {
-          await ref.read(groupServiceProvider).removeMember(
-            groupId,
-            currentUserId,
-            currentUserId,
-          );
+          await ref
+              .read(groupServiceProvider)
+              .removeMember(groupId, currentUserId, currentUserId);
           if (context.mounted) {
             Navigator.pop(context);
             MonoToast.success(
@@ -413,10 +482,7 @@ class GroupMembersScreen extends ConsumerWidget {
           }
         } catch (e) {
           if (context.mounted) {
-            MonoToast.error(
-              context,
-              '${isVi ? 'Lỗi' : 'Error'}: $e',
-            );
+            MonoToast.error(context, '${isVi ? 'Lỗi' : 'Error'}: $e');
           }
         }
       }
@@ -446,23 +512,20 @@ class GroupMembersScreen extends ConsumerWidget {
       final currentUserId = ref.read(currentUserIdProvider);
       if (currentUserId != null) {
         try {
-          await ref.read(groupServiceProvider).removeMember(
-            groupId,
-            memberId,
-            currentUserId,
-          );
+          await ref
+              .read(groupServiceProvider)
+              .removeMember(groupId, memberId, currentUserId);
           if (context.mounted) {
             MonoToast.success(
               context,
-              isVi ? 'Đã xóa $memberName khỏi nhóm' : 'Removed $memberName from group',
+              isVi
+                  ? 'Đã xóa $memberName khỏi nhóm'
+                  : 'Removed $memberName from group',
             );
           }
         } catch (e) {
           if (context.mounted) {
-            MonoToast.error(
-              context,
-              '${isVi ? 'Lỗi' : 'Error'}: $e',
-            );
+            MonoToast.error(context, '${isVi ? 'Lỗi' : 'Error'}: $e');
           }
         }
       }

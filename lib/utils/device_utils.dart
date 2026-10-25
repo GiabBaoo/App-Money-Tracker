@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -44,7 +45,8 @@ class DeviceUtils {
         switch (defaultTargetPlatform) {
           case TargetPlatform.android:
             final androidInfo = await deviceInfoPlugin.androidInfo;
-            deviceName = '${androidInfo.brand} ${androidInfo.model}'.toUpperCase();
+            deviceName = '${androidInfo.brand} ${androidInfo.model}'
+                .toUpperCase();
             deviceType = 'mobile';
             break;
           case TargetPlatform.iOS:
@@ -70,11 +72,7 @@ class DeviceUtils {
     } catch (e) {
       deviceName = 'Lỗi thông tin thiết bị';
     }
-    return {
-      'name': deviceName,
-      'type': deviceType,
-      'deviceId': installId,
-    };
+    return {'name': deviceName, 'type': deviceType, 'deviceId': installId};
   }
 
   /// Lấy Session ID định danh duy nhất của phiên theo UID và installation UUID
@@ -85,8 +83,9 @@ class DeviceUtils {
 
   /// Tương thích ngược phiên bản cũ (dựa trên tên thiết bị)
   static String getLegacySessionId(String uid, String deviceName) {
-    String sanitized = deviceName.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_').toLowerCase();
+    String sanitized = deviceName
+        .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')
+        .toLowerCase();
     return '${uid}_$sanitized';
   }
 }
-

@@ -43,9 +43,7 @@ void main() {
       expect(firestoreMap['longitude'], 106.7009);
 
       // Test copyWith and clearLocation
-      final updatedTx = tx.copyWith(
-        location: 'Phúc Long Bến Nghé',
-      );
+      final updatedTx = tx.copyWith(location: 'Phúc Long Bến Nghé');
       expect(updatedTx.location, 'Phúc Long Bến Nghé');
       expect(updatedTx.latitude, 10.7769);
 

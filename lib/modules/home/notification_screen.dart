@@ -55,16 +55,24 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Future<void> _handleRefresh({bool forceAnalyze = false}) async {
     setState(() => _isRefreshing = true);
     try {
-      final newCount = await SmartNotificationService.instance.generateSmartFinancialNotifications(forceRefresh: forceAnalyze);
+      final newCount = await SmartNotificationService.instance
+          .generateSmartFinancialNotifications(forceRefresh: forceAnalyze);
       if (!forceAnalyze) {
         await _notiRepo.markAllAsRead();
         _firestoreService.markAllNotificationsAsRead().catchError((_) {});
       }
       if (forceAnalyze && mounted) {
         final isVi = LanguageScope.of(context).isVietnamese;
-        TopToast.show(context, newCount > 0
-            ? (isVi ? 'Đã tạo $newCount báo cáo phân tích chi tiêu mới!' : 'Generated $newCount new spending insights!')
-            : (isVi ? 'Dữ liệu chi tiêu của bạn đã được cập nhật mới nhất!' : 'Your spending insights are up to date!'));
+        TopToast.show(
+          context,
+          newCount > 0
+              ? (isVi
+                    ? 'Đã tạo $newCount báo cáo phân tích chi tiêu mới!'
+                    : 'Generated $newCount new spending insights!')
+              : (isVi
+                    ? 'Dữ liệu chi tiêu của bạn đã được cập nhật mới nhất!'
+                    : 'Your spending insights are up to date!'),
+        );
       }
     } catch (e) {
       debugPrint('Refresh error: $e');
@@ -81,7 +89,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final isDark = context.isDark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
+      backgroundColor: isDark
+          ? AppColors.primaryTealDark
+          : AppColors.primaryTeal,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -105,7 +115,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white24, width: 0.8),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 18,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   Text(
@@ -120,27 +134,39 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   Row(
                     children: [
                       AnimatedScaleButton(
-                        onTap: _isRefreshing ? () {} : () {
-                          HapticFeedback.lightImpact();
-                          _handleRefresh(forceAnalyze: true);
-                        },
+                        onTap: _isRefreshing
+                            ? () {}
+                            : () {
+                                HapticFeedback.lightImpact();
+                                _handleRefresh(forceAnalyze: true);
+                              },
                         child: Container(
                           width: 42,
                           height: 42,
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white24, width: 0.8),
+                            border: Border.all(
+                              color: Colors.white24,
+                              width: 0.8,
+                            ),
                           ),
                           child: _isRefreshing
                               ? const Center(
                                   child: SizedBox(
                                     width: 18,
                                     height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 )
-                              : const Icon(Icons.auto_awesome_rounded, color: Colors.amberAccent, size: 20),
+                              : const Icon(
+                                  Icons.auto_awesome_rounded,
+                                  color: Colors.amberAccent,
+                                  size: 20,
+                                ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -150,7 +176,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           await _firestoreService.markAllNotificationsAsRead();
                           await _notiRepo.markAllAsRead();
                           if (context.mounted) {
-                            TopToast.show(context, isVi ? 'Đã đánh dấu tất cả thông báo là đã đọc!' : 'All notifications marked as read!');
+                            TopToast.show(
+                              context,
+                              isVi
+                                  ? 'Đã đánh dấu tất cả thông báo là đã đọc!'
+                                  : 'All notifications marked as read!',
+                            );
                           }
                         },
                         child: Container(
@@ -159,9 +190,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white24, width: 0.8),
+                            border: Border.all(
+                              color: Colors.white24,
+                              width: 0.8,
+                            ),
                           ),
-                          child: const Icon(Icons.done_all_rounded, color: Colors.white, size: 20),
+                          child: const Icon(
+                            Icons.done_all_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ],
@@ -177,7 +215,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(32),
+                  ),
                 ),
                 child: StreamBuilder<List<NotificationModel>>(
                   stream: _notiRepo.getNotificationsStream(),
@@ -189,10 +229,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.error_outline_rounded, size: 56, color: context.expenseColor),
+                              Icon(
+                                Icons.error_outline_rounded,
+                                size: 56,
+                                color: context.expenseColor,
+                              ),
                               const SizedBox(height: 16),
                               Text(
-                                isVi ? 'Lỗi tải thông báo: ${snapshot.error}' : 'Error loading notifications: ${snapshot.error}',
+                                isVi
+                                    ? 'Lỗi tải thông báo: ${snapshot.error}'
+                                    : 'Error loading notifications: ${snapshot.error}',
                                 textAlign: TextAlign.center,
                                 style: context.textTheme.bodyMedium,
                               ),
@@ -210,7 +256,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Center(
-                        child: CircularProgressIndicator(color: context.colors.primary),
+                        child: CircularProgressIndicator(
+                          color: context.colors.primary,
+                        ),
                       );
                     }
 
@@ -240,7 +288,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 }
                                 if (!context.mounted) return;
 
-                                if (noti.type == 'group_invite' && noti.groupId != null) {
+                                if (noti.type == 'group_invite' &&
+                                    noti.groupId != null) {
                                   Navigator.push(
                                     context,
                                     PageTransitions.slideRight(
@@ -250,7 +299,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                       ),
                                     ),
                                   );
-                                } else if (noti.type == 'group_response' && noti.groupId != null) {
+                                } else if (noti.type == 'group_response' &&
+                                    noti.groupId != null) {
                                   Navigator.push(
                                     context,
                                     PageTransitions.slideRight(
@@ -261,7 +311,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                   Navigator.push(
                                     context,
                                     PageTransitions.slideRight(
-                                      NotificationDetailScreen(notification: noti),
+                                      NotificationDetailScreen(
+                                        notification: noti,
+                                      ),
                                     ),
                                   );
                                 }
@@ -298,7 +350,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
               height: 88,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isDark ? AppColors.surfaceElevatedDark : context.colors.primary.withValues(alpha: 0.1),
+                color: isDark
+                    ? AppColors.surfaceElevatedDark
+                    : context.colors.primary.withValues(alpha: 0.1),
               ),
               child: Icon(
                 Icons.notifications_off_outlined,
@@ -317,7 +371,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              isVi ? 'Mọi thông tin về giao dịch, quỹ nhóm và nhắc nhở chi tiêu sẽ được hiển thị tại đây.' : 'All transaction, group fund, and reminder updates will appear here.',
+              isVi
+                  ? 'Mọi thông tin về giao dịch, quỹ nhóm và nhắc nhở chi tiêu sẽ được hiển thị tại đây.'
+                  : 'All transaction, group fund, and reminder updates will appear here.',
               textAlign: TextAlign.center,
               style: context.textTheme.bodyMedium?.copyWith(
                 fontSize: 14,
@@ -330,12 +386,21 @@ class _NotificationScreenState extends State<NotificationScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.colors.primary,
                 foregroundColor: context.colors.onPrimary,
-                shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: AppRadius.button,
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
               ),
               onPressed: () => _handleRefresh(forceAnalyze: true),
               icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-              label: Text(isVi ? 'Phân tích chi tiêu thông minh ngay' : 'Analyze smart spending now'),
+              label: Text(
+                isVi
+                    ? 'Phân tích chi tiêu thông minh ngay'
+                    : 'Analyze smart spending now',
+              ),
             ),
           ],
         ),
@@ -357,10 +422,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
     if (notification.type == 'spending_spike_alert') {
       iconColor = AppColors.warningAmber;
       iconData = Icons.bolt_rounded;
-    } else if (notification.type == 'daily_limit_exceeded' || notification.type == 'monthly_limit_exceeded') {
+    } else if (notification.type == 'daily_limit_exceeded' ||
+        notification.type == 'monthly_limit_exceeded') {
       iconColor = AppColors.expenseRose;
       iconData = Icons.warning_rounded;
-    } else if (notification.type == 'daily_limit_warning' || notification.type == 'monthly_limit_warning') {
+    } else if (notification.type == 'daily_limit_warning' ||
+        notification.type == 'monthly_limit_warning') {
       iconColor = AppColors.warningAmber;
       iconData = Icons.running_with_errors_rounded;
     } else if (notification.type == 'spending_alert_high') {
@@ -381,7 +448,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
     } else if (notification.type == 'daily_reminder') {
       iconColor = context.colors.primary;
       iconData = Icons.edit_note_rounded;
-    } else if (notification.type == 'group_invite' || notification.type == 'group_response') {
+    } else if (notification.type == 'group_invite' ||
+        notification.type == 'group_response') {
       iconColor = AppColors.transferIndigo;
       iconData = Icons.group_rounded;
     }
@@ -407,7 +475,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
     if (diff.inMinutes < 1) {
       timeAgo = isVi ? 'Vừa xong' : 'Just now';
     } else if (diff.inMinutes < 60) {
-      timeAgo = isVi ? '${diff.inMinutes} phút trước' : '${diff.inMinutes}m ago';
+      timeAgo = isVi
+          ? '${diff.inMinutes} phút trước'
+          : '${diff.inMinutes}m ago';
     } else if (diff.inHours < 24) {
       timeAgo = isVi ? '${diff.inHours} giờ trước' : '${diff.inHours}h ago';
     } else if (diff.inDays < 7) {
@@ -421,9 +491,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       decoration: BoxDecoration(
         color: context.cardBg,
         borderRadius: AppRadius.card,
-        border: Border.all(
-          color: context.borderColor,
-        ),
+        border: Border.all(color: context.borderColor),
         boxShadow: AppShadows.card(isDark),
       ),
       child: Padding(
@@ -439,11 +507,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 color: iconColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(
-                iconData,
-                color: iconColor,
-                size: 22,
-              ),
+              child: Icon(iconData, color: iconColor, size: 22),
             ),
             const SizedBox(width: 14),
 
@@ -460,18 +524,25 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           notification.title,
                           style: context.textTheme.titleSmall?.copyWith(
                             fontSize: 15,
-                            fontWeight: notification.isRead ? FontWeight.w600 : FontWeight.w700,
+                            fontWeight: notification.isRead
+                                ? FontWeight.w600
+                                : FontWeight.w700,
                             color: context.textPrimaryColor,
                           ),
                         ),
                       ),
                       if (statusLabel != null)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: statusColor!.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                            border: Border.all(
+                              color: statusColor.withValues(alpha: 0.3),
+                            ),
                           ),
                           child: Text(
                             statusLabel,

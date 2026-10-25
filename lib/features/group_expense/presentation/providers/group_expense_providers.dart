@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../data/repositories/user_repository.dart';
 import '../../data/repositories/firestore_debt_repository.dart';
 import '../../data/repositories/firestore_expense_repository.dart';
 import '../../data/repositories/firestore_group_repository.dart';
@@ -20,6 +20,12 @@ import '../../data/models/debt_model.dart';
 import '../../data/models/settlement_model.dart';
 import '../../data/models/fund_transaction_model.dart';
 import '../../data/repositories/firestore_fund_transaction_repository.dart';
+import '../../data/repositories/sqlite_group_repository.dart';
+import '../../data/repositories/sqlite_expense_repository.dart';
+import '../../data/repositories/sqlite_settlement_repository.dart';
+import '../../domain/usecases/create_group_expense_use_case.dart';
+import '../../domain/usecases/leave_group_use_case.dart';
+import '../../domain/usecases/settle_group_debt_use_case.dart';
 
 final firestoreProvider = Provider<FirebaseFirestore>((ref) {
   return FirebaseFirestore.instance;
@@ -37,21 +43,14 @@ final currentUserIdProvider = Provider<String?>((ref) {
 final currentUserNameProvider = FutureProvider<String>((ref) async {
   final userId = ref.watch(currentUserIdProvider);
   if (userId == null) return 'Người dùng';
-  
+
   try {
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .get();
-    
-    if (userDoc.exists) {
-      final data = userDoc.data();
-      return data?['name'] as String? ?? 'Người dùng';
+    final user = await UserRepository().getUserById(userId);
+    if (user != null && user.name.isNotEmpty) {
+      return user.name;
     }
-  } catch (e) {
-    debugPrint('Error getting user name: $e');
-  }
-  
+  } catch (_) {}
+
   return 'Người dùng';
 });
 
@@ -71,19 +70,42 @@ final settlementRepositoryProvider = Provider<ISettlementRepository>((ref) {
   return FirestoreSettlementRepository(ref.watch(firestoreProvider));
 });
 
-final fundTransactionRepositoryProvider = Provider<FirestoreFundTransactionRepository>((ref) {
-  return FirestoreFundTransactionRepository(ref.watch(firestoreProvider));
+final fundTransactionRepositoryProvider =
+    Provider<FirestoreFundTransactionRepository>((ref) {
+      return FirestoreFundTransactionRepository(ref.watch(firestoreProvider));
+    });
+
+// SQLite Local Repositories
+final sqliteGroupRepositoryProvider = Provider<SqliteGroupRepository>((ref) {
+  return SqliteGroupRepository();
 });
+
+final sqliteExpenseRepositoryProvider = Provider<SqliteExpenseRepository>((
+  ref,
+) {
+  return SqliteExpenseRepository();
+});
+
+final sqliteSettlementRepositoryProvider = Provider<SqliteSettlementRepository>(
+  (ref) {
+    return SqliteSettlementRepository();
+  },
+);
 
 final debtCalculatorProvider = Provider<DebtCalculator>((ref) {
   return DebtCalculator(
     ref.watch(expenseRepositoryProvider),
     ref.watch(debtRepositoryProvider),
+    ref.watch(settlementRepositoryProvider),
   );
 });
 
 final groupServiceProvider = Provider<GroupService>((ref) {
-  return GroupService(ref.watch(groupRepositoryProvider));
+  return GroupService(
+    ref.watch(groupRepositoryProvider),
+    ref.watch(debtCalculatorProvider),
+    ref.watch(settlementRepositoryProvider),
+  );
 });
 
 final expenseServiceProvider = Provider<ExpenseService>((ref) {
@@ -102,29 +124,63 @@ final settlementServiceProvider = Provider<SettlementService>((ref) {
   );
 });
 
+// UseCases
+final createGroupExpenseUseCaseProvider = Provider<CreateGroupExpenseUseCase>((
+  ref,
+) {
+  return CreateGroupExpenseUseCase(
+    expenseRepository: ref.watch(expenseRepositoryProvider),
+    groupRepository: ref.watch(groupRepositoryProvider),
+    debtCalculator: ref.watch(debtCalculatorProvider),
+  );
+});
+
+final leaveGroupUseCaseProvider = Provider<LeaveGroupUseCase>((ref) {
+  return LeaveGroupUseCase(
+    groupRepository: ref.watch(groupRepositoryProvider),
+    debtCalculator: ref.watch(debtCalculatorProvider),
+    settlementRepository: ref.watch(settlementRepositoryProvider),
+  );
+});
+
+final settleGroupDebtUseCaseProvider = Provider<SettleGroupDebtUseCase>((ref) {
+  return SettleGroupDebtUseCase(
+    settlementRepository: ref.watch(settlementRepositoryProvider),
+    debtRepository: ref.watch(debtRepositoryProvider),
+    debtCalculator: ref.watch(debtCalculatorProvider),
+  );
+});
+
 final userGroupsStreamProvider = StreamProvider<List<GroupModel>>((ref) {
   final userId = ref.watch(currentUserIdProvider);
   if (userId == null) return Stream.value([]);
   return ref.watch(groupRepositoryProvider).watchByUserId(userId);
 });
 
-final groupExpensesStreamProvider = StreamProvider.family<List<ExpenseModel>, String>((ref, groupId) {
-  return ref.watch(expenseRepositoryProvider).watchByGroupId(groupId);
-});
+final groupExpensesStreamProvider =
+    StreamProvider.family<List<ExpenseModel>, String>((ref, groupId) {
+      return ref.watch(expenseRepositoryProvider).watchByGroupId(groupId);
+    });
 
-final groupDebtsStreamProvider = StreamProvider.family<List<DebtModel>, String>((ref, groupId) {
-  return ref.watch(debtRepositoryProvider).watchByGroupId(groupId);
-});
+final groupDebtsStreamProvider = StreamProvider.family<List<DebtModel>, String>(
+  (ref, groupId) {
+    return ref.watch(debtRepositoryProvider).watchByGroupId(groupId);
+  },
+);
 
-final groupSettlementsStreamProvider = StreamProvider.family<List<SettlementModel>, String>((ref, groupId) {
-  return ref.watch(settlementRepositoryProvider).watchByGroupId(groupId);
-});
+final groupSettlementsStreamProvider =
+    StreamProvider.family<List<SettlementModel>, String>((ref, groupId) {
+      return ref.watch(settlementRepositoryProvider).watchByGroupId(groupId);
+    });
 
 // Single group stream provider (only for members)
-final groupStreamProvider = StreamProvider.family<GroupModel?, String>((ref, groupId) {
+final groupStreamProvider = StreamProvider.family<GroupModel?, String>((
+  ref,
+  groupId,
+) {
   final userId = ref.watch(currentUserIdProvider);
   if (userId == null) return Stream.value(null);
-  
+
   return ref.watch(groupRepositoryProvider).watchByUserId(userId).map((groups) {
     try {
       return groups.firstWhere((g) => g.id == groupId);
@@ -136,7 +192,10 @@ final groupStreamProvider = StreamProvider.family<GroupModel?, String>((ref, gro
 
 // Group provider for viewing any group (including for join invitations)
 // This fetches the group directly by ID without membership check
-final groupDetailsProvider = FutureProvider.family<GroupModel?, String>((ref, groupId) async {
+final groupDetailsProvider = FutureProvider.family<GroupModel?, String>((
+  ref,
+  groupId,
+) async {
   try {
     return await ref.watch(groupRepositoryProvider).getById(groupId);
   } catch (e) {
@@ -145,16 +204,27 @@ final groupDetailsProvider = FutureProvider.family<GroupModel?, String>((ref, gr
 });
 
 // Group debts provider (calculated)
-final groupDebtsProvider = FutureProvider.family<List<DebtModel>, String>((ref, groupId) async {
+final groupDebtsProvider = FutureProvider.family<List<DebtModel>, String>((
+  ref,
+  groupId,
+) async {
   return ref.watch(debtCalculatorProvider).getGroupDebts(groupId);
 });
 
 // Fund transactions stream provider
-final groupFundTransactionsProvider = StreamProvider.family<List<FundTransactionModel>, String>((ref, groupId) {
-  return ref.watch(fundTransactionRepositoryProvider).watchByGroupId(groupId);
-});
+final groupFundTransactionsProvider =
+    StreamProvider.family<List<FundTransactionModel>, String>((ref, groupId) {
+      return ref
+          .watch(fundTransactionRepositoryProvider)
+          .watchByGroupId(groupId);
+    });
 
 // Group balance provider (Stream để cập nhật real-time)
-final groupBalanceProvider = StreamProvider.family<double, String>((ref, groupId) {
-  return ref.watch(fundTransactionRepositoryProvider).watchGroupBalance(groupId);
+final groupBalanceProvider = StreamProvider.family<double, String>((
+  ref,
+  groupId,
+) {
+  return ref
+      .watch(fundTransactionRepositoryProvider)
+      .watchGroupBalance(groupId);
 });

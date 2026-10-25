@@ -18,7 +18,7 @@ class ReportExportService {
   final FirestoreService _firestoreService;
 
   ReportExportService({FirestoreService? firestoreService})
-      : _firestoreService = firestoreService ?? FirestoreService();
+    : _firestoreService = firestoreService ?? FirestoreService();
 
   /// 1) Xử lý khoảng thời gian từ lựa chọn UI
   DateTimeRange resolveDateRange({
@@ -37,8 +37,14 @@ class ReportExportService {
         );
       case 'Tháng trước':
         final firstDayThisMonth = DateTime(current.year, current.month, 1);
-        final lastDayPrevMonth = firstDayThisMonth.subtract(const Duration(days: 1));
-        final firstDayPrevMonth = DateTime(lastDayPrevMonth.year, lastDayPrevMonth.month, 1);
+        final lastDayPrevMonth = firstDayThisMonth.subtract(
+          const Duration(days: 1),
+        );
+        final firstDayPrevMonth = DateTime(
+          lastDayPrevMonth.year,
+          lastDayPrevMonth.month,
+          1,
+        );
         return DateTimeRange(start: firstDayPrevMonth, end: lastDayPrevMonth);
       case '3 tháng qua':
         return DateTimeRange(
@@ -46,15 +52,15 @@ class ReportExportService {
           end: current,
         );
       case 'Năm nay':
-        return DateTimeRange(
-          start: DateTime(current.year, 1, 1),
-          end: current,
-        );
+        return DateTimeRange(start: DateTime(current.year, 1, 1), end: current);
       case 'Tùy chỉnh':
         if (customDateRange == null) {
           throw Exception('Vui lòng chọn khoảng thời gian tùy chỉnh.');
         }
-        return DateTimeRange(start: customDateRange.start, end: customDateRange.end);
+        return DateTimeRange(
+          start: customDateRange.start,
+          end: customDateRange.end,
+        );
       default:
         // fallback an toàn
         return DateTimeRange(start: today, end: current);
@@ -87,10 +93,7 @@ class ReportExportService {
       pw.MultiPage(
         pageTheme: pw.PageTheme(
           margin: const pw.EdgeInsets.all(24),
-          theme: pw.ThemeData.withFont(
-            base: regularFont,
-            bold: boldFont,
-          ),
+          theme: pw.ThemeData.withFont(base: regularFont, bold: boldFont),
         ),
         build: (context) => [
           pw.Text(
@@ -105,7 +108,11 @@ class ReportExportService {
           pw.SizedBox(height: 16),
           pw.TableHelper.fromTextArray(
             border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.6),
-            headerStyle: pw.TextStyle(font: boldFont, fontSize: 11, color: PdfColors.white),
+            headerStyle: pw.TextStyle(
+              font: boldFont,
+              fontSize: 11,
+              color: PdfColors.white,
+            ),
             headerDecoration: const pw.BoxDecoration(color: PdfColors.teal700),
             cellStyle: const pw.TextStyle(fontSize: 10),
             cellAlignment: pw.Alignment.centerLeft,
@@ -122,7 +129,11 @@ class ReportExportService {
                   (tx) => [
                     dateFmt.format(tx.date),
                     tx.category,
-                    NumberFormat.currency(locale: 'vi_VN', symbol: 'đ', decimalDigits: 0).format(tx.amount),
+                    NumberFormat.currency(
+                      locale: 'vi_VN',
+                      symbol: 'đ',
+                      decimalDigits: 0,
+                    ).format(tx.amount),
                     tx.description.isEmpty ? '-' : tx.description,
                   ],
                 )
@@ -132,14 +143,20 @@ class ReportExportService {
           pw.Align(
             alignment: pw.Alignment.centerRight,
             child: pw.Container(
-              padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const pw.EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
               decoration: pw.BoxDecoration(
                 color: PdfColors.teal50,
                 borderRadius: pw.BorderRadius.circular(6),
               ),
               child: pw.Text(
                 'Tổng chi tiêu: ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ', decimalDigits: 0).format(total)}',
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12),
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ),
           ),
@@ -160,7 +177,9 @@ class ReportExportService {
     final Sheet sheet = excel[sheetName];
 
     // Header
-    sheet.cell(CellIndex.indexByString('A1')).value = TextCellValue('Báo cáo chi tiêu');
+    sheet.cell(CellIndex.indexByString('A1')).value = TextCellValue(
+      'Báo cáo chi tiêu',
+    );
     sheet.merge(CellIndex.indexByString('A1'), CellIndex.indexByString('D1'));
     sheet.cell(CellIndex.indexByString('A2')).value = TextCellValue(
       'Khoảng thời gian: ${DateFormat('dd/MM/yyyy').format(range.start)} - ${DateFormat('dd/MM/yyyy').format(range.end)}',
@@ -185,20 +204,43 @@ class ReportExportService {
     double total = 0;
     for (final tx in transactions) {
       total += tx.amount;
-      sheet.cell(CellIndex.indexByString('A$row')).value = TextCellValue(DateFormat('dd/MM/yyyy').format(tx.date));
-      sheet.cell(CellIndex.indexByString('B$row')).value = TextCellValue(tx.category);
-      sheet.cell(CellIndex.indexByString('C$row')).value =
-          TextCellValue(NumberFormat.currency(locale: 'vi_VN', symbol: 'đ', decimalDigits: 0).format(tx.amount));
-      sheet.cell(CellIndex.indexByString('D$row')).value = TextCellValue(tx.description.isEmpty ? '-' : tx.description);
+      sheet.cell(CellIndex.indexByString('A$row')).value = TextCellValue(
+        DateFormat('dd/MM/yyyy').format(tx.date),
+      );
+      sheet.cell(CellIndex.indexByString('B$row')).value = TextCellValue(
+        tx.category,
+      );
+      sheet.cell(CellIndex.indexByString('C$row')).value = TextCellValue(
+        NumberFormat.currency(
+          locale: 'vi_VN',
+          symbol: 'đ',
+          decimalDigits: 0,
+        ).format(tx.amount),
+      );
+      sheet.cell(CellIndex.indexByString('D$row')).value = TextCellValue(
+        tx.description.isEmpty ? '-' : tx.description,
+      );
       row++;
     }
 
     sheet.cell(CellIndex.indexByString('A$row')).value = TextCellValue('Tổng');
-    sheet.merge(CellIndex.indexByString('A$row'), CellIndex.indexByString('B$row'));
-    sheet.cell(CellIndex.indexByString('C$row')).value =
-        TextCellValue(NumberFormat.currency(locale: 'vi_VN', symbol: 'đ', decimalDigits: 0).format(total));
-    sheet.cell(CellIndex.indexByString('A$row')).cellStyle = CellStyle(bold: true);
-    sheet.cell(CellIndex.indexByString('C$row')).cellStyle = CellStyle(bold: true);
+    sheet.merge(
+      CellIndex.indexByString('A$row'),
+      CellIndex.indexByString('B$row'),
+    );
+    sheet.cell(CellIndex.indexByString('C$row')).value = TextCellValue(
+      NumberFormat.currency(
+        locale: 'vi_VN',
+        symbol: 'đ',
+        decimalDigits: 0,
+      ).format(total),
+    );
+    sheet.cell(CellIndex.indexByString('A$row')).cellStyle = CellStyle(
+      bold: true,
+    );
+    sheet.cell(CellIndex.indexByString('C$row')).cellStyle = CellStyle(
+      bold: true,
+    );
 
     sheet.setColumnWidth(0, 16);
     sheet.setColumnWidth(1, 22);
@@ -248,7 +290,9 @@ class ReportExportService {
     }
 
     final ext = format.toLowerCase() == 'pdf' ? 'pdf' : 'xlsx';
-    final mimeType = format.toLowerCase() == 'pdf' ? MimeType.pdf : MimeType.microsoftExcel;
+    final mimeType = format.toLowerCase() == 'pdf'
+        ? MimeType.pdf
+        : MimeType.microsoftExcel;
 
     final result = await FileSaver.instance.saveFile(
       name: fileName.replaceAll('.$ext', ''),
@@ -277,14 +321,10 @@ class ReportExportService {
     return storageStatus.isGranted;
   }
 
-  String buildFileName({
-    required String format,
-    required DateTimeRange range,
-  }) {
+  String buildFileName({required String format, required DateTimeRange range}) {
     final start = DateFormat('dd_MM_yyyy').format(range.start);
     final end = DateFormat('dd_MM_yyyy').format(range.end);
     final ext = format.toLowerCase() == 'pdf' ? 'pdf' : 'xlsx';
     return 'report_${start}_to_$end.$ext';
   }
 }
-

@@ -8,13 +8,16 @@ import 'package:timezone/timezone.dart' as tz;
 /// Dịch vụ quản lý Thông báo Đẩy Cục bộ (Local Push Notifications) trên thiết bị
 class LocalNotificationService {
   LocalNotificationService._internal();
-  static final LocalNotificationService instance = LocalNotificationService._internal();
+  static final LocalNotificationService instance =
+      LocalNotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _notificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   static const String channelId = 'mono_financial_channel';
   static const String channelName = 'Thông báo tài chính Mono';
-  static const String channelDescription = 'Cảnh báo chi tiêu, gợi ý số dư và nhắc nhở ghi chép mỗi ngày';
+  static const String channelDescription =
+      'Cảnh báo chi tiêu, gợi ý số dư và nhắc nhở ghi chép mỗi ngày';
 
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
@@ -31,7 +34,9 @@ class LocalNotificationService {
       } catch (_) {}
 
       // 2. Cài đặt icon thông báo Android (sử dụng icon đơn sắc ic_stat_mono trên thanh taskbar/status bar)
-      const androidSettings = AndroidInitializationSettings('@drawable/ic_stat_mono');
+      const androidSettings = AndroidInitializationSettings(
+        '@drawable/ic_stat_mono',
+      );
 
       // 3. Cài đặt iOS / macOS
       const darwinSettings = DarwinInitializationSettings(
@@ -64,7 +69,9 @@ class LocalNotificationService {
         );
 
         final androidImplementation = _notificationsPlugin
-            .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
 
         await androidImplementation?.createNotificationChannel(androidChannel);
       }
@@ -84,12 +91,16 @@ class LocalNotificationService {
     try {
       if (Platform.isAndroid) {
         final androidImpl = _notificationsPlugin
-            .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
         final granted = await androidImpl?.requestNotificationsPermission();
         return granted ?? false;
       } else if (Platform.isIOS) {
         final iosImpl = _notificationsPlugin
-            .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+            .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin
+            >();
         final granted = await iosImpl?.requestPermissions(
           alert: true,
           badge: true,
@@ -111,7 +122,9 @@ class LocalNotificationService {
     try {
       if (Platform.isAndroid) {
         final androidImpl = _notificationsPlugin
-            .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
         return await androidImpl?.areNotificationsEnabled() ?? false;
       }
     } catch (e) {
@@ -206,7 +219,9 @@ class LocalNotificationService {
         iOS: darwinDetails,
       );
 
-      final scheduledDate = tz.TZDateTime.now(tz.local).add(Duration(seconds: delaySeconds));
+      final scheduledDate = tz.TZDateTime.now(
+        tz.local,
+      ).add(Duration(seconds: delaySeconds));
 
       try {
         await _notificationsPlugin.zonedSchedule(
@@ -232,7 +247,9 @@ class LocalNotificationService {
         );
       }
 
-      debugPrint('Test notification scheduled in $delaySeconds seconds successfully');
+      debugPrint(
+        'Test notification scheduled in $delaySeconds seconds successfully',
+      );
     } catch (e) {
       debugPrint('Error scheduling test notification: $e');
     }
@@ -391,7 +408,8 @@ class LocalNotificationService {
       );
 
       // Tìm ngày Chủ Nhật tiếp theo
-      while (scheduledDate.weekday != dayOfWeek || scheduledDate.isBefore(now)) {
+      while (scheduledDate.weekday != dayOfWeek ||
+          scheduledDate.isBefore(now)) {
         scheduledDate = scheduledDate.add(const Duration(days: 1));
       }
 
@@ -421,7 +439,9 @@ class LocalNotificationService {
         );
       }
 
-      debugPrint('Weekly report scheduled at day $dayOfWeek $hour:$minute successfully');
+      debugPrint(
+        'Weekly report scheduled at day $dayOfWeek $hour:$minute successfully',
+      );
     } catch (e) {
       debugPrint('Error scheduling weekly report: $e');
     }

@@ -4,12 +4,7 @@ import 'package:flutter/services.dart';
 import '../services/app_widget_service.dart';
 import '../core/theme/app_theme.dart';
 
-enum MonoToastType {
-  success,
-  error,
-  warning,
-  info,
-}
+enum MonoToastType { success, error, warning, info }
 
 /// Hệ thống thông báo nổi Liquid Capsule Toast hiện đại v2.0
 /// Độc lập hoàn toàn với Scaffold, bo góc 24px, đổ bóng kính mờ và tự động thích ứng Sáng / Tối.
@@ -96,32 +91,40 @@ class MonoToast {
     overlay.insert(entry);
   }
 
-  static void success(
-    dynamic contextOrMessage, [
-    String? positionalMessage,
-  ]) {
-    _dispatch(contextOrMessage, positionalMessage, MonoToastType.success, const Duration(milliseconds: 2600));
+  static void success(dynamic contextOrMessage, [String? positionalMessage]) {
+    _dispatch(
+      contextOrMessage,
+      positionalMessage,
+      MonoToastType.success,
+      const Duration(milliseconds: 2600),
+    );
   }
 
-  static void error(
-    dynamic contextOrMessage, [
-    String? positionalMessage,
-  ]) {
-    _dispatch(contextOrMessage, positionalMessage, MonoToastType.error, const Duration(milliseconds: 3000));
+  static void error(dynamic contextOrMessage, [String? positionalMessage]) {
+    _dispatch(
+      contextOrMessage,
+      positionalMessage,
+      MonoToastType.error,
+      const Duration(milliseconds: 3000),
+    );
   }
 
-  static void warning(
-    dynamic contextOrMessage, [
-    String? positionalMessage,
-  ]) {
-    _dispatch(contextOrMessage, positionalMessage, MonoToastType.warning, const Duration(milliseconds: 2800));
+  static void warning(dynamic contextOrMessage, [String? positionalMessage]) {
+    _dispatch(
+      contextOrMessage,
+      positionalMessage,
+      MonoToastType.warning,
+      const Duration(milliseconds: 2800),
+    );
   }
 
-  static void info(
-    dynamic contextOrMessage, [
-    String? positionalMessage,
-  ]) {
-    _dispatch(contextOrMessage, positionalMessage, MonoToastType.info, const Duration(milliseconds: 2600));
+  static void info(dynamic contextOrMessage, [String? positionalMessage]) {
+    _dispatch(
+      contextOrMessage,
+      positionalMessage,
+      MonoToastType.info,
+      const Duration(milliseconds: 2600),
+    );
   }
 
   static void _dispatch(
@@ -192,9 +195,10 @@ class _MonoToastWidgetState extends State<_MonoToastWidget>
       CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
 
     _animController.forward();
 
@@ -280,7 +284,10 @@ class _MonoToastWidgetState extends State<_MonoToastWidget>
                 filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 480),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: config.bg.withValues(alpha: isDark ? 0.92 : 0.96),
                     borderRadius: AppRadius.dialog,
@@ -296,7 +303,11 @@ class _MonoToastWidgetState extends State<_MonoToastWidget>
                           color: Colors.white.withValues(alpha: 0.14),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(config.iconData, color: config.icon, size: 18),
+                        child: Icon(
+                          config.iconData,
+                          color: config.icon,
+                          size: 18,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Flexible(

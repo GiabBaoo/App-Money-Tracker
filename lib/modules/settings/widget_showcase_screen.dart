@@ -60,7 +60,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
     if (val is String) {
       final s = val.trim();
       if (s.isEmpty) return 0.0;
-      if (s.contains('đ') || s.contains('₫') || RegExp(r'\d+\.\d{3}').hasMatch(s)) {
+      if (s.contains('đ') ||
+          s.contains('₫') ||
+          RegExp(r'\d+\.\d{3}').hasMatch(s)) {
         final clean = s.replaceAll(RegExp(r'[^0-9\-]'), '');
         return double.tryParse(clean) ?? 0.0;
       }
@@ -86,7 +88,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
   Future<void> _pinWidget(String providerName, String widgetName) async {
     final isVi = LanguageScope.of(context).isVietnamese;
     HapticFeedback.mediumImpact();
-    final success = await AppWidgetService.instance.requestPinWidget(providerName);
+    final success = await AppWidgetService.instance.requestPinWidget(
+      providerName,
+    );
     if (!mounted) return;
 
     if (success == true) {
@@ -122,13 +126,21 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
       appBar: AppBar(
         title: Text(
           isVi ? 'Tiện ích Màn hình chính' : 'Home Screen Widgets',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: context.colors.onSurface),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: context.colors.onSurface,
+          ),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: context.colors.onSurface, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: context.colors.onSurface,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -141,8 +153,14 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: isDark
-                    ? [context.brandColor.withValues(alpha: 0.35), const Color(0xFF0F2625)]
-                    : [context.brandColor.withValues(alpha: 0.12), context.brandColor.withValues(alpha: 0.05)],
+                    ? [
+                        context.brandColor.withValues(alpha: 0.35),
+                        const Color(0xFF0F2625),
+                      ]
+                    : [
+                        context.brandColor.withValues(alpha: 0.12),
+                        context.brandColor.withValues(alpha: 0.05),
+                      ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -157,7 +175,11 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                     color: primaryColor,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.widgets_rounded, color: Colors.white, size: 24),
+                  child: const Icon(
+                    Icons.widgets_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -165,7 +187,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isVi ? 'Xem trước & Thêm Widget' : 'Preview & Add Widgets',
+                        isVi
+                            ? 'Xem trước & Thêm Widget'
+                            : 'Preview & Add Widgets',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -177,10 +201,7 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                         isVi
                             ? 'Theo dõi dòng tiền, số dư và ghi chép chi tiêu siêu tốc ngay từ màn hình chính!'
                             : 'Track cash flow, balance, and record expenses quickly right from your home screen!',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: textSecondary,
-                        ),
+                        style: TextStyle(fontSize: 12.5, color: textSecondary),
                       ),
                     ],
                   ),
@@ -203,7 +224,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
             borderColor: borderColor,
             textPrimary: textPrimary,
             textSecondary: textSecondary,
-            pinButtonLabel: isVi ? 'Ghim ra Màn hình chính' : 'Pin to Home Screen',
+            pinButtonLabel: isVi
+                ? 'Ghim ra Màn hình chính'
+                : 'Pin to Home Screen',
             onPinPressed: () => _pinWidget(
               AppWidgetService.smallWidgetProvider,
               isVi ? 'Widget Nhỏ' : 'Small Widget',
@@ -218,7 +241,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
             title: isVi
                 ? '2. Widget Vừa (Medium 4×2) - Phong cách Vibrant'
                 : '2. Medium Widget (4×2) - Vibrant Style',
-            badgeText: isVi ? 'Khuyên dùng • Phổ biến' : 'Recommended • Popular',
+            badgeText: isVi
+                ? 'Khuyên dùng • Phổ biến'
+                : 'Recommended • Popular',
             badgeColor: primaryColor,
             description: isVi
                 ? 'Thiết kế Vibrant sắc nét, hiển thị số dư to rõ, hạn mức an toàn và 2 nút Chi / Thu lớn công thái học.'
@@ -227,7 +252,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
             borderColor: borderColor,
             textPrimary: textPrimary,
             textSecondary: textSecondary,
-            pinButtonLabel: isVi ? 'Ghim ra Màn hình chính' : 'Pin to Home Screen',
+            pinButtonLabel: isVi
+                ? 'Ghim ra Màn hình chính'
+                : 'Pin to Home Screen',
             onPinPressed: () => _pinWidget(
               AppWidgetService.mediumWidgetProvider,
               isVi ? 'Widget Vừa (Số dư)' : 'Medium Widget (Balance)',
@@ -251,7 +278,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
             borderColor: borderColor,
             textPrimary: textPrimary,
             textSecondary: textSecondary,
-            pinButtonLabel: isVi ? 'Ghim ra Màn hình chính' : 'Pin to Home Screen',
+            pinButtonLabel: isVi
+                ? 'Ghim ra Màn hình chính'
+                : 'Pin to Home Screen',
             onPinPressed: () => _pinWidget(
               AppWidgetService.budgetWidgetProvider,
               isVi ? 'Widget Ngân sách' : 'Budget Widget',
@@ -264,7 +293,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
           // 3. WIDGET LỚN (4x4)
           _buildWidgetCard(
             title: isVi ? '4. Widget Lớn (Large 4×4)' : '4. Large Widget (4×4)',
-            badgeText: isVi ? 'Bảng điều khiển tài chính' : 'Financial Dashboard',
+            badgeText: isVi
+                ? 'Bảng điều khiển tài chính'
+                : 'Financial Dashboard',
             badgeColor: Colors.deepPurple,
             description: isVi
                 ? 'Báo cáo toàn diện: Tab Tuần/Tháng, so sánh tháng trước, Top 3 danh mục và 4 nút đáy.'
@@ -273,7 +304,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
             borderColor: borderColor,
             textPrimary: textPrimary,
             textSecondary: textSecondary,
-            pinButtonLabel: isVi ? 'Ghim ra Màn hình chính' : 'Pin to Home Screen',
+            pinButtonLabel: isVi
+                ? 'Ghim ra Màn hình chính'
+                : 'Pin to Home Screen',
             onPinPressed: () => _pinWidget(
               AppWidgetService.largeWidgetProvider,
               isVi ? 'Widget Lớn' : 'Large Widget',
@@ -296,13 +329,21 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.info_outline_rounded, color: Color(0xFF2F7E79), size: 20),
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      color: Color(0xFF2F7E79),
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       isVi
                           ? 'Cách thêm thủ công từ màn hình chính'
                           : 'How to add manually from home screen',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: textPrimary),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: textPrimary,
+                      ),
                     ),
                   ],
                 ),
@@ -310,14 +351,18 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                 Text(
                   isVi
                       ? '1. Chạm và giữ vào một vùng trống trên màn hình chính của điện thoại.\n'
-                          '2. Chọn mục "Tiện ích" (hoặc "Widgets").\n'
-                          '3. Cuộn tìm ứng dụng "Mono" để xem trước giao diện demo sắc nét.\n'
-                          '4. Chạm và kéo widget mong muốn ra vị trí bạn thích.'
+                            '2. Chọn mục "Tiện ích" (hoặc "Widgets").\n'
+                            '3. Cuộn tìm ứng dụng "Mono" để xem trước giao diện demo sắc nét.\n'
+                            '4. Chạm và kéo widget mong muốn ra vị trí bạn thích.'
                       : '1. Touch and hold an empty space on your phone\'s home screen.\n'
-                          '2. Select "Widgets".\n'
-                          '3. Scroll to find "Mono".\n'
-                          '4. Touch and drag the desired widget to your preferred position.',
-                  style: TextStyle(fontSize: 13, height: 1.5, color: textSecondary),
+                            '2. Select "Widgets".\n'
+                            '3. Scroll to find "Mono".\n'
+                            '4. Touch and drag the desired widget to your preferred position.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    color: textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -364,7 +409,11 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textPrimary),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: textPrimary,
+                  ),
                 ),
               ),
               Container(
@@ -375,13 +424,20 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                 ),
                 child: Text(
                   badgeText,
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: badgeColor),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: badgeColor,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 6),
-          Text(description, style: TextStyle(fontSize: 13, color: textSecondary)),
+          Text(
+            description,
+            style: TextStyle(fontSize: 13, color: textSecondary),
+          ),
           const SizedBox(height: 14),
 
           // Container mô phỏng widget thực tế
@@ -395,13 +451,18 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
               icon: const Icon(Icons.add_to_home_screen_rounded, size: 18),
               label: Text(
                 pinButtonLabel,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13.5,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.brandColor,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 11),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
             ),
@@ -420,7 +481,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2))],
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -429,8 +492,19 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
-              Text('Mono', style: TextStyle(color: Color(0xFF2F7E79), fontSize: 12, fontWeight: FontWeight.bold)),
-              Icon(Icons.remove_red_eye_outlined, size: 14, color: Color(0xFF64748B)),
+              Text(
+                'Mono',
+                style: TextStyle(
+                  color: Color(0xFF2F7E79),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Icon(
+                Icons.remove_red_eye_outlined,
+                size: 14,
+                color: Color(0xFF64748B),
+              ),
             ],
           ),
           const SizedBox(height: 6),
@@ -446,7 +520,11 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
             isVi
                 ? 'Hôm nay còn ${_snapshot?.safeDailySpend ?? '0đ'}'
                 : 'Today: ${_snapshot?.safeDailySpend ?? '0đ'} left',
-            style: const TextStyle(color: Color(0xFF059669), fontSize: 9.5, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Color(0xFF059669),
+              fontSize: 9.5,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 10),
           Row(
@@ -454,11 +532,19 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 6),
-                  decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFFECACA))),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFFECACA)),
+                  ),
                   child: Center(
                     child: Text(
                       isVi ? '− Chi' : '− Exp',
-                      style: const TextStyle(color: Color(0xFFDC2626), fontSize: 11, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Color(0xFFDC2626),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -467,11 +553,19 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 6),
-                  decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFA7F3D0))),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD1FAE5),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                  ),
                   child: Center(
                     child: Text(
                       isVi ? '+ Thu' : '+ Inc',
-                      style: const TextStyle(color: Color(0xFF059669), fontSize: 11, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Color(0xFF059669),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -491,8 +585,12 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2))],
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -516,7 +614,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                   Text(
                     isVi ? 'Tổng số dư' : 'Total Balance',
                     style: TextStyle(
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF64748B),
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -526,7 +626,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
               Icon(
                 Icons.remove_red_eye_outlined,
                 size: 15,
-                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                color: isDark
+                    ? const Color(0xFF94A3B8)
+                    : const Color(0xFF64748B),
               ),
             ],
           ),
@@ -539,15 +641,26 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
             children: [
               Text(
                 _snapshot?.totalBalance ?? (_isLoadingData ? '...' : '0đ'),
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: -0.3),
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.3,
+                ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3.5,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF13382C) : const Color(0xFFECFDF5),
+                  color: isDark
+                      ? const Color(0xFF13382C)
+                      : const Color(0xFFECFDF5),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isDark ? const Color(0xFF065F46) : const Color(0xFFA7F3D0),
+                    color: isDark
+                        ? const Color(0xFF065F46)
+                        : const Color(0xFFA7F3D0),
                   ),
                 ),
                 child: Text(
@@ -572,17 +685,23 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                 child: Container(
                   height: 38,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF3E1F24) : const Color(0xFFFEE2E2),
+                    color: isDark
+                        ? const Color(0xFF3E1F24)
+                        : const Color(0xFFFEE2E2),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFECACA),
+                      color: isDark
+                          ? const Color(0xFF7F1D1D)
+                          : const Color(0xFFFECACA),
                     ),
                   ),
                   child: Center(
                     child: Text(
                       isVi ? '− Chi tiền' : '− Expense',
                       style: TextStyle(
-                        color: isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626),
+                        color: isDark
+                            ? const Color(0xFFF87171)
+                            : const Color(0xFFDC2626),
                         fontSize: 12.5,
                         fontWeight: FontWeight.bold,
                       ),
@@ -595,17 +714,23 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                 child: Container(
                   height: 38,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF13382C) : const Color(0xFFD1FAE5),
+                    color: isDark
+                        ? const Color(0xFF13382C)
+                        : const Color(0xFFD1FAE5),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF065F46) : const Color(0xFFA7F3D0),
+                      color: isDark
+                          ? const Color(0xFF065F46)
+                          : const Color(0xFFA7F3D0),
                     ),
                   ),
                   child: Center(
                     child: Text(
                       isVi ? '+ Thu tiền' : '+ Income',
                       style: TextStyle(
-                        color: isDark ? const Color(0xFF34D399) : const Color(0xFF059669),
+                        color: isDark
+                            ? const Color(0xFF34D399)
+                            : const Color(0xFF059669),
                         fontSize: 12.5,
                         fontWeight: FontWeight.bold,
                       ),
@@ -638,8 +763,12 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
       totalSpent += _parseAmount(b['spent_raw'] ?? b['spent']);
       totalLimit += _parseAmount(b['limit_raw'] ?? b['limit']);
     }
-    final overallPercent = totalLimit > 0 ? (totalSpent / totalLimit * 100).round() : 0;
-    final progressVal = totalLimit > 0 ? (totalSpent / totalLimit).clamp(0.0, 1.0) : 0.0;
+    final overallPercent = totalLimit > 0
+        ? (totalSpent / totalLimit * 100).round()
+        : 0;
+    final progressVal = totalLimit > 0
+        ? (totalSpent / totalLimit).clamp(0.0, 1.0)
+        : 0.0;
 
     String spentDisplay = _formatCompact(totalSpent);
     String limitDisplay = _formatCompact(totalLimit);
@@ -657,7 +786,8 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
 
     if (budgetsList.isNotEmpty) {
       final b1 = budgetsList[0];
-      cat1Name = (b1['category'] ?? b1['name'] ?? (isVi ? 'Ăn uống' : 'Dining')).toString();
+      cat1Name = (b1['category'] ?? b1['name'] ?? (isVi ? 'Ăn uống' : 'Dining'))
+          .toString();
       final spent1 = _parseAmount(b1['spent_raw'] ?? b1['spent']);
       final limit1 = _parseAmount(b1['limit_raw'] ?? b1['limit']);
       final p1 = limit1 > 0 ? (spent1 / limit1 * 100).round() : 0;
@@ -667,7 +797,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
 
     if (budgetsList.length > 1) {
       final b2 = budgetsList[1];
-      cat2Name = (b2['category'] ?? b2['name'] ?? (isVi ? 'Mua sắm' : 'Shopping')).toString();
+      cat2Name =
+          (b2['category'] ?? b2['name'] ?? (isVi ? 'Mua sắm' : 'Shopping'))
+              .toString();
       final spent2 = _parseAmount(b2['spent_raw'] ?? b2['spent']);
       final limit2 = _parseAmount(b2['limit_raw'] ?? b2['limit']);
       final p2 = limit2 > 0 ? (spent2 / limit2 * 100).round() : 0;
@@ -682,7 +814,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2))],
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
+        ],
       ),
       child: Row(
         children: [
@@ -698,27 +832,59 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                   children: [
                     Text(
                       isVi ? 'Ngân sách tháng' : 'Monthly budget',
-                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 11,
+                      ),
                     ),
-                    Text('$overallPercent%', style: const TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold)),
+                    Text(
+                      '$overallPercent%',
+                      style: const TextStyle(
+                        color: Color(0xFF10B981),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text('$spentDisplay / $limitDisplay', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(
+                  '$spentDisplay / $limitDisplay',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 5),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(value: progressVal, minHeight: 6, backgroundColor: const Color(0xFFE2E8F0), valueColor: const AlwaysStoppedAnimation(Color(0xFF10B981))),
+                  child: LinearProgressIndicator(
+                    value: progressVal,
+                    minHeight: 6,
+                    backgroundColor: const Color(0xFFE2E8F0),
+                    valueColor: const AlwaysStoppedAnimation(Color(0xFF10B981)),
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(color: const Color(0xFFECFDF5), borderRadius: BorderRadius.circular(6), border: Border.all(color: const Color(0xFFA7F3D0))),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                  ),
                   child: Text(
                     isVi
                         ? 'Hôm nay còn ${_snapshot?.safeDailySpend ?? '0đ'}'
                         : 'Today: ${_snapshot?.safeDailySpend ?? '0đ'} left',
-                    style: const TextStyle(color: Color(0xFF059669), fontSize: 10, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Color(0xFF059669),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -735,27 +901,71 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(child: Text(cat1Name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))),
-                    Text(cat1Percent, style: const TextStyle(fontSize: 9.5, color: Color(0xFFF59E0B), fontWeight: FontWeight.bold)),
+                    Expanded(
+                      child: Text(
+                        cat1Name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      cat1Percent,
+                      style: const TextStyle(
+                        fontSize: 9.5,
+                        color: Color(0xFFF59E0B),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 2),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(3),
-                  child: LinearProgressIndicator(value: cat1Ratio, minHeight: 4, backgroundColor: const Color(0xFFE2E8F0), valueColor: const AlwaysStoppedAnimation(Color(0xFFF59E0B))),
+                  child: LinearProgressIndicator(
+                    value: cat1Ratio,
+                    minHeight: 4,
+                    backgroundColor: const Color(0xFFE2E8F0),
+                    valueColor: const AlwaysStoppedAnimation(Color(0xFFF59E0B)),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(child: Text(cat2Name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold))),
-                    Text(cat2Percent, style: const TextStyle(fontSize: 9.5, color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
+                    Expanded(
+                      child: Text(
+                        cat2Name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      cat2Percent,
+                      style: const TextStyle(
+                        fontSize: 9.5,
+                        color: Color(0xFF10B981),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 2),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(3),
-                  child: LinearProgressIndicator(value: cat2Ratio, minHeight: 4, backgroundColor: const Color(0xFFE2E8F0), valueColor: const AlwaysStoppedAnimation(Color(0xFF10B981))),
+                  child: LinearProgressIndicator(
+                    value: cat2Ratio,
+                    minHeight: 4,
+                    backgroundColor: const Color(0xFFE2E8F0),
+                    valueColor: const AlwaysStoppedAnimation(Color(0xFF10B981)),
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Row(
@@ -763,11 +973,19 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 4),
-                        decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFFECACA))),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFFECACA)),
+                        ),
                         child: Center(
                           child: Text(
                             isVi ? '− Chi' : '− Exp',
-                            style: const TextStyle(color: Color(0xFFDC2626), fontSize: 10, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Color(0xFFDC2626),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
@@ -776,11 +994,19 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 4),
-                        decoration: BoxDecoration(color: const Color(0xFFEEF2FF), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFC7D2FE))),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEEF2FF),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFC7D2FE)),
+                        ),
                         child: Center(
                           child: Text(
                             isVi ? 'Quét' : 'Scan',
-                            style: const TextStyle(color: Color(0xFF4F46E5), fontSize: 10, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Color(0xFF4F46E5),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
@@ -830,7 +1056,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2))],
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -841,28 +1069,49 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
               Expanded(
                 child: Text(
                   isVi ? 'Tài chính' : 'Finance',
-                  style: const TextStyle(color: Color(0xFF2F7E79), fontSize: 12, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Color(0xFF2F7E79),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: const Color(0xFFEEF2F6), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF2F6),
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: Text(
                   isVi ? 'Tuần' : 'Week',
-                  style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Color(0xFF64748B),
+                  ),
                 ),
               ),
               const SizedBox(width: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: const Color(0xFF2F7E79), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2F7E79),
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: Text(
                   isVi ? 'Tháng' : 'Month',
-                  style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
-              const Icon(Icons.remove_red_eye_outlined, size: 14, color: Color(0xFF64748B)),
+              const Icon(
+                Icons.remove_red_eye_outlined,
+                size: 14,
+                color: Color(0xFF64748B),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -880,10 +1129,16 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                   children: [
                     Text(
                       isVi ? 'Tổng số dư' : 'Total Balance',
-                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 10,
+                      ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1.5,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFECFDF5),
                         borderRadius: BorderRadius.circular(6),
@@ -894,7 +1149,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                             ? '${_snapshot?.monthVsLastMonthStatus == 'negative' ? '↑' : '↓'} ${_snapshot?.monthVsLastMonthPercent ?? '0%'} so với tháng trước'
                             : '${_snapshot?.monthVsLastMonthStatus == 'negative' ? '↑' : '↓'} ${_snapshot?.monthVsLastMonthPercent ?? '0%'} vs last month',
                         style: TextStyle(
-                          color: _snapshot?.monthVsLastMonthStatus == 'negative' ? const Color(0xFFDC2626) : const Color(0xFF059669),
+                          color: _snapshot?.monthVsLastMonthStatus == 'negative'
+                              ? const Color(0xFFDC2626)
+                              : const Color(0xFF059669),
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
                         ),
@@ -904,7 +1161,10 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                 ),
                 Text(
                   _snapshot?.totalBalance ?? (_isLoadingData ? '...' : '0đ'),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -913,11 +1173,18 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                       isVi
                           ? 'Tháng: +${_formatCompact(_snapshot?.monthIncomeRaw ?? 0)} • -${_formatCompact(_snapshot?.monthExpenseRaw ?? 0)}'
                           : 'Month: +${_formatCompact(_snapshot?.monthIncomeRaw ?? 0)} • -${_formatCompact(_snapshot?.monthExpenseRaw ?? 0)}',
-                      style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
+                      style: const TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 10,
+                      ),
                     ),
                     Text(
                       _snapshot?.monthDifference ?? '0đ',
-                      style: const TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Color(0xFF10B981),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -931,7 +1198,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                    color: isDark
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Column(
@@ -941,7 +1210,10 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                         isVi
                             ? 'Hạn mức: ${_snapshot?.safeDailySpend ?? '0đ'}'
                             : 'Daily limit: ${_snapshot?.safeDailySpend ?? '0đ'}',
-                        style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Row(
@@ -950,10 +1222,20 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                         children: sevenDays.length == 7
                             ? List.generate(7, (i) {
                                 final day = sevenDays[i];
-                                final label = (day['label'] ?? day['day'] ?? '').toString();
-                                final amt = _parseAmount(day['amount_raw'] ?? day['amount']);
-                                final isToday = day['isToday'] == true || day['is_today'] == true;
-                                final h = maxDayExpense > 0 ? ((amt / maxDayExpense) * 22).clamp(4.0, 24.0) : 6.0;
+                                final label = (day['label'] ?? day['day'] ?? '')
+                                    .toString();
+                                final amt = _parseAmount(
+                                  day['amount_raw'] ?? day['amount'],
+                                );
+                                final isToday =
+                                    day['isToday'] == true ||
+                                    day['is_today'] == true;
+                                final h = maxDayExpense > 0
+                                    ? ((amt / maxDayExpense) * 22).clamp(
+                                        4.0,
+                                        24.0,
+                                      )
+                                    : 6.0;
                                 return _buildMiniBar(label, h, isToday);
                               })
                             : [
@@ -975,7 +1257,9 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                    color: isDark
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Column(
@@ -983,17 +1267,31 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
                     children: [
                       Text(
                         isVi ? 'Chi nhiều nhất' : 'Top Spending',
-                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 9, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       if (topCats.isNotEmpty)
                         ...topCats.take(3).map((c) {
                           final name = c['name'] ?? '';
-                          final amt = _parseAmount(c['amount_raw'] ?? c['amount']);
-                          return Text('• $name: ${_formatCompact(amt)}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 9));
+                          final amt = _parseAmount(
+                            c['amount_raw'] ?? c['amount'],
+                          );
+                          return Text(
+                            '• $name: ${_formatCompact(amt)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 9),
+                          );
                         })
                       else ...[
-                        Text(isVi ? '• Chưa có chi tiêu' : '• No spending yet', style: const TextStyle(fontSize: 9)),
+                        Text(
+                          isVi ? '• Chưa có chi tiêu' : '• No spending yet',
+                          style: const TextStyle(fontSize: 9),
+                        ),
                       ],
                     ],
                   ),
@@ -1004,13 +1302,29 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
           const SizedBox(height: 8),
           Row(
             children: [
-              _buildLargeBtn(isVi ? '− Chi' : '− Exp', const Color(0xFFFEE2E2), const Color(0xFFDC2626)),
+              _buildLargeBtn(
+                isVi ? '− Chi' : '− Exp',
+                const Color(0xFFFEE2E2),
+                const Color(0xFFDC2626),
+              ),
               const SizedBox(width: 4),
-              _buildLargeBtn(isVi ? '+ Thu' : '+ Inc', const Color(0xFFD1FAE5), const Color(0xFF059669)),
+              _buildLargeBtn(
+                isVi ? '+ Thu' : '+ Inc',
+                const Color(0xFFD1FAE5),
+                const Color(0xFF059669),
+              ),
               const SizedBox(width: 4),
-              _buildLargeBtn(isVi ? 'Quét' : 'Scan', const Color(0xFFEEF2FF), const Color(0xFF4F46E5)),
+              _buildLargeBtn(
+                isVi ? 'Quét' : 'Scan',
+                const Color(0xFFEEF2FF),
+                const Color(0xFF4F46E5),
+              ),
               const SizedBox(width: 4),
-              _buildLargeBtn(isVi ? 'Báo cáo' : 'Report', const Color(0xFFE0F2FE), const Color(0xFF0284C7)),
+              _buildLargeBtn(
+                isVi ? 'Báo cáo' : 'Report',
+                const Color(0xFFE0F2FE),
+                const Color(0xFF0284C7),
+              ),
             ],
           ),
         ],
@@ -1022,9 +1336,19 @@ class _WidgetShowcaseScreenState extends State<WidgetShowcaseScreen> {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 5),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Center(
-          child: Text(label, style: TextStyle(color: textColor, fontSize: 9.5, fontWeight: FontWeight.bold)),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 9.5,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );

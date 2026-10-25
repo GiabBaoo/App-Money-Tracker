@@ -38,7 +38,9 @@ class FirestoreService {
       throw StateError('User is not authenticated');
     }
 
-    final docRef = await _db.collection('transactions').add(transaction.toFirestore());
+    final docRef = await _db
+        .collection('transactions')
+        .add(transaction.toFirestore());
     return docRef.id;
   }
 
@@ -60,8 +62,13 @@ class FirestoreService {
       query = query.limit(limit);
     }
 
-    return query.snapshots().map((snapshot) =>
-        snapshot.docs.map((doc) => TransactionModel.fromFirestore(doc)).toList())
+    return query
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => TransactionModel.fromFirestore(doc))
+              .toList(),
+        )
         .handleError((error) {
           debugPrint('Firestore getTransactionsStream error: $error');
           return <TransactionModel>[];
@@ -113,7 +120,10 @@ class FirestoreService {
         .map((doc) => TransactionModel.fromFirestore(doc))
         .where((tx) {
           final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
-          return !txDate.isBefore(rangeStart) && !txDate.isAfter(DateTime(rangeEnd.year, rangeEnd.month, rangeEnd.day));
+          return !txDate.isBefore(rangeStart) &&
+              !txDate.isAfter(
+                DateTime(rangeEnd.year, rangeEnd.month, rangeEnd.day),
+              );
         })
         // Báo cáo chi tiêu: chỉ lấy expense
         .where((tx) => !tx.isIncome)
@@ -178,20 +188,21 @@ class FirestoreService {
         .collection('transactions')
         .where('uid', isEqualTo: _uid)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => TransactionModel.fromFirestore(doc))
-            .where((tx) => tx.hasPhoto)
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => TransactionModel.fromFirestore(doc))
+              .where((tx) => tx.hasPhoto)
+              .toList(),
+        );
   }
 
   // ======================== THỐNG KÊ (HOME) ========================
 
   // Stream tính tổng số dư, tổng thu, tổng chi (realtime)
   Stream<({double balance, double totalIncome, double totalExpense})>
-      getBalanceStream() {
+  getBalanceStream() {
     if (_uid == null) {
-      return Stream.value(
-          (balance: 0.0, totalIncome: 0.0, totalExpense: 0.0));
+      return Stream.value((balance: 0.0, totalIncome: 0.0, totalExpense: 0.0));
     }
 
     return _db
@@ -199,25 +210,25 @@ class FirestoreService {
         .where('uid', isEqualTo: _uid)
         .snapshots()
         .map((snapshot) {
-      double totalIncome = 0;
-      double totalExpense = 0;
+          double totalIncome = 0;
+          double totalExpense = 0;
 
-      for (var doc in snapshot.docs) {
-        final data = doc.data();
-        final amount = (data['amount'] ?? 0).toDouble();
-        if (data['type'] == 'income') {
-          totalIncome += amount;
-        } else {
-          totalExpense += amount;
-        }
-      }
+          for (var doc in snapshot.docs) {
+            final data = doc.data();
+            final amount = (data['amount'] ?? 0).toDouble();
+            if (data['type'] == 'income') {
+              totalIncome += amount;
+            } else {
+              totalExpense += amount;
+            }
+          }
 
-      return (
-        balance: totalIncome - totalExpense,
-        totalIncome: totalIncome,
-        totalExpense: totalExpense,
-      );
-    });
+          return (
+            balance: totalIncome - totalExpense,
+            totalIncome: totalIncome,
+            totalExpense: totalExpense,
+          );
+        });
   }
 
   // ======================== NOTIFICATIONS ========================
@@ -237,24 +248,24 @@ class FirestoreService {
         // Sắp xếp ở phía Client để tránh lỗi yêu cầu tạo Index trên Firebase
         .snapshots()
         .map((snapshot) {
-      final list = snapshot.docs
-          .map((doc) => NotificationModel.fromFirestore(doc))
-          .toList();
-      // Sắp xếp giảm dần theo thời gian (mới nhất lên đầu)
-      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      return list;
-    }).handleError((error) {
-      debugPrint('Firestore getNotificationsStream error: $error');
-      return <NotificationModel>[];
-    });
+          final list = snapshot.docs
+              .map((doc) => NotificationModel.fromFirestore(doc))
+              .toList();
+          // Sắp xếp giảm dần theo thời gian (mới nhất lên đầu)
+          list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return list;
+        })
+        .handleError((error) {
+          debugPrint('Firestore getNotificationsStream error: $error');
+          return <NotificationModel>[];
+        });
   }
 
   // Đánh dấu thông báo đã đọc
   Future<void> markNotificationAsRead(String notificationId) async {
-    await _db
-        .collection('notifications')
-        .doc(notificationId)
-        .update({'isRead': true});
+    await _db.collection('notifications').doc(notificationId).update({
+      'isRead': true,
+    });
   }
 
   // Đánh dấu tất cả thông báo đã đọc
@@ -294,7 +305,8 @@ class FirestoreService {
           uid: _uid!,
           iconCode: Icons.celebration_rounded.codePoint,
           title: 'Chào mừng bạn đến với Mono!',
-          description: 'Cảm ơn bạn đã lựa chọn Mono để quản lý tài chính cá nhân. Hãy bắt đầu ghi lại khoản thu chi đầu tiên của bạn nhé!',
+          description:
+              'Cảm ơn bạn đã lựa chọn Mono để quản lý tài chính cá nhân. Hãy bắt đầu ghi lại khoản thu chi đầu tiên của bạn nhé!',
           isRead: false,
           type: 'welcome',
         );
@@ -316,7 +328,10 @@ class FirestoreService {
   }
 
   // Thêm thông báo cho người dùng khác (không phải người dùng hiện tại)
-  Future<void> addNotificationForUser(String userId, NotificationModel notification) async {
+  Future<void> addNotificationForUser(
+    String userId,
+    NotificationModel notification,
+  ) async {
     try {
       final notificationData = notification.toFirestore();
       notificationData['uid'] = userId;
@@ -341,8 +356,11 @@ class FirestoreService {
     if (!ConnectivityService().isOnline || AuthService().isOfflineSession) {
       return UserRepository().getUserStream();
     }
-    return _db.collection('users').doc(_uid).snapshots().map(
-        (doc) => doc.exists ? UserModel.fromFirestore(doc) : null);
+    return _db
+        .collection('users')
+        .doc(_uid)
+        .snapshots()
+        .map((doc) => doc.exists ? UserModel.fromFirestore(doc) : null);
   }
 
   // ======================== MESSAGES ========================
@@ -365,15 +383,16 @@ class FirestoreService {
         // Bỏ orderBy để tránh lỗi Composite Index của Firestore, sau đó sort ở client
         .snapshots()
         .map((snapshot) {
-      final messages = snapshot.docs
-          .map((doc) => MessageModel.fromFirestore(doc))
-          .toList();
-      messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      return messages;
-    }).handleError((error) {
-      debugPrint('Firestore getMessagesStream error: $error');
-      return <MessageModel>[];
-    });
+          final messages = snapshot.docs
+              .map((doc) => MessageModel.fromFirestore(doc))
+              .toList();
+          messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return messages;
+        })
+        .handleError((error) {
+          debugPrint('Firestore getMessagesStream error: $error');
+          return <MessageModel>[];
+        });
   }
 
   // ======================== DEVICE SESSIONS ========================
@@ -387,20 +406,25 @@ class FirestoreService {
     try {
       final installId = deviceId ?? await DeviceUtils.getInstallationId();
       final docId = '${_uid}_$installId';
-      
+
       String realLocation = 'Thiết bị hiện hành';
-      
+
       try {
-        final response = await http.get(Uri.parse('https://ipapi.co/json/')).timeout(const Duration(seconds: 3));
+        final response = await http
+            .get(Uri.parse('https://ipapi.co/json/'))
+            .timeout(const Duration(seconds: 3));
         if (response.statusCode == 200) {
           final data = json.decode(response.body);
           final city = data['city'] ?? '';
           final country = data['country_name'] ?? '';
-          final loc = [city, country].where((s) => s.toString().isNotEmpty).join(', ');
+          final loc = [
+            city,
+            country,
+          ].where((s) => s.toString().isNotEmpty).join(', ');
           if (loc.isNotEmpty) realLocation = loc;
         }
       } catch (_) {}
-      
+
       await _db.collection('device_sessions').doc(docId).set({
         'uid': _uid,
         'deviceId': installId,
@@ -435,15 +459,16 @@ class FirestoreService {
         .where('uid', isEqualTo: _uid)
         .snapshots()
         .map((snapshot) {
-      final sessions = snapshot.docs
-          .map((doc) => DeviceSessionModel.fromFirestore(doc))
-          .toList();
-      sessions.sort((a, b) => b.lastActive.compareTo(a.lastActive));
-      return sessions;
-    }).handleError((err) {
-      debugPrint('FirestoreService getDeviceSessionsStream error: $err');
-      return <DeviceSessionModel>[];
-    });
+          final sessions = snapshot.docs
+              .map((doc) => DeviceSessionModel.fromFirestore(doc))
+              .toList();
+          sessions.sort((a, b) => b.lastActive.compareTo(a.lastActive));
+          return sessions;
+        })
+        .handleError((err) {
+          debugPrint('FirestoreService getDeviceSessionsStream error: $err');
+          return <DeviceSessionModel>[];
+        });
   }
 
   Future<void> removeDeviceSession(String sessionId) async {
@@ -476,9 +501,7 @@ class FirestoreService {
   // Cập nhật tùy chọn sử dụng dữ liệu
   Future<void> updateDataUsagePreference(String key, bool value) async {
     if (_uid == null) return;
-    await _db.collection('users').doc(_uid).update({
-      'dataUsage.$key': value,
-    });
+    await _db.collection('users').doc(_uid).update({'dataUsage.$key': value});
   }
 
   // ======================== WALLETS ========================
@@ -490,14 +513,16 @@ class FirestoreService {
         .where('uid', isEqualTo: _uid)
         .snapshots()
         .map((snapshot) {
-      final list = snapshot.docs.map((doc) => WalletModel.fromFirestore(doc)).toList();
-      list.sort((a, b) {
-        if (a.isDefault) return -1;
-        if (b.isDefault) return 1;
-        return a.createdAt.compareTo(b.createdAt);
-      });
-      return list;
-    });
+          final list = snapshot.docs
+              .map((doc) => WalletModel.fromFirestore(doc))
+              .toList();
+          list.sort((a, b) {
+            if (a.isDefault) return -1;
+            if (b.isDefault) return 1;
+            return a.createdAt.compareTo(b.createdAt);
+          });
+          return list;
+        });
   }
 
   Future<void> addWallet(WalletModel wallet) async {
@@ -506,7 +531,10 @@ class FirestoreService {
   }
 
   Future<void> updateWallet(WalletModel wallet) async {
-    await _db.collection('wallets').doc(wallet.id).set(wallet.toFirestore(), SetOptions(merge: true));
+    await _db
+        .collection('wallets')
+        .doc(wallet.id)
+        .set(wallet.toFirestore(), SetOptions(merge: true));
   }
 
   Future<void> deleteWallet(String walletId) async {

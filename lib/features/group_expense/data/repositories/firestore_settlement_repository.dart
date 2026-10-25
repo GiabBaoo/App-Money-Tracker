@@ -49,7 +49,7 @@ class FirestoreSettlementRepository implements ISettlementRepository {
     final settlements = snapshot.docs
         .map((doc) => SettlementModel.fromJson(doc.data()))
         .toList();
-    
+
     settlements.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return settlements;
   }
@@ -65,7 +65,7 @@ class FirestoreSettlementRepository implements ISettlementRepository {
           final settlements = snapshot.docs
               .map((doc) => SettlementModel.fromJson(doc.data()))
               .toList();
-          
+
           settlements.sort((a, b) => b.createdAt.compareTo(a.createdAt));
           return settlements;
         });

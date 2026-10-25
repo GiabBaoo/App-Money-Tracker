@@ -71,6 +71,8 @@ class WalletModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String syncStatus;
+  final bool isDeleted;
+  final DateTime? deletedAt;
 
   WalletModel({
     required this.id,
@@ -89,8 +91,10 @@ class WalletModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     this.syncStatus = 'synced',
-  })  : createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+    this.isDeleted = false,
+    this.deletedAt,
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   IconData get icon => IconData(iconCode, fontFamily: 'MaterialIcons');
   Color get color => Color(colorValue);
@@ -108,8 +112,11 @@ class WalletModel {
       balance: (data['balance'] as num?)?.toDouble() ?? 0.0,
       initialBalance: (data['initialBalance'] as num?)?.toDouble() ?? 0.0,
       currency: data['currency'] as String? ?? 'VND',
-      iconCode: data['iconCode'] as int? ?? Icons.account_balance_wallet_rounded.codePoint,
-      colorValue: data['colorValue'] as int? ?? const Color(0xFF438883).toARGB32(),
+      iconCode:
+          data['iconCode'] as int? ??
+          Icons.account_balance_wallet_rounded.codePoint,
+      colorValue:
+          data['colorValue'] as int? ?? const Color(0xFF438883).toARGB32(),
       isDefault: data['isDefault'] is bool
           ? (data['isDefault'] as bool)
           : (data['isDefault'] == 1 || data['isDefault'] == 'true'),
@@ -123,6 +130,10 @@ class WalletModel {
           ? (data['updatedAt'] as Timestamp).toDate()
           : DateTime.now(),
       syncStatus: 'synced',
+      isDeleted: data['isDeleted'] as bool? ?? false,
+      deletedAt: data['deletedAt'] != null
+          ? (data['deletedAt'] as Timestamp).toDate()
+          : null,
     );
   }
 
@@ -142,6 +153,8 @@ class WalletModel {
       'note': note,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
+      'isDeleted': isDeleted,
+      if (deletedAt != null) 'deletedAt': Timestamp.fromDate(deletedAt!),
     };
   }
 
@@ -156,15 +169,26 @@ class WalletModel {
       balance: (map['balance'] as num?)?.toDouble() ?? 0.0,
       initialBalance: (map['initialBalance'] as num?)?.toDouble() ?? 0.0,
       currency: map['currency'] as String? ?? 'VND',
-      iconCode: map['iconCode'] as int? ?? Icons.account_balance_wallet_rounded.codePoint,
-      colorValue: map['colorValue'] as int? ?? const Color(0xFF438883).toARGB32(),
+      iconCode:
+          map['iconCode'] as int? ??
+          Icons.account_balance_wallet_rounded.codePoint,
+      colorValue:
+          map['colorValue'] as int? ?? const Color(0xFF438883).toARGB32(),
       isDefault: (map['isDefault'] as int? ?? 0) == 1,
       accountNumber: map['accountNumber'] as String? ?? '',
       bankName: map['bankName'] as String? ?? '',
       note: map['note'] as String? ?? '',
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int? ?? 0),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt'] as int? ?? 0),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+        map['createdAt'] as int? ?? 0,
+      ),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(
+        map['updatedAt'] as int? ?? 0,
+      ),
       syncStatus: map['syncStatus'] as String? ?? 'synced',
+      isDeleted: (map['isDeleted'] as int? ?? 0) == 1,
+      deletedAt: map['deletedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['deletedAt'] as int)
+          : null,
     );
   }
 
@@ -186,6 +210,8 @@ class WalletModel {
       'createdAt': createdAt.millisecondsSinceEpoch,
       'updatedAt': updatedAt.millisecondsSinceEpoch,
       'syncStatus': syncStatus,
+      'isDeleted': isDeleted ? 1 : 0,
+      'deletedAt': deletedAt?.millisecondsSinceEpoch,
     };
   }
 
@@ -206,6 +232,8 @@ class WalletModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     String? syncStatus,
+    bool? isDeleted,
+    DateTime? deletedAt,
   }) {
     return WalletModel(
       id: id ?? this.id,
@@ -224,6 +252,8 @@ class WalletModel {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       syncStatus: syncStatus ?? this.syncStatus,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
     );
   }
 }

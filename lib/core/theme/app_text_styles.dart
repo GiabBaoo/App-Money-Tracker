@@ -149,7 +149,10 @@ class AppTextStyles {
   );
 
   // ─── TẠO TEXTTHEME THEO CHUẨN MATERIAL 3 ───
-  static TextTheme createTextTheme(Color primaryTextColor, Color secondaryTextColor) {
+  static TextTheme createTextTheme(
+    Color primaryTextColor,
+    Color secondaryTextColor,
+  ) {
     return TextTheme(
       headlineLarge: headlineLarge.copyWith(color: primaryTextColor),
       headlineMedium: headlineMedium.copyWith(color: primaryTextColor),

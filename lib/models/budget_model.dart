@@ -14,6 +14,8 @@ class BudgetModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String syncStatus;
+  final bool isDeleted;
+  final DateTime? deletedAt;
 
   // Transient/calculated fields (không cần lưu SQLite nếu tính theo transactions)
   final double currentSpent;
@@ -31,18 +33,24 @@ class BudgetModel {
     DateTime? updatedAt,
     this.syncStatus = 'synced',
     this.currentSpent = 0.0,
-  })  : createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+    this.isDeleted = false,
+    this.deletedAt,
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   IconData get icon {
     if (category == 'Tất cả') {
       return Icons.account_balance_wallet_outlined;
     }
-    return CategoryUtils.getCategoryIcon(category, fallbackCode: categoryIconCode);
+    return CategoryUtils.getCategoryIcon(
+      category,
+      fallbackCode: categoryIconCode,
+    );
   }
 
   double get remainingAmount => limitAmount - currentSpent;
-  double get progressPercentage => limitAmount > 0 ? (currentSpent / limitAmount).clamp(0.0, 2.0) : 0.0;
+  double get progressPercentage =>
+      limitAmount > 0 ? (currentSpent / limitAmount).clamp(0.0, 2.0) : 0.0;
   bool get isOverBudget => currentSpent > limitAmount;
   bool get isNearLimit => currentSpent >= (limitAmount * 0.8) && !isOverBudget;
 
@@ -59,6 +67,8 @@ class BudgetModel {
     DateTime? updatedAt,
     String? syncStatus,
     double? currentSpent,
+    bool? isDeleted,
+    DateTime? deletedAt,
   }) {
     return BudgetModel(
       id: id ?? this.id,
@@ -73,6 +83,8 @@ class BudgetModel {
       updatedAt: updatedAt ?? this.updatedAt,
       syncStatus: syncStatus ?? this.syncStatus,
       currentSpent: currentSpent ?? this.currentSpent,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
     );
   }
 
@@ -89,6 +101,8 @@ class BudgetModel {
       'createdAt': createdAt.millisecondsSinceEpoch,
       'updatedAt': updatedAt.millisecondsSinceEpoch,
       'syncStatus': syncStatus,
+      'isDeleted': isDeleted ? 1 : 0,
+      'deletedAt': deletedAt?.millisecondsSinceEpoch,
     };
   }
 
@@ -102,9 +116,17 @@ class BudgetModel {
       period: map['period'] as String? ?? 'monthly',
       month: map['month'] as int? ?? DateTime.now().month,
       year: map['year'] as int? ?? DateTime.now().year,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int? ?? 0),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt'] as int? ?? 0),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(
+        map['createdAt'] as int? ?? 0,
+      ),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(
+        map['updatedAt'] as int? ?? 0,
+      ),
       syncStatus: map['syncStatus'] as String? ?? 'synced',
+      isDeleted: (map['isDeleted'] as int? ?? 0) == 1,
+      deletedAt: map['deletedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['deletedAt'] as int)
+          : null,
     );
   }
 
@@ -119,6 +141,8 @@ class BudgetModel {
       'year': year,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
+      'isDeleted': isDeleted,
+      if (deletedAt != null) 'deletedAt': Timestamp.fromDate(deletedAt!),
     };
   }
 
@@ -140,6 +164,10 @@ class BudgetModel {
           ? (data['updatedAt'] as Timestamp).toDate()
           : DateTime.now(),
       syncStatus: 'synced',
+      isDeleted: data['isDeleted'] as bool? ?? false,
+      deletedAt: data['deletedAt'] != null
+          ? (data['deletedAt'] as Timestamp).toDate()
+          : null,
     );
   }
 }

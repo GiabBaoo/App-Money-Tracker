@@ -11,31 +11,47 @@ import '../../services/sync_service.dart';
 import '../../services/category_style_service.dart';
 
 /// Provider quản lý Giao diện (Theme, Dark/Light Mode, Font scale)
-final themeServiceProvider = ChangeNotifierProvider<ThemeService>((ref) => ThemeService());
+final themeServiceProvider = ChangeNotifierProvider<ThemeService>(
+  (ref) => ThemeService(),
+);
 
 /// Provider quản lý Đa ngôn ngữ (Tiếng Việt / English)
-final languageServiceProvider = ChangeNotifierProvider<LanguageService>((ref) => LanguageService());
+final languageServiceProvider = ChangeNotifierProvider<LanguageService>(
+  (ref) => LanguageService(),
+);
 
 /// Provider màu/biểu tượng danh mục user tuỳ chỉnh — widget `ref.watch` để tự rebuild khi đổi
-final categoryStyleProvider = ChangeNotifierProvider<CategoryStyleService>((ref) => CategoryStyleService.instance);
+final categoryStyleProvider = ChangeNotifierProvider<CategoryStyleService>(
+  (ref) => CategoryStyleService.instance,
+);
 
 /// Provider truy xuất TransactionRepository
-final transactionRepoProvider = Provider<TransactionRepository>((ref) => TransactionRepository());
+final transactionRepoProvider = Provider<TransactionRepository>(
+  (ref) => TransactionRepository(),
+);
 
 /// Provider truy xuất WalletRepository
-final walletRepoProvider = Provider<WalletRepository>((ref) => WalletRepository());
+final walletRepoProvider = Provider<WalletRepository>(
+  (ref) => WalletRepository(),
+);
 
 /// Provider truy xuất UserRepository
 final userRepoProvider = Provider<UserRepository>((ref) => UserRepository());
 
 /// Provider truy xuất NotificationRepository
-final notificationRepoProvider = Provider<NotificationRepository>((ref) => NotificationRepository());
+final notificationRepoProvider = Provider<NotificationRepository>(
+  (ref) => NotificationRepository(),
+);
 
 /// Provider truy xuất MessageRepository
-final messageRepoProvider = Provider<MessageRepository>((ref) => MessageRepository());
+final messageRepoProvider = Provider<MessageRepository>(
+  (ref) => MessageRepository(),
+);
 
 /// Provider trạng thái kết nối mạng ConnectivityService
-final connectivityServiceProvider = Provider<ConnectivityService>((ref) => ConnectivityService());
+final connectivityServiceProvider = Provider<ConnectivityService>(
+  (ref) => ConnectivityService(),
+);
 
 /// Provider đồng bộ dữ liệu đám mây SyncService
 final syncServiceProvider = Provider<SyncService>((ref) => SyncService());

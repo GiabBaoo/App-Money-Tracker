@@ -45,7 +45,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  final GlobalKey<StatisticsScreenState> _statsKey = GlobalKey<StatisticsScreenState>();
+  final GlobalKey<StatisticsScreenState> _statsKey =
+      GlobalKey<StatisticsScreenState>();
   DateTime? _lastBackPressTime;
 
   late final List<Widget> _pages;
@@ -71,10 +72,14 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isDark = context.isDark;
-    
+
     // MÀU SẮC FLOATING DOCK CHUẨN FINTECH
-    final Color activeColor = isDark ? AppColors.primaryTealVibrant : AppColors.primaryTeal;
-    final Color inactiveColor = isDark ? AppColors.textMutedDark : AppColors.textSecondaryLight;
+    final Color activeColor = isDark
+        ? AppColors.primaryTealVibrant
+        : AppColors.primaryTeal;
+    final Color inactiveColor = isDark
+        ? AppColors.textMutedDark
+        : AppColors.textSecondaryLight;
 
     return PopScope(
       canPop: false,
@@ -86,7 +91,9 @@ class _HomeScreenState extends State<HomeScreen> {
         } else {
           // Nếu đang ở tab Trang chủ: bấm lần 2 để thoát
           final now = DateTime.now();
-          if (_lastBackPressTime == null || now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+          if (_lastBackPressTime == null ||
+              now.difference(_lastBackPressTime!) >
+                  const Duration(seconds: 2)) {
             _lastBackPressTime = now;
             TopToast.show(context, context.tr('press_again_to_exit'));
           } else {
@@ -97,10 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         extendBody: true,
         backgroundColor: context.colors.surface,
-        body: FadeIndexedStack(
-          index: _selectedIndex,
-          children: _pages,
-        ),
+        body: FadeIndexedStack(index: _selectedIndex, children: _pages),
         bottomNavigationBar: SafeArea(
           top: false,
           child: RepaintBoundary(
@@ -113,13 +117,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       ? AppColors.surfaceElevatedDark.withValues(alpha: 0.96)
                       : Colors.white.withValues(alpha: 0.97),
                   borderRadius: BorderRadius.circular(28),
-                  border: Border.all(
-                    color: context.borderColor,
-                    width: 1.2,
-                  ),
+                  border: Border.all(color: context.borderColor, width: 1.2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.35 : 0.08,
+                      ),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -138,22 +141,29 @@ class _HomeScreenState extends State<HomeScreen> {
                       duration: const Duration(milliseconds: 280),
                       curve: Curves.easeOutCubic,
                       child: FractionallySizedBox(
-                        widthFactor: 0.2, // Chiếm đúng 1/5 chiều rộng thanh dock
+                        widthFactor:
+                            0.2, // Chiếm đúng 1/5 chiều rộng thanh dock
                         heightFactor: 1.0,
                         child: Center(
                           child: Container(
                             width: 52,
                             height: 46,
                             decoration: BoxDecoration(
-                              color: activeColor.withValues(alpha: isDark ? 0.20 : 0.12),
+                              color: activeColor.withValues(
+                                alpha: isDark ? 0.20 : 0.12,
+                              ),
                               borderRadius: BorderRadius.circular(23),
                               border: Border.all(
-                                color: activeColor.withValues(alpha: isDark ? 0.35 : 0.22),
+                                color: activeColor.withValues(
+                                  alpha: isDark ? 0.35 : 0.22,
+                                ),
                                 width: 1.0,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: activeColor.withValues(alpha: isDark ? 0.22 : 0.12),
+                                  color: activeColor.withValues(
+                                    alpha: isDark ? 0.22 : 0.12,
+                                  ),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -168,19 +178,45 @@ class _HomeScreenState extends State<HomeScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: _buildFloatingNavItem(0, Icons.home_rounded, 'nav_home', activeColor, inactiveColor),
+                          child: _buildFloatingNavItem(
+                            0,
+                            Icons.home_rounded,
+                            'nav_home',
+                            activeColor,
+                            inactiveColor,
+                          ),
                         ),
                         Expanded(
-                          child: _buildFloatingNavItem(1, Icons.bar_chart_rounded, 'nav_stats', activeColor, inactiveColor),
+                          child: _buildFloatingNavItem(
+                            1,
+                            Icons.bar_chart_rounded,
+                            'nav_stats',
+                            activeColor,
+                            inactiveColor,
+                          ),
                         ),
                         Expanded(
-                          child: Center(child: _buildCenterFabButton(context, isDark)),
+                          child: Center(
+                            child: _buildCenterFabButton(context, isDark),
+                          ),
                         ),
                         Expanded(
-                          child: _buildFloatingNavItem(2, Icons.account_balance_wallet_rounded, 'nav_wallets', activeColor, inactiveColor),
+                          child: _buildFloatingNavItem(
+                            2,
+                            Icons.account_balance_wallet_rounded,
+                            'nav_wallets',
+                            activeColor,
+                            inactiveColor,
+                          ),
                         ),
                         Expanded(
-                          child: _buildFloatingNavItem(3, Icons.person_rounded, 'nav_profile', activeColor, inactiveColor),
+                          child: _buildFloatingNavItem(
+                            3,
+                            Icons.person_rounded,
+                            'nav_profile',
+                            activeColor,
+                            inactiveColor,
+                          ),
                         ),
                       ],
                     ),
@@ -208,7 +244,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Widget _buildFloatingNavItem(int index, IconData icon, String labelKey, Color activeColor, Color inactiveColor) {
+  Widget _buildFloatingNavItem(
+    int index,
+    IconData icon,
+    String labelKey,
+    Color activeColor,
+    Color inactiveColor,
+  ) {
     final bool isSelected = _selectedIndex == index;
     return Tooltip(
       message: context.tr(labelKey),
@@ -259,14 +301,22 @@ class _HomeScreenState extends State<HomeScreen> {
         scaleDown: 0.88,
         onTap: () {
           HapticFeedback.mediumImpact();
-          Navigator.push(context, PageTransitions.slideUp(const AddTransactionScreen()));
+          Navigator.push(
+            context,
+            PageTransitions.slideUp(const AddTransactionScreen()),
+          );
         },
         child: Container(
           width: 48,
           height: 48,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [AppColors.primaryTeal, isDark ? AppColors.primaryTealVibrant : AppColors.primaryTealLight],
+              colors: [
+                AppColors.primaryTeal,
+                isDark
+                    ? AppColors.primaryTealVibrant
+                    : AppColors.primaryTealLight,
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -297,7 +347,8 @@ class HomeBody extends StatefulWidget {
   State<HomeBody> createState() => _HomeBodyState();
 }
 
-class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin {
+class _HomeBodyState extends State<HomeBody>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
   final WalletRepository _walletRepo = WalletRepository();
@@ -346,7 +397,7 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
   Widget build(BuildContext context) {
     super.build(context);
     final isDark = context.isDark;
-    
+
     return Column(
       children: [
         // THÔNG BÁO CHẾ ĐỘ NGOẠI TUYẾN (TỰ ĐỘNG BIẾN MẤT SAU 4 GIÂY)
@@ -362,21 +413,27 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 12),
+                        const Icon(
+                          Icons.wifi_off_rounded,
+                          color: Colors.white,
+                          size: 12,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           context.tr('offline_mode'),
-                          style: context.textTheme.labelSmall?.copyWith(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: -0.2,
-                          ) ?? const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: -0.2,
-                          ),
+                          style:
+                              context.textTheme.labelSmall?.copyWith(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: -0.2,
+                              ) ??
+                              const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: -0.2,
+                              ),
                         ),
                       ],
                     ),
@@ -392,7 +449,9 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
               height: 200,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
+                color: isDark
+                    ? AppColors.primaryTealDark
+                    : AppColors.primaryTeal,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(30),
                   bottomRight: Radius.circular(30),
@@ -416,19 +475,28 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                             String? fbName;
                             String? fbPhoto;
                             try {
-                              fbName = FirebaseAuth.instance.currentUser?.displayName;
-                              fbPhoto = FirebaseAuth.instance.currentUser?.photoURL;
+                              fbName = FirebaseAuth
+                                  .instance
+                                  .currentUser
+                                  ?.displayName;
+                              fbPhoto =
+                                  FirebaseAuth.instance.currentUser?.photoURL;
                             } catch (_) {}
-                            final displayName = (user?.name != null && user!.name.isNotEmpty)
+                            final displayName =
+                                (user?.name != null && user!.name.isNotEmpty)
                                 ? user.name
                                 : (fbName ?? fallbackName);
-                            final avatarUrl = (user?.avatarUrl != null && user!.avatarUrl.isNotEmpty)
+                            final avatarUrl =
+                                (user?.avatarUrl != null &&
+                                    user!.avatarUrl.isNotEmpty)
                                 ? user.avatarUrl
                                 : fbPhoto;
                             final nowHour = DateTime.now().hour;
                             final greeting = nowHour < 12
                                 ? '${context.tr('greeting_morning')},'
-                                : (nowHour < 18 ? '${context.tr('greeting_afternoon')},' : '${context.tr('greeting_evening')},');
+                                : (nowHour < 18
+                                      ? '${context.tr('greeting_afternoon')},'
+                                      : '${context.tr('greeting_evening')},');
 
                             return Row(
                               children: [
@@ -444,13 +512,16 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                                     avatarUrl: avatarUrl,
                                     avatarLocalPath: user?.avatarLocalPath,
                                     showBorder: true,
-                                    borderColor: Colors.white.withValues(alpha: 0.35),
+                                    borderColor: Colors.white.withValues(
+                                      alpha: 0.35,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Row(
@@ -459,14 +530,18 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                                           Flexible(
                                             child: Text(
                                               greeting,
-                                              style: context.textTheme.bodySmall?.copyWith(
-                                                color: Colors.white70,
-                                                fontWeight: FontWeight.w500,
-                                              ) ?? const TextStyle(
-                                                color: Colors.white70,
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                              style:
+                                                  context.textTheme.bodySmall
+                                                      ?.copyWith(
+                                                        color: Colors.white70,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ) ??
+                                                  const TextStyle(
+                                                    color: Colors.white70,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
@@ -480,14 +555,17 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                                       ),
                                       Text(
                                         displayName,
-                                        style: context.textTheme.titleMedium?.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ) ?? const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        style:
+                                            context.textTheme.titleMedium
+                                                ?.copyWith(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                ) ??
+                                            const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -507,8 +585,10 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                             onTap: () {
                               HapticFeedback.selectionClick();
                               Navigator.push(
-                                context, 
-                                PageTransitions.slideRight(const GroupListScreen()),
+                                context,
+                                PageTransitions.slideRight(
+                                  const GroupListScreen(),
+                                ),
                               );
                             },
                             child: Container(
@@ -518,7 +598,11 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                                 color: Colors.white.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(Icons.group, color: Colors.white, size: 20),
+                              child: const Icon(
+                                Icons.group,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                             ),
                           ),
                           AnimatedScaleButton(
@@ -527,7 +611,9 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                               HapticFeedback.selectionClick();
                               await Navigator.push(
                                 context,
-                                PageTransitions.slideRight(const NotificationScreen()),
+                                PageTransitions.slideRight(
+                                  const NotificationScreen(),
+                                ),
                               );
                               if (context.mounted) {
                                 setState(() {});
@@ -542,17 +628,25 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                               child: Stack(
                                 clipBehavior: Clip.none,
                                 children: [
-                                  const Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
+                                  const Icon(
+                                    Icons.notifications_outlined,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                                   // Badge hiển thị số thông báo chưa đọc
                                   StreamBuilder<List<NotificationModel>>(
                                     stream: _notiRepo.getNotificationsStream(),
                                     builder: (context, snapshot) {
-                                      if (!snapshot.hasData) return const SizedBox.shrink();
-                                      
-                                      final unreadCount = snapshot.data!.where((n) => !n.isRead).length;
-                                      
-                                      if (unreadCount == 0) return const SizedBox.shrink();
-                                      
+                                      if (!snapshot.hasData)
+                                        return const SizedBox.shrink();
+
+                                      final unreadCount = snapshot.data!
+                                          .where((n) => !n.isRead)
+                                          .length;
+
+                                      if (unreadCount == 0)
+                                        return const SizedBox.shrink();
+
                                       return Positioned(
                                         right: -4,
                                         top: -4,
@@ -567,7 +661,9 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                                             minHeight: 16,
                                           ),
                                           child: Text(
-                                            unreadCount > 99 ? '99+' : unreadCount.toString(),
+                                            unreadCount > 99
+                                                ? '99+'
+                                                : unreadCount.toString(),
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 9,
@@ -590,23 +686,34 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                   const SizedBox(height: 30),
                   // TỔNG SỐ DƯ CARD - ĐỒNG BỘ CHÍNH XÁC VỚI VÍ TIỀN
                   StreamBuilder<double>(
-                    initialData: _walletRepo.latestWallets.fold<double>(0.0, (double prev, w) => prev + w.balance),
+                    initialData: _walletRepo.latestWallets.fold<double>(
+                      0.0,
+                      (double prev, w) => prev + w.balance,
+                    ),
                     stream: _walletRepo.getTotalBalanceStream(),
                     builder: (context, walletSnapshot) {
-                      final double totalBalance = walletSnapshot.data ?? _walletRepo.latestWallets.fold<double>(0.0, (double prev, w) => prev + w.balance);
+                      final double totalBalance =
+                          walletSnapshot.data ??
+                          _walletRepo.latestWallets.fold<double>(
+                            0.0,
+                            (double prev, w) => prev + w.balance,
+                          );
                       return StreamBuilder<List<TransactionModel>>(
                         initialData: TransactionRepository().latestTransactions,
                         stream: TransactionRepository().getTransactionsStream(),
                         builder: (context, snapshot) {
                           double totalIncome = 0;
                           double totalExpense = 0;
-                          final txList = (snapshot.data != null && snapshot.data!.isNotEmpty)
+                          final txList =
+                              (snapshot.data != null &&
+                                  snapshot.data!.isNotEmpty)
                               ? snapshot.data!
                               : TransactionRepository().latestTransactions;
                           final now = DateTime.now();
                           for (var tx in txList) {
                             // Chỉ tính cho tháng và năm hiện tại & loại trừ chuyển tiền nội bộ
-                            if (tx.date.month == now.month && tx.date.year == now.year) {
+                            if (tx.date.month == now.month &&
+                                tx.date.year == now.year) {
                               if (tx.isTransfer) continue;
                               if (tx.type == 'income') {
                                 totalIncome += tx.amount;
@@ -615,7 +722,11 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                               }
                             }
                           }
-                          return _buildBalanceCard(totalBalance, totalIncome, totalExpense);
+                          return _buildBalanceCard(
+                            totalBalance,
+                            totalIncome,
+                            totalExpense,
+                          );
                         },
                       );
                     },
@@ -637,10 +748,12 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
             children: [
               Text(
                 context.tr('tx_history'),
-                style: context.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: context.textPrimaryColor,
-                ) ?? const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    context.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: context.textPrimaryColor,
+                    ) ??
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               TextButton(
                 onPressed: () => Navigator.push(
@@ -649,13 +762,15 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                 ),
                 child: Text(
                   context.tr('see_all'),
-                  style: context.textTheme.labelLarge?.copyWith(
-                    color: context.colors.primary,
-                    fontWeight: FontWeight.w700,
-                  ) ?? TextStyle(
-                    color: context.colors.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style:
+                      context.textTheme.labelLarge?.copyWith(
+                        color: context.colors.primary,
+                        fontWeight: FontWeight.w700,
+                      ) ??
+                      TextStyle(
+                        color: context.colors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
               ),
             ],
@@ -674,16 +789,19 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                     : TransactionRepository().latestTransactions,
               );
 
-              if (snapshot.connectionState == ConnectionState.waiting && allTx.isEmpty) {
-                return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
+              if (snapshot.connectionState == ConnectionState.waiting &&
+                  allTx.isEmpty) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF438883)),
+                );
               }
-              
+
               allTx.sort(CurrencyUtils.compareTransactionsChronological);
-              
+
               // Hiển thị danh sách các giao dịch gần đây nhất (tối đa 10 giao dịch)
               // Giúp giao diện luôn hiển thị đầy đủ dòng tiền mới nhất, không bị giới hạn chỉ 1 giao dịch khi vừa sang tháng
               final displayTransactions = allTx.take(10).toList();
-              
+
               if (displayTransactions.isEmpty) {
                 return Center(
                   child: Padding(
@@ -701,10 +819,11 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
 
               final effectiveWallets = _walletRepo.latestWallets;
               final walletMap = {for (final w in effectiveWallets) w.id: w};
-              final reverseBalances = CurrencyUtils.calculateReverseWalletBalances(
-                allTransactions: allTx,
-                wallets: effectiveWallets,
-              );
+              final reverseBalances =
+                  CurrencyUtils.calculateReverseWalletBalances(
+                    allTransactions: allTx,
+                    wallets: effectiveWallets,
+                  );
 
               return ListView.builder(
                 key: const PageStorageKey('home_tx_list'),
@@ -737,7 +856,9 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
     final isDark = context.isDark;
     final isVi = LanguageScope.of(context).isVietnamese;
     final double totalFlow = income + expense;
-    final int incomePercent = totalFlow > 0 ? ((income / totalFlow) * 100).round() : 50;
+    final int incomePercent = totalFlow > 0
+        ? ((income / totalFlow) * 100).round()
+        : 50;
     final int expensePercent = totalFlow > 0 ? (100 - incomePercent) : 50;
 
     return AnimatedScaleButton(
@@ -749,7 +870,9 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
       child: Container(
         padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
-          gradient: isDark ? AppColors.brandGradientDark : AppColors.brandGradientLight,
+          gradient: isDark
+              ? AppColors.brandGradientDark
+              : AppColors.brandGradientLight,
           borderRadius: AppRadius.card,
           border: Border.all(
             color: Colors.white.withValues(alpha: isDark ? 0.16 : 0.22),
@@ -757,7 +880,9 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
           ),
           boxShadow: [
             BoxShadow(
-              color: (isDark ? Colors.black : AppColors.primaryTeal).withValues(alpha: isDark ? 0.4 : 0.32),
+              color: (isDark ? Colors.black : AppColors.primaryTeal).withValues(
+                alpha: isDark ? 0.4 : 0.32,
+              ),
               blurRadius: 22,
               offset: const Offset(0, 10),
             ),
@@ -799,16 +924,18 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                   children: [
                     Text(
                       context.tr('total_balance'),
-                      style: context.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.2,
-                      ) ?? TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.2,
-                      ),
+                      style:
+                          context.textTheme.bodyMedium?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.2,
+                          ) ??
+                          TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.2,
+                          ),
                     ),
                     AnimatedScaleButton(
                       scaleDown: 0.88,
@@ -819,7 +946,10 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                         });
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(20),
@@ -836,7 +966,9 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              _isBalanceVisible ? (isVi ? 'Hiện' : 'Show') : (isVi ? 'Ẩn' : 'Hide'),
+                              _isBalanceVisible
+                                  ? (isVi ? 'Hiện' : 'Show')
+                                  : (isVi ? 'Ẩn' : 'Hide'),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
@@ -855,19 +987,23 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    _isBalanceVisible ? CurrencyUtils.formatCurrency(totalBalance) : '•••••••• ₫',
+                    _isBalanceVisible
+                        ? CurrencyUtils.formatCurrency(totalBalance)
+                        : '•••••••• ₫',
                     maxLines: 1,
-                    style: context.textTheme.headlineMedium?.copyWith(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.3,
-                    ) ?? const TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.3,
-                    ),
+                    style:
+                        context.textTheme.headlineMedium?.copyWith(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.3,
+                        ) ??
+                        const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.3,
+                        ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -911,16 +1047,24 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                         child: Row(
                           children: [
                             Expanded(
-                              flex: totalFlow > 0 ? incomePercent.clamp(1, 99) : 50,
+                              flex: totalFlow > 0
+                                  ? incomePercent.clamp(1, 99)
+                                  : 50,
                               child: Container(
-                                color: totalFlow > 0 ? AppColors.incomeEmeraldLight : Colors.white24,
+                                color: totalFlow > 0
+                                    ? AppColors.incomeEmeraldLight
+                                    : Colors.white24,
                               ),
                             ),
                             const SizedBox(width: 2),
                             Expanded(
-                              flex: totalFlow > 0 ? expensePercent.clamp(1, 99) : 50,
+                              flex: totalFlow > 0
+                                  ? expensePercent.clamp(1, 99)
+                                  : 50,
                               child: Container(
-                                color: totalFlow > 0 ? AppColors.expenseRoseLight : Colors.white24,
+                                color: totalFlow > 0
+                                    ? AppColors.expenseRoseLight
+                                    : Colors.white24,
                               ),
                             ),
                           ],
@@ -932,29 +1076,35 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          totalFlow > 0 ? '${context.tr('flow_income')} $incomePercent%' : context.tr('no_cash_flow'),
-                          style: context.textTheme.labelSmall?.copyWith(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.75),
-                          ) ?? TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.75),
-                          ),
+                          totalFlow > 0
+                              ? '${context.tr('flow_income')} $incomePercent%'
+                              : context.tr('no_cash_flow'),
+                          style:
+                              context.textTheme.labelSmall?.copyWith(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white.withValues(alpha: 0.75),
+                              ) ??
+                              TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white.withValues(alpha: 0.75),
+                              ),
                         ),
                         if (totalFlow > 0)
                           Text(
                             '${context.tr('flow_expense')} $expensePercent%',
-                            style: context.textTheme.labelSmall?.copyWith(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white.withValues(alpha: 0.75),
-                            ) ?? TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white.withValues(alpha: 0.75),
-                            ),
+                            style:
+                                context.textTheme.labelSmall?.copyWith(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white.withValues(alpha: 0.75),
+                                ) ??
+                                TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white.withValues(alpha: 0.75),
+                                ),
                           ),
                       ],
                     ),
@@ -1009,28 +1159,34 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
                 children: [
                   Text(
                     label,
-                    style: context.textTheme.labelSmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ) ?? TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style:
+                        context.textTheme.labelSmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ) ??
+                        TextStyle(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    _isBalanceVisible ? CurrencyUtils.formatCurrency(amount) : '•••••• ₫',
-                    style: context.textTheme.bodyMedium?.copyWith(
-                      color: Colors.white,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                    ) ?? const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    _isBalanceVisible
+                        ? CurrencyUtils.formatCurrency(amount)
+                        : '•••••• ₫',
+                    style:
+                        context.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                        ) ??
+                        const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                        ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1115,7 +1271,9 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: isDark ? color.withValues(alpha: 0.18) : color.withValues(alpha: 0.12),
+                color: isDark
+                    ? color.withValues(alpha: 0.18)
+                    : color.withValues(alpha: 0.12),
                 borderRadius: AppRadius.card,
                 border: Border.all(
                   color: color.withValues(alpha: isDark ? 0.35 : 0.22),
@@ -1134,17 +1292,23 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
             const SizedBox(height: 7),
             Text(
               label,
-              style: context.textTheme.labelSmall?.copyWith(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.textPrimaryDark : AppColors.textSecondaryLight,
-                letterSpacing: 0.1,
-              ) ?? TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.textPrimaryDark : AppColors.textSecondaryLight,
-                letterSpacing: 0.1,
-              ),
+              style:
+                  context.textTheme.labelSmall?.copyWith(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textSecondaryLight,
+                    letterSpacing: 0.1,
+                  ) ??
+                  TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textSecondaryLight,
+                    letterSpacing: 0.1,
+                  ),
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1155,4 +1319,3 @@ class _HomeBodyState extends State<HomeBody> with AutomaticKeepAliveClientMixin 
     );
   }
 }
-

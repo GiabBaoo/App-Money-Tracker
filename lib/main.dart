@@ -30,11 +30,11 @@ import 'services/sync_service.dart';
 import 'services/local_notification_service.dart';
 import 'services/midnight_sync_service.dart';
 import 'services/auth_service.dart';
-import 'services/transaction_balance_service.dart';
 import 'services/app_widget_service.dart';
 import 'services/category_style_service.dart';
 import 'services/firestore_service.dart';
 import 'core/providers/app_providers.dart';
+import 'core/session/session_manager.dart';
 
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -54,10 +54,22 @@ void main() async {
   final localInitFutures = Future.wait([
     initializeDateFormatting('vi', null).catchError((_) => null),
     initializeDateFormatting('vi_VN', null).catchError((_) => null),
-    dbHelper.database,
-    connectivityService.init(),
-    themeService.init(),
-    languageService.init(),
+    dbHelper.database.catchError((e) {
+      debugPrint('Database init error: $e');
+      return dbHelper.database;
+    }),
+    connectivityService.init().catchError((e) {
+      debugPrint('Connectivity init error: $e');
+      return null;
+    }),
+    themeService.init().catchError((e) {
+      debugPrint('Theme init error: $e');
+      return null;
+    }),
+    languageService.init().catchError((e) {
+      debugPrint('Language init error: $e');
+      return null;
+    }),
   ]);
 
   // ═══ 2. Khởi tạo Firebase ═══
@@ -78,10 +90,12 @@ void main() async {
   // Đẩy Firebase AppCheck sang background microtask để không nghẽn luồng mở app
   Future.microtask(() async {
     try {
-      await FirebaseAppCheck.instance.activate(
-        androidProvider: kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
-        appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
-      );
+      if (!kDebugMode) {
+        await FirebaseAppCheck.instance.activate(
+          androidProvider: AndroidProvider.playIntegrity,
+          appleProvider: AppleProvider.deviceCheck,
+        );
+      }
       await FirebaseAuth.instance.setSettings(
         appVerificationDisabledForTesting: true,
       );
@@ -93,13 +107,23 @@ void main() async {
   // Đợi các dịch vụ cục bộ hoàn tất song song
   await localInitFutures;
 
-  // ═══ 3. Khởi tạo Repositories & Session ═══
+  // ═══ 3. Khởi tạo Repositories & Sync Service ═══
   final transactionRepo = TransactionRepository();
   final walletRepo = WalletRepository();
   final userRepo = UserRepository();
   final notificationRepo = NotificationRepository();
   final messageRepo = MessageRepository();
 
+  final syncService = SyncService();
+  syncService.init(
+    transactionRepo: transactionRepo,
+    walletRepo: walletRepo,
+    userRepo: userRepo,
+    notificationRepo: notificationRepo,
+    messageRepo: messageRepo,
+  );
+
+  // ═══ 4. Khởi tạo Session & Auth ═══
   final authService = AuthService();
   final currentUser = FirebaseAuth.instance.currentUser;
   String? activeUid = currentUser?.uid;
@@ -110,32 +134,11 @@ void main() async {
   }
 
   if (activeUid != null) {
-    transactionRepo.setUid(activeUid);
-    walletRepo.setUid(activeUid);
-    userRepo.setUid(activeUid);
-    notificationRepo.setUid(activeUid);
-    messageRepo.setUid(activeUid);
-
-    // Khôi phục chuẩn xác số dư ví 1 lần duy nhất theo dữ liệu chuẩn
-    try {
-      await TransactionBalanceService().restoreCorrectUserBaselineOnce(targetUid: activeUid);
-    } catch (e) {
-      debugPrint('Main: Lỗi khi khởi tạo số dư ví: $e');
-    }
+    SessionManager.instance.activate(activeUid);
   }
 
   // Lắng nghe màu/biểu tượng danh mục user tuỳ chỉnh (áp dụng toàn app)
   CategoryStyleService.ensureInitialized();
-
-  // ═══ 4. Khởi tạo Sync Service ═══
-  final syncService = SyncService();
-  syncService.init(
-    transactionRepo: transactionRepo,
-    walletRepo: walletRepo,
-    userRepo: userRepo,
-    notificationRepo: notificationRepo,
-    messageRepo: messageRepo,
-  );
 
   // Khởi động các dịch vụ chạy ngầm sau khi UI đã sẵn sàng
   Future.microtask(() async {
@@ -156,11 +159,7 @@ void main() async {
     }
   });
 
-  runApp(
-    ProviderScope(
-      child: MyApp(),
-    ),
-  );
+  runApp(ProviderScope(child: MyApp()));
 }
 
 class MyApp extends ConsumerStatefulWidget {
@@ -189,7 +188,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         final uri = Uri.base;
         final hash = uri.fragment; // Sử dụng fragment thay vì hash
         debugPrint('DEBUG: Initial hash = $hash');
-        
+
         if (hash.isNotEmpty) {
           if (hash.startsWith('/join/')) {
             _groupIdToJoin = hash.substring(6); // Remove '/join/'
@@ -222,7 +221,7 @@ class _MyAppState extends ConsumerState<MyApp> {
           physics: const BouncingScrollPhysics(),
         ),
         locale: Locale(languageService.currentLanguage),
-        home: _groupIdToJoin != null 
+        home: _groupIdToJoin != null
             ? JoinGroupScreen(groupId: _groupIdToJoin!)
             : const SplashScreen(),
         builder: (context, child) {
@@ -230,7 +229,9 @@ class _MyAppState extends ConsumerState<MyApp> {
             service: languageService,
             child: MediaQuery(
               data: MediaQuery.of(context).copyWith(
-                textScaler: TextScaler.linear(themeService.textScaleFactor.clamp(0.85, 1.25)),
+                textScaler: TextScaler.linear(
+                  themeService.textScaleFactor.clamp(0.85, 1.25),
+                ),
               ),
               child: LifecycleManager(
                 navigatorKey: widget.navigatorKey,
@@ -239,26 +240,26 @@ class _MyAppState extends ConsumerState<MyApp> {
             ),
           );
         },
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-        '/verify_email': (context) {
-          final email = ModalRoute.of(context)?.settings.arguments as String? ?? '';
-          return VerifyEmailScreen(email: email);
+        routes: {
+          '/login': (context) => const LoginScreen(),
+          '/register': (context) => const RegisterScreen(),
+          '/verify_email': (context) {
+            final email =
+                ModalRoute.of(context)?.settings.arguments as String? ?? '';
+            return VerifyEmailScreen(email: email);
+          },
         },
-      },
-      onGenerateRoute: (settings) {
-        // Handle /join/:groupId route
-        if (settings.name?.startsWith('/join/') == true) {
-          final groupId = settings.name!.substring(6); // Remove '/join/'
-          return PageTransitions.slideRight(
-            JoinGroupScreen(groupId: groupId),
-          );
-        }
-        return null;
-      },
+        onGenerateRoute: (settings) {
+          // Handle /join/:groupId route
+          if (settings.name?.startsWith('/join/') == true) {
+            final groupId = settings.name!.substring(6); // Remove '/join/'
+            return PageTransitions.slideRight(
+              JoinGroupScreen(groupId: groupId),
+            );
+          }
+          return null;
+        },
       ),
     );
   }
 }
-

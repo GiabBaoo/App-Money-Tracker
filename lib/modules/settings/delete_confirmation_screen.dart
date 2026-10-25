@@ -52,7 +52,9 @@ class DeleteConfirmationScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -61,7 +63,9 @@ class DeleteConfirmationScreen extends StatelessWidget {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: context.expense.withValues(alpha: isDark ? 0.2 : 0.12),
+                        color: context.expense.withValues(
+                          alpha: isDark ? 0.2 : 0.12,
+                        ),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -84,7 +88,9 @@ class DeleteConfirmationScreen extends StatelessWidget {
                     const SizedBox(height: 30),
 
                     Text(
-                      isVi ? 'Bạn có chắc chắn muốn xóa?' : 'Are you sure you want to delete?',
+                      isVi
+                          ? 'Bạn có chắc chắn muốn xóa?'
+                          : 'Are you sure you want to delete?',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: context.colors.onSurface,

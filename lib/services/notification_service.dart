@@ -38,7 +38,10 @@ class NotificationService {
         if (isCurrent) {
           await _firestoreService.addNotification(notification);
         } else {
-          await _firestoreService.addNotificationForUser(notification.uid, notification);
+          await _firestoreService.addNotificationForUser(
+            notification.uid,
+            notification,
+          );
         }
       } catch (e) {
         debugPrint('NotificationService Firestore sync error: $e');
@@ -69,7 +72,11 @@ class NotificationService {
     final targetUid = uid ?? _currentUid;
     if (targetUid == null) return;
 
-    final currencyFmt = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ', decimalDigits: 0);
+    final currencyFmt = NumberFormat.currency(
+      locale: 'vi_VN',
+      symbol: 'đ',
+      decimalDigits: 0,
+    );
     final spentStr = currencyFmt.format(spent);
     final limitStr = currencyFmt.format(limit);
 
@@ -77,7 +84,8 @@ class NotificationService {
       uid: targetUid,
       iconCode: Icons.warning_amber_rounded.codePoint,
       title: 'Vượt hạn mức chi tiêu!',
-      description: 'Danh mục "$category" đã chi $spentStr, vượt hạn mức $limitStr.',
+      description:
+          'Danh mục "$category" đã chi $spentStr, vượt hạn mức $limitStr.',
       createdAt: DateTime.now(),
       type: 'budget_exceeded',
     );
@@ -163,4 +171,3 @@ class NotificationService {
         .snapshots();
   }
 }
-

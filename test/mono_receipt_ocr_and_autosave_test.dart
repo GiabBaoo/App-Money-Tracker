@@ -5,11 +5,13 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Mono Receipt OCR & Auto-save Logic Tests', () {
-    test('Receipt JSON parse extracts string amount and Vietnamese date correctly', () {
-      final service = GeminiAiService();
-      
-      // Giả lập raw JSON mà Gemini Vision trả về từ ảnh hóa đơn tại Việt Nam
-      const rawAiResponse = '''
+    test(
+      'Receipt JSON parse extracts string amount and Vietnamese date correctly',
+      () {
+        final service = GeminiAiService();
+
+        // Giả lập raw JSON mà Gemini Vision trả về từ ảnh hóa đơn tại Việt Nam
+        const rawAiResponse = '''
 ```json
 {
   "actionType": "recordTransaction",
@@ -29,23 +31,26 @@ void main() {
 ```
 ''';
 
-      final result = service.parseJsonFromAiTextForTesting(rawAiResponse);
-      expect(result.isSuccess, isTrue);
-      expect(result.transactions.length, equals(1));
-      
-      final tx = result.transactions.first;
-      expect(tx.amount, equals(125000.0));
-      expect(tx.description, contains('WinMart'));
-      expect(tx.category, equals('Ăn uống'));
-      expect(tx.date.day, equals(28));
-      expect(tx.date.month, equals(9));
-      expect(tx.date.year, equals(2026));
-    });
+        final result = service.parseJsonFromAiTextForTesting(rawAiResponse);
+        expect(result.isSuccess, isTrue);
+        expect(result.transactions.length, equals(1));
 
-    test('Receipt JSON parse with currency suffix (e.g. 45,000đ) resolves properly', () {
-      final service = GeminiAiService();
+        final tx = result.transactions.first;
+        expect(tx.amount, equals(125000.0));
+        expect(tx.description, contains('WinMart'));
+        expect(tx.category, equals('Ăn uống'));
+        expect(tx.date.day, equals(28));
+        expect(tx.date.month, equals(9));
+        expect(tx.date.year, equals(2026));
+      },
+    );
 
-      const rawAiResponse = '''
+    test(
+      'Receipt JSON parse with currency suffix (e.g. 45,000đ) resolves properly',
+      () {
+        final service = GeminiAiService();
+
+        const rawAiResponse = '''
 {
   "actionType": "recordTransaction",
   "reply": "Đã ghi nhận Highlands Coffee 45.000đ",
@@ -63,17 +68,20 @@ void main() {
 }
 ''';
 
-      final result = service.parseJsonFromAiTextForTesting(rawAiResponse);
-      expect(result.isSuccess, isTrue);
-      expect(result.transactions.length, equals(1));
-      expect(result.transactions.first.amount, equals(45000.0));
-      expect(result.needsAmount, isFalse);
-    });
+        final result = service.parseJsonFromAiTextForTesting(rawAiResponse);
+        expect(result.isSuccess, isTrue);
+        expect(result.transactions.length, equals(1));
+        expect(result.transactions.first.amount, equals(45000.0));
+        expect(result.needsAmount, isFalse);
+      },
+    );
 
-    test('Receipt JSON with slash dates and dashed dates parses accurately', () {
-      final service = GeminiAiService();
+    test(
+      'Receipt JSON with slash dates and dashed dates parses accurately',
+      () {
+        final service = GeminiAiService();
 
-      const rawResponseDash = '''
+        const rawResponseDash = '''
 {
   "actionType": "recordTransaction",
   "reply": "Hóa đơn Circle K",
@@ -90,12 +98,13 @@ void main() {
 }
 ''';
 
-      final result = service.parseJsonFromAiTextForTesting(rawResponseDash);
-      expect(result.isSuccess, isTrue);
-      final tx = result.transactions.first;
-      expect(tx.date.day, equals(15));
-      expect(tx.date.month, equals(10));
-      expect(tx.date.year, equals(2026));
-    });
+        final result = service.parseJsonFromAiTextForTesting(rawResponseDash);
+        expect(result.isSuccess, isTrue);
+        final tx = result.transactions.first;
+        expect(tx.date.day, equals(15));
+        expect(tx.date.month, equals(10));
+        expect(tx.date.year, equals(2026));
+      },
+    );
   });
 }

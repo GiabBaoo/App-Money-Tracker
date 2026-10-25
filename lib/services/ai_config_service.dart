@@ -21,7 +21,7 @@ class AiConfigService extends ChangeNotifier {
   String _modelName = latestModel;
   int _voiceSilenceDurationMs = 2000; // Mặc định 2.0 giây
   int _responseDelayMs = 700; // Mặc định 700ms (Chuẩn / Cân bằng)
-  
+
   // Cấu hình AI Local (Mặc định: Qwen 2.5 1.5B-Instruct On-Device/Local)
   static const String defaultLocalModel = 'qwen2.5:1.5b';
   static const String defaultLocalEndpoint = 'http://10.0.2.2:11434';
@@ -83,7 +83,8 @@ class AiConfigService extends ChangeNotifier {
       final savedDelay = await _secureStorage.read(key: _responseDelayKey);
       if (savedDelay != null) {
         final parsed = int.tryParse(savedDelay);
-        if (parsed != null && (parsed == 300 || parsed == 700 || parsed == 1500)) {
+        if (parsed != null &&
+            (parsed == 300 || parsed == 700 || parsed == 1500)) {
           _responseDelayMs = parsed;
         } else {
           _responseDelayMs = 700;
@@ -92,28 +93,43 @@ class AiConfigService extends ChangeNotifier {
       }
 
       // Đọc cấu hình Local AI
-      final savedEngineMode = await _secureStorage.read(key: _engineModeStorageKey);
+      final savedEngineMode = await _secureStorage.read(
+        key: _engineModeStorageKey,
+      );
       if (savedEngineMode != null && savedEngineMode.isNotEmpty) {
         _engineMode = savedEngineMode;
       } else {
         _engineMode = 'local_qwen';
-        await _secureStorage.write(key: _engineModeStorageKey, value: 'local_qwen');
+        await _secureStorage.write(
+          key: _engineModeStorageKey,
+          value: 'local_qwen',
+        );
       }
 
-      final savedLocalModel = await _secureStorage.read(key: _localModelStorageKey);
+      final savedLocalModel = await _secureStorage.read(
+        key: _localModelStorageKey,
+      );
       if (savedLocalModel != null && savedLocalModel.isNotEmpty) {
         _localModelName = savedLocalModel;
       } else {
         _localModelName = defaultLocalModel;
-        await _secureStorage.write(key: _localModelStorageKey, value: defaultLocalModel);
+        await _secureStorage.write(
+          key: _localModelStorageKey,
+          value: defaultLocalModel,
+        );
       }
 
-      final savedEndpoint = await _secureStorage.read(key: _localEndpointStorageKey);
+      final savedEndpoint = await _secureStorage.read(
+        key: _localEndpointStorageKey,
+      );
       if (savedEndpoint != null && savedEndpoint.isNotEmpty) {
         _localEndpoint = savedEndpoint.trim();
       } else {
         _localEndpoint = defaultLocalEndpoint;
-        await _secureStorage.write(key: _localEndpointStorageKey, value: defaultLocalEndpoint);
+        await _secureStorage.write(
+          key: _localEndpointStorageKey,
+          value: defaultLocalEndpoint,
+        );
       }
 
       _isInitialized = true;
@@ -133,14 +149,20 @@ class AiConfigService extends ChangeNotifier {
   /// Cập nhật tên mô hình Local (VD: 'qwen2.5:1.5b' hoặc 'qwen2.5:0.5b')
   Future<void> setLocalModelName(String model) async {
     _localModelName = model;
-    await _secureStorage.write(key: _localModelStorageKey, value: _localModelName);
+    await _secureStorage.write(
+      key: _localModelStorageKey,
+      value: _localModelName,
+    );
     notifyListeners();
   }
 
   /// Cập nhật endpoint Local AI (VD: 'http://10.0.2.2:11434' hoặc 'http://127.0.0.1:11434')
   Future<void> setLocalEndpoint(String endpoint) async {
     _localEndpoint = endpoint.trim();
-    await _secureStorage.write(key: _localEndpointStorageKey, value: _localEndpoint);
+    await _secureStorage.write(
+      key: _localEndpointStorageKey,
+      value: _localEndpoint,
+    );
     notifyListeners();
   }
 
@@ -155,7 +177,10 @@ class AiConfigService extends ChangeNotifier {
   Future<void> setVoiceSilenceDurationMs(int ms) async {
     final validMs = ms < 1500 ? 2000 : ms;
     _voiceSilenceDurationMs = validMs;
-    await _secureStorage.write(key: _silenceDurationKey, value: validMs.toString());
+    await _secureStorage.write(
+      key: _silenceDurationKey,
+      value: validMs.toString(),
+    );
     notifyListeners();
   }
 

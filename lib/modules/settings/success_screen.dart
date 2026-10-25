@@ -20,7 +20,7 @@ class SuccessScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
-    
+
     return Scaffold(
       backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
@@ -66,7 +66,9 @@ class SuccessScreen extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -76,7 +78,9 @@ class SuccessScreen extends StatelessWidget {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: context.income.withValues(alpha: isDark ? 0.2 : 0.12),
+                        color: context.income.withValues(
+                          alpha: isDark ? 0.2 : 0.12,
+                        ),
                         shape: BoxShape.circle,
                       ),
                       child: Center(

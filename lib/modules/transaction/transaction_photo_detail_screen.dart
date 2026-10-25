@@ -15,17 +15,17 @@ import 'edit_transaction_screen.dart';
 class TransactionPhotoDetailScreen extends StatefulWidget {
   final TransactionModel transaction;
 
-  const TransactionPhotoDetailScreen({
-    super.key,
-    required this.transaction,
-  });
+  const TransactionPhotoDetailScreen({super.key, required this.transaction});
 
   @override
-  State<TransactionPhotoDetailScreen> createState() => _TransactionPhotoDetailScreenState();
+  State<TransactionPhotoDetailScreen> createState() =>
+      _TransactionPhotoDetailScreenState();
 }
 
-class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScreen> {
-  final TransformationController _transformController = TransformationController();
+class _TransactionPhotoDetailScreenState
+    extends State<TransactionPhotoDetailScreen> {
+  final TransformationController _transformController =
+      TransformationController();
   int _quarterTurns = 0;
   bool _isZoomed = false;
 
@@ -84,7 +84,9 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
     final heroTag = 'tx_photo_${widget.transaction.id}';
     final isIncome = widget.transaction.isIncome;
     final isVi = LanguageScope.of(context).isVietnamese;
-    final categoryColor = CategoryUtils.getVibrantColor(widget.transaction.category);
+    final categoryColor = CategoryUtils.getVibrantColor(
+      widget.transaction.category,
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFF090D0D),
@@ -117,11 +119,13 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                                 child: Center(
                                   child: RotatedBox(
                                     quarterTurns: _quarterTurns,
-                                    child: ReceiptStorageService.buildReceiptImage(
-                                      photoLocalPath: widget.transaction.photoLocalPath,
-                                      photoUrl: widget.transaction.photoUrl,
-                                      fit: BoxFit.contain,
-                                    ),
+                                    child:
+                                        ReceiptStorageService.buildReceiptImage(
+                                          photoLocalPath:
+                                              widget.transaction.photoLocalPath,
+                                          photoUrl: widget.transaction.photoUrl,
+                                          fit: BoxFit.contain,
+                                        ),
                                   ),
                                 ),
                               ),
@@ -136,20 +140,35 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.08),
                                   borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.12),
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.touch_app_rounded, color: Colors.white60, size: 14),
+                                    const Icon(
+                                      Icons.touch_app_rounded,
+                                      color: Colors.white60,
+                                      size: 14,
+                                    ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      isVi ? 'Chạm 2 lần để phóng to • Kéo để thu phóng' : 'Double tap to zoom • Pinch to scale',
-                                      style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
+                                      isVi
+                                          ? 'Chạm 2 lần để phóng to • Kéo để thu phóng'
+                                          : 'Double tap to zoom • Pinch to scale',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -163,7 +182,9 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                           padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
                           child: _TransactionInfoGlassCard(
                             transaction: widget.transaction,
-                            createdAtText: _formatCreatedAt(widget.transaction.createdAt),
+                            createdAtText: _formatCreatedAt(
+                              widget.transaction.createdAt,
+                            ),
                             isIncome: isIncome,
                             categoryColor: categoryColor,
                           ),
@@ -215,7 +236,11 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white24, width: 0.8),
                         ),
-                        child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                        child: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                       ),
                     ),
 
@@ -243,9 +268,16 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.14),
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white24, width: 0.8),
+                              border: Border.all(
+                                color: Colors.white24,
+                                width: 0.8,
+                              ),
                             ),
-                            child: const Icon(Icons.rotate_right_rounded, color: Colors.white, size: 20),
+                            child: const Icon(
+                              Icons.rotate_right_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                         ),
                         if (_quarterTurns != 0 || _isZoomed) ...[
@@ -257,11 +289,20 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                               width: 42,
                               height: 42,
                               decoration: BoxDecoration(
-                                color: context.brandColor.withValues(alpha: 0.3),
+                                color: context.brandColor.withValues(
+                                  alpha: 0.3,
+                                ),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: context.colors.primary, width: 0.8),
+                                border: Border.all(
+                                  color: context.colors.primary,
+                                  width: 0.8,
+                                ),
                               ),
-                              child: Icon(Icons.restart_alt_rounded, color: context.colors.primary, size: 20),
+                              child: Icon(
+                                Icons.restart_alt_rounded,
+                                color: context.colors.primary,
+                                size: 20,
+                              ),
                             ),
                           ),
                         ],
@@ -278,11 +319,17 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
               left: 20,
               right: 20,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF131D1C).withValues(alpha: 0.95),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.2),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    width: 1.2,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.6),
@@ -301,7 +348,9 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                           Navigator.push(
                             context,
                             PageTransitions.slideUp(
-                              EditTransactionScreen(transaction: widget.transaction),
+                              EditTransactionScreen(
+                                transaction: widget.transaction,
+                              ),
                             ),
                           );
                         },
@@ -315,7 +364,11 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.edit_note_rounded, color: Colors.white70, size: 20),
+                              const Icon(
+                                Icons.edit_note_rounded,
+                                color: Colors.white70,
+                                size: 20,
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 context.tr('edit'),
@@ -340,7 +393,9 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                           Navigator.push(
                             context,
                             PageTransitions.slideRight(
-                              TransactionDetailScreen(transaction: widget.transaction),
+                              TransactionDetailScreen(
+                                transaction: widget.transaction,
+                              ),
                             ),
                           );
                         },
@@ -348,14 +403,19 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [context.colors.primary, context.brandColor],
+                              colors: [
+                                context.colors.primary,
+                                context.brandColor,
+                              ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: context.colors.primary.withValues(alpha: 0.4),
+                                color: context.colors.primary.withValues(
+                                  alpha: 0.4,
+                                ),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -364,7 +424,11 @@ class _TransactionPhotoDetailScreenState extends State<TransactionPhotoDetailScr
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.receipt_rounded, color: Colors.white, size: 18),
+                              const Icon(
+                                Icons.receipt_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 isVi ? 'Chi tiết GD' : 'Tx Details',
@@ -406,13 +470,18 @@ class _TransactionInfoGlassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
-    final amountText = CurrencyUtils.formatAmountWithSign(transaction.amount, isIncome);
+    final amountText = CurrencyUtils.formatAmountWithSign(
+      transaction.amount,
+      isIncome,
+    );
     final statusColor = isIncome ? context.income : context.expense;
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: context.isDarkMode ? context.cardBgColor : const Color(0xFF131D1C),
+        color: context.isDarkMode
+            ? context.cardBgColor
+            : const Color(0xFF131D1C),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
         boxShadow: [
@@ -434,29 +503,36 @@ class _TransactionInfoGlassCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   amountText,
-                  style: (context.textTheme.headlineMedium ?? const TextStyle()).copyWith(
-                    color: statusColor,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.5,
-                  ),
+                  style: (context.textTheme.headlineMedium ?? const TextStyle())
+                      .copyWith(
+                        color: statusColor,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                 ),
                 child: Text(
-                  isIncome ? context.tr('income').toUpperCase() : context.tr('expense').toUpperCase(),
-                  style: (context.textTheme.labelSmall ?? const TextStyle()).copyWith(
-                    color: statusColor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
+                  isIncome
+                      ? context.tr('income').toUpperCase()
+                      : context.tr('expense').toUpperCase(),
+                  style: (context.textTheme.labelSmall ?? const TextStyle())
+                      .copyWith(
+                        color: statusColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
                 ),
               ),
             ],
@@ -482,7 +558,9 @@ class _TransactionInfoGlassCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      transaction.category.isEmpty ? (isVi ? 'Chưa có danh mục' : 'Uncategorized') : context.trCat(transaction.category),
+                      transaction.category.isEmpty
+                          ? (isVi ? 'Chưa có danh mục' : 'Uncategorized')
+                          : context.trCat(transaction.category),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -514,17 +592,28 @@ class _TransactionInfoGlassCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.event_outlined, color: Colors.white54, size: 16),
+                  const Icon(
+                    Icons.event_outlined,
+                    color: Colors.white54,
+                    size: 16,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     isVi ? 'Ngày giao dịch' : 'Transaction Date',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
               Text(
                 '${CurrencyUtils.formatDate(transaction.date)} • ${transaction.time}',
-                style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),

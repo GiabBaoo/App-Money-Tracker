@@ -42,8 +42,12 @@ class SpendingReportResult {
   });
 
   double get netBalance => totalIncome - totalExpense;
-  double get savingsRate => totalIncome > 0 ? (((totalIncome - totalExpense) / totalIncome) * 100).clamp(0.0, 100.0) : 0.0;
-  double get expenseRatio => totalIncome > 0 ? (totalExpense / totalIncome).clamp(0.0, 1.0) * 100 : (totalExpense > 0 ? 100.0 : 0.0);
+  double get savingsRate => totalIncome > 0
+      ? (((totalIncome - totalExpense) / totalIncome) * 100).clamp(0.0, 100.0)
+      : 0.0;
+  double get expenseRatio => totalIncome > 0
+      ? (totalExpense / totalIncome).clamp(0.0, 1.0) * 100
+      : (totalExpense > 0 ? 100.0 : 0.0);
   bool get isDeficit => totalExpense > totalIncome;
 }
 
@@ -243,7 +247,9 @@ class AiActionHandler {
   Future<bool> changeLanguage(String langStr) async {
     final languageService = LanguageService();
     final lower = langStr.toLowerCase().trim();
-    if (lower.contains('en') || lower.contains('tiếng anh') || lower.contains('english')) {
+    if (lower.contains('en') ||
+        lower.contains('tiếng anh') ||
+        lower.contains('english')) {
       await languageService.setLanguage('en');
       return true;
     } else {
@@ -264,21 +270,33 @@ class AiActionHandler {
     final p = period.toLowerCase();
     if (p.contains('hôm nay') || p.contains('today')) {
       periodText = 'Hôm nay (${now.day}/${now.month})';
-      filtered = allTxs.where((tx) =>
-          tx.date.year == now.year &&
-          tx.date.month == now.month &&
-          tx.date.day == now.day).toList();
+      filtered = allTxs
+          .where(
+            (tx) =>
+                tx.date.year == now.year &&
+                tx.date.month == now.month &&
+                tx.date.day == now.day,
+          )
+          .toList();
     } else if (p.contains('hôm qua') || p.contains('yesterday')) {
       final yesterday = now.subtract(const Duration(days: 1));
       periodText = 'Hôm qua (${yesterday.day}/${yesterday.month})';
-      filtered = allTxs.where((tx) =>
-          tx.date.year == yesterday.year &&
-          tx.date.month == yesterday.month &&
-          tx.date.day == yesterday.day).toList();
+      filtered = allTxs
+          .where(
+            (tx) =>
+                tx.date.year == yesterday.year &&
+                tx.date.month == yesterday.month &&
+                tx.date.day == yesterday.day,
+          )
+          .toList();
     } else if (p.contains('tuần') || p.contains('week')) {
       periodText = 'Tuần này';
       final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-      final cleanStart = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+      final cleanStart = DateTime(
+        startOfWeek.year,
+        startOfWeek.month,
+        startOfWeek.day,
+      );
       filtered = allTxs.where((tx) => !tx.date.isBefore(cleanStart)).toList();
     } else if (p.contains('năm') || p.contains('year')) {
       periodText = 'Năm ${now.year}';
@@ -286,8 +304,9 @@ class AiActionHandler {
     } else {
       // Mặc định là tháng này
       periodText = 'Tháng ${now.month}/${now.year}';
-      filtered = allTxs.where((tx) =>
-          tx.date.year == now.year && tx.date.month == now.month).toList();
+      filtered = allTxs
+          .where((tx) => tx.date.year == now.year && tx.date.month == now.month)
+          .toList();
     }
 
     double expense = 0;
@@ -299,7 +318,8 @@ class AiActionHandler {
         income += tx.amount;
       } else {
         expense += tx.amount;
-        categorySums[tx.category] = (categorySums[tx.category] ?? 0) + tx.amount;
+        categorySums[tx.category] =
+            (categorySums[tx.category] ?? 0) + tx.amount;
       }
     }
 
@@ -333,24 +353,35 @@ class AiActionHandler {
   /// Trợ lý Mono sẽ từ chối tự động thực hiện và hướng dẫn người dùng tự thao tác
   String? checkSecurityRestriction(String text) {
     final lower = text.toLowerCase();
-    
+
     // Đổi mật khẩu
-    if (lower.contains('đổi mật khẩu') || lower.contains('reset mật khẩu') || lower.contains('thay mật khẩu') || lower.contains('change password')) {
+    if (lower.contains('đổi mật khẩu') ||
+        lower.contains('reset mật khẩu') ||
+        lower.contains('thay mật khẩu') ||
+        lower.contains('change password')) {
       return 'Vì lý do an toàn và bảo mật tài khoản, Trợ lý Mono không thể trực tiếp thay đổi mật khẩu của bạn. Bạn vui lòng bấm vào nút bên dưới để mở màn hình **Đổi mật khẩu** và xác thực an toàn.';
     }
 
     // Xóa tài khoản
-    if (lower.contains('xóa tài khoản') || lower.contains('xóa nick') || lower.contains('hủy tài khoản') || lower.contains('delete account')) {
+    if (lower.contains('xóa tài khoản') ||
+        lower.contains('xóa nick') ||
+        lower.contains('hủy tài khoản') ||
+        lower.contains('delete account')) {
       return 'Yêu cầu xóa tài khoản ảnh hưởng trực tiếp tới toàn bộ dữ liệu tài chính của bạn. Trợ lý Mono không được phép tự ý thực hiện thao tác này. Vui lòng vào Cài đặt -> Tài khoản để xác nhận thủ công.';
     }
 
     // Sinh trắc học
-    if (lower.contains('tắt vân tay') || lower.contains('bật vân tay') || lower.contains('face id') || lower.contains('sinh trắc học')) {
+    if (lower.contains('tắt vân tay') ||
+        lower.contains('bật vân tay') ||
+        lower.contains('face id') ||
+        lower.contains('sinh trắc học')) {
       return 'Cài đặt sinh trắc học (Vân tay / FaceID) yêu cầu quyền xác thực phần cứng trực tiếp từ bạn. Bạn có thể cấu hình nhanh trong mục **Đăng nhập sinh trắc học**.';
     }
 
     // Chuyển tiền / Giao dịch ngân hàng thực tế ra bên ngoài
-    if (lower.contains('chuyển tiền cho') || lower.contains('bắn tiền') || lower.contains('rút tiền về ngân hàng')) {
+    if (lower.contains('chuyển tiền cho') ||
+        lower.contains('bắn tiền') ||
+        lower.contains('rút tiền về ngân hàng')) {
       return 'Ứng dụng Mono là sổ theo dõi quản lý thu chi cá nhân, không có chức năng chuyển tiền ngân hàng thực tế. Trợ lý Mono có thể giúp bạn **ghi nhận lại giao dịch thu/chi** này vào sổ sách!';
     }
 
@@ -358,12 +389,15 @@ class AiActionHandler {
   }
 
   /// Đề xuất phân bổ tài chính thông minh (quy tắc 50/30/20, gợi ý ngân sách & mục tiêu)
-  Future<FinancialAdviceResult> generateFinancialAdvice({String? specificQuery}) async {
+  Future<FinancialAdviceResult> generateFinancialAdvice({
+    String? specificQuery,
+  }) async {
     final snapshot = await AiFinancialContextService().getFinancialSnapshot();
     final balance = snapshot.totalBalance > 0 ? snapshot.totalBalance : 0.0;
 
     final lowerQuery = (specificQuery ?? '').toLowerCase();
-    final isSalaryQuery = lowerQuery.contains('lương') ||
+    final isSalaryQuery =
+        lowerQuery.contains('lương') ||
         lowerQuery.contains('nhận lương') ||
         lowerQuery.contains('chia tiền') ||
         lowerQuery.contains('phân bổ') ||
@@ -373,14 +407,23 @@ class AiActionHandler {
     // 1. Trích xuất mức tiền lương nếu có trong câu hỏi (VD: "nhận lương 15tr", "lương 10.000.000")
     double targetAmount = 0.0;
     if (specificQuery != null) {
-      final thousandsMatch = RegExp(r'(\d{1,3}(?:\.\d{3})+)\s*(?:đ|đồng|vnd)?', caseSensitive: false).firstMatch(specificQuery);
+      final thousandsMatch = RegExp(
+        r'(\d{1,3}(?:\.\d{3})+)\s*(?:đ|đồng|vnd)?',
+        caseSensitive: false,
+      ).firstMatch(specificQuery);
       if (thousandsMatch != null) {
-        targetAmount = double.tryParse(thousandsMatch.group(1)!.replaceAll('.', '')) ?? 0.0;
+        targetAmount =
+            double.tryParse(thousandsMatch.group(1)!.replaceAll('.', '')) ??
+            0.0;
       }
       if (targetAmount <= 0) {
-        final scaleMatch = RegExp(r'(\d+(?:[\.,]\d+)?)\s*(tr|triệu|củ|k|nghìn|ngàn)', caseSensitive: false).firstMatch(specificQuery);
+        final scaleMatch = RegExp(
+          r'(\d+(?:[\.,]\d+)?)\s*(tr|triệu|củ|k|nghìn|ngàn)',
+          caseSensitive: false,
+        ).firstMatch(specificQuery);
         if (scaleMatch != null) {
-          final val = double.tryParse(scaleMatch.group(1)!.replaceAll(',', '.')) ?? 0.0;
+          final val =
+              double.tryParse(scaleMatch.group(1)!.replaceAll(',', '.')) ?? 0.0;
           final unit = scaleMatch.group(2)!.toLowerCase();
           if (unit == 'tr' || unit == 'triệu' || unit == 'củ') {
             targetAmount = val * 1000000;
@@ -394,9 +437,14 @@ class AiActionHandler {
     // Nếu không nói số tiền cụ thể trong câu lệnh, kiểm tra giao dịch tiền lương gần nhất trong sổ
     if (targetAmount <= 0 && isSalaryQuery) {
       final allTxs = await TransactionRepository().getAllTransactions();
-      final salaryTxs = allTxs.where((tx) =>
-          tx.type == 'income' &&
-          (tx.category.toLowerCase().contains('lương') || tx.description.toLowerCase().contains('lương'))).toList();
+      final salaryTxs = allTxs
+          .where(
+            (tx) =>
+                tx.type == 'income' &&
+                (tx.category.toLowerCase().contains('lương') ||
+                    tx.description.toLowerCase().contains('lương')),
+          )
+          .toList();
       if (salaryTxs.isNotEmpty) {
         salaryTxs.sort((a, b) => b.date.compareTo(a.date));
         targetAmount = salaryTxs.first.amount;
@@ -404,7 +452,9 @@ class AiActionHandler {
     }
 
     if (targetAmount <= 0) {
-      targetAmount = balance > 0 ? balance : 10000000.0; // Chuẩn tham chiếu 10tr
+      targetAmount = balance > 0
+          ? balance
+          : 10000000.0; // Chuẩn tham chiếu 10tr
     }
 
     final needs50 = targetAmount * 0.50;
@@ -416,45 +466,89 @@ class AiActionHandler {
 
     if (snapshot.topCategories.isNotEmpty) {
       final topEntry = snapshot.topCategories.entries.first;
-      tips.add('Danh mục chi nhiều nhất là **${topEntry.key}** (${CurrencyUtils.formatCurrency(topEntry.value)}). Bạn có thể đặt hạn mức chi tiêu để cắt giảm 10-15%.');
+      tips.add(
+        'Danh mục chi nhiều nhất là **${topEntry.key}** (${CurrencyUtils.formatCurrency(topEntry.value)}). Bạn có thể đặt hạn mức chi tiêu để cắt giảm 10-15%.',
+      );
     }
 
     if (snapshot.goals.isNotEmpty) {
       final firstGoal = snapshot.goals.first;
-      tips.add('Trích 20% (${CurrencyUtils.formatCurrency(savings20)}) nạp ngay vào mục tiêu "**${firstGoal.title}**" (đã đạt ${CurrencyUtils.formatCurrency(firstGoal.currentAmount)} / ${CurrencyUtils.formatCurrency(firstGoal.targetAmount)}) để sớm về đích!');
+      tips.add(
+        'Trích 20% (${CurrencyUtils.formatCurrency(savings20)}) nạp ngay vào mục tiêu "**${firstGoal.title}**" (đã đạt ${CurrencyUtils.formatCurrency(firstGoal.currentAmount)} / ${CurrencyUtils.formatCurrency(firstGoal.targetAmount)}) để sớm về đích!',
+      );
     } else {
-      tips.add('Bạn chưa có mục tiêu tích lũy. Hãy trích 20% (${CurrencyUtils.formatCurrency(savings20)}) tạo ngay Quỹ khẩn cấp (bằng 3-6 tháng chi tiêu cơ bản).');
+      tips.add(
+        'Bạn chưa có mục tiêu tích lũy. Hãy trích 20% (${CurrencyUtils.formatCurrency(savings20)}) tạo ngay Quỹ khẩn cấp (bằng 3-6 tháng chi tiêu cơ bản).',
+      );
     }
 
-    tips.add('Áp dụng quy tắc "Trả cho mình trước (Pay yourself first)": Trích ngay 20% tiết kiệm vào ngày nhận lương, tuyệt đối không đợi cuối tháng mới gom phần thừa.');
-    tips.add('Áp dụng nguyên tắc "Chờ 48 giờ" trước các quyết định mua sắm ngẫu hứng trên 500k.');
+    tips.add(
+      'Áp dụng quy tắc "Trả cho mình trước (Pay yourself first)": Trích ngay 20% tiết kiệm vào ngày nhận lương, tuyệt đối không đợi cuối tháng mới gom phần thừa.',
+    );
+    tips.add(
+      'Áp dụng nguyên tắc "Chờ 48 giờ" trước các quyết định mua sắm ngẫu hứng trên 500k.',
+    );
 
     final summary = StringBuffer();
     if (isSalaryQuery) {
-      summary.writeln('💡 **Kế hoạch phân bổ tiền lương tối ưu theo quy tắc 50/30/20:**\n');
-      summary.writeln('Với mức thu nhập **${CurrencyUtils.formatCurrency(targetAmount)}**, Mono đề xuất bạn chia thành 3 phần rõ ràng ngay khi nhận lương:\n');
-      summary.writeln('1️⃣ **50% Thiết yếu — ${CurrencyUtils.formatCurrency(needs50)}**');
-      summary.writeln('• Chi cho: Tiền trọ/nhà, hóa đơn điện nước, ăn uống cơ bản, xăng xe.');
-      summary.writeln('• 🎯 *Mẹo*: Đặt hạn mức chi tiêu hàng tháng cho từng danh mục này để không vượt trần.\n');
-      summary.writeln('2️⃣ **30% Linh hoạt — ${CurrencyUtils.formatCurrency(wants30)}**');
-      summary.writeln('• Chi cho: Cà phê, ăn ngoài cùng bạn bè, mua sắm giải trí, xem phim.');
-      summary.writeln('• 🎯 *Mẹo*: Dùng ví riêng (như MoMo hoặc Tiền mặt) cho khoản này, hết hạn mức thì dừng chi.\n');
-      summary.writeln('3️⃣ **20% Tiết kiệm & Tích lũy — ${CurrencyUtils.formatCurrency(savings20)}** (Ưu tiên số 1 ⚡)');
-      summary.writeln('• **Trích ngay lập tức khi vừa nhận lương**, chuyển thẳng vào quỹ dự phòng hoặc mục tiêu tiết kiệm.');
+      summary.writeln(
+        '💡 **Kế hoạch phân bổ tiền lương tối ưu theo quy tắc 50/30/20:**\n',
+      );
+      summary.writeln(
+        'Với mức thu nhập **${CurrencyUtils.formatCurrency(targetAmount)}**, Mono đề xuất bạn chia thành 3 phần rõ ràng ngay khi nhận lương:\n',
+      );
+      summary.writeln(
+        '1️⃣ **50% Thiết yếu — ${CurrencyUtils.formatCurrency(needs50)}**',
+      );
+      summary.writeln(
+        '• Chi cho: Tiền trọ/nhà, hóa đơn điện nước, ăn uống cơ bản, xăng xe.',
+      );
+      summary.writeln(
+        '• 🎯 *Mẹo*: Đặt hạn mức chi tiêu hàng tháng cho từng danh mục này để không vượt trần.\n',
+      );
+      summary.writeln(
+        '2️⃣ **30% Linh hoạt — ${CurrencyUtils.formatCurrency(wants30)}**',
+      );
+      summary.writeln(
+        '• Chi cho: Cà phê, ăn ngoài cùng bạn bè, mua sắm giải trí, xem phim.',
+      );
+      summary.writeln(
+        '• 🎯 *Mẹo*: Dùng ví riêng (như MoMo hoặc Tiền mặt) cho khoản này, hết hạn mức thì dừng chi.\n',
+      );
+      summary.writeln(
+        '3️⃣ **20% Tiết kiệm & Tích lũy — ${CurrencyUtils.formatCurrency(savings20)}** (Ưu tiên số 1 ⚡)',
+      );
+      summary.writeln(
+        '• **Trích ngay lập tức khi vừa nhận lương**, chuyển thẳng vào quỹ dự phòng hoặc mục tiêu tiết kiệm.',
+      );
     } else {
-      summary.writeln('💡 **Đề xuất phân bổ tài chính theo quy tắc 50/30/20:**\n');
+      summary.writeln(
+        '💡 **Đề xuất phân bổ tài chính theo quy tắc 50/30/20:**\n',
+      );
       if (balance > 0) {
-        summary.writeln('Với số dư khả dụng **${CurrencyUtils.formatCurrency(balance)}**, Mono đề xuất bạn phân bổ như sau:');
-        summary.writeln('• **50% Thiết yếu**: ${CurrencyUtils.formatCurrency(needs50)} (Tiền nhà, ăn uống, hóa đơn sinh hoạt)');
-        summary.writeln('• **30% Linh hoạt**: ${CurrencyUtils.formatCurrency(wants30)} (Giải trí, mua sắm, giao lưu bạn bè)');
-        summary.writeln('• **20% Tiết kiệm & Dự phòng**: ${CurrencyUtils.formatCurrency(savings20)} (Mục tiêu tiết kiệm, quỹ khẩn cấp)');
+        summary.writeln(
+          'Với số dư khả dụng **${CurrencyUtils.formatCurrency(balance)}**, Mono đề xuất bạn phân bổ như sau:',
+        );
+        summary.writeln(
+          '• **50% Thiết yếu**: ${CurrencyUtils.formatCurrency(needs50)} (Tiền nhà, ăn uống, hóa đơn sinh hoạt)',
+        );
+        summary.writeln(
+          '• **30% Linh hoạt**: ${CurrencyUtils.formatCurrency(wants30)} (Giải trí, mua sắm, giao lưu bạn bè)',
+        );
+        summary.writeln(
+          '• **20% Tiết kiệm & Dự phòng**: ${CurrencyUtils.formatCurrency(savings20)} (Mục tiêu tiết kiệm, quỹ khẩn cấp)',
+        );
       } else {
-        summary.writeln('Hiện tại số dư của bạn chưa có thặng dư lớn. Hãy ưu tiên ghi chép đầy đủ các khoản chi nhỏ lẻ và tập trung cắt giảm các chi phí không cần thiết!');
+        summary.writeln(
+          'Hiện tại số dư của bạn chưa có thặng dư lớn. Hãy ưu tiên ghi chép đầy đủ các khoản chi nhỏ lẻ và tập trung cắt giảm các chi phí không cần thiết!',
+        );
       }
     }
 
     return FinancialAdviceResult(
-      title: isSalaryQuery ? 'Kế hoạch phân bổ tiền lương (50/30/20)' : 'Đề xuất phân bổ & Mẹo tiết kiệm',
+      title: isSalaryQuery
+          ? 'Kế hoạch phân bổ tiền lương (50/30/20)'
+          : 'Đề xuất phân bổ & Mẹo tiết kiệm',
       summaryText: summary.toString().trim(),
       totalBalance: targetAmount,
       needs50: needs50,

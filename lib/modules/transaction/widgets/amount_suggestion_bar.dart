@@ -28,7 +28,14 @@ class AmountSuggestionBar extends StatelessWidget {
   List<double> _calculateSuggestions() {
     final cleanDigits = rawInput.replaceAll(RegExp(r'[^0-9]'), '');
     if (cleanDigits.isEmpty) {
-      final baseDefaults = [20000.0, 50000.0, 100000.0, 200000.0, 500000.0, 1000000.0];
+      final baseDefaults = [
+        20000.0,
+        50000.0,
+        100000.0,
+        200000.0,
+        500000.0,
+        1000000.0,
+      ];
       if (frequentAmounts != null && frequentAmounts!.isNotEmpty) {
         final merged = <double>{...frequentAmounts!, ...baseDefaults};
         return merged.toList();
@@ -90,11 +97,12 @@ class AmountSuggestionBar extends StatelessWidget {
                 isDefault
                     ? context.tr('quick_suggestions_label')
                     : context.tr('matching_suggestions_label'),
-                style: (context.textTheme.labelSmall ?? const TextStyle()).copyWith(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                  color: context.textSecondaryColor,
-                ),
+                style: (context.textTheme.labelSmall ?? const TextStyle())
+                    .copyWith(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: context.textSecondaryColor,
+                    ),
               ),
             ],
           ),
@@ -110,7 +118,8 @@ class AmountSuggestionBar extends StatelessWidget {
             itemBuilder: (context, index) {
               final amount = suggestions[index];
               final label = CurrencyUtils.formatCurrency(amount);
-              final isFrequent = isDefault && (frequentAmounts?.contains(amount) ?? false);
+              final isFrequent =
+                  isDefault && (frequentAmounts?.contains(amount) ?? false);
 
               return AnimatedScaleButton(
                 scaleDown: 0.92,
@@ -119,18 +128,23 @@ class AmountSuggestionBar extends StatelessWidget {
                   onSelectAmount(amount);
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: isFrequent
                         ? activeColor.withValues(alpha: isDark ? 0.22 : 0.12)
                         : (isDark
-                            ? context.colors.surfaceContainerHighest
-                            : context.inputBgColor),
+                              ? context.colors.surfaceContainerHighest
+                              : context.inputBgColor),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isFrequent
                           ? activeColor.withValues(alpha: isDark ? 0.6 : 0.45)
-                          : context.colors.outline.withValues(alpha: isDark ? 0.35 : 0.25),
+                          : context.colors.outline.withValues(
+                              alpha: isDark ? 0.35 : 0.25,
+                            ),
                       width: isFrequent ? 1.3 : 1.0,
                     ),
                   ),
@@ -147,14 +161,20 @@ class AmountSuggestionBar extends StatelessWidget {
                       ],
                       Text(
                         label,
-                        style: (context.textTheme.labelMedium ?? const TextStyle()).copyWith(
-                          fontSize: 12.5,
-                          fontWeight: isFrequent ? FontWeight.w800 : FontWeight.w700,
-                          color: isFrequent
-                              ? (isDark ? context.colors.onSurface : activeColor)
-                              : context.textPrimaryColor,
-                          letterSpacing: -0.2,
-                        ),
+                        style:
+                            (context.textTheme.labelMedium ?? const TextStyle())
+                                .copyWith(
+                                  fontSize: 12.5,
+                                  fontWeight: isFrequent
+                                      ? FontWeight.w800
+                                      : FontWeight.w700,
+                                  color: isFrequent
+                                      ? (isDark
+                                            ? context.colors.onSurface
+                                            : activeColor)
+                                      : context.textPrimaryColor,
+                                  letterSpacing: -0.2,
+                                ),
                       ),
                     ],
                   ),

@@ -35,10 +35,14 @@ class MidnightSyncService {
     final nextMidnight = DateTime(now.year, now.month, now.day + 1, 0, 0, 5);
     final duration = nextMidnight.difference(now);
 
-    debugPrint('MidnightSyncService: Next midnight sync scheduled in ${duration.inHours}h ${duration.inMinutes % 60}m (at $nextMidnight)');
+    debugPrint(
+      'MidnightSyncService: Next midnight sync scheduled in ${duration.inHours}h ${duration.inMinutes % 60}m (at $nextMidnight)',
+    );
 
     _midnightTimer = Timer(duration, () async {
-      debugPrint('MidnightSyncService: 00:00 Midnight reached! Triggering auto-sync...');
+      debugPrint(
+        'MidnightSyncService: 00:00 Midnight reached! Triggering auto-sync...',
+      );
       await triggerMidnightSync(isCatchUp: false);
       // Tiếp tục lập lịch cho nửa đêm tiếp theo
       _scheduleNextMidnightTimer();
@@ -51,30 +55,39 @@ class MidnightSyncService {
 
     final uid = AuthService().currentUid;
     if (uid == null) {
-      debugPrint('MidnightSyncService: No logged in user, skipping midnight sync.');
+      debugPrint(
+        'MidnightSyncService: No logged in user, skipping midnight sync.',
+      );
       return false;
     }
 
     final isOnline = ConnectivityService().isOnline;
     if (!isOnline) {
-      debugPrint('MidnightSyncService: Device is offline at midnight. Will sync when network is restored.');
+      debugPrint(
+        'MidnightSyncService: Device is offline at midnight. Will sync when network is restored.',
+      );
       return false;
     }
 
     _isSyncing = true;
     try {
-      debugPrint('MidnightSyncService: Starting midnight full backup to Firebase...');
+      debugPrint(
+        'MidnightSyncService: Starting midnight full backup to Firebase...',
+      );
       final success = await SyncService().syncAll();
 
       if (success) {
         final now = DateTime.now();
-        final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-        
+        final todayStr =
+            '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_prefLastMidnightSyncKey, todayStr);
 
         // Ghi log hoàn thành âm thầm trong background (không bắn push notification quấy rầy)
-        debugPrint('MidnightSyncService: Midnight sync succeeded and recorded for $todayStr');
+        debugPrint(
+          'MidnightSyncService: Midnight sync succeeded and recorded for $todayStr',
+        );
         return true;
       }
       return false;
@@ -96,11 +109,14 @@ class MidnightSyncService {
       final lastSyncDate = prefs.getString(_prefLastMidnightSyncKey);
 
       final now = DateTime.now();
-      final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final todayStr =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
       // Nếu ngày lưu lần cuối khác hôm nay, tức là chưa thực hiện sao lưu của ngày mới
       if (lastSyncDate != todayStr) {
-        debugPrint('MidnightSyncService: Catch-up sync triggered (Last: $lastSyncDate, Today: $todayStr)');
+        debugPrint(
+          'MidnightSyncService: Catch-up sync triggered (Last: $lastSyncDate, Today: $todayStr)',
+        );
         await triggerMidnightSync(isCatchUp: true);
       }
     } catch (e) {

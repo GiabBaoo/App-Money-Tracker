@@ -77,12 +77,16 @@ void main() {
       final darkBg = Color(0xFF0D4D4D);
       final primaryText = Color(0xFFE0E0E0);
       final secondaryText = Color(0xFFB0B0B0);
-      
+
       // Check primary text contrast
       final primaryRatio = calculateContrastRatio(primaryText, darkBg);
-      expect(primaryRatio, greaterThan(4.5), reason: 'Primary text should meet WCAG AA (4.5:1)');
+      expect(
+        primaryRatio,
+        greaterThan(4.5),
+        reason: 'Primary text should meet WCAG AA (4.5:1)',
+      );
       expect(meetsWCAGAA(primaryText, darkBg), isTrue);
-      
+
       // Check secondary text contrast
       final secondaryRatio = calculateContrastRatio(secondaryText, darkBg);
       // Secondary text might not meet 4.5:1 but should be visible
@@ -91,14 +95,18 @@ void main() {
         expect(meetsWCAGAA(secondaryText, darkBg), isTrue);
       } else {
         // If secondary text doesn't meet 4.5:1, it should at least meet 3:1 for large text
-        expect(secondaryRatio, greaterThan(3.0), reason: 'Secondary text should at least meet 3:1');
+        expect(
+          secondaryRatio,
+          greaterThan(3.0),
+          reason: 'Secondary text should at least meet 3:1',
+        );
       }
     });
 
     test('validates dark mode AppBar colors meet WCAG AA', () {
       final darkAppBar = Color(0xFF0A3A3A);
       final whiteText = Colors.white;
-      
+
       expect(meetsWCAGAA(whiteText, darkAppBar), isTrue);
     });
   });

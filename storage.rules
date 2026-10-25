@@ -2,34 +2,71 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Helper functions
-    function isAuthenticated() {
-      return request.auth != null;
+    function signedIn() { return request.auth != null; }
+    function isOwner(userId) { return signedIn() && request.auth.uid == userId; }
+
+    // Chỉ dùng cho create/update — KHÔNG dùng trong read
+    function isImageUpload(maxMb) {
+      return request.resource != null
+        && request.resource.size > 0
+        && request.resource.size < maxMb * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp|heic|heif)');
+    }
+    function uploaderIsMe() {
+      return request.resource.metadata != null
+        && request.resource.metadata.uploaderUid == request.auth.uid;
     }
 
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+    function groupDoc(groupId) {
+      return firestore.get(/databases/(default)/documents/groups/$(groupId));
+    }
+    function isGroupMember(groupId) {
+      return signedIn()
+        && firestore.exists(/databases/(default)/documents/groups/$(groupId))
+        && request.auth.uid in groupDoc(groupId).data.memberIds
+        && groupDoc(groupId).data.get('isDeleted', false) != true;
+    }
+    function isGroupAdmin(groupId) {
+      return signedIn() && groupDoc(groupId).data.adminId == request.auth.uid;
     }
 
-    function isValidImage() {
-      return request.resource.contentType.matches('image/.*') &&
-             request.resource.size < 10 * 1024 * 1024; // Tối đa 10MB
+    // 1. Avatar: đọc công khai cho người đã đăng nhập; ghi đúng file {uid}.{ext}
+    match /avatars/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && fileName.matches(request.auth.uid + '[.](jpg|jpeg|png|webp)')
+        && isImageUpload(5);
+      allow delete: if signedIn()
+        && fileName.matches(request.auth.uid + '[.](jpg|jpeg|png|webp)');
     }
 
-    // 1. Ảnh đại diện người dùng
-    match /avatars/{userId}.jpg {
-      allow read: if isAuthenticated(); // Đọc được để hiển thị avatar thành viên trong nhóm
-      allow write: if isOwner(userId) && isValidImage();
-      allow delete: if isOwner(userId);
-    }
-
-    // 2. Ảnh hóa đơn chứng từ giao dịch
+    // 2. Hóa đơn giao dịch cá nhân: READ tách riêng, không phụ thuộc request.resource
     match /transaction_images/{userId}/{transactionId}/{fileName} {
-      allow read, write: if isOwner(userId) && isValidImage();
-      allow delete: if isOwner(userId);
+      allow read:           if isOwner(userId);
+      allow create, update: if isOwner(userId) && isImageUpload(10);
+      allow delete:         if isOwner(userId);
     }
 
-    // Mặc định chặn truy cập các đường dẫn khác
+    // 3. Hóa đơn chi tiêu nhóm: mọi thành viên đọc được; chỉ người upload/admin xóa
+    match /group_receipts/{groupId}/{expenseId}/{fileName} {
+      allow read:   if isGroupMember(groupId);
+      allow create: if isGroupMember(groupId) && isImageUpload(10) && uploaderIsMe();
+      allow update: if false;
+      allow delete: if isGroupMember(groupId)
+        && (resource.metadata.uploaderUid == request.auth.uid || isGroupAdmin(groupId));
+    }
+
+    // 4. Ảnh bằng chứng quyết toán: thành viên đọc; chỉ payer của settlement upload
+    match /settlement_proofs/{groupId}/{settlementId}/{fileName} {
+      allow read:   if isGroupMember(groupId);
+      allow create: if isGroupMember(groupId) && isImageUpload(10) && uploaderIsMe()
+        && firestore.get(/databases/(default)/documents/settlements/$(settlementId)).data.payerId == request.auth.uid
+        && firestore.get(/databases/(default)/documents/settlements/$(settlementId)).data.groupId == groupId;
+      allow update: if false;
+      allow delete: if signedIn() && resource.metadata.uploaderUid == request.auth.uid;
+    }
+
+    // Mặc định: chặn
     match /{allPaths=**} {
       allow read, write: if false;
     }

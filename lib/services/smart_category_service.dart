@@ -19,7 +19,8 @@ class SmartCategoryResult {
 
 /// Dịch vụ tự động phân loại giao dịch thông minh (Local-first & User-habit aware)
 class SmartCategoryService {
-  static final SmartCategoryService _instance = SmartCategoryService._internal();
+  static final SmartCategoryService _instance =
+      SmartCategoryService._internal();
   factory SmartCategoryService() => _instance;
   SmartCategoryService._internal();
 
@@ -32,91 +33,335 @@ class SmartCategoryService {
   // Từ điển thương hiệu, ứng dụng và dịch vụ phổ biến tại Việt Nam
   static final Map<String, List<String>> _brandDictionary = {
     'Ăn uống': [
-      'phúc long', 'phuclong', 'highlands', 'the coffee house', 'starbucks', 'katinat',
-      'chagee', 'koi thé', 'gong cha', 'tocotoco', 'mixue', 'cheese coffee', 'aha cafe',
-      'cộng cà phê', 'cong ca phe', 'trung nguyên', 'trung nguyen', 'kfc', 'lotteria',
-      'jollibee', 'mcdonald', 'pizza hut', 'domino', 'the pizza company', 'haidilao',
-      'manwah', 'kichi kichi', 'gogi', 'sumobbq', 'dookki', 'golden gate', 'redsun',
-      'baemin', 'shopeefood', 'grabfood', 'beamin', 'loship', 'quán cơm', 'phở', 'bún bò',
-      'hủ tiếu', 'bánh mì', 'trà sữa', 'cà phê', 'cafe', 'ăn sáng', 'ăn trưa', 'ăn tối',
-      'nhậu', 'lẩu', 'nướng', 'bbq', 'buffet', 'bánh tráng', 'cơm tấm'
+      'phúc long',
+      'phuclong',
+      'highlands',
+      'the coffee house',
+      'starbucks',
+      'katinat',
+      'chagee',
+      'koi thé',
+      'gong cha',
+      'tocotoco',
+      'mixue',
+      'cheese coffee',
+      'aha cafe',
+      'cộng cà phê',
+      'cong ca phe',
+      'trung nguyên',
+      'trung nguyen',
+      'kfc',
+      'lotteria',
+      'jollibee',
+      'mcdonald',
+      'pizza hut',
+      'domino',
+      'the pizza company',
+      'haidilao',
+      'manwah',
+      'kichi kichi',
+      'gogi',
+      'sumobbq',
+      'dookki',
+      'golden gate',
+      'redsun',
+      'baemin',
+      'shopeefood',
+      'grabfood',
+      'beamin',
+      'loship',
+      'quán cơm',
+      'phở',
+      'bún bò',
+      'hủ tiếu',
+      'bánh mì',
+      'trà sữa',
+      'cà phê',
+      'cafe',
+      'ăn sáng',
+      'ăn trưa',
+      'ăn tối',
+      'nhậu',
+      'lẩu',
+      'nướng',
+      'bbq',
+      'buffet',
+      'bánh tráng',
+      'cơm tấm',
     ],
     'Di chuyển': [
-      'grab', 'grab bike', 'grab car', 'xe be', 'đi be', 'be bike', 'be car', 'be ride', 'be', 'xanh sm', 'xanhsm',
-      'vinfast', 'gojek', 'mai linh', 'vina sun', 'vinasun', 'taxi', 'tiền xăng', 'petrolimex',
-      'pvoil', 'gửi xe', 'vé xe', 'xe bus', 'xe buýt', 'vé tàu', 'vé máy bay', 'vietjet',
-      'vietnam airlines', 'bamboo airways', 'phí cầu đường', 'epass', 'etc', 'vetc',
-      'phương trang', 'futa', 'thành bưởi', 'thanh buoi'
+      'grab',
+      'grab bike',
+      'grab car',
+      'xe be',
+      'đi be',
+      'be bike',
+      'be car',
+      'be ride',
+      'be',
+      'xanh sm',
+      'xanhsm',
+      'vinfast',
+      'gojek',
+      'mai linh',
+      'vina sun',
+      'vinasun',
+      'taxi',
+      'tiền xăng',
+      'petrolimex',
+      'pvoil',
+      'gửi xe',
+      'vé xe',
+      'xe bus',
+      'xe buýt',
+      'vé tàu',
+      'vé máy bay',
+      'vietjet',
+      'vietnam airlines',
+      'bamboo airways',
+      'phí cầu đường',
+      'epass',
+      'etc',
+      'vetc',
+      'phương trang',
+      'futa',
+      'thành bưởi',
+      'thanh buoi',
     ],
     'Mua sắm': [
-      'shopee', 'lazada', 'tiki', 'tiktok shop', 'sendo', 'uniqlo', 'zara', 'h&m',
-      'yame', 'routine', 'coolmate', 'canifa', 'winmart', 'coopmart', 'co.opmart',
-      'bách hóa xanh', 'bachhoaxanh', 'lotte mart', 'aeon', 'aeon mall', 'big c', 'tops market',
-      'mega market', 'circle k', '7-eleven', 'familymart', 'ministop', 'gs25', 'chợ'
+      'shopee',
+      'lazada',
+      'tiki',
+      'tiktok shop',
+      'sendo',
+      'uniqlo',
+      'zara',
+      'h&m',
+      'yame',
+      'routine',
+      'coolmate',
+      'canifa',
+      'winmart',
+      'coopmart',
+      'co.opmart',
+      'bách hóa xanh',
+      'bachhoaxanh',
+      'lotte mart',
+      'aeon',
+      'aeon mall',
+      'big c',
+      'tops market',
+      'mega market',
+      'circle k',
+      '7-eleven',
+      'familymart',
+      'ministop',
+      'gs25',
+      'chợ',
     ],
     'Đồ công nghệ': [
-      'thế giới di động', 'tgdd', 'dienmayxanh', 'điện máy xanh', 'fpt shop', 'fptshop',
-      'cellphones', 'viettel store', 'hoanghamobile', 'hoàng hà mobile', 'gearvn',
-      'an phát', 'phong vũ', 'apple', 'samsung', 'xiaomi', 'tai nghe', 'bàn phím', 'chuột máy tính'
+      'thế giới di động',
+      'tgdd',
+      'dienmayxanh',
+      'điện máy xanh',
+      'fpt shop',
+      'fptshop',
+      'cellphones',
+      'viettel store',
+      'hoanghamobile',
+      'hoàng hà mobile',
+      'gearvn',
+      'an phát',
+      'phong vũ',
+      'apple',
+      'samsung',
+      'xiaomi',
+      'tai nghe',
+      'bàn phím',
+      'chuột máy tính',
     ],
     'Sức khỏe': [
-      'pharmacity', 'long châu', 'nhà thuốc long châu', 'an khang', 'nhà thuốc',
-      'bệnh viện', 'khám bệnh', 'bác sĩ', 'thuốc', 'xét nghiệm', 'nha khoa', 'răng hàm mặt',
-      'phòng khám', 'tiêm chủng', 'vnvc'
+      'pharmacity',
+      'long châu',
+      'nhà thuốc long châu',
+      'an khang',
+      'nhà thuốc',
+      'bệnh viện',
+      'khám bệnh',
+      'bác sĩ',
+      'thuốc',
+      'xét nghiệm',
+      'nha khoa',
+      'răng hàm mặt',
+      'phòng khám',
+      'tiêm chủng',
+      'vnvc',
     ],
     'Làm đẹp': [
-      'hasaki', 'guardian', 'watsons', 'cắt tóc', 'barber', 'salon', 'spa', 'nail',
-      'mỹ phẩm', 'son môi', 'chăm sóc da', 'gội đầu', 'massage'
+      'hasaki',
+      'guardian',
+      'watsons',
+      'cắt tóc',
+      'barber',
+      'salon',
+      'spa',
+      'nail',
+      'mỹ phẩm',
+      'son môi',
+      'chăm sóc da',
+      'gội đầu',
+      'massage',
     ],
     'Giải trí': [
-      'cgv', 'bhd', 'lotte cinema', 'galaxy cinema', 'cinema', 'rạp phim', 'netflix',
-      'spotify', 'youtube premium', 'apple music', 'steam', 'playstation', 'nintendo',
-      'garena', 'nạp game', 'bida', 'karaoke', 'bowling', 'pub', 'bar', 'board game'
+      'cgv',
+      'bhd',
+      'lotte cinema',
+      'galaxy cinema',
+      'cinema',
+      'rạp phim',
+      'netflix',
+      'spotify',
+      'youtube premium',
+      'apple music',
+      'steam',
+      'playstation',
+      'nintendo',
+      'garena',
+      'nạp game',
+      'bida',
+      'karaoke',
+      'bowling',
+      'pub',
+      'bar',
+      'board game',
     ],
     'Học tập': [
-      'học phí', 'khóa học', 'mua sách', 'nhà sách', 'fahasa', 'tiền học', 'tiếng anh',
-      'ielts', 'toeic', 'udemy', 'coursera', 'văn phòng phẩm'
+      'học phí',
+      'khóa học',
+      'mua sách',
+      'nhà sách',
+      'fahasa',
+      'tiền học',
+      'tiếng anh',
+      'ielts',
+      'toeic',
+      'udemy',
+      'coursera',
+      'văn phòng phẩm',
     ],
     'Tiền điện': [
-      'tiền điện', 'evn', 'điện lực', 'hóa đơn điện', 'npc', 'cpc', 'spc'
+      'tiền điện',
+      'evn',
+      'điện lực',
+      'hóa đơn điện',
+      'npc',
+      'cpc',
+      'spc',
     ],
     'Điện thoại': [
-      'tiền mạng', 'internet', 'fpt telecom', 'viettel telecom', 'vnpt', 'nạp card',
-      'nạp tiền điện thoại', 'gói cước 4g', '4g viettel', '4g vinaphone', '4g mobifone'
+      'tiền mạng',
+      'internet',
+      'fpt telecom',
+      'viettel telecom',
+      'vnpt',
+      'nạp card',
+      'nạp tiền điện thoại',
+      'gói cước 4g',
+      '4g viettel',
+      '4g vinaphone',
+      '4g mobifone',
     ],
     'Tiền nhà': [
-      'tiền phòng', 'tiền trọ', 'tiền thuê nhà', 'tiền nhà', 'phí quản lý chung cư', 'tiền nước'
+      'tiền phòng',
+      'tiền trọ',
+      'tiền thuê nhà',
+      'tiền nhà',
+      'phí quản lý chung cư',
+      'tiền nước',
     ],
     'Thể thao': [
-      'gym', 'fitness', 'california fitness', 'elite fitness', 'yoga', 'cầu lông',
-      'sân bóng', 'đá banh', 'bơi lội', 'chạy bộ', 'quần áo thể thao', 'pickleball'
+      'gym',
+      'fitness',
+      'california fitness',
+      'elite fitness',
+      'yoga',
+      'cầu lông',
+      'sân bóng',
+      'đá banh',
+      'bơi lội',
+      'chạy bộ',
+      'quần áo thể thao',
+      'pickleball',
     ],
     'Thú cưng': [
-      'thú cưng', 'chó mèo', 'pet shop', 'thức ăn mèo', 'thức ăn chó', 'pate mèo', 'bác sĩ thú y'
+      'thú cưng',
+      'chó mèo',
+      'pet shop',
+      'thức ăn mèo',
+      'thức ăn chó',
+      'pate mèo',
+      'bác sĩ thú y',
     ],
     'Quà tặng': [
-      'mừng cưới', 'đám cưới', 'sinh nhật', 'thôi nôi', 'quà tặng', 'lì xì', 'phong bì'
+      'mừng cưới',
+      'đám cưới',
+      'sinh nhật',
+      'thôi nôi',
+      'quà tặng',
+      'lì xì',
+      'phong bì',
     ],
     'Tiền lương': [
-      'lương', 'salary', 'chuyển lương', 'thanh toán lương', 'tạm ứng lương', 'payroll'
+      'lương',
+      'salary',
+      'chuyển lương',
+      'thanh toán lương',
+      'tạm ứng lương',
+      'payroll',
     ],
     'Tiền thưởng': [
-      'thưởng', 'bonus', 'thưởng tết', 'thưởng quý', 'thưởng nóng'
+      'thưởng',
+      'bonus',
+      'thưởng tết',
+      'thưởng quý',
+      'thưởng nóng',
     ],
     'Được cho/Tặng': [
-      'ba mẹ cho', 'mẹ cho', 'bố cho', 'ba cho', 'anh cho', 'chị cho', 'em cho',
-      'bạn cho', 'phụng cho', 'sếp cho', 'khách cho', 'người yêu cho', 'crush cho',
-      'ai cho', 'được cho', 'cho tiền', 'lì xì', 'biếu', 'quà tặng từ', 'quà tặng'
+      'ba mẹ cho',
+      'mẹ cho',
+      'bố cho',
+      'ba cho',
+      'anh cho',
+      'chị cho',
+      'em cho',
+      'bạn cho',
+      'phụng cho',
+      'sếp cho',
+      'khách cho',
+      'người yêu cho',
+      'crush cho',
+      'ai cho',
+      'được cho',
+      'cho tiền',
+      'lì xì',
+      'biếu',
+      'quà tặng từ',
+      'quà tặng',
     ],
     'Kinh doanh': [
-      'khách hàng thanh toán', 'tiền hàng', 'bán hàng', 'doanh thu', 'tiền cọc'
+      'khách hàng thanh toán',
+      'tiền hàng',
+      'bán hàng',
+      'doanh thu',
+      'tiền cọc',
     ],
   };
 
   /// Tải lịch sử phân loại cá nhân của người dùng từ 100 giao dịch gần nhất
   Future<void> _ensureHistoryLoaded() async {
     final now = DateTime.now();
-    if (_lastHistoryLoaded != null && now.difference(_lastHistoryLoaded!).inMinutes < 15) {
+    if (_lastHistoryLoaded != null &&
+        now.difference(_lastHistoryLoaded!).inMinutes < 15) {
       return;
     }
 
@@ -188,7 +433,10 @@ class SmartCategoryService {
       for (final kw in keywords) {
         bool matches = false;
         if (kw == 'be') {
-          matches = RegExp(r'\bbe\b').hasMatch(cleanText) && !cleanText.contains('bento') && !cleanText.contains('beamin');
+          matches =
+              RegExp(r'\bbe\b').hasMatch(cleanText) &&
+              !cleanText.contains('bento') &&
+              !cleanText.contains('beamin');
         } else {
           matches = cleanText.contains(kw);
         }
@@ -214,13 +462,19 @@ class SmartCategoryService {
       if (cleanText.contains('lãi') || cleanText.contains('interest')) {
         return _buildResult('Tiền lãi', 0.85, 'Tiền lãi tiết kiệm/đầu tư');
       }
-      if (RegExp(r'(?:^|\s)(?:[a-zà-ỹA-ZÀ-Ỹ0-9_]+)\s+cho\b').hasMatch(cleanText) ||
+      if (RegExp(
+            r'(?:^|\s)(?:[a-zà-ỹA-ZÀ-Ỹ0-9_]+)\s+cho\b',
+          ).hasMatch(cleanText) ||
           cleanText.contains('cho') ||
           cleanText.contains('tặng') ||
           cleanText.contains('lì xì') ||
           cleanText.contains('biếu') ||
           cleanText.contains('quà')) {
-        return _buildResult('Được cho/Tặng', 0.95, 'Khoản tiền được cho hoặc tặng');
+        return _buildResult(
+          'Được cho/Tặng',
+          0.95,
+          'Khoản tiền được cho hoặc tặng',
+        );
       }
       return _buildResult('Thu khác', 0.5, 'Thu nhập khác');
     }
@@ -230,7 +484,10 @@ class SmartCategoryService {
   }
 
   /// Phân loại đồng bộ siêu tốc (0ms) dựa trên từ điển thương hiệu & quy tắc có sẵn
-  SmartCategoryResult predictCategoryFast(String text, {bool isIncome = false}) {
+  SmartCategoryResult predictCategoryFast(
+    String text, {
+    bool isIncome = false,
+  }) {
     final cleanText = text.trim().toLowerCase();
     if (cleanText.isEmpty) {
       final defaultCat = isIncome ? 'Thu khác' : 'Ăn uống';
@@ -265,7 +522,10 @@ class SmartCategoryService {
       for (final kw in keywords) {
         bool matches = false;
         if (kw == 'be') {
-          matches = RegExp(r'\bbe\b').hasMatch(cleanText) && !cleanText.contains('bento') && !cleanText.contains('beamin');
+          matches =
+              RegExp(r'\bbe\b').hasMatch(cleanText) &&
+              !cleanText.contains('bento') &&
+              !cleanText.contains('beamin');
         } else {
           matches = cleanText.contains(kw);
         }
@@ -290,13 +550,19 @@ class SmartCategoryService {
       if (cleanText.contains('lãi') || cleanText.contains('interest')) {
         return _buildResult('Tiền lãi', 0.85, 'Tiền lãi tiết kiệm/đầu tư');
       }
-      if (RegExp(r'(?:^|\s)(?:[a-zà-ỹA-ZÀ-Ỹ0-9_]+)\s+cho\b').hasMatch(cleanText) ||
+      if (RegExp(
+            r'(?:^|\s)(?:[a-zà-ỹA-ZÀ-Ỹ0-9_]+)\s+cho\b',
+          ).hasMatch(cleanText) ||
           cleanText.contains('cho') ||
           cleanText.contains('tặng') ||
           cleanText.contains('lì xì') ||
           cleanText.contains('biếu') ||
           cleanText.contains('quà')) {
-        return _buildResult('Được cho/Tặng', 0.95, 'Khoản tiền được cho hoặc tặng');
+        return _buildResult(
+          'Được cho/Tặng',
+          0.95,
+          'Khoản tiền được cho hoặc tặng',
+        );
       }
       return _buildResult('Thu khác', 0.5, 'Thu nhập khác');
     }
@@ -304,7 +570,11 @@ class SmartCategoryService {
     return _buildResult('Ăn uống', 0.4, 'Danh mục chi tiêu phổ biến');
   }
 
-  SmartCategoryResult _buildResult(String category, double confidence, String reason) {
+  SmartCategoryResult _buildResult(
+    String category,
+    double confidence,
+    String reason,
+  ) {
     return SmartCategoryResult(
       category: category,
       iconCode: CategoryUtils.getCategoryIcon(category).codePoint,

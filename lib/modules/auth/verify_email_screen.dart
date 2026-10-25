@@ -38,13 +38,17 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   void _startAutoCheck() {
     _autoCheckTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
       if (!mounted) return;
-      
+
       final result = await _authService.reloadAndCheckEmailVerification();
-      
+
       if (result.emailVerified && mounted) {
         _autoCheckTimer?.cancel();
         final isVi = LanguageScope.of(context).isVietnamese;
-        _showSnackBar(isVi ? 'Email đã xác nhận! Đang nhập vào ứng dụng...' : 'Email verified! Logging into app...');
+        _showSnackBar(
+          isVi
+              ? 'Email đã xác nhận! Đang nhập vào ứng dụng...'
+              : 'Email verified! Logging into app...',
+        );
         Future.delayed(const Duration(milliseconds: 500), () {
           if (mounted) {
             Navigator.pushAndRemoveUntil(
@@ -69,7 +73,12 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     if (!mounted) return;
 
     if (result.emailVerified) {
-      _showSnackBar(isVi ? 'Email đã xác nhận! Đang nhập vào ứng dụng...' : 'Email verified! Logging into app...', isError: false);
+      _showSnackBar(
+        isVi
+            ? 'Email đã xác nhận! Đang nhập vào ứng dụng...'
+            : 'Email verified! Logging into app...',
+        isError: false,
+      );
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) {
           Navigator.pushAndRemoveUntil(
@@ -95,7 +104,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     if (!mounted) return;
 
     if (result.success) {
-      _showSnackBar(isVi ? 'Email xác nhận đã được gửi lại!' : 'Verification email resent!', isError: false);
+      _showSnackBar(
+        isVi ? 'Email xác nhận đã được gửi lại!' : 'Verification email resent!',
+        isError: false,
+      );
     } else {
       _showSnackBar(result.message, isError: true);
     }
@@ -113,27 +125,35 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = context.isDark;
-    
+
     return Scaffold(
-      backgroundColor: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
+      backgroundColor: isDark
+          ? AppColors.primaryTealDark
+          : AppColors.primaryTeal,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Row(children: [
-                IconButton(
-                  icon: Icon(Icons.arrow_back_ios, color: context.colors.onPrimary, size: 20),
-                  onPressed: () {
-                    _authService.logout();
-                    Navigator.pop(context);
-                  },
-                ),
-                const Spacer(),
-                AppLogo.wordmark(height: 32, color: context.colors.onPrimary),
-                const Spacer(flex: 2),
-              ]),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_ios,
+                      color: context.colors.onPrimary,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      _authService.logout();
+                      Navigator.pop(context);
+                    },
+                  ),
+                  const Spacer(),
+                  AppLogo.wordmark(height: 32, color: context.colors.onPrimary),
+                  const Spacer(flex: 2),
+                ],
+              ),
             ),
             const SizedBox(height: 20),
             Expanded(
@@ -141,11 +161,16 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: context.colors.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                   boxShadow: AppShadows.modal(isDark),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 40,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -154,10 +179,16 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: context.colors.primary.withValues(alpha: isDark ? 0.2 : 0.1),
+                          color: context.colors.primary.withValues(
+                            alpha: isDark ? 0.2 : 0.1,
+                          ),
                           borderRadius: BorderRadius.circular(18),
                         ),
-                        child: Icon(Icons.mail_outline_rounded, color: context.colors.primary, size: 40),
+                        child: Icon(
+                          Icons.mail_outline_rounded,
+                          color: context.colors.primary,
+                          size: 40,
+                        ),
                       ),
                       const SizedBox(height: 24),
 
@@ -174,7 +205,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
                       // Description
                       Text(
-                        isVi ? 'Chúng tôi đã gửi email xác nhận tới\n${widget.email}' : 'We sent a verification email to\n${widget.email}',
+                        isVi
+                            ? 'Chúng tôi đã gửi email xác nhận tới\n${widget.email}'
+                            : 'We sent a verification email to\n${widget.email}',
                         style: context.textTheme.bodyMedium?.copyWith(
                           color: context.colors.onSurfaceVariant,
                           height: 1.5,
@@ -183,18 +216,38 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        isVi ? 'Vui lòng kiểm tra hộp thư và nhấp vào link để xác nhận.' : 'Please check your inbox and click the link to verify.',
+                        isVi
+                            ? 'Vui lòng kiểm tra hộp thư và nhấp vào link để xác nhận.'
+                            : 'Please check your inbox and click the link to verify.',
                         style: context.textTheme.bodySmall?.copyWith(
-                          color: context.colors.onSurfaceVariant.withValues(alpha: 0.8),
+                          color: context.colors.onSurfaceVariant.withValues(
+                            alpha: 0.8,
+                          ),
                         ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 40),
 
                       // Steps
-                      _buildStep(context, 1, isVi ? 'Mở email mà chúng tôi vừa gửi' : 'Open the email we just sent'),
-                      _buildStep(context, 2, isVi ? 'Nhấp vào link xác nhận trong email' : 'Click the verification link in the email'),
-                      _buildStep(context, 3, isVi ? 'Quay trở lại ứng dụng' : 'Return to the app'),
+                      _buildStep(
+                        context,
+                        1,
+                        isVi
+                            ? 'Mở email mà chúng tôi vừa gửi'
+                            : 'Open the email we just sent',
+                      ),
+                      _buildStep(
+                        context,
+                        2,
+                        isVi
+                            ? 'Nhấp vào link xác nhận trong email'
+                            : 'Click the verification link in the email',
+                      ),
+                      _buildStep(
+                        context,
+                        3,
+                        isVi ? 'Quay trở lại ứng dụng' : 'Return to the app',
+                      ),
                       const SizedBox(height: 40),
 
                       // Manual Check Button
@@ -206,13 +259,21 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: _isLoading
-                                  ? [context.colors.surfaceContainerHighest, context.colors.surfaceContainerHighest]
-                                  : [AppColors.primaryTealLight, AppColors.primaryTeal],
+                                  ? [
+                                      context.colors.surfaceContainerHighest,
+                                      context.colors.surfaceContainerHighest,
+                                    ]
+                                  : [
+                                      AppColors.primaryTealLight,
+                                      AppColors.primaryTeal,
+                                    ],
                             ),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: context.colors.primary.withValues(alpha: 0.3),
+                                color: context.colors.primary.withValues(
+                                  alpha: 0.3,
+                                ),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -220,13 +281,23 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           ),
                           child: Center(
                             child: _isLoading
-                                ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: context.colors.onPrimary, strokeWidth: 2.5))
-                                : Text(
-                                    isVi ? 'Đã xác nhận email' : 'I have verified my email',
-                                    style: context.textTheme.titleMedium?.copyWith(
+                                ? SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
                                       color: context.colors.onPrimary,
-                                      fontWeight: FontWeight.w600,
+                                      strokeWidth: 2.5,
                                     ),
+                                  )
+                                : Text(
+                                    isVi
+                                        ? 'Đã xác nhận email'
+                                        : 'I have verified my email',
+                                    style: context.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: context.colors.onPrimary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                   ),
                           ),
                         ),
@@ -240,12 +311,17 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           decoration: BoxDecoration(
-                            border: Border.all(color: context.colors.primary, width: 1.5),
+                            border: Border.all(
+                              color: context.colors.primary,
+                              width: 1.5,
+                            ),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Center(
                             child: Text(
-                              isVi ? 'Gửi lại email xác nhận' : 'Resend verification email',
+                              isVi
+                                  ? 'Gửi lại email xác nhận'
+                                  : 'Resend verification email',
                               style: context.textTheme.titleSmall?.copyWith(
                                 color: context.colors.primary,
                                 fontWeight: FontWeight.w600,
@@ -292,14 +368,18 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: isDark ? context.colors.primaryContainer : context.colors.primary,
+              color: isDark
+                  ? context.colors.primaryContainer
+                  : context.colors.primary,
               borderRadius: BorderRadius.circular(50),
             ),
             child: Center(
               child: Text(
                 '$number',
                 style: context.textTheme.labelMedium?.copyWith(
-                  color: isDark ? context.colors.onPrimaryContainer : context.colors.onPrimary,
+                  color: isDark
+                      ? context.colors.onPrimaryContainer
+                      : context.colors.onPrimary,
                   fontWeight: FontWeight.bold,
                 ),
               ),

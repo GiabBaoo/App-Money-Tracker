@@ -97,7 +97,12 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     final isVi = LanguageScope.of(context).isVietnamese;
 
     if (_selectedDateRange == 'Tùy chỉnh' && _customDateRange == null) {
-      _showSnackBar(isVi ? 'Vui lòng chọn khoảng thời gian!' : 'Please select a date range!', isError: true);
+      _showSnackBar(
+        isVi
+            ? 'Vui lòng chọn khoảng thời gian!'
+            : 'Please select a date range!',
+        isError: true,
+      );
       return;
     }
 
@@ -108,30 +113,58 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
         customDateRange: _customDateRange,
       );
 
-      final transactions = await _reportExportService.fetchTransactions(range: range);
+      final transactions = await _reportExportService.fetchTransactions(
+        range: range,
+      );
       if (transactions.isEmpty) {
-        _showSnackBar(isVi ? 'Không có dữ liệu chi tiêu trong khoảng thời gian này.' : 'No expense data found in this time range.');
+        _showSnackBar(
+          isVi
+              ? 'Không có dữ liệu chi tiêu trong khoảng thời gian này.'
+              : 'No expense data found in this time range.',
+        );
         return;
       }
 
       final isPdf = _selectedFormat == 'PDF';
       final bytes = isPdf
-          ? await _reportExportService.buildPdfBytes(transactions: transactions, range: range)
-          : await _reportExportService.buildExcelBytes(transactions: transactions, range: range);
+          ? await _reportExportService.buildPdfBytes(
+              transactions: transactions,
+              range: range,
+            )
+          : await _reportExportService.buildExcelBytes(
+              transactions: transactions,
+              range: range,
+            );
 
-      final fileName = _reportExportService.buildFileName(format: _selectedFormat, range: range);
+      final fileName = _reportExportService.buildFileName(
+        format: _selectedFormat,
+        range: range,
+      );
       final savedPath = await _reportExportService.saveToDeviceDownloads(
         bytes: bytes,
         fileName: fileName,
         format: _selectedFormat,
       );
-      final file = await _reportExportService.saveToTempFile(bytes: bytes, fileName: fileName);
+      final file = await _reportExportService.saveToTempFile(
+        bytes: bytes,
+        fileName: fileName,
+      );
 
       if (!mounted) return;
-      _showSnackBar(isVi ? 'Đã lưu file: $savedPath' : 'File saved: $savedPath');
-      await _showExportDoneSheet(file: file, bytes: bytes, isPdf: isPdf, savedPath: savedPath);
+      _showSnackBar(
+        isVi ? 'Đã lưu file: $savedPath' : 'File saved: $savedPath',
+      );
+      await _showExportDoneSheet(
+        file: file,
+        bytes: bytes,
+        isPdf: isPdf,
+        savedPath: savedPath,
+      );
     } catch (e) {
-      _showSnackBar(isVi ? 'Tạo báo cáo thất bại: $e' : 'Export report failed: $e', isError: true);
+      _showSnackBar(
+        isVi ? 'Tạo báo cáo thất bại: $e' : 'Export report failed: $e',
+        isError: true,
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -154,7 +187,9 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                isVi ? 'Đã tải file về máy thành công' : 'File downloaded successfully',
+                isVi
+                    ? 'Đã tải file về máy thành công'
+                    : 'File downloaded successfully',
                 style: context.textTheme.titleMedium?.copyWith(
                   color: context.textPrimaryColor,
                   fontWeight: FontWeight.w700,
@@ -184,7 +219,10 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                   shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
                 ),
                 icon: const Icon(Icons.share),
-                label: Text(isVi ? 'Chia sẻ file' : 'Share file', style: const TextStyle(fontWeight: FontWeight.w600)),
+                label: Text(
+                  isVi ? 'Chia sẻ file' : 'Share file',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
               if (isPdf) ...[
                 const SizedBox(height: 10),
@@ -194,13 +232,21 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                   },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: AppRadius.button),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppRadius.button,
+                    ),
                     side: BorderSide(color: context.colors.primary),
                   ),
-                  icon: Icon(Icons.picture_as_pdf_outlined, color: context.colors.primary),
+                  icon: Icon(
+                    Icons.picture_as_pdf_outlined,
+                    color: context.colors.primary,
+                  ),
                   label: Text(
                     isVi ? 'Mở/Xem trước PDF' : 'Open/Preview PDF',
-                    style: TextStyle(color: context.colors.primary, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: context.colors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -225,7 +271,9 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
+      backgroundColor: isDark
+          ? AppColors.primaryTealDark
+          : AppColors.primaryTeal,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -249,7 +297,11 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white24, width: 0.8),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 18,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   Expanded(
@@ -258,16 +310,18 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: context.textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.3,
-                      ) ?? const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.3,
-                      ),
+                      style:
+                          context.textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.3,
+                          ) ??
+                          const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.3,
+                          ),
                     ),
                   ),
                   const SizedBox(width: 42),
@@ -283,7 +337,9 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: cardBg,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                   boxShadow: AppShadows.card(isDark),
                 ),
                 child: SingleChildScrollView(
@@ -313,7 +369,10 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                       const SizedBox(height: 30),
 
                       // CHỌN THỜI GIAN (Dropdown)
-                      _buildLabel(isVi ? 'Thời gian xuất báo cáo' : 'Report time range', isDark),
+                      _buildLabel(
+                        isVi ? 'Thời gian xuất báo cáo' : 'Report time range',
+                        isDark,
+                      ),
                       DropdownButtonFormField<String>(
                         initialValue: _selectedDateRange,
                         dropdownColor: cardBg,
@@ -331,7 +390,9 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                             value: value,
                             child: Text(
                               _getDateRangeLabel(value, isVi),
-                              style: context.textTheme.bodyMedium?.copyWith(color: textPrimary),
+                              style: context.textTheme.bodyMedium?.copyWith(
+                                color: textPrimary,
+                              ),
                             ),
                           );
                         }).toList(),
@@ -369,7 +430,9 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                               children: [
                                 Text(
                                   _customDateRange == null
-                                      ? (isVi ? 'Bấm để chọn ngày...' : 'Tap to select date range...')
+                                      ? (isVi
+                                            ? 'Bấm để chọn ngày...'
+                                            : 'Tap to select date range...')
                                       : '${_customDateRange!.start.day.toString().padLeft(2, '0')}/${_customDateRange!.start.month.toString().padLeft(2, '0')}/${_customDateRange!.start.year}  -  ${_customDateRange!.end.day.toString().padLeft(2, '0')}/${_customDateRange!.end.month.toString().padLeft(2, '0')}/${_customDateRange!.end.year}',
                                   style: context.textTheme.bodyMedium?.copyWith(
                                     color: _customDateRange == null
@@ -393,7 +456,10 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                       const SizedBox(height: 30),
 
                       // CHỌN ĐỊNH DẠNG FILE
-                      _buildLabel(isVi ? 'Định dạng tệp' : 'File format', isDark),
+                      _buildLabel(
+                        isVi ? 'Định dạng tệp' : 'File format',
+                        isDark,
+                      ),
                       Row(
                         children: [
                           _buildFormatCard(
@@ -431,11 +497,15 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            color: _isLoading ? Colors.grey : context.colors.primary,
+                            color: _isLoading
+                                ? Colors.grey
+                                : context.colors.primary,
                             borderRadius: AppRadius.button,
                             boxShadow: [
                               BoxShadow(
-                                color: context.colors.primary.withValues(alpha: 0.35),
+                                color: context.colors.primary.withValues(
+                                  alpha: 0.35,
+                                ),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -455,11 +525,14 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                                     ),
                                     const SizedBox(width: 10),
                                     Text(
-                                      isVi ? 'Đang tạo báo cáo...' : 'Generating report...',
-                                      style: context.textTheme.labelLarge?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                      isVi
+                                          ? 'Đang tạo báo cáo...'
+                                          : 'Generating report...',
+                                      style: context.textTheme.labelLarge
+                                          ?.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                     ),
                                   ]
                                 : [
@@ -471,11 +544,12 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
                                     const SizedBox(width: 8),
                                     Text(
                                       isVi ? 'Tải xuống ngay' : 'Download now',
-                                      style: context.textTheme.labelLarge?.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                      ),
+                                      style: context.textTheme.labelLarge
+                                          ?.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 16,
+                                          ),
                                     ),
                                   ],
                           ),
@@ -557,7 +631,9 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
       fillColor: isDark ? AppColors.inputBgDark : AppColors.inputBgLight,
       enabledBorder: OutlineInputBorder(
         borderRadius: AppRadius.input,
-        borderSide: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        borderSide: BorderSide(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: AppRadius.input,

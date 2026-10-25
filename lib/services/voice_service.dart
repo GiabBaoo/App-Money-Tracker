@@ -17,13 +17,16 @@ class VoiceService {
   factory VoiceService() => _instance;
   VoiceService._internal();
 
-  static const MethodChannel _platformChannel = MethodChannel('app.mono/settings');
+  static const MethodChannel _platformChannel = MethodChannel(
+    'app.mono/settings',
+  );
 
   SpeechToText? _speechToTextInstance;
   SpeechToText get _speechToText => _speechToTextInstance ??= SpeechToText();
 
   AudioRecorder? _audioRecorderInstance;
-  AudioRecorder get _audioRecorder => _audioRecorderInstance ??= AudioRecorder();
+  AudioRecorder get _audioRecorder =>
+      _audioRecorderInstance ??= AudioRecorder();
 
   bool _isInitialized = false;
   bool _supportsVietnamese = false;
@@ -31,7 +34,9 @@ class VoiceService {
   bool _isListeningSTT = false;
   String _vietnameseLocaleId = 'vi_VN';
   String _englishLocaleId = 'en_US';
-  String get activeLocaleId => LanguageService.instance.currentLanguage == 'en' ? _englishLocaleId : _vietnameseLocaleId;
+  String get activeLocaleId => LanguageService.instance.currentLanguage == 'en'
+      ? _englishLocaleId
+      : _vietnameseLocaleId;
   String? _currentRecordingPath;
   StreamSubscription<Amplitude>? _amplitudeSub;
   String? _lastError;
@@ -46,12 +51,17 @@ class VoiceService {
   bool get supportsVietnamese => _supportsVietnamese;
   bool get isAudioRecording => _isAudioRecording;
   bool get isAiVoiceMode => _isAudioRecording || !_supportsVietnamese;
-  bool get isListening => _isListeningSTT || (_speechToTextInstance?.isListening == true) || _isAudioRecording;
+  bool get isListening =>
+      _isListeningSTT ||
+      (_speechToTextInstance?.isListening == true) ||
+      _isAudioRecording;
 
   /// Mở trực tiếp màn hình cài đặt dịch vụ nhận dạng giọng nói trên Android / Xiaomi
   Future<bool> openVoiceInputSettings() async {
     try {
-      final res = await _platformChannel.invokeMethod<bool>('openVoiceSettings');
+      final res = await _platformChannel.invokeMethod<bool>(
+        'openVoiceSettings',
+      );
       return res ?? false;
     } catch (e) {
       debugPrint('VoiceService: Failed to open voice settings via channel: $e');
@@ -92,7 +102,9 @@ class VoiceService {
         if (finalPath != null) {
           final file = File(finalPath);
           if (await file.exists()) {
-            try { await file.delete(); } catch (_) {}
+            try {
+              await file.delete();
+            } catch (_) {}
           }
         }
       } catch (_) {}
@@ -107,7 +119,8 @@ class VoiceService {
       if (!micStatus.isGranted) {
         final req = await Permission.microphone.request();
         if (!req.isGranted) {
-          _lastError = 'Chưa được cấp quyền Microphone. Vui lòng cấp quyền trong Cài đặt.';
+          _lastError =
+              'Chưa được cấp quyền Microphone. Vui lòng cấp quyền trong Cài đặt.';
           _isInitialized = false;
           return false;
         }
@@ -122,50 +135,59 @@ class VoiceService {
 
     // 2. Khởi tạo SpeechToText hệ thống để nhận diện trực tiếp thời gian thực (Native STT)
     try {
-      final sttSuccess = await _speechToText.initialize(
-        onError: (error) {
-          debugPrint('VoiceService (STT Error): ${error.errorMsg} (permanent: ${error.permanent})');
-          _lastError = error.errorMsg;
+      final sttSuccess = await _speechToText
+          .initialize(
+            onError: (error) {
+              debugPrint(
+                'VoiceService (STT Error): ${error.errorMsg} (permanent: ${error.permanent})',
+              );
+              _lastError = error.errorMsg;
 
-          // Bỏ qua các lỗi không nghiêm trọng khi người dùng chưa kịp nói hoặc khoảng lặng tự nhiên
-          final isHarmless = error.errorMsg.contains('no_match') ||
-              error.errorMsg.contains('speech_timeout');
-          if (isHarmless && !error.permanent) {
-            debugPrint('VoiceService: Harmless STT pause/silence, continuing listen...');
-            return;
-          }
+              // Bỏ qua các lỗi không nghiêm trọng khi người dùng chưa kịp nói hoặc khoảng lặng tự nhiên
+              final isHarmless =
+                  error.errorMsg.contains('no_match') ||
+                  error.errorMsg.contains('speech_timeout');
+              if (isHarmless && !error.permanent) {
+                debugPrint(
+                  'VoiceService: Harmless STT pause/silence, continuing listen...',
+                );
+                return;
+              }
 
-          if (_isListeningSTT) {
-            _isListeningSTT = false;
-            if (error.errorMsg.contains('language') || error.errorMsg.contains('not_supported')) {
-              _supportsVietnamese = false;
-            }
-            _safeDispatchDone();
-          }
-        },
-        onStatus: (status) {
-          debugPrint('VoiceService (STT Status): $status');
-          // CHÚ Ý: KHÔNG ngắt mic khi status là 'notListening'!
-          // Trên Android, onEndOfSpeech() gửi 'notListening' trước khi onResults kịp giải mã xong.
-          // Chỉ ngắt và dispatch khi status thực sự là 'done'.
-          if (status == 'done' && _isListeningSTT) {
-            _isListeningSTT = false;
-            Future.delayed(const Duration(milliseconds: 250), () {
-              _safeDispatchDone();
-            });
-          }
-        },
-        debugLogging: false,
-      ).timeout(
-        const Duration(seconds: 4),
-        onTimeout: () {
-          debugPrint('VoiceService: STT initialize timed out');
-          return false;
-        },
-      );
+              if (_isListeningSTT) {
+                _isListeningSTT = false;
+                if (error.errorMsg.contains('language') ||
+                    error.errorMsg.contains('not_supported')) {
+                  _supportsVietnamese = false;
+                }
+                _safeDispatchDone();
+              }
+            },
+            onStatus: (status) {
+              debugPrint('VoiceService (STT Status): $status');
+              // CHÚ Ý: KHÔNG ngắt mic khi status là 'notListening'!
+              // Trên Android, onEndOfSpeech() gửi 'notListening' trước khi onResults kịp giải mã xong.
+              // Chỉ ngắt và dispatch khi status thực sự là 'done'.
+              if (status == 'done' && _isListeningSTT) {
+                _isListeningSTT = false;
+                Future.delayed(const Duration(milliseconds: 250), () {
+                  _safeDispatchDone();
+                });
+              }
+            },
+            debugLogging: false,
+          )
+          .timeout(
+            const Duration(seconds: 4),
+            onTimeout: () {
+              debugPrint('VoiceService: STT initialize timed out');
+              return false;
+            },
+          );
 
       if (sttSuccess) {
-        _supportsVietnamese = true; // Luôn kích hoạt native STT khi speech recognizer khả dụng
+        _supportsVietnamese =
+            true; // Luôn kích hoạt native STT khi speech recognizer khả dụng
         _vietnameseLocaleId = 'vi_VN';
 
         try {
@@ -176,28 +198,38 @@ class VoiceService {
           debugPrint('VoiceService: STT locales count = ${locales.length}');
 
           final viLocale = locales.firstWhere(
-            (l) => l.localeId.toLowerCase().replaceAll('_', '-').startsWith('vi'),
+            (l) =>
+                l.localeId.toLowerCase().replaceAll('_', '-').startsWith('vi'),
             orElse: () => LocaleName('', ''),
           );
 
           if (viLocale.localeId.isNotEmpty) {
             _vietnameseLocaleId = viLocale.localeId;
-            debugPrint('VoiceService: Matched Vietnamese locale from system: $_vietnameseLocaleId');
+            debugPrint(
+              'VoiceService: Matched Vietnamese locale from system: $_vietnameseLocaleId',
+            );
           } else {
             _vietnameseLocaleId = 'vi_VN';
-            debugPrint('VoiceService: System locales did not list vi. Defaulting to online vi_VN');
+            debugPrint(
+              'VoiceService: System locales did not list vi. Defaulting to online vi_VN',
+            );
           }
 
           final enLocale = locales.firstWhere(
-            (l) => l.localeId.toLowerCase().replaceAll('_', '-').startsWith('en'),
+            (l) =>
+                l.localeId.toLowerCase().replaceAll('_', '-').startsWith('en'),
             orElse: () => LocaleName('', ''),
           );
           if (enLocale.localeId.isNotEmpty) {
             _englishLocaleId = enLocale.localeId;
-            debugPrint('VoiceService: Matched English locale from system: $_englishLocaleId');
+            debugPrint(
+              'VoiceService: Matched English locale from system: $_englishLocaleId',
+            );
           }
         } catch (e) {
-          debugPrint('VoiceService: Error querying locales: $e. Defaulting to vi_VN');
+          debugPrint(
+            'VoiceService: Error querying locales: $e. Defaulting to vi_VN',
+          );
           _vietnameseLocaleId = 'vi_VN';
         }
       } else {
@@ -238,7 +270,9 @@ class VoiceService {
         _isListeningSTT = true;
         await _speechToText.listen(
           onResult: (SpeechRecognitionResult result) {
-            debugPrint('VoiceService (STT): "${result.recognizedWords}" (final: ${result.finalResult})');
+            debugPrint(
+              'VoiceService (STT): "${result.recognizedWords}" (final: ${result.finalResult})',
+            );
             if (result.recognizedWords.isNotEmpty) {
               onResult(result.recognizedWords);
             }
@@ -258,7 +292,9 @@ class VoiceService {
           },
           localeId: activeLocaleId,
           listenFor: const Duration(seconds: 30),
-          pauseFor: pauseFor < const Duration(seconds: 3) ? const Duration(seconds: 3) : pauseFor,
+          pauseFor: pauseFor < const Duration(seconds: 3)
+              ? const Duration(seconds: 3)
+              : pauseFor,
           listenOptions: SpeechListenOptions(
             listenMode: ListenMode.dictation,
             cancelOnError: false,
@@ -268,7 +304,9 @@ class VoiceService {
         debugPrint('VoiceService: Started real-time STT with $activeLocaleId');
         return;
       } catch (e) {
-        debugPrint('VoiceService: Real-time STT failed: $e, switching to AI Audio Recording fallback');
+        debugPrint(
+          'VoiceService: Real-time STT failed: $e, switching to AI Audio Recording fallback',
+        );
         _isListeningSTT = false;
       }
     }
@@ -277,13 +315,15 @@ class VoiceService {
     try {
       final isOnline = ConnectivityService().isOnline;
       if (!isOnline) {
-        _lastError = 'Thiết bị cần kết nối Internet để nhận diện giọng nói tiếng Việt qua AI.';
+        _lastError =
+            'Thiết bị cần kết nối Internet để nhận diện giọng nói tiếng Việt qua AI.';
         _safeDispatchDone();
         return;
       }
 
       final dir = await getTemporaryDirectory();
-      _currentRecordingPath = '${dir.path}/mono_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      _currentRecordingPath =
+          '${dir.path}/mono_voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
       await _audioRecorder.start(
         const RecordConfig(
@@ -303,52 +343,65 @@ class VoiceService {
       double ambientNoise = -55.0;
       int sampleCount = 0;
 
-      _amplitudeSub = _audioRecorder.onAmplitudeChanged(const Duration(milliseconds: 80)).listen((amp) {
-        final db = amp.current;
-        double level = 0.0;
-        if (db > -55) {
-          level = ((db + 55) / 55) * 10.0;
-        }
-        onSoundLevelChange(level.clamp(0.0, 10.0));
+      _amplitudeSub = _audioRecorder
+          .onAmplitudeChanged(const Duration(milliseconds: 80))
+          .listen((amp) {
+            final db = amp.current;
+            double level = 0.0;
+            if (db > -55) {
+              level = ((db + 55) / 55) * 10.0;
+            }
+            onSoundLevelChange(level.clamp(0.0, 10.0));
 
-        sampleCount++;
-        if (sampleCount <= 4) {
-          if (db < ambientNoise) ambientNoise = db;
-        }
+            sampleCount++;
+            if (sampleCount <= 4) {
+              if (db < ambientNoise) ambientNoise = db;
+            }
 
-        final now = DateTime.now();
-        final isSpeaking = db > -38.0 || (sampleCount > 4 && db > ambientNoise + 7.0 && db > -46.0);
+            final now = DateTime.now();
+            final isSpeaking =
+                db > -38.0 ||
+                (sampleCount > 4 && db > ambientNoise + 7.0 && db > -46.0);
 
-        if (isSpeaking) {
-          hasDetectedSpeech = true;
-          lastSpeechTime = now;
-        } else if (hasDetectedSpeech && lastSpeechTime != null) {
-          final silenceDuration = now.difference(lastSpeechTime!);
-          if (silenceDuration >= pauseFor) {
-            debugPrint('VoiceService (VAD): Im lặng ${silenceDuration.inMilliseconds}ms >= ${pauseFor.inMilliseconds}ms -> Tự động kết thúc.');
-            _amplitudeSub?.cancel();
-            _amplitudeSub = null;
-            _safeDispatchDone();
-            return;
-          }
-        } else if (!hasDetectedSpeech && now.difference(startTime).inSeconds >= 10) {
-          debugPrint('VoiceService (VAD): Không phát hiện tiếng nói sau 10s -> Dừng.');
-          _amplitudeSub?.cancel();
-          _amplitudeSub = null;
-          _safeDispatchDone();
-          return;
-        }
+            if (isSpeaking) {
+              hasDetectedSpeech = true;
+              lastSpeechTime = now;
+            } else if (hasDetectedSpeech && lastSpeechTime != null) {
+              final silenceDuration = now.difference(lastSpeechTime!);
+              if (silenceDuration >= pauseFor) {
+                debugPrint(
+                  'VoiceService (VAD): Im lặng ${silenceDuration.inMilliseconds}ms >= ${pauseFor.inMilliseconds}ms -> Tự động kết thúc.',
+                );
+                _amplitudeSub?.cancel();
+                _amplitudeSub = null;
+                _safeDispatchDone();
+                return;
+              }
+            } else if (!hasDetectedSpeech &&
+                now.difference(startTime).inSeconds >= 10) {
+              debugPrint(
+                'VoiceService (VAD): Không phát hiện tiếng nói sau 10s -> Dừng.',
+              );
+              _amplitudeSub?.cancel();
+              _amplitudeSub = null;
+              _safeDispatchDone();
+              return;
+            }
 
-        if (now.difference(startTime).inSeconds >= 30) {
-          debugPrint('VoiceService (VAD): Đạt thời gian tối đa 30s -> Tự động dừng.');
-          _amplitudeSub?.cancel();
-          _amplitudeSub = null;
-          _safeDispatchDone();
-          return;
-        }
-      });
+            if (now.difference(startTime).inSeconds >= 30) {
+              debugPrint(
+                'VoiceService (VAD): Đạt thời gian tối đa 30s -> Tự động dừng.',
+              );
+              _amplitudeSub?.cancel();
+              _amplitudeSub = null;
+              _safeDispatchDone();
+              return;
+            }
+          });
 
-      debugPrint('VoiceService: Started AI Audio Recording with auto-execute (${pauseFor.inMilliseconds}ms) to $_currentRecordingPath');
+      debugPrint(
+        'VoiceService: Started AI Audio Recording with auto-execute (${pauseFor.inMilliseconds}ms) to $_currentRecordingPath',
+      );
     } catch (e) {
       debugPrint('VoiceService: Start recording error: $e');
       _lastError = 'Lỗi khởi động micro thu âm: $e';
@@ -391,11 +444,18 @@ class VoiceService {
           final file = File(finalPath);
           if (await file.exists()) {
             final bytes = await file.readAsBytes();
-            try { await file.delete(); } catch (_) {}
+            try {
+              await file.delete();
+            } catch (_) {}
 
             if (bytes.length >= 2048) {
-              debugPrint('VoiceService: Transcribing ${bytes.length} audio bytes via Gemini...');
-              final transcript = await GeminiAiService().transcribeAudio(bytes, mimeType: 'audio/mp4');
+              debugPrint(
+                'VoiceService: Transcribing ${bytes.length} audio bytes via Gemini...',
+              );
+              final transcript = await GeminiAiService().transcribeAudio(
+                bytes,
+                mimeType: 'audio/mp4',
+              );
               if (transcript != null && transcript.trim().isNotEmpty) {
                 final cleaned = transcript.trim();
                 debugPrint('VoiceService (Gemini AI Result): "$cleaned"');
@@ -403,7 +463,9 @@ class VoiceService {
                 return cleaned;
               }
             } else {
-              debugPrint('VoiceService: Audio file too short (${bytes.length} bytes), skipping transcription');
+              debugPrint(
+                'VoiceService: Audio file too short (${bytes.length} bytes), skipping transcription',
+              );
             }
           }
         }
@@ -417,13 +479,25 @@ class VoiceService {
   }
 
   /// Trích xuất lý do/nội dung tinh gọn (chỉ giữ chi/thu vì cái gì)
-  String _extractCleanReason(String originalText, String cleanText, String category) {
+  String _extractCleanReason(
+    String originalText,
+    String cleanText,
+    String category,
+  ) {
     // Nếu có cấu trúc ai đó cho tiền (VD: "phụng cho 15k", "mẹ cho 50k", "bạn cho 100k")
-    final matchGiven = RegExp(r'(?:^|\s)([a-zà-ỹA-ZÀ-Ỹ0-9_]+)\s+cho\b', caseSensitive: false).firstMatch(originalText);
+    final matchGiven = RegExp(
+      r'(?:^|\s)([a-zà-ỹA-ZÀ-Ỹ0-9_]+)\s+cho\b',
+      caseSensitive: false,
+    ).firstMatch(originalText);
     if (matchGiven != null) {
       final subject = matchGiven.group(1)!.trim();
       final lowerSub = subject.toLowerCase();
-      if (lowerSub != 'chi' && lowerSub != 'trả' && lowerSub != 'mua' && lowerSub != 'không' && lowerSub != 'đừng' && lowerSub != 'tiền') {
+      if (lowerSub != 'chi' &&
+          lowerSub != 'trả' &&
+          lowerSub != 'mua' &&
+          lowerSub != 'không' &&
+          lowerSub != 'đừng' &&
+          lowerSub != 'tiền') {
         final capitalized = subject[0].toUpperCase() + subject.substring(1);
         return '$capitalized cho';
       }
@@ -431,45 +505,173 @@ class VoiceService {
 
     String s = ' $cleanText ';
     final removeWords = [
-      'tôi vừa mới mua', 'tôi mới mua', 'tôi vừa mua', 'vừa mới mua', 'mới mua',
-      'tôi vừa mới ăn', 'tôi mới ăn', 'tôi vừa ăn', 'vừa mới ăn', 'mới ăn',
-      'tôi vừa mới uống', 'tôi mới uống', 'tôi vừa uống', 'vừa mới uống', 'mới uống',
-      'tôi vừa mới chi', 'tôi mới chi', 'tôi vừa chi', 'vừa mới chi', 'mới chi',
-      'tôi vừa mới', 'tôi vừa', 'tôi mới', 'vừa mới', 'vừa', 'mới',
-      'hôm nay', 'sáng nay', 'trưa nay', 'chiều nay', 'tối nay', 'ngày mai',
-      'hôm qua', 'hôm kia', 'hôm kìa', 'tối qua', 'sáng qua', 'trưa qua', 'chiều qua', 'đêm qua', 'ngày mốt', 'hôm trước',
-      'tầm khoảng', 'khoảng', 'khoản', 'tầm', 'cỡ', 'độ', 'hết',
-      'cho tôi', 'giúp tôi',
-      'mới được nhận', 'vừa được nhận', 'được nhận',
-      'mới được cộng', 'vừa được cộng', 'được cộng',
-      'nhận được', 'mới nhận', 'vừa nhận',
-      'cộng thêm', 'cộng vào', 'cộng tiền', 'tiền về',
-      'thanh toán bằng ví', 'thanh toán qua ví', 'thanh toán từ ví',
-      'thanh toán bằng tiền mặt', 'thanh toán bằng thẻ', 'thanh toán chuyển khoản',
-      'thanh toán bằng', 'thanh toán qua', 'thanh toán từ', 'thanh toán',
-      'trả tiền bằng ví', 'trả tiền qua ví', 'trả tiền từ ví',
-      'trả bằng ví', 'trả qua ví', 'trả từ ví',
-      'trả tiền bằng', 'trả tiền qua', 'trả tiền từ',
-      'trả bằng tiền mặt', 'trả bằng thẻ', 'trả bằng', 'trả qua', 'trả tiền',
-      'bằng ví', 'qua ví', 'từ ví', 'vào ví', 'và ví',
-      'bằng tiền mặt', 'bằng thẻ', 'chuyển khoản',
-      'tài khoản', 'ví',
-      'momo', 'mono', 'zalopay', 'tiền mặt',
-      'nghìn', 'ngàn', 'triệu', 'đồng', 'vnd', 'củ', 'lít', 'tỷ',
-      'trăm', 'trắm', 'mươi', 'mưới', 'mười', 'chục', 'linh', 'lẻ', 'rưỡi',
-      'không', 'một', 'mốt', 'hai', 'ba', 'bốn', 'tư', 'năm', 'lăm', 'nhăm', 'sáu', 'bảy', 'tám', 'chín',
-      'nhé', 'nha', 'ạ', 'ơi', 'nhận', 'được', 'và',
+      'tôi vừa mới mua',
+      'tôi mới mua',
+      'tôi vừa mua',
+      'vừa mới mua',
+      'mới mua',
+      'tôi vừa mới ăn',
+      'tôi mới ăn',
+      'tôi vừa ăn',
+      'vừa mới ăn',
+      'mới ăn',
+      'tôi vừa mới uống',
+      'tôi mới uống',
+      'tôi vừa uống',
+      'vừa mới uống',
+      'mới uống',
+      'tôi vừa mới chi',
+      'tôi mới chi',
+      'tôi vừa chi',
+      'vừa mới chi',
+      'mới chi',
+      'tôi vừa mới',
+      'tôi vừa',
+      'tôi mới',
+      'vừa mới',
+      'vừa',
+      'mới',
+      'hôm nay',
+      'sáng nay',
+      'trưa nay',
+      'chiều nay',
+      'tối nay',
+      'ngày mai',
+      'hôm qua',
+      'hôm kia',
+      'hôm kìa',
+      'tối qua',
+      'sáng qua',
+      'trưa qua',
+      'chiều qua',
+      'đêm qua',
+      'ngày mốt',
+      'hôm trước',
+      'tầm khoảng',
+      'khoảng',
+      'khoản',
+      'tầm',
+      'cỡ',
+      'độ',
+      'hết',
+      'cho tôi',
+      'giúp tôi',
+      'mới được nhận',
+      'vừa được nhận',
+      'được nhận',
+      'mới được cộng',
+      'vừa được cộng',
+      'được cộng',
+      'nhận được',
+      'mới nhận',
+      'vừa nhận',
+      'cộng thêm',
+      'cộng vào',
+      'cộng tiền',
+      'tiền về',
+      'thanh toán bằng ví',
+      'thanh toán qua ví',
+      'thanh toán từ ví',
+      'thanh toán bằng tiền mặt',
+      'thanh toán bằng thẻ',
+      'thanh toán chuyển khoản',
+      'thanh toán bằng',
+      'thanh toán qua',
+      'thanh toán từ',
+      'thanh toán',
+      'trả tiền bằng ví',
+      'trả tiền qua ví',
+      'trả tiền từ ví',
+      'trả bằng ví',
+      'trả qua ví',
+      'trả từ ví',
+      'trả tiền bằng',
+      'trả tiền qua',
+      'trả tiền từ',
+      'trả bằng tiền mặt',
+      'trả bằng thẻ',
+      'trả bằng',
+      'trả qua',
+      'trả tiền',
+      'bằng ví',
+      'qua ví',
+      'từ ví',
+      'vào ví',
+      'và ví',
+      'bằng tiền mặt',
+      'bằng thẻ',
+      'chuyển khoản',
+      'tài khoản',
+      'ví',
+      'momo',
+      'mono',
+      'zalopay',
+      'tiền mặt',
+      'nghìn',
+      'ngàn',
+      'triệu',
+      'đồng',
+      'vnd',
+      'củ',
+      'lít',
+      'tỷ',
+      'trăm',
+      'trắm',
+      'mươi',
+      'mưới',
+      'mười',
+      'chục',
+      'linh',
+      'lẻ',
+      'rưỡi',
+      'không',
+      'một',
+      'mốt',
+      'hai',
+      'ba',
+      'bốn',
+      'tư',
+      'năm',
+      'lăm',
+      'nhăm',
+      'sáu',
+      'bảy',
+      'tám',
+      'chín',
+      'nhé',
+      'nha',
+      'ạ',
+      'ơi',
+      'nhận',
+      'được',
+      'và',
     ];
     // Sắp xếp từ dài đến ngắn để xóa cụm từ trước
     removeWords.sort((a, b) => b.length.compareTo(a.length));
     for (final w in removeWords) {
       s = s.replaceAll(' $w ', ' ');
     }
-    s = s.replaceAll('+', ' ').replaceAll('-', ' ').replaceAll('₫', ' ').replaceAll('đ', ' ');
+    s = s
+        .replaceAll('+', ' ')
+        .replaceAll('-', ' ')
+        .replaceAll('₫', ' ')
+        .replaceAll('đ', ' ');
     s = s.replaceAll(RegExp(r'[\.,]'), ' ');
     s = s.replaceAll(RegExp(r'\d+'), ' ');
-    s = s.replaceAll(RegExp(r'\b(?:thanh toán|trả tiền|trả|bằng|qua|từ|vào|ví)\s*$', caseSensitive: false), ' ');
-    s = s.replaceAll(RegExp(r'^(?:thanh toán|trả tiền|trả|bằng|qua|từ|vào)\s+', caseSensitive: false), ' ');
+    s = s.replaceAll(
+      RegExp(
+        r'\b(?:thanh toán|trả tiền|trả|bằng|qua|từ|vào|ví)\s*$',
+        caseSensitive: false,
+      ),
+      ' ',
+    );
+    s = s.replaceAll(
+      RegExp(
+        r'^(?:thanh toán|trả tiền|trả|bằng|qua|từ|vào)\s+',
+        caseSensitive: false,
+      ),
+      ' ',
+    );
     s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
 
     final lowerS = s.toLowerCase();
@@ -488,7 +690,8 @@ class VoiceService {
     }
 
     if (s.isEmpty || s.length < 2) {
-      if (category == 'Thu khác' && (originalText.contains(RegExp(r'momo|mono', caseSensitive: false)))) {
+      if (category == 'Thu khác' &&
+          (originalText.contains(RegExp(r'momo|mono', caseSensitive: false)))) {
         return 'Cộng tiền vào ví MoMo';
       }
       return category;
@@ -500,7 +703,8 @@ class VoiceService {
   /// Giải mã số tiền đọc bằng chữ hoặc hỗn hợp số + chữ tiếng Việt
   /// Hỗ trợ cả biến thể phiên âm STT: "trắm" -> "trăm", "mưới" -> "mươi", v.v.
   double parseVietnameseNumber(String text) {
-    String normalized = text.toLowerCase()
+    String normalized = text
+        .toLowerCase()
         .replaceAll('₫', ' ')
         .replaceAll('trắm', 'trăm')
         .replaceAll('mưới', 'mươi')
@@ -511,8 +715,20 @@ class VoiceService {
         .replaceAll('đ', ' ');
 
     final Map<String, int> wordDigits = {
-      'không': 0, 'một': 1, 'mốt': 1, 'hai': 2, 'ba': 3, 'bốn': 4, 'tư': 4,
-      'năm': 5, 'lăm': 5, 'nhăm': 5, 'sáu': 6, 'bảy': 7, 'tám': 8, 'chín': 9,
+      'không': 0,
+      'một': 1,
+      'mốt': 1,
+      'hai': 2,
+      'ba': 3,
+      'bốn': 4,
+      'tư': 4,
+      'năm': 5,
+      'lăm': 5,
+      'nhăm': 5,
+      'sáu': 6,
+      'bảy': 7,
+      'tám': 8,
+      'chín': 9,
     };
 
     final tokens = normalized.split(RegExp(r'\s+'));
@@ -630,9 +846,18 @@ class VoiceService {
     final dateMatch = specificDateRegex.firstMatch(lower);
     if (dateMatch != null) {
       final day = int.tryParse(dateMatch.group(1)!);
-      final month = dateMatch.group(2) != null ? int.tryParse(dateMatch.group(2)!) : now.month;
-      final year = dateMatch.group(3) != null ? int.tryParse(dateMatch.group(3)!) : now.year;
-      if (day != null && month != null && day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+      final month = dateMatch.group(2) != null
+          ? int.tryParse(dateMatch.group(2)!)
+          : now.month;
+      final year = dateMatch.group(3) != null
+          ? int.tryParse(dateMatch.group(3)!)
+          : now.year;
+      if (day != null &&
+          month != null &&
+          day >= 1 &&
+          day <= 31 &&
+          month >= 1 &&
+          month <= 12) {
         targetDate = DateTime(year ?? now.year, month, day);
         hasExplicitDate = true;
       }
@@ -694,12 +919,16 @@ class VoiceService {
       }
       final session = match.group(3)?.toLowerCase();
       if (h != null) {
-        if ((session == 'chiều' || session == 'tối' || session == 'đêm') && h < 12) {
+        if ((session == 'chiều' || session == 'tối' || session == 'đêm') &&
+            h < 12) {
           h += 12;
         } else if (session == 'sáng' && h == 12) {
           h = 0;
         } else if (session == null) {
-          if ((lower.contains('chiều') || lower.contains('tối') || lower.contains('đêm')) && h < 12) {
+          if ((lower.contains('chiều') ||
+                  lower.contains('tối') ||
+                  lower.contains('đêm')) &&
+              h < 12) {
             h += 12;
           }
         }
@@ -715,23 +944,38 @@ class VoiceService {
         targetHour = 6;
         targetMinute = 30;
         hasExplicitTime = true;
-      } else if (lower.contains('sáng nay') || lower.contains('sáng qua') || lower.contains('buổi sáng') || lower.contains('sáng')) {
+      } else if (lower.contains('sáng nay') ||
+          lower.contains('sáng qua') ||
+          lower.contains('buổi sáng') ||
+          lower.contains('sáng')) {
         targetHour = 8;
         targetMinute = 0;
         hasExplicitTime = true;
-      } else if (lower.contains('trưa nay') || lower.contains('trưa qua') || lower.contains('buổi trưa') || lower.contains('trưa')) {
+      } else if (lower.contains('trưa nay') ||
+          lower.contains('trưa qua') ||
+          lower.contains('buổi trưa') ||
+          lower.contains('trưa')) {
         targetHour = 12;
         targetMinute = 0;
         hasExplicitTime = true;
-      } else if (lower.contains('chiều nay') || lower.contains('chiều qua') || lower.contains('buổi chiều') || lower.contains('chiều')) {
+      } else if (lower.contains('chiều nay') ||
+          lower.contains('chiều qua') ||
+          lower.contains('buổi chiều') ||
+          lower.contains('chiều')) {
         targetHour = 15;
         targetMinute = 30;
         hasExplicitTime = true;
-      } else if (lower.contains('tối nay') || lower.contains('tối qua') || lower.contains('buổi tối') || lower.contains('tối')) {
+      } else if (lower.contains('tối nay') ||
+          lower.contains('tối qua') ||
+          lower.contains('buổi tối') ||
+          lower.contains('tối')) {
         targetHour = 19;
         targetMinute = 30;
         hasExplicitTime = true;
-      } else if (lower.contains('đêm qua') || lower.contains('khuya qua') || lower.contains('đêm nay') || lower.contains('nửa đêm')) {
+      } else if (lower.contains('đêm qua') ||
+          lower.contains('khuya qua') ||
+          lower.contains('đêm nay') ||
+          lower.contains('nửa đêm')) {
         targetHour = 22;
         targetMinute = 30;
         hasExplicitTime = true;
@@ -746,7 +990,8 @@ class VoiceService {
       targetMinute,
     );
 
-    final formattedTime = '${targetHour.toString().padLeft(2, '0')}:${targetMinute.toString().padLeft(2, '0')}';
+    final formattedTime =
+        '${targetHour.toString().padLeft(2, '0')}:${targetMinute.toString().padLeft(2, '0')}';
 
     return {
       'date': finalDateTime,
@@ -764,37 +1009,47 @@ class VoiceService {
   /// Advanced parsing logic for Vietnamese
   Map<String, dynamic>? parseVoiceCommand(String text) {
     if (text.isEmpty) return null;
-    
-    String cleanText = text.toLowerCase().trim()
+
+    String cleanText = text
+        .toLowerCase()
+        .trim()
         .replaceAll('₫', 'đ')
         .replaceAll('và ví', 'vào ví')
         .replaceAll('  ', ' ');
 
-    final bool hasPlusSign = cleanText.contains('+') || RegExp(r'\+\s*\d+').hasMatch(text);
-    final bool hasMinusSign = cleanText.contains('-') || RegExp(r'-\s*\d+').hasMatch(text);
-        
+    final bool hasPlusSign =
+        cleanText.contains('+') || RegExp(r'\+\s*\d+').hasMatch(text);
+    final bool hasMinusSign =
+        cleanText.contains('-') || RegExp(r'-\s*\d+').hasMatch(text);
+
     // Nhận diện ngày giờ chính xác bằng bộ phân tích tiếng Việt chuyên sâu
     final dtInfo = parseVietnameseDateTime(cleanText);
     final DateTime parsedDate = dtInfo['date'] as DateTime;
     final int parsedHour = dtInfo['hour'] as int;
     final int parsedMinute = dtInfo['minute'] as int;
-    
+
     // Dọn dẹp các cụm từ chỉ thời gian khỏi cleanText để tránh nhiễu phân tích số tiền
     final timeReg = RegExp(
       r'\b(?:lúc\s+)?\d{1,2}\s*(?:(?:h|giờ|g|:)\s*(?:\d{1,2}|rưỡi)?|rưỡi)\s*(?:phút)?\s*(?:sáng|trưa|chiều|tối|đêm)?\b',
       caseSensitive: false,
     );
     cleanText = cleanText.replaceAll(timeReg, ' ');
-    cleanText = cleanText.replaceAll(RegExp(
-      r'\b(?:hôm nay|hôm qua|hôm kia|hôm kìa|sáng nay|sáng qua|trưa nay|trưa qua|chiều nay|chiều qua|tối nay|tối qua|đêm qua|ngày mai|ngày mốt)\b',
-      caseSensitive: false,
-    ), ' ');
+    cleanText = cleanText.replaceAll(
+      RegExp(
+        r'\b(?:hôm nay|hôm qua|hôm kia|hôm kìa|sáng nay|sáng qua|trưa nay|trưa qua|chiều nay|chiều qua|tối nay|tối qua|đêm qua|ngày mai|ngày mốt)\b',
+        caseSensitive: false,
+      ),
+      ' ',
+    );
 
     // 1. Trích xuất số tiền: Hỗ trợ phân cách hàng nghìn (9.880đ), đơn vị scale (1.5tr, 35k), số hỗn hợp (9 nghìn 8 trắm 8 mưới) và chữ số
     double amount = 0;
 
     // 1.1 Phân cách hàng nghìn kiểu Việt Nam: 9.880, 50.000, 1.500.000 (hỗ trợ cả +9.880, +50.000)
-    final thousandsSepRegex = RegExp(r'(?:\+|-)?\s*(\d{1,3}(?:\.\d{3})+)\s*(?:đ|đồng|vnd|₫)?(?:\s|$|\b)', caseSensitive: false);
+    final thousandsSepRegex = RegExp(
+      r'(?:\+|-)?\s*(\d{1,3}(?:\.\d{3})+)\s*(?:đ|đồng|vnd|₫)?(?:\s|$|\b)',
+      caseSensitive: false,
+    );
     final thousandsMatch = thousandsSepRegex.firstMatch(cleanText);
     if (thousandsMatch != null) {
       final cleanStr = thousandsMatch.group(1)!.replaceAll('.', '');
@@ -806,7 +1061,10 @@ class VoiceService {
 
     // 1.2 Số thập phân kèm đơn vị quy đổi: 1.5tr, 2.5k, 1,5 triệu (hỗ trợ cả +1.5tr)
     if (amount <= 0) {
-      final scaleDecimalRegex = RegExp(r'(?:\+|-)?\s*(\d+[,\.]\d+)\s*(k|nghìn|ngàn|tr|triệu|củ)\b', caseSensitive: false);
+      final scaleDecimalRegex = RegExp(
+        r'(?:\+|-)?\s*(\d+[,\.]\d+)\s*(k|nghìn|ngàn|tr|triệu|củ)\b',
+        caseSensitive: false,
+      );
       final scaleDecMatch = scaleDecimalRegex.firstMatch(cleanText);
       if (scaleDecMatch != null) {
         final numStr = scaleDecMatch.group(1)!.replaceAll(',', '.');
@@ -834,7 +1092,10 @@ class VoiceService {
 
     // 1.4 Số nguyên kèm đơn vị quy đổi thông thường: 35k, 50 nghìn, 2 triệu (hỗ trợ cả +50k)
     if (amount <= 0) {
-      final scaleRegex = RegExp(r'(?:\+|-)?\s*(\d+(?:[\.,]\d+)?)\s*(k|nghìn|ngàn|tr|triệu|củ)\b', caseSensitive: false);
+      final scaleRegex = RegExp(
+        r'(?:\+|-)?\s*(\d+(?:[\.,]\d+)?)\s*(k|nghìn|ngàn|tr|triệu|củ)\b',
+        caseSensitive: false,
+      );
       final scaleMatch = scaleRegex.firstMatch(cleanText);
       if (scaleMatch != null) {
         final numStr = scaleMatch.group(1)!.replaceAll(',', '.');
@@ -849,7 +1110,8 @@ class VoiceService {
           }
           amount = val * scale;
           if (cleanText.contains('rưỡi')) {
-            if (unit == 'tr' || unit == 'triệu' || unit == 'củ') amount += 500000;
+            if (unit == 'tr' || unit == 'triệu' || unit == 'củ')
+              amount += 500000;
             if (unit == 'k' || unit == 'nghìn' || unit == 'ngàn') amount += 500;
           }
         }
@@ -858,7 +1120,10 @@ class VoiceService {
 
     // 1.5 Số nguyên thông thường: 9880, 50000 (hỗ trợ cả +9880)
     if (amount <= 0) {
-      final plainNumRegex = RegExp(r'(?:\+|-)?\s*(\d+)\s*(đ|đồng|vnd)?\b', caseSensitive: false);
+      final plainNumRegex = RegExp(
+        r'(?:\+|-)?\s*(\d+)\s*(đ|đồng|vnd)?\b',
+        caseSensitive: false,
+      );
       final plainMatch = plainNumRegex.firstMatch(cleanText);
       if (plainMatch != null) {
         amount = double.tryParse(plainMatch.group(1)!) ?? 0;
@@ -869,16 +1134,21 @@ class VoiceService {
 
     // 2. Kiểm tra xem có phải là lệnh đặt hạn mức chi tiêu mỗi ngày không
     final limitKeywords = [
-      'hạn mức', 'đặt hạn mức', 'cài hạn mức', 'hạn mức chi tiêu',
-      'hạn mức ngày', 'giới hạn chi tiêu', 'set limit', 'daily limit', 'limit',
-      'giới hạn', 'hạn mức tháng', 'giới hạn tháng',
+      'hạn mức',
+      'đặt hạn mức',
+      'cài hạn mức',
+      'hạn mức chi tiêu',
+      'hạn mức ngày',
+      'giới hạn chi tiêu',
+      'set limit',
+      'daily limit',
+      'limit',
+      'giới hạn',
+      'hạn mức tháng',
+      'giới hạn tháng',
     ];
     if (limitKeywords.any((kw) => cleanText.contains(kw))) {
-      return {
-        'isDailyLimit': true,
-        'amount': amount,
-        'description': text,
-      };
+      return {'isDailyLimit': true, 'amount': amount, 'description': text};
     }
 
     // 2.1 Nhận diện Ví tiền
@@ -905,7 +1175,10 @@ class VoiceService {
         cleanText.contains('từ ví')) {
       final wallets = WalletRepository().latestWallets;
       if (wallets.isNotEmpty) {
-        final def = wallets.firstWhere((w) => w.isDefault, orElse: () => wallets.first);
+        final def = wallets.firstWhere(
+          (w) => w.isDefault,
+          orElse: () => wallets.first,
+        );
         wallet = def.name;
       } else {
         wallet = 'Tiền mặt';
@@ -915,48 +1188,336 @@ class VoiceService {
     // 3. Match Category
     String category = 'Chi khác';
     String type = 'expense';
-    
+
     final categoriesMap = {
       // INCOME CATEGORIES (Ưu tiên Lên Đầu)
-      'Tiền lương': ['lương', 'salary', 'nhận lương', 'lãnh lương', 'ting ting lương', 'phát lương', 'tiền công', 'trả công'],
-      'Tiền thưởng': ['thưởng', 'bonus', 'khoản thu', 'khoảng thu', 'hoa hồng', 'tiền bo', 'tip', 'kpi'],
-      'Tiền thuê nhà': ['tiền thuê nhà', 'thuê nhà', 'thu tiền nhà', 'nhận tiền thuê nhà', 'tiền trọ', 'thu tiền trọ'],
+      'Tiền lương': [
+        'lương',
+        'salary',
+        'nhận lương',
+        'lãnh lương',
+        'ting ting lương',
+        'phát lương',
+        'tiền công',
+        'trả công',
+      ],
+      'Tiền thưởng': [
+        'thưởng',
+        'bonus',
+        'khoản thu',
+        'khoảng thu',
+        'hoa hồng',
+        'tiền bo',
+        'tip',
+        'kpi',
+      ],
+      'Tiền thuê nhà': [
+        'tiền thuê nhà',
+        'thuê nhà',
+        'thu tiền nhà',
+        'nhận tiền thuê nhà',
+        'tiền trọ',
+        'thu tiền trọ',
+      ],
       'Được cho/Tặng': [
-        'lì xì', 'mẹ cho', 'bố cho', 'ba cho', 'anh cho', 'chị cho', 'em cho', 'bạn cho',
-        'phụng cho', 'sếp cho', 'khách cho', 'người yêu cho', 'crush cho', 'cho tiền',
-        'được cho', 'nhận được', 'cho tôi', 'tặng', 'mẹ tôi cho', 'bố tôi cho', 'biếu',
-        'tài trợ', 'nhận tiền', 'được nhận', 'mới được nhận', 'vừa được nhận', 'mới nhận',
-        'vừa nhận', 'ai cho'
+        'lì xì',
+        'mẹ cho',
+        'bố cho',
+        'ba cho',
+        'anh cho',
+        'chị cho',
+        'em cho',
+        'bạn cho',
+        'phụng cho',
+        'sếp cho',
+        'khách cho',
+        'người yêu cho',
+        'crush cho',
+        'cho tiền',
+        'được cho',
+        'nhận được',
+        'cho tôi',
+        'tặng',
+        'mẹ tôi cho',
+        'bố tôi cho',
+        'biếu',
+        'tài trợ',
+        'nhận tiền',
+        'được nhận',
+        'mới được nhận',
+        'vừa được nhận',
+        'mới nhận',
+        'vừa nhận',
+        'ai cho',
       ],
       'Tiền lãi': ['tiền lãi', 'lãi tiết kiệm', 'lãi suất', 'tiền lời'],
-      'Bán đồ': ['bán hàng', 'bán', 'lời', 'thu được', 'thanh lý', 'sang nhượng', 'đẩy đi', 'pass lại'],
-      'Kinh doanh': ['kinh doanh', 'lợi nhuận', 'doanh thu', 'đầu tư', 'cổ tức', 'nhận tiền nhà', 'cho thuê'],
+      'Bán đồ': [
+        'bán hàng',
+        'bán',
+        'lời',
+        'thu được',
+        'thanh lý',
+        'sang nhượng',
+        'đẩy đi',
+        'pass lại',
+      ],
+      'Kinh doanh': [
+        'kinh doanh',
+        'lợi nhuận',
+        'doanh thu',
+        'đầu tư',
+        'cổ tức',
+        'nhận tiền nhà',
+        'cho thuê',
+      ],
       'Thu khác': [
-        'trúng số', 'nhặt được', 'tiền rớt', 'quỹ đen', 'bồi thường',
-        'được cộng', 'mới được cộng', 'vừa được cộng', 'cộng thêm', 'cộng vào', 'cộng tiền', 'vào ví', 'tiền về'
+        'trúng số',
+        'nhặt được',
+        'tiền rớt',
+        'quỹ đen',
+        'bồi thường',
+        'được cộng',
+        'mới được cộng',
+        'vừa được cộng',
+        'cộng thêm',
+        'cộng vào',
+        'cộng tiền',
+        'vào ví',
+        'tiền về',
       ],
 
       // SPECIFIC EXPENSE CATEGORIES
-      'Tiền nhà': ['thuê nhà', 'tiền nhà', 'trọ', 'nhà trọ', 'chung cư', 'quản lý phí'],
-      'Tiền điện': ['điện', 'tiền điện', 'evn', 'nước', 'tiền nước', 'internet', 'wifi', 'cáp quang', 'tiền mạng', 'cước viễn thông'],
-      'Điện thoại': ['điện thoại', 'nạp card', 'thẻ cào', 'thẻ viettel', 'thẻ mobi', 'thẻ vina', 'cước điện thoại', 'cước trả trước', 'cước trả sau', 'nạp thẻ', 'nạp tiền điện thoại'],
-      'Sức khỏe': ['thuốc', 'khám', 'bệnh', 'nha khoa', 'vitamin', 'bệnh viện', 'phòng khám', 'xét nghiệm', 'bảo hiểm y tế', 'viện phí', 'tiêm phòng', 'băng cá nhân', 'y tế'],
-      'Học tập': ['học', 'sách', 'vở', 'khóa học', 'bút', 'giáo trình', 'học phí', 'thi lại', 'hành trang', 'kỹ năng', 'toeic', 'ielts', 'tiếng anh'],
-      'Thể thao': ['thể thao', 'gym', 'bơi', 'đá bóng', 'cầu lông', 'chạy', 'tennis', 'yoga', 'đạp xe', 'vợt', 'giày chạy', 'thuê sân', 'bóng đá', 'billard', 'bi a', 'bida'],
-      'Di chuyển': ['xăng', 'xe', 'bus', 'grab', 'be', 'taxi', 'vé máy bay', 'tàu', 'gửi xe', 'bến', 'bơm xe', 'thay nhớt', 'rửa xe', 'vé xe', 'thu phí', 'bot', 'bảo dưỡng'],
-      'Giải trí': ['phim', 'nhạc', 'game', 'karaoke', 'xem phim', 'netflix', 'spotify', 'gacha', 'nạp game', 'vé concert', 'nhạc hội', 'đi lượn', 'chơi'],
-      'Du lịch': ['du lịch', 'khách sạn', 'homestay', 'resort', 'máy bay', 'phòng', 'vé tham quan', 'tour', 'visa', 'đặt phòng', 'villas'],
-      'Quà tặng': ['quà', 'mừng', 'sinh nhật', 'lễ', 'đám cưới', 'chu cấp', 'thăm hỏi', 'phúng điếu', 'ma chay', 'thôi nôi', 'đầy tháng', 'tặng bạn', 'tặng người yêu'],
-      'Tiết kiệm': ['tiết kiệm', 'bỏ ống heo', 'đút lợn', 'gửi ngân hàng', 'nuôi heo'],
-      'Thú cưng': ['thú cưng', 'chó mèo', 'thức ăn chó mèo', 'pate', 'cát vệ sinh', 'cám chó', 'cám mèo', 'thú y'],
-      'Từ thiện': ['từ thiện', 'quyên góp', 'ủng hộ', 'cúng dường', 'nhang đèn', 'đi chùa'],
+      'Tiền nhà': [
+        'thuê nhà',
+        'tiền nhà',
+        'trọ',
+        'nhà trọ',
+        'chung cư',
+        'quản lý phí',
+      ],
+      'Tiền điện': [
+        'điện',
+        'tiền điện',
+        'evn',
+        'nước',
+        'tiền nước',
+        'internet',
+        'wifi',
+        'cáp quang',
+        'tiền mạng',
+        'cước viễn thông',
+      ],
+      'Điện thoại': [
+        'điện thoại',
+        'nạp card',
+        'thẻ cào',
+        'thẻ viettel',
+        'thẻ mobi',
+        'thẻ vina',
+        'cước điện thoại',
+        'cước trả trước',
+        'cước trả sau',
+        'nạp thẻ',
+        'nạp tiền điện thoại',
+      ],
+      'Sức khỏe': [
+        'thuốc',
+        'khám',
+        'bệnh',
+        'nha khoa',
+        'vitamin',
+        'bệnh viện',
+        'phòng khám',
+        'xét nghiệm',
+        'bảo hiểm y tế',
+        'viện phí',
+        'tiêm phòng',
+        'băng cá nhân',
+        'y tế',
+      ],
+      'Học tập': [
+        'học',
+        'sách',
+        'vở',
+        'khóa học',
+        'bút',
+        'giáo trình',
+        'học phí',
+        'thi lại',
+        'hành trang',
+        'kỹ năng',
+        'toeic',
+        'ielts',
+        'tiếng anh',
+      ],
+      'Thể thao': [
+        'thể thao',
+        'gym',
+        'bơi',
+        'đá bóng',
+        'cầu lông',
+        'chạy',
+        'tennis',
+        'yoga',
+        'đạp xe',
+        'vợt',
+        'giày chạy',
+        'thuê sân',
+        'bóng đá',
+        'billard',
+        'bi a',
+        'bida',
+      ],
+      'Di chuyển': [
+        'xăng',
+        'xe',
+        'bus',
+        'grab',
+        'be',
+        'taxi',
+        'vé máy bay',
+        'tàu',
+        'gửi xe',
+        'bến',
+        'bơm xe',
+        'thay nhớt',
+        'rửa xe',
+        'vé xe',
+        'thu phí',
+        'bot',
+        'bảo dưỡng',
+      ],
+      'Giải trí': [
+        'phim',
+        'nhạc',
+        'game',
+        'karaoke',
+        'xem phim',
+        'netflix',
+        'spotify',
+        'gacha',
+        'nạp game',
+        'vé concert',
+        'nhạc hội',
+        'đi lượn',
+        'chơi',
+      ],
+      'Du lịch': [
+        'du lịch',
+        'khách sạn',
+        'homestay',
+        'resort',
+        'máy bay',
+        'phòng',
+        'vé tham quan',
+        'tour',
+        'visa',
+        'đặt phòng',
+        'villas',
+      ],
+      'Quà tặng': [
+        'quà',
+        'mừng',
+        'sinh nhật',
+        'lễ',
+        'đám cưới',
+        'chu cấp',
+        'thăm hỏi',
+        'phúng điếu',
+        'ma chay',
+        'thôi nôi',
+        'đầy tháng',
+        'tặng bạn',
+        'tặng người yêu',
+      ],
+      'Tiết kiệm': [
+        'tiết kiệm',
+        'bỏ ống heo',
+        'đút lợn',
+        'gửi ngân hàng',
+        'nuôi heo',
+      ],
+      'Thú cưng': [
+        'thú cưng',
+        'chó mèo',
+        'thức ăn chó mèo',
+        'pate',
+        'cát vệ sinh',
+        'cám chó',
+        'cám mèo',
+        'thú y',
+      ],
+      'Từ thiện': [
+        'từ thiện',
+        'quyên góp',
+        'ủng hộ',
+        'cúng dường',
+        'nhang đèn',
+        'đi chùa',
+      ],
       'Bảo hiểm': ['bảo hiểm nhân thọ', 'bảo hiểm xe', 'đóng bảo hiểm'],
       'Con cái': ['bỉm', 'sữa', 'đồ chơi', 'học phí cho con', 'nuôi con'],
-      'Làm đẹp': ['spa', 'cắt tóc', 'gội đầu', 'làm móng', 'nail', 'skincare', 'makeup', 'nối mi', 'massage', 'làm đẹp'],
+      'Làm đẹp': [
+        'spa',
+        'cắt tóc',
+        'gội đầu',
+        'làm móng',
+        'nail',
+        'skincare',
+        'makeup',
+        'nối mi',
+        'massage',
+        'làm đẹp',
+      ],
 
       // BROAD EXPENSE CATEGORIES
-      'Ăn uống': ['ăn', 'uống', 'cafe', 'phở', 'bún', 'cơm', 'trà', 'nhậu', 'tiệc', 'bánh', 'mì', 'phê', 'sinh tố', 'trà sữa', 'ốc', 'nhà hàng', 'xôi', 'chè', 'đồ ăn', 'đồ uống', 'nước ép', 'bia', 'pizza', 'gà rán', 'hamburger', 'trái cây'],
-      'Mua sắm': ['mua', 'shopee', 'lazada', 'quần', 'áo', 'giày', 'dép', 'túi', 'siêu thị', 'đồ dùng', 'mỹ phẩm', 'tiki', 'tiktok shop', 'váy', 'son', 'kem chống nắng', 'sắm'],
+      'Ăn uống': [
+        'ăn',
+        'uống',
+        'cafe',
+        'phở',
+        'bún',
+        'cơm',
+        'trà',
+        'nhậu',
+        'tiệc',
+        'bánh',
+        'mì',
+        'phê',
+        'sinh tố',
+        'trà sữa',
+        'ốc',
+        'nhà hàng',
+        'xôi',
+        'chè',
+        'đồ ăn',
+        'đồ uống',
+        'nước ép',
+        'bia',
+        'pizza',
+        'gà rán',
+        'hamburger',
+        'trái cây',
+      ],
+      'Mua sắm': [
+        'mua',
+        'shopee',
+        'lazada',
+        'quần',
+        'áo',
+        'giày',
+        'dép',
+        'túi',
+        'siêu thị',
+        'đồ dùng',
+        'mỹ phẩm',
+        'tiki',
+        'tiktok shop',
+        'váy',
+        'son',
+        'kem chống nắng',
+        'sắm',
+      ],
     };
 
     int maxKeywordLength = -1;
@@ -971,7 +1532,8 @@ class VoiceService {
       }
     }
 
-    final bool isGiveOutExpense = cleanText.contains('cho vay') ||
+    final bool isGiveOutExpense =
+        cleanText.contains('cho vay') ||
         cleanText.contains('cho mượn') ||
         cleanText.contains('cho bạn mượn') ||
         cleanText.contains('cho tiền ăn xin') ||
@@ -983,37 +1545,44 @@ class VoiceService {
         cleanText.contains('gửi cho') ||
         cleanText.contains('chuyển cho');
 
-    final bool hasGivenBySomeone = !isGiveOutExpense && (
-        RegExp(r'(?:^|\s)(?:[a-zà-ỹA-ZÀ-Ỹ0-9_]+)\s+cho\s+(?:\d|[\.,\d]+|tiền|vào ví|vào)', caseSensitive: false).hasMatch(cleanText) ||
-        RegExp(r'(?:^|\s)cho\s+(?:\d|[\.,\d]+)\s*(?:k|nghìn|ngàn|tr|triệu|củ|đ|đồng|vnd)?\s+vào\s+ví', caseSensitive: false).hasMatch(cleanText) ||
-        cleanText.contains('được cho') ||
-        cleanText.contains('cho tiền') ||
-        cleanText.contains('ai cho') ||
-        cleanText.contains('người ta cho') ||
-        cleanText.contains('mẹ cho') ||
-        cleanText.contains('bố cho') ||
-        cleanText.contains('ba cho') ||
-        cleanText.contains('bạn cho') ||
-        cleanText.contains('anh cho') ||
-        cleanText.contains('chị cho') ||
-        cleanText.contains('em cho') ||
-        cleanText.contains('sếp cho') ||
-        cleanText.contains('khách cho') ||
-        cleanText.contains('ông cho') ||
-        cleanText.contains('bà cho') ||
-        cleanText.contains('cô cho') ||
-        cleanText.contains('chú cho') ||
-        cleanText.contains('bác cho') ||
-        cleanText.contains('người yêu cho') ||
-        cleanText.contains('crush cho')
-    );
+    final bool hasGivenBySomeone =
+        !isGiveOutExpense &&
+        (RegExp(
+              r'(?:^|\s)(?:[a-zà-ỹA-ZÀ-Ỹ0-9_]+)\s+cho\s+(?:\d|[\.,\d]+|tiền|vào ví|vào)',
+              caseSensitive: false,
+            ).hasMatch(cleanText) ||
+            RegExp(
+              r'(?:^|\s)cho\s+(?:\d|[\.,\d]+)\s*(?:k|nghìn|ngàn|tr|triệu|củ|đ|đồng|vnd)?\s+vào\s+ví',
+              caseSensitive: false,
+            ).hasMatch(cleanText) ||
+            cleanText.contains('được cho') ||
+            cleanText.contains('cho tiền') ||
+            cleanText.contains('ai cho') ||
+            cleanText.contains('người ta cho') ||
+            cleanText.contains('mẹ cho') ||
+            cleanText.contains('bố cho') ||
+            cleanText.contains('ba cho') ||
+            cleanText.contains('bạn cho') ||
+            cleanText.contains('anh cho') ||
+            cleanText.contains('chị cho') ||
+            cleanText.contains('em cho') ||
+            cleanText.contains('sếp cho') ||
+            cleanText.contains('khách cho') ||
+            cleanText.contains('ông cho') ||
+            cleanText.contains('bà cho') ||
+            cleanText.contains('cô cho') ||
+            cleanText.contains('chú cho') ||
+            cleanText.contains('bác cho') ||
+            cleanText.contains('người yêu cho') ||
+            cleanText.contains('crush cho'));
 
     if (hasGivenBySomeone) {
       category = 'Được cho/Tặng';
     }
 
     // Determine type (income or expense)
-    final bool isExplicitExpense = cleanText.contains('mua') ||
+    final bool isExplicitExpense =
+        cleanText.contains('mua') ||
         cleanText.contains('chi') ||
         cleanText.contains('tiêu') ||
         cleanText.contains('ăn') ||
@@ -1026,30 +1595,73 @@ class VoiceService {
         cleanText.contains('trả tiền nước') ||
         cleanText.contains('trả tiền điện');
 
-    final bool isSellIncome = RegExp(r'\bbán\s+(?:được|hàng|đồ|xe|nhà|đất|ve chai|phế liệu|cũ)\b', caseSensitive: false).hasMatch(cleanText) ||
+    final bool isSellIncome =
+        RegExp(
+          r'\bbán\s+(?:được|hàng|đồ|xe|nhà|đất|ve chai|phế liệu|cũ)\b',
+          caseSensitive: false,
+        ).hasMatch(cleanText) ||
         cleanText.contains('tiền bán') ||
         cleanText.contains('bán được');
 
-    final bool hasCreditAction = RegExp(r'(?:^|\s)(?:cộng|nạp|thu|nhận)\s+(?:\d|[\.,\d]+)', caseSensitive: false).hasMatch(cleanText) ||
-        RegExp(r'(?:^|\s)cộng\s+.*?(?:vào|sang)\s+(?:ví)?', caseSensitive: false).hasMatch(cleanText);
+    final bool hasCreditAction =
+        RegExp(
+          r'(?:^|\s)(?:cộng|nạp|thu|nhận)\s+(?:\d|[\.,\d]+)',
+          caseSensitive: false,
+        ).hasMatch(cleanText) ||
+        RegExp(
+          r'(?:^|\s)cộng\s+.*?(?:vào|sang)\s+(?:ví)?',
+          caseSensitive: false,
+        ).hasMatch(cleanText);
 
-    if (!isExplicitExpense && (
-        hasPlusSign ||
-        hasGivenBySomeone ||
-        hasCreditAction ||
-        ['Tiền lương', 'Tiền thưởng', 'Tiền lãi', 'Tiền thuê nhà', 'Kinh doanh', 'Được cho/Tặng', 'Bán đồ', 'Thu khác'].contains(category) || 
-        cleanText.contains('được nhận') || cleanText.contains('mới được nhận') || cleanText.contains('vừa được nhận') ||
-        cleanText.contains('nhận được') || cleanText.contains('mới nhận') || cleanText.contains('vừa nhận') ||
-        cleanText.contains('được cộng') || cleanText.contains('mới được cộng') || cleanText.contains('vừa được cộng') ||
-        cleanText.contains('cộng thêm') || cleanText.contains('cộng vào') || cleanText.contains('cộng tiền') ||
-        cleanText.contains('thu nhập') || cleanText.contains('được cho') || cleanText.contains('mẹ cho') || 
-        cleanText.contains('bố cho') || cleanText.contains('cho tiền') || 
-        cleanText.contains('khoản thu') || cleanText.contains('khoảng thu') || cleanText.contains('cho tôi') ||
-        cleanText.contains('đưa tôi') || cleanText.contains('mẹ tôi cho') || isSellIncome || 
-        cleanText.contains('tiền lời') || cleanText.contains('tiền lãi') || cleanText.contains('thu được') || 
-        cleanText.contains('đầu tư sinh lời') || cleanText.contains('trúng số') || cleanText.contains('nhận tiền') || 
-        cleanText.contains('thu tiền') || cleanText.contains('cho thuê') || cleanText.contains('lãnh lương') || 
-        cleanText.contains('thanh lý') || cleanText.contains('nạp vào ví') || cleanText.contains('tiền về'))) {
+    if (!isExplicitExpense &&
+        (hasPlusSign ||
+            hasGivenBySomeone ||
+            hasCreditAction ||
+            [
+              'Tiền lương',
+              'Tiền thưởng',
+              'Tiền lãi',
+              'Tiền thuê nhà',
+              'Kinh doanh',
+              'Được cho/Tặng',
+              'Bán đồ',
+              'Thu khác',
+            ].contains(category) ||
+            cleanText.contains('được nhận') ||
+            cleanText.contains('mới được nhận') ||
+            cleanText.contains('vừa được nhận') ||
+            cleanText.contains('nhận được') ||
+            cleanText.contains('mới nhận') ||
+            cleanText.contains('vừa nhận') ||
+            cleanText.contains('được cộng') ||
+            cleanText.contains('mới được cộng') ||
+            cleanText.contains('vừa được cộng') ||
+            cleanText.contains('cộng thêm') ||
+            cleanText.contains('cộng vào') ||
+            cleanText.contains('cộng tiền') ||
+            cleanText.contains('thu nhập') ||
+            cleanText.contains('được cho') ||
+            cleanText.contains('mẹ cho') ||
+            cleanText.contains('bố cho') ||
+            cleanText.contains('cho tiền') ||
+            cleanText.contains('khoản thu') ||
+            cleanText.contains('khoảng thu') ||
+            cleanText.contains('cho tôi') ||
+            cleanText.contains('đưa tôi') ||
+            cleanText.contains('mẹ tôi cho') ||
+            isSellIncome ||
+            cleanText.contains('tiền lời') ||
+            cleanText.contains('tiền lãi') ||
+            cleanText.contains('thu được') ||
+            cleanText.contains('đầu tư sinh lời') ||
+            cleanText.contains('trúng số') ||
+            cleanText.contains('nhận tiền') ||
+            cleanText.contains('thu tiền') ||
+            cleanText.contains('cho thuê') ||
+            cleanText.contains('lãnh lương') ||
+            cleanText.contains('thanh lý') ||
+            cleanText.contains('nạp vào ví') ||
+            cleanText.contains('tiền về'))) {
       type = 'income';
       if (category == 'Chi khác') {
         category = 'Thu khác';
@@ -1063,7 +1675,8 @@ class VoiceService {
 
     final reason = _extractCleanReason(text, cleanText, category);
 
-    final timeStr = '${parsedHour.toString().padLeft(2, '0')}:${parsedMinute.toString().padLeft(2, '0')}';
+    final timeStr =
+        '${parsedHour.toString().padLeft(2, '0')}:${parsedMinute.toString().padLeft(2, '0')}';
 
     return {
       'category': category,

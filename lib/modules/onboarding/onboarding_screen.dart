@@ -134,7 +134,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               children: [
                 // 1. TOP HEADER: LOGO MONO & NÚT BỎ QUA (SKIP)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -170,8 +173,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           },
                           style: TextButton.styleFrom(
                             foregroundColor: context.colors.onSurfaceVariant,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -184,7 +192,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 ),
                               ),
                               const SizedBox(width: 4),
-                              const Icon(Icons.arrow_forward_ios_rounded, size: 12),
+                              const Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 12,
+                              ),
                             ],
                           ),
                         )
@@ -205,7 +216,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     itemCount: items.length,
                     itemBuilder: (context, index) {
                       final item = items[index];
-                      return _buildSlideContent(item, size, isDark, primaryColor);
+                      return _buildSlideContent(
+                        item,
+                        size,
+                        isDark,
+                        primaryColor,
+                      );
                     },
                   ),
                 ),
@@ -250,8 +266,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: isDark
-                                  ? [AppColors.primaryTealLight, AppColors.primaryTeal]
-                                  : [const Color(0xFF68AEA9), const Color(0xFF387A75)],
+                                  ? [
+                                      AppColors.primaryTealLight,
+                                      AppColors.primaryTeal,
+                                    ]
+                                  : [
+                                      const Color(0xFF68AEA9),
+                                      const Color(0xFF387A75),
+                                    ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -269,7 +291,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  _currentPage == items.length - 1 ? (isVi ? 'Bắt đầu ngay' : 'Get Started') : (isVi ? 'Tiếp tục' : 'Continue'),
+                                  _currentPage == items.length - 1
+                                      ? (isVi ? 'Bắt đầu ngay' : 'Get Started')
+                                      : (isVi ? 'Tiếp tục' : 'Continue'),
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 16.5,
@@ -297,12 +321,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       AnimatedScaleButton(
                         onTap: _navigateToLogin,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 16,
+                          ),
                           child: Text.rich(
                             TextSpan(
                               children: [
                                 TextSpan(
-                                  text: isVi ? 'Đã có tài khoản? ' : 'Already have an account? ',
+                                  text: isVi
+                                      ? 'Đã có tài khoản? '
+                                      : 'Already have an account? ',
                                   style: TextStyle(
                                     color: context.colors.onSurfaceVariant,
                                     fontSize: 14,
@@ -356,7 +385,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         fit: BoxFit.contain,
                       ),
                     )
-                  : _buildIllustratedFeatureCard(item, size, isDark, primaryColor),
+                  : _buildIllustratedFeatureCard(
+                      item,
+                      size,
+                      isDark,
+                      primaryColor,
+                    ),
             ),
           ),
 
@@ -392,18 +426,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(
             item.title,
             textAlign: TextAlign.center,
-            style: context.textTheme.headlineSmall?.copyWith(
-              color: context.colors.onSurface,
-              fontWeight: FontWeight.w800,
-              height: 1.25,
-              letterSpacing: -0.5,
-            ) ?? TextStyle(
-              color: context.colors.onSurface,
-              fontSize: 25,
-              fontWeight: FontWeight.w800,
-              height: 1.25,
-              letterSpacing: -0.5,
-            ),
+            style:
+                context.textTheme.headlineSmall?.copyWith(
+                  color: context.colors.onSurface,
+                  fontWeight: FontWeight.w800,
+                  height: 1.25,
+                  letterSpacing: -0.5,
+                ) ??
+                TextStyle(
+                  color: context.colors.onSurface,
+                  fontSize: 25,
+                  fontWeight: FontWeight.w800,
+                  height: 1.25,
+                  letterSpacing: -0.5,
+                ),
           ),
 
           const SizedBox(height: 10),
@@ -414,17 +450,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Text(
               item.description,
               textAlign: TextAlign.center,
-              style: context.textTheme.bodyMedium?.copyWith(
-                color: context.colors.onSurfaceVariant,
-                fontSize: 13.5,
-                height: 1.45,
-                fontWeight: FontWeight.w500,
-              ) ?? TextStyle(
-                color: context.colors.onSurfaceVariant,
-                fontSize: 13.5,
-                height: 1.45,
-                fontWeight: FontWeight.w500,
-              ),
+              style:
+                  context.textTheme.bodyMedium?.copyWith(
+                    color: context.colors.onSurfaceVariant,
+                    fontSize: 13.5,
+                    height: 1.45,
+                    fontWeight: FontWeight.w500,
+                  ) ??
+                  TextStyle(
+                    color: context.colors.onSurfaceVariant,
+                    fontSize: 13.5,
+                    height: 1.45,
+                    fontWeight: FontWeight.w500,
+                  ),
             ),
           ),
           const SizedBox(height: 10),
@@ -448,9 +486,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       decoration: BoxDecoration(
         color: context.cardBg,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: context.borderColor,
-        ),
+        border: Border.all(color: context.borderColor),
         boxShadow: [
           BoxShadow(
             color: primaryColor.withValues(alpha: isDark ? 0.15 : 0.08),
@@ -497,11 +533,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ],
                 ),
                 child: Center(
-                  child: Icon(
-                    item.primaryIcon,
-                    size: 42,
-                    color: Colors.white,
-                  ),
+                  child: Icon(item.primaryIcon, size: 42, color: Colors.white),
                 ),
               ),
               const SizedBox(height: 16),
@@ -510,7 +542,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _buildSubFeaturePill(
-                    isAi ? (isVi ? 'Voice Tiếng Việt' : 'Voice Input') : (isVi ? 'Chia đều hóa đơn' : 'Split Bills'),
+                    isAi
+                        ? (isVi ? 'Voice Tiếng Việt' : 'Voice Input')
+                        : (isVi ? 'Chia đều hóa đơn' : 'Split Bills'),
                     isDark,
                     primaryColor,
                   ),
@@ -535,9 +569,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       decoration: BoxDecoration(
         color: isDark ? context.surfaceElevatedColor : context.colors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: context.borderColor,
-        ),
+        border: Border.all(color: context.borderColor),
       ),
       child: Text(
         text,

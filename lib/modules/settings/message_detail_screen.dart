@@ -50,7 +50,11 @@ class MessageDetailScreen extends StatelessWidget {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white24, width: 0.8),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 18,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   Text(
@@ -75,7 +79,9 @@ class MessageDetailScreen extends StatelessWidget {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -123,13 +129,16 @@ class MessageDetailScreen extends StatelessWidget {
                                           Icon(
                                             Icons.access_time,
                                             size: 14,
-                                            color: context.colors.onSurfaceVariant,
+                                            color:
+                                                context.colors.onSurfaceVariant,
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
                                             time,
                                             style: TextStyle(
-                                              color: context.colors.onSurfaceVariant,
+                                              color: context
+                                                  .colors
+                                                  .onSurfaceVariant,
                                               fontSize: 13,
                                             ),
                                           ),
@@ -142,10 +151,7 @@ class MessageDetailScreen extends StatelessWidget {
                             ),
 
                             const SizedBox(height: 24),
-                            Divider(
-                              color: context.dividerColor,
-                              height: 1,
-                            ),
+                            Divider(color: context.dividerColor, height: 1),
                             const SizedBox(height: 24),
 
                             // NỘI DUNG CHI TIẾT

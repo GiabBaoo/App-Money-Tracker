@@ -19,7 +19,8 @@ class FirestoreExpenseRepository implements IExpenseRepository {
     if (dto.splitMethod == SplitMethod.equal) {
       final shareAmount = dto.amount / dto.participantIds.length;
       shares = {for (var id in dto.participantIds) id: shareAmount};
-    } else if (dto.splitMethod == SplitMethod.custom && dto.customShares != null) {
+    } else if (dto.splitMethod == SplitMethod.custom &&
+        dto.customShares != null) {
       shares = dto.customShares!;
     } else if (dto.splitMethod == SplitMethod.singlePayer) {
       shares = {dto.payerId: dto.amount};
@@ -67,7 +68,7 @@ class FirestoreExpenseRepository implements IExpenseRepository {
     final expenses = snapshot.docs
         .map((doc) => ExpenseModel.fromJson(doc.data()))
         .toList();
-    
+
     expenses.sort((a, b) => b.date.compareTo(a.date));
     return expenses;
   }
@@ -83,7 +84,7 @@ class FirestoreExpenseRepository implements IExpenseRepository {
           final expenses = snapshot.docs
               .map((doc) => ExpenseModel.fromJson(doc.data()))
               .toList();
-          
+
           expenses.sort((a, b) => b.date.compareTo(a.date));
           return expenses;
         });

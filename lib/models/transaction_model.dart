@@ -7,7 +7,8 @@ class TransactionModel {
   final String uid;
   final String type; // 'income' hoặc 'expense'
   final String category;
-  final int categoryIconCode; // Lưu icon.codePoint vì Firestore không lưu được IconData
+  final int
+  categoryIconCode; // Lưu icon.codePoint vì Firestore không lưu được IconData
   final double amount;
   final DateTime date;
   final String time;
@@ -27,6 +28,10 @@ class TransactionModel {
   // Ví tiền / Nơi chứa tiền
   final String walletId;
 
+  // Định danh chuyển tiền & mục tiêu tài chính
+  final String? transferId; // Mã định danh liên kết cặp bút toán chuyển khoản
+  final String? goalId; // Mã định danh mục tiêu tài chính liên quan
+
   // Trạng thái đồng bộ: 'synced', 'pending', 'failed'
   final String syncStatus;
 
@@ -34,6 +39,13 @@ class TransactionModel {
   final String? location;
   final double? latitude;
   final double? longitude;
+
+  // Soft Delete (Tombstone)
+  final bool isDeleted;
+  final DateTime? deletedAt;
+
+  // Liên kết Sổ cái nhóm (Dual-Ledger)
+  final String? groupExpenseId;
 
   TransactionModel({
     this.id = '',
@@ -55,24 +67,31 @@ class TransactionModel {
     this.groupIconCode,
     this.source = 'personal', // Default là personal
     this.walletId = '',
+    this.transferId,
+    this.goalId,
+    this.groupExpenseId,
     this.syncStatus = 'synced',
     this.location,
     this.latitude,
     this.longitude,
-  })  : createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+    this.isDeleted = false,
+    this.deletedAt,
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   // Lấy IconData linh hoạt theo cấu hình hiện tại (hoặc fallback về codePoint đã lưu)
-  IconData get icon => CategoryUtils.getCategoryIcon(category, fallbackCode: categoryIconCode);
+  IconData get icon =>
+      CategoryUtils.getCategoryIcon(category, fallbackCode: categoryIconCode);
 
   bool get isIncome => type == 'income';
 
   /// Kiểm tra giao dịch có phải là chuyển tiền giữa các ví hay không
   bool get isTransfer =>
+      (transferId != null && transferId!.isNotEmpty) ||
+      (groupId != null && groupId!.startsWith('transfer_')) ||
       category == 'Chuyển tiền' ||
       category == 'Nhận chuyển tiền' ||
-      category == 'Chuyển ví' ||
-      (groupId != null && groupId!.startsWith('transfer_'));
+      category == 'Chuyển ví';
 
   // ════════ FIRESTORE ════════
 
@@ -104,16 +123,23 @@ class TransactionModel {
       updatedAt: data['updatedAt'] != null
           ? (data['updatedAt'] as Timestamp).toDate()
           : (data['createdAt'] != null
-              ? (data['createdAt'] as Timestamp).toDate()
-              : DateTime.now()),
+                ? (data['createdAt'] as Timestamp).toDate()
+                : DateTime.now()),
       groupId: data['groupId'],
       groupIconCode: data['groupIconCode'],
       source: data['source'] ?? 'personal', // Backward compatibility
       walletId: data['walletId'] as String? ?? '',
+      transferId: data['transferId'] as String?,
+      goalId: data['goalId'] as String?,
+      groupExpenseId: data['groupExpenseId'] as String?,
       syncStatus: 'synced',
       location: data['location'] as String?,
       latitude: (data['latitude'] as num?)?.toDouble(),
       longitude: (data['longitude'] as num?)?.toDouble(),
+      isDeleted: data['isDeleted'] as bool? ?? false,
+      deletedAt: data['deletedAt'] != null
+          ? (data['deletedAt'] as Timestamp).toDate()
+          : null,
     );
   }
 
@@ -134,9 +160,14 @@ class TransactionModel {
       'groupIconCode': groupIconCode,
       'source': source,
       'walletId': walletId,
+      if (transferId != null) 'transferId': transferId,
+      if (goalId != null) 'goalId': goalId,
+      if (groupExpenseId != null) 'groupExpenseId': groupExpenseId,
       'hasPhoto': hasPhoto,
       'photoUrl': photoUrl,
       'photoStoragePath': photoStoragePath,
+      'isDeleted': isDeleted,
+      if (deletedAt != null) 'deletedAt': Timestamp.fromDate(deletedAt!),
       if (location != null) 'location': location,
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
@@ -167,10 +198,17 @@ class TransactionModel {
       groupIconCode: map['groupIconCode'] as int?,
       source: map['source'] as String? ?? 'personal',
       walletId: map['walletId'] as String? ?? '',
+      transferId: map['transferId'] as String?,
+      goalId: map['goalId'] as String?,
+      groupExpenseId: map['groupExpenseId'] as String?,
       syncStatus: map['syncStatus'] as String? ?? 'synced',
       location: map['location'] as String?,
       latitude: (map['latitude'] as num?)?.toDouble(),
       longitude: (map['longitude'] as num?)?.toDouble(),
+      isDeleted: (map['isDeleted'] as int? ?? 0) == 1,
+      deletedAt: map['deletedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['deletedAt'] as int)
+          : null,
     );
   }
 
@@ -182,7 +220,7 @@ class TransactionModel {
       'type': type,
       'category': category,
       'categoryIconCode': categoryIconCode,
-      'amount': amount,
+      'amount': amount.round(),
       'date': date.millisecondsSinceEpoch,
       'time': time,
       'description': description,
@@ -196,10 +234,15 @@ class TransactionModel {
       'groupIconCode': groupIconCode,
       'source': source,
       'walletId': walletId,
+      'transferId': transferId,
+      'goalId': goalId,
+      'groupExpenseId': groupExpenseId,
       'syncStatus': syncStatus,
       'location': location ?? '',
       'latitude': latitude,
       'longitude': longitude,
+      'isDeleted': isDeleted ? 1 : 0,
+      'deletedAt': deletedAt?.millisecondsSinceEpoch,
     };
   }
 
@@ -225,11 +268,18 @@ class TransactionModel {
     int? groupIconCode,
     String? source,
     String? walletId,
+    String? transferId,
+    String? goalId,
+    String? groupExpenseId,
     String? syncStatus,
     String? location,
     double? latitude,
     double? longitude,
+    bool? isDeleted,
+    DateTime? deletedAt,
     bool clearLocation = false,
+    bool clearTransferId = false,
+    bool clearGoalId = false,
   }) {
     return TransactionModel(
       id: id ?? this.id,
@@ -251,11 +301,15 @@ class TransactionModel {
       groupIconCode: groupIconCode ?? this.groupIconCode,
       source: source ?? this.source,
       walletId: walletId ?? this.walletId,
+      transferId: clearTransferId ? null : (transferId ?? this.transferId),
+      goalId: clearGoalId ? null : (goalId ?? this.goalId),
+      groupExpenseId: groupExpenseId ?? this.groupExpenseId,
       syncStatus: syncStatus ?? this.syncStatus,
       location: clearLocation ? null : (location ?? this.location),
       latitude: clearLocation ? null : (latitude ?? this.latitude),
       longitude: clearLocation ? null : (longitude ?? this.longitude),
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
     );
   }
 }
-

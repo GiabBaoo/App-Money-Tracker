@@ -101,7 +101,9 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(24),
@@ -109,7 +111,9 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isVi ? 'Chúng tôi có thể giúp gì cho bạn?' : 'How can we help you?',
+                        isVi
+                            ? 'Chúng tôi có thể giúp gì cho bạn?'
+                            : 'How can we help you?',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -158,24 +162,37 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                       _buildLabel(isVi ? 'Tiêu đề' : 'Title'),
                       TextFormField(
                         controller: _titleController,
-                        style: TextStyle(fontSize: 16, color: context.colors.onSurface),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: context.colors.onSurface,
+                        ),
                         decoration: _buildInputDecoration(
                           context,
-                          hintText: isVi ? 'Nhập tiêu đề ngắn gọn' : 'Enter brief title',
+                          hintText: isVi
+                              ? 'Nhập tiêu đề ngắn gọn'
+                              : 'Enter brief title',
                         ),
                       ),
 
                       const SizedBox(height: 20),
 
                       // NỘI DUNG CHI TIẾT
-                      _buildLabel(isVi ? 'Nội dung chi tiết' : 'Detailed description'),
+                      _buildLabel(
+                        isVi ? 'Nội dung chi tiết' : 'Detailed description',
+                      ),
                       TextFormField(
                         controller: _detailsController,
                         maxLines: 5,
-                        style: TextStyle(fontSize: 16, height: 1.5, color: context.colors.onSurface),
+                        style: TextStyle(
+                          fontSize: 16,
+                          height: 1.5,
+                          color: context.colors.onSurface,
+                        ),
                         decoration: _buildInputDecoration(
                           context,
-                          hintText: isVi ? 'Mô tả chi tiết vấn đề của bạn...' : 'Describe your problem in detail...',
+                          hintText: isVi
+                              ? 'Mô tả chi tiết vấn đề của bạn...'
+                              : 'Describe your problem in detail...',
                         ),
                       ),
 
@@ -183,88 +200,117 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
 
                       // NÚT GỬI YÊU CẦU
                       InkWell(
-                        onTap: _isLoading ? null : () async {
-                          if (_titleController.text.trim().isEmpty || _detailsController.text.trim().isEmpty) {
-                            MonoToast.warning(
-                              context,
-                              isVi
-                                  ? 'Vui lòng nhập đầy đủ tiêu đề và nội dung!'
-                                  : 'Please enter both title and content!',
-                            );
-                            return;
-                          }
+                        onTap: _isLoading
+                            ? null
+                            : () async {
+                                if (_titleController.text.trim().isEmpty ||
+                                    _detailsController.text.trim().isEmpty) {
+                                  MonoToast.warning(
+                                    context,
+                                    isVi
+                                        ? 'Vui lòng nhập đầy đủ tiêu đề và nội dung!'
+                                        : 'Please enter both title and content!',
+                                  );
+                                  return;
+                                }
 
-                          setState(() => _isLoading = true);
-                          try {
-                            // Tạo tin nhắn tự động phản hồi
-                            final user = FirebaseAuth.instance.currentUser;
-                            if (user != null) {
-                              final randomId = Random().nextInt(90000) + 10000;
-                              final message = MessageModel(
-                                uid: user.uid,
-                                iconCode: Icons.headset_mic.codePoint,
-                                iconBgColorValue: 0xFF6C5CE7,
-                                title: isVi ? 'Hỗ trợ khách hàng #$randomId' : 'Customer Support #$randomId',
-                                shortMessage: isVi
-                                    ? 'Yêu cầu hỗ trợ của bạn đã được tiếp nhận.'
-                                    : 'Your support request has been received.',
-                                fullMessage: isVi
-                                    ? 'Chào bạn,\n\nYêu cầu hỗ trợ về "${_titleController.text.trim()}" (Mã số: #$randomId) của bạn đã được gửi đến bộ phận Chăm sóc khách hàng. Tư vấn viên của chúng tôi sẽ liên hệ lại với bạn trong vòng 24 giờ tới.\n\nTrân trọng!'
-                                    : 'Hello,\n\nYour support request regarding "${_titleController.text.trim()}" (ID: #$randomId) has been sent to Customer Support. An agent will contact you within the next 24 hours.\n\nBest regards!',
-                              );
-                              await _firestoreService.addMessage(message);
-                            }
+                                setState(() => _isLoading = true);
+                                try {
+                                  // Tạo tin nhắn tự động phản hồi
+                                  final user =
+                                      FirebaseAuth.instance.currentUser;
+                                  if (user != null) {
+                                    final randomId =
+                                        Random().nextInt(90000) + 10000;
+                                    final message = MessageModel(
+                                      uid: user.uid,
+                                      iconCode: Icons.headset_mic.codePoint,
+                                      iconBgColorValue: 0xFF6C5CE7,
+                                      title: isVi
+                                          ? 'Hỗ trợ khách hàng #$randomId'
+                                          : 'Customer Support #$randomId',
+                                      shortMessage: isVi
+                                          ? 'Yêu cầu hỗ trợ của bạn đã được tiếp nhận.'
+                                          : 'Your support request has been received.',
+                                      fullMessage: isVi
+                                          ? 'Chào bạn,\n\nYêu cầu hỗ trợ về "${_titleController.text.trim()}" (Mã số: #$randomId) của bạn đã được gửi đến bộ phận Chăm sóc khách hàng. Tư vấn viên của chúng tôi sẽ liên hệ lại với bạn trong vòng 24 giờ tới.\n\nTrân trọng!'
+                                          : 'Hello,\n\nYour support request regarding "${_titleController.text.trim()}" (ID: #$randomId) has been sent to Customer Support. An agent will contact you within the next 24 hours.\n\nBest regards!',
+                                    );
+                                    await _firestoreService.addMessage(message);
+                                  }
 
-                            if (!context.mounted) return;
-                            
-                            // GỬI THÀNH CÔNG -> GỌI TRANG SUCCESS_SCREEN ĐA NĂNG
-                            Navigator.push(
-                              context,
-                              PageTransitions.scale(
-                                SuccessScreen(
-                                  appBarTitle: isVi ? 'Gửi yêu cầu' : 'Submit Request',
-                                  successTitle: isVi ? 'Gửi yêu cầu thành công' : 'Request Sent Successfully',
-                                  successMessage: isVi
-                                      ? 'Yêu cầu của bạn đã được chuyển đến bộ phận Chăm sóc khách hàng. Chúng tôi sẽ phản hồi sớm nhất có thể.'
-                                      : 'Your request has been forwarded to our support team. We will respond as soon as possible.',
-                                  buttonText: isVi ? 'Quay lại Hộp thư' : 'Back to Inbox',
-                                  onButtonPressed: () {
-                                    int count = 0;
-                                    Navigator.popUntil(context, (route) {
-                                      return count++ == 2;
-                                    });
-                                  },
-                                ),
-                              ),
-                            );
-                          } catch (e) {
-                            if (!context.mounted) return;
-                            MonoToast.error(
-                              context,
-                              isVi ? 'Có lỗi xảy ra: $e' : 'An error occurred: $e',
-                            );
-                          } finally {
-                            if (mounted) setState(() => _isLoading = false);
-                          }
-                        },
+                                  if (!context.mounted) return;
+
+                                  // GỬI THÀNH CÔNG -> GỌI TRANG SUCCESS_SCREEN ĐA NĂNG
+                                  Navigator.push(
+                                    context,
+                                    PageTransitions.scale(
+                                      SuccessScreen(
+                                        appBarTitle: isVi
+                                            ? 'Gửi yêu cầu'
+                                            : 'Submit Request',
+                                        successTitle: isVi
+                                            ? 'Gửi yêu cầu thành công'
+                                            : 'Request Sent Successfully',
+                                        successMessage: isVi
+                                            ? 'Yêu cầu của bạn đã được chuyển đến bộ phận Chăm sóc khách hàng. Chúng tôi sẽ phản hồi sớm nhất có thể.'
+                                            : 'Your request has been forwarded to our support team. We will respond as soon as possible.',
+                                        buttonText: isVi
+                                            ? 'Quay lại Hộp thư'
+                                            : 'Back to Inbox',
+                                        onButtonPressed: () {
+                                          int count = 0;
+                                          Navigator.popUntil(context, (route) {
+                                            return count++ == 2;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  if (!context.mounted) return;
+                                  MonoToast.error(
+                                    context,
+                                    isVi
+                                        ? 'Có lỗi xảy ra: $e'
+                                        : 'An error occurred: $e',
+                                  );
+                                } finally {
+                                  if (mounted)
+                                    setState(() => _isLoading = false);
+                                }
+                              },
                         borderRadius: BorderRadius.circular(14),
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            color: _isLoading ? context.colors.onSurfaceVariant.withValues(alpha: 0.3) : context.brandColor,
+                            color: _isLoading
+                                ? context.colors.onSurfaceVariant.withValues(
+                                    alpha: 0.3,
+                                  )
+                                : context.brandColor,
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
-                                color: context.brandColor.withValues(alpha: 0.25),
+                                color: context.brandColor.withValues(
+                                  alpha: 0.25,
+                                ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
                             ],
                           ),
                           child: Center(
-                            child: _isLoading 
-                                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
                                 : Text(
                                     isVi ? 'Gửi yêu cầu' : 'Submit Request',
                                     style: const TextStyle(
@@ -305,7 +351,10 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
   }
 
   // Hàm phụ tạo khung Input viền đồng bộ
-  InputDecoration _buildInputDecoration(BuildContext context, {String? hintText}) {
+  InputDecoration _buildInputDecoration(
+    BuildContext context, {
+    String? hintText,
+  }) {
     return InputDecoration(
       hintText: hintText,
       hintStyle: TextStyle(
@@ -317,9 +366,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
       fillColor: context.cardBg,
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(
-          color: context.borderColor,
-        ),
+        borderSide: BorderSide(color: context.borderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

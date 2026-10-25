@@ -5,7 +5,8 @@ import '../core/config/email_config.dart';
 
 class EmailService {
   /// Credentials đọc từ `.env` (xem `.env.example`). Inject [config] khi test.
-  EmailService({EmailConfig? config}) : _config = config ?? EmailConfig.fromEnv();
+  EmailService({EmailConfig? config})
+    : _config = config ?? EmailConfig.fromEnv();
 
   final EmailConfig _config;
 
@@ -13,8 +14,7 @@ class EmailService {
   static Future<({bool success, String message})> sendOTPEmail({
     required String toEmail,
     required String otpCode,
-  }) =>
-      EmailService().sendOtp(toEmail: toEmail, otpCode: otpCode);
+  }) => EmailService().sendOtp(toEmail: toEmail, otpCode: otpCode);
 
   // Gui email OTP
   Future<({bool success, String message})> sendOtp({
@@ -22,7 +22,9 @@ class EmailService {
     required String otpCode,
   }) async {
     if (!_config.isConfigured) {
-      debugPrint('EmailService: thieu SMTP_SENDER_EMAIL / SMTP_APP_PASSWORD trong .env');
+      debugPrint(
+        'EmailService: thieu SMTP_SENDER_EMAIL / SMTP_APP_PASSWORD trong .env',
+      );
       return (success: false, message: 'Dich vu email chua duoc cau hinh.');
     }
 
@@ -32,7 +34,8 @@ class EmailService {
       ..from = Address(_config.senderEmail, _config.senderName)
       ..recipients.add(toEmail)
       ..subject = 'Ma xac thuc OTP - Mono App'
-      ..html = '''
+      ..html =
+          '''
         <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 30px; background: #f8faf9; border-radius: 16px;">
           <div style="text-align: center; margin-bottom: 24px;">
             <h1 style="color: #438883; font-size: 32px; margin: 0;">mono</h1>
@@ -60,7 +63,10 @@ class EmailService {
       return (success: true, message: 'Email da duoc gui thanh cong!');
     } on MailerException catch (e) {
       debugPrint('Loi gui email: ${e.message}');
-      return (success: false, message: 'Khong gui duoc email. Vui long thu lai.');
+      return (
+        success: false,
+        message: 'Khong gui duoc email. Vui long thu lai.',
+      );
     } catch (e) {
       debugPrint('Loi: $e');
       return (success: false, message: 'Loi gui email: $e');

@@ -37,9 +37,10 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
     super.initState();
     if (widget.existingBudget != null) {
       _selectedCategory = widget.existingBudget!.category;
-      _amountController.text = NumberFormat.currency(locale: 'vi_VN', symbol: '')
-          .format(widget.existingBudget!.limitAmount)
-          .trim();
+      _amountController.text = NumberFormat.currency(
+        locale: 'vi_VN',
+        symbol: '',
+      ).format(widget.existingBudget!.limitAmount).trim();
       _selectedMonth = widget.existingBudget!.month;
       _selectedYear = widget.existingBudget!.year;
     }
@@ -48,10 +49,13 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
 
   Future<void> _loadCategories() async {
     try {
-      final list = await _categoryRepo.getExpenseCategories(includeAllOption: true);
+      final list = await _categoryRepo.getExpenseCategories(
+        includeAllOption: true,
+      );
 
       // Nếu đang chỉnh sửa ngân sách cũ mà danh mục đó đã bị xóa hoặc chưa có trong danh sách
-      if (widget.existingBudget != null && !list.any((c) => c.name == widget.existingBudget!.category)) {
+      if (widget.existingBudget != null &&
+          !list.any((c) => c.name == widget.existingBudget!.category)) {
         list.insert(
           1,
           CategoryModel(
@@ -68,7 +72,9 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
           _categories = list;
           _isLoadingCategories = false;
           if (!_categories.any((c) => c.name == _selectedCategory)) {
-            _selectedCategory = _categories.isNotEmpty ? _categories.first.name : 'Tất cả';
+            _selectedCategory = _categories.isNotEmpty
+                ? _categories.first.name
+                : 'Tất cả';
           }
         });
       }
@@ -91,7 +97,12 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
     final isVi = LanguageScope.of(context).isVietnamese;
 
     if (amount <= 0) {
-      TopToast.show(context, isVi ? 'Vui lòng nhập số tiền hạn mức hợp lệ' : 'Please enter a valid budget limit');
+      TopToast.show(
+        context,
+        isVi
+            ? 'Vui lòng nhập số tiền hạn mức hợp lệ'
+            : 'Please enter a valid budget limit',
+      );
       return;
     }
 
@@ -120,10 +131,18 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
 
     if (widget.existingBudget != null) {
       await _budgetRepo.updateBudget(budget);
-      if (mounted) TopToast.show(context, isVi ? 'Đã cập nhật ngân sách!' : 'Budget updated successfully!');
+      if (mounted)
+        TopToast.show(
+          context,
+          isVi ? 'Đã cập nhật ngân sách!' : 'Budget updated successfully!',
+        );
     } else {
       await _budgetRepo.addBudget(budget);
-      if (mounted) TopToast.show(context, isVi ? 'Đã tạo ngân sách mới!' : 'New budget created successfully!');
+      if (mounted)
+        TopToast.show(
+          context,
+          isVi ? 'Đã tạo ngân sách mới!' : 'New budget created successfully!',
+        );
     }
 
     if (mounted) Navigator.pop(context, true);
@@ -160,7 +179,11 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.close, size: 20, color: context.colors.onSurfaceVariant),
+                icon: Icon(
+                  Icons.close,
+                  size: 20,
+                  color: context.colors.onSurfaceVariant,
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -186,7 +209,9 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
                 color: isDark ? AppColors.inputBgDark : context.inputBgColor,
                 borderRadius: AppRadius.button,
                 border: Border.all(
-                  color: isDark ? context.colors.outline.withValues(alpha: 0.3) : context.borderColor,
+                  color: isDark
+                      ? context.colors.outline.withValues(alpha: 0.3)
+                      : context.borderColor,
                   width: 1,
                 ),
               ),
@@ -219,22 +244,34 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
                 color: isDark ? AppColors.inputBgDark : context.inputBgColor,
                 borderRadius: AppRadius.button,
                 border: Border.all(
-                  color: isDark ? context.colors.outline.withValues(alpha: 0.3) : context.borderColor,
+                  color: isDark
+                      ? context.colors.outline.withValues(alpha: 0.3)
+                      : context.borderColor,
                   width: 1,
                 ),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
-                  value: _categories.any((c) => c.name == _selectedCategory) ? _selectedCategory : null,
-                  dropdownColor: isDark ? AppColors.surfaceElevatedDark : context.colors.surface,
+                  value: _categories.any((c) => c.name == _selectedCategory)
+                      ? _selectedCategory
+                      : null,
+                  dropdownColor: isDark
+                      ? AppColors.surfaceElevatedDark
+                      : context.colors.surface,
                   isExpanded: true,
                   items: _categories.map((c) {
                     final isAll = c.name == 'Tất cả';
-                    final icon = isAll ? Icons.account_balance_wallet_outlined : c.icon;
+                    final icon = isAll
+                        ? Icons.account_balance_wallet_outlined
+                        : c.icon;
                     final iconColor = isAll
                         ? accentTeal
                         : (c.color ?? CategoryUtils.getVibrantColor(c.name));
-                    final displayName = isAll ? (isVi ? 'Tất cả (Tổng ngân sách)' : 'All (Total Budget)') : context.trCat(c.name);
+                    final displayName = isAll
+                        ? (isVi
+                              ? 'Tất cả (Tổng ngân sách)'
+                              : 'All (Total Budget)')
+                        : context.trCat(c.name);
 
                     return DropdownMenuItem(
                       value: c.name,
@@ -255,7 +292,10 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
                           if (c.isCustom) ...[
                             const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: accentTeal.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(6),
@@ -304,31 +344,37 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
               isDense: true,
               filled: true,
               fillColor: isDark ? AppColors.inputBgDark : context.inputBgColor,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 13,
+              ),
               hintText: isVi ? 'Ví dụ: 3.000.000' : 'e.g. 3,000,000',
               hintStyle: context.textTheme.bodyMedium?.copyWith(
-                color: isDark ? AppColors.textMutedDark : context.colors.onSurfaceVariant.withValues(alpha: 0.7),
+                color: isDark
+                    ? AppColors.textMutedDark
+                    : context.colors.onSurfaceVariant.withValues(alpha: 0.7),
               ),
               border: OutlineInputBorder(
                 borderRadius: AppRadius.button,
                 borderSide: BorderSide(
-                  color: isDark ? context.colors.outline.withValues(alpha: 0.3) : context.borderColor,
+                  color: isDark
+                      ? context.colors.outline.withValues(alpha: 0.3)
+                      : context.borderColor,
                   width: 1,
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: AppRadius.button,
                 borderSide: BorderSide(
-                  color: isDark ? context.colors.outline.withValues(alpha: 0.3) : context.borderColor,
+                  color: isDark
+                      ? context.colors.outline.withValues(alpha: 0.3)
+                      : context.borderColor,
                   width: 1,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: AppRadius.button,
-                borderSide: BorderSide(
-                  color: accentTeal,
-                  width: 1.5,
-                ),
+                borderSide: BorderSide(color: accentTeal, width: 1.5),
               ),
               suffixText: '₫',
               suffixStyle: context.textTheme.titleMedium?.copyWith(
@@ -341,10 +387,15 @@ class _AddBudgetDialogState extends State<AddBudgetDialog> {
               if (clean.isNotEmpty) {
                 final parsed = double.tryParse(clean);
                 if (parsed != null) {
-                  final formatted = NumberFormat.currency(locale: 'vi_VN', symbol: '').format(parsed).trim();
+                  final formatted = NumberFormat.currency(
+                    locale: 'vi_VN',
+                    symbol: '',
+                  ).format(parsed).trim();
                   _amountController.value = TextEditingValue(
                     text: formatted,
-                    selection: TextSelection.collapsed(offset: formatted.length),
+                    selection: TextSelection.collapsed(
+                      offset: formatted.length,
+                    ),
                   );
                 }
               }

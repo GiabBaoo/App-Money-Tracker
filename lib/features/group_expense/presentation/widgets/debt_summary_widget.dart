@@ -29,16 +29,24 @@ class DebtSummaryWidget extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final cardBgColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textPrimary = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-    final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final borderColor = isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0);
+    final textPrimary = isDark
+        ? const Color(0xFFF8FAFC)
+        : const Color(0xFF0F172A);
+    final textSecondary = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF64748B);
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : const Color(0xFFE2E8F0);
 
     if (debts.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(16),
         child: Center(
           child: Text(
-            isVi ? 'Không có công nợ nào cần thanh toán' : 'No debts or balances',
+            isVi
+                ? 'Không có công nợ nào cần thanh toán'
+                : 'No debts or balances',
             style: TextStyle(color: textSecondary, fontSize: 13),
           ),
         ),
@@ -53,7 +61,9 @@ class DebtSummaryWidget extends ConsumerWidget {
         final debt = debts[index];
         final isDebtor = debt.debtorId == currentUserId;
         final isCreditor = debt.creditorId == currentUserId;
-        final color = isDebtor ? Colors.redAccent : (isDark ? const Color(0xFF34D399) : const Color(0xFF10B981));
+        final color = isDebtor
+            ? Colors.redAccent
+            : (isDark ? const Color(0xFF34D399) : const Color(0xFF10B981));
 
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
@@ -80,7 +90,9 @@ class DebtSummaryWidget extends ConsumerWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  isDebtor ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                  isDebtor
+                      ? Icons.arrow_upward_rounded
+                      : Icons.arrow_downward_rounded,
                   color: color,
                   size: 18,
                 ),
@@ -92,10 +104,16 @@ class DebtSummaryWidget extends ConsumerWidget {
                   children: [
                     Text(
                       isDebtor
-                          ? (isVi ? 'Bạn nợ ${debt.creditorId}' : 'You owe ${debt.creditorId}')
+                          ? (isVi
+                                ? 'Bạn nợ ${debt.creditorId}'
+                                : 'You owe ${debt.creditorId}')
                           : isCreditor
-                              ? (isVi ? '${debt.debtorId} nợ bạn' : '${debt.debtorId} owes you')
-                              : (isVi ? '${debt.debtorId} nợ ${debt.creditorId}' : '${debt.debtorId} owes ${debt.creditorId}'),
+                          ? (isVi
+                                ? '${debt.debtorId} nợ bạn'
+                                : '${debt.debtorId} owes you')
+                          : (isVi
+                                ? '${debt.debtorId} nợ ${debt.creditorId}'
+                                : '${debt.debtorId} owes ${debt.creditorId}'),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -121,11 +139,19 @@ class DebtSummaryWidget extends ConsumerWidget {
                     _showSettlementDialog(context, ref, debt);
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
-                      color: Colors.redAccent.withValues(alpha: isDark ? 0.2 : 0.1),
+                      color: Colors.redAccent.withValues(
+                        alpha: isDark ? 0.2 : 0.1,
+                      ),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3), width: 1),
+                      border: Border.all(
+                        color: Colors.redAccent.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
                     ),
                     child: Text(
                       isVi ? 'Thanh toán' : 'Settle',
@@ -144,7 +170,11 @@ class DebtSummaryWidget extends ConsumerWidget {
     );
   }
 
-  void _showSettlementDialog(BuildContext context, WidgetRef ref, DebtModel debt) async {
+  void _showSettlementDialog(
+    BuildContext context,
+    WidgetRef ref,
+    DebtModel debt,
+  ) async {
     final confirmed = await MonoDialog.confirm(
       context,
       title: isVi ? 'Xác nhận thanh toán' : 'Confirm Settlement',
@@ -161,7 +191,11 @@ class DebtSummaryWidget extends ConsumerWidget {
     }
   }
 
-  Future<void> _createSettlement(BuildContext context, WidgetRef ref, DebtModel debt) async {
+  Future<void> _createSettlement(
+    BuildContext context,
+    WidgetRef ref,
+    DebtModel debt,
+  ) async {
     final currentUserId = ref.read(currentUserIdProvider);
     if (currentUserId == null) return;
 
@@ -173,12 +207,16 @@ class DebtSummaryWidget extends ConsumerWidget {
         amount: debt.amount,
       );
 
-      final settlement = await ref.read(settlementServiceProvider).createSettlement(dto, currentUserId);
+      final settlement = await ref
+          .read(settlementServiceProvider)
+          .createSettlement(dto, currentUserId);
 
       if (context.mounted) {
         MonoToast.success(
           context,
-          LanguageService.instance.isVietnamese ? 'Đã tạo thanh toán, chờ xác nhận' : 'Settlement created, awaiting confirmation',
+          LanguageService.instance.isVietnamese
+              ? 'Đã tạo thanh toán, chờ xác nhận'
+              : 'Settlement created, awaiting confirmation',
         );
 
         Navigator.push(

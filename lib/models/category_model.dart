@@ -30,8 +30,12 @@ class CategoryModel {
     return CategoryModel(
       id: map['id']?.toString() ?? defaultId ?? map['name']?.toString() ?? '',
       name: map['name']?.toString() ?? '',
-      iconCode: map['iconCode'] is num ? (map['iconCode'] as num).toInt() : 0xe148,
-      colorValue: map['colorValue'] is num ? (map['colorValue'] as num).toInt() : null,
+      iconCode: map['iconCode'] is num
+          ? (map['iconCode'] as num).toInt()
+          : 0xe148,
+      colorValue: map['colorValue'] is num
+          ? (map['colorValue'] as num).toInt()
+          : null,
       isIncome: map['isIncome'] == true,
       group: map['group']?.toString() ?? 'Khác',
       isDefault: map['isDefault'] == true,
@@ -81,7 +85,10 @@ class CategoryModel {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is CategoryModel && runtimeType == other.runtimeType && id == other.id && name == other.name;
+      other is CategoryModel &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          name == other.name;
 
   @override
   int get hashCode => id.hashCode ^ name.hashCode;

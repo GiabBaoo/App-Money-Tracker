@@ -218,7 +218,8 @@ class GeminiAiService {
   static String get fallbackModel => _fallbackModel;
 
   final List<Map<String, String>> _conversationHistory = [];
-  List<Map<String, String>> get conversationHistory => List.unmodifiable(_conversationHistory);
+  List<Map<String, String>> get conversationHistory =>
+      List.unmodifiable(_conversationHistory);
 
   void addToHistory(String role, String text) {
     _conversationHistory.add({'role': role, 'text': text});
@@ -242,27 +243,33 @@ class GeminiAiService {
 
     for (final model in modelsToTry) {
       try {
-        final url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$key');
-        final response = await _client.post(
-          url,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'contents': [
-              {
-                'parts': [
-                  {'text': 'Ping'}
-                ]
-              }
-            ]
-          }),
-        ).timeout(const Duration(seconds: 8));
+        final url = Uri.parse(
+          'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$key',
+        );
+        final response = await _client
+            .post(
+              url,
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({
+                'contents': [
+                  {
+                    'parts': [
+                      {'text': 'Ping'},
+                    ],
+                  },
+                ],
+              }),
+            )
+            .timeout(const Duration(seconds: 8));
 
         if (response.statusCode == 200) {
           debugPrint('Gemini testConnection thành công với model: $model');
           return true;
         }
 
-        debugPrint('Gemini testConnection thử $model thất bại (${response.statusCode}), chuyển model tiếp theo...');
+        debugPrint(
+          'Gemini testConnection thử $model thất bại (${response.statusCode}), chuyển model tiếp theo...',
+        );
       } catch (e) {
         debugPrint('Gemini testConnection exception với $model: $e');
       }
@@ -299,7 +306,8 @@ class GeminiAiService {
       final parseRes = BankSmsParserService().parse(trimmed);
       if (parseRes != null) {
         return AiParsedResult(
-          aiReply: 'Mono đã phát hiện tin nhắn biến động số dư từ **${parseRes.bankName}**. Bạn có muốn ghi nhận khoản này vào sổ không?',
+          aiReply:
+              'Mono đã phát hiện tin nhắn biến động số dư từ **${parseRes.bankName}**. Bạn có muốn ghi nhận khoản này vào sổ không?',
           transactions: [],
           actionType: AiActionType.bankSmsImport,
           bankSmsResult: parseRes,
@@ -308,7 +316,8 @@ class GeminiAiService {
     }
 
     // 3. TÍNH TOÁN & CHIA TIỀN HÓA ĐƠN NHÓM THÔNG MINH (Group Bill Split)
-    final isSalaryOrPersonalBudgetQuery = lowerTrimmed.contains('lương') ||
+    final isSalaryOrPersonalBudgetQuery =
+        lowerTrimmed.contains('lương') ||
         lowerTrimmed.contains('nhận lương') ||
         lowerTrimmed.contains('tiền lương') ||
         lowerTrimmed.contains('thu nhập') ||
@@ -318,13 +327,19 @@ class GeminiAiService {
         lowerTrimmed.contains('50/30/20') ||
         lowerTrimmed.contains('tiền còn lại');
 
-    final isSplitQuery = !isSalaryOrPersonalBudgetQuery &&
+    final isSplitQuery =
+        !isSalaryOrPersonalBudgetQuery &&
         (lowerTrimmed.contains('chia bill') ||
-         lowerTrimmed.contains('chia tiền ăn') ||
-         lowerTrimmed.contains('chia campuchia') ||
-         ((lowerTrimmed.contains('chia') || lowerTrimmed.contains('share')) &&
-          (lowerTrimmed.contains('người') || lowerTrimmed.contains('đều') || lowerTrimmed.contains('bill'))));
-    if (isSplitQuery && lowerTrimmed != 'chi tiêu nhóm' && lowerTrimmed != 'chia tiền') {
+            lowerTrimmed.contains('chia tiền ăn') ||
+            lowerTrimmed.contains('chia campuchia') ||
+            ((lowerTrimmed.contains('chia') ||
+                    lowerTrimmed.contains('share')) &&
+                (lowerTrimmed.contains('người') ||
+                    lowerTrimmed.contains('đều') ||
+                    lowerTrimmed.contains('bill'))));
+    if (isSplitQuery &&
+        lowerTrimmed != 'chi tiêu nhóm' &&
+        lowerTrimmed != 'chia tiền') {
       final splitRes = GroupBillSplitService().parseAndSplit(trimmed);
       return AiParsedResult(
         aiReply: splitRes.shareSummaryText,
@@ -351,73 +366,110 @@ class GeminiAiService {
           lowerTrimmed.contains('mỗi ngày được tiêu') ||
           lowerTrimmed.contains('hạn mức ngày') ||
           lowerTrimmed.contains('tiêu an toàn')) {
-        attachedSafeDaily = await FinancialAdvisorService().calculateSafeDailyBudget();
-        sbExtraContext.writeln('• Phân tích hạn mức chi an toàn hôm nay: ${attachedSafeDaily.advice}');
+        attachedSafeDaily = await FinancialAdvisorService()
+            .calculateSafeDailyBudget();
+        sbExtraContext.writeln(
+          '• Phân tích hạn mức chi an toàn hôm nay: ${attachedSafeDaily.advice}',
+        );
       } else if (lowerTrimmed.contains('dự báo') ||
           lowerTrimmed.contains('dự đoán') ||
           lowerTrimmed.contains('cuối tháng') ||
           lowerTrimmed.contains('thâm hụt') ||
           lowerTrimmed.contains('cháy túi')) {
-        attachedForecast = await FinancialAdvisorService().forecastMonthEndBalance();
-        sbExtraContext.writeln('• Phân tích dự báo tài chính cuối tháng: ${attachedForecast.summary}');
+        attachedForecast = await FinancialAdvisorService()
+            .forecastMonthEndBalance();
+        sbExtraContext.writeln(
+          '• Phân tích dự báo tài chính cuối tháng: ${attachedForecast.summary}',
+        );
       } else if (lowerTrimmed.contains('thủng ví') ||
           lowerTrimmed.contains('tiêu vặt') ||
           lowerTrimmed.contains('lặt vặt') ||
           lowerTrimmed.contains('latte factor')) {
-        attachedLatteFactor = await FinancialAdvisorService().analyzeLatteFactor();
-        sbExtraContext.writeln('• Phân tích thói quen tiêu vặt thủng ví: ${attachedLatteFactor.advice}');
+        attachedLatteFactor = await FinancialAdvisorService()
+            .analyzeLatteFactor();
+        sbExtraContext.writeln(
+          '• Phân tích thói quen tiêu vặt thủng ví: ${attachedLatteFactor.advice}',
+        );
       } else if (lowerTrimmed.contains('lộ trình tiết kiệm') ||
           lowerTrimmed.contains('tiết kiệm để mua') ||
           lowerTrimmed.contains('để dành mua')) {
-        final amount = GroupBillSplitService().parseAndSplit(trimmed).totalAmount;
+        final amount = GroupBillSplitService()
+            .parseAndSplit(trimmed)
+            .totalAmount;
         String goalTitle = 'Mục tiêu tiết kiệm';
-        final goalMatch = RegExp(r'(?:mua|tiết kiệm cho|để)\s+([^0-9.,]+)', caseSensitive: false).firstMatch(trimmed);
+        final goalMatch = RegExp(
+          r'(?:mua|tiết kiệm cho|để)\s+([^0-9.,]+)',
+          caseSensitive: false,
+        ).firstMatch(trimmed);
         if (goalMatch != null) {
           final raw = goalMatch.group(1)!.trim();
           if (raw.isNotEmpty && raw.length <= 30) {
             goalTitle = 'Mua ${raw[0].toUpperCase()}${raw.substring(1)}';
           }
         }
-        attachedRoadmap = await FinancialAdvisorService().generateSavingsRoadmap(
-          goalTitle: goalTitle,
-          targetAmount: amount > 0 ? amount : 15000000,
+        attachedRoadmap = await FinancialAdvisorService()
+            .generateSavingsRoadmap(
+              goalTitle: goalTitle,
+              targetAmount: amount > 0 ? amount : 15000000,
+            );
+        sbExtraContext.writeln(
+          '• Phân tích lộ trình tiết kiệm: ${attachedRoadmap.planExplanation}',
         );
-        sbExtraContext.writeln('• Phân tích lộ trình tiết kiệm: ${attachedRoadmap.planExplanation}');
       } else if (lowerTrimmed.contains('xu hướng chi tiêu') ||
           lowerTrimmed.contains('xu hướng tiêu') ||
           lowerTrimmed.contains('chi tiêu bất thường') ||
           lowerTrimmed.contains('so sánh chi tiêu')) {
-        attachedSpendingTrend = await FinancialAdvisorService().analyzeSpendingTrends(
-          period: lowerTrimmed.contains('tháng') ? 'month' : 'week',
+        attachedSpendingTrend = await FinancialAdvisorService()
+            .analyzeSpendingTrends(
+              period: lowerTrimmed.contains('tháng') ? 'month' : 'week',
+            );
+        sbExtraContext.writeln(
+          '• Phân tích xu hướng chi tiêu: ${attachedSpendingTrend.advice}',
         );
-        sbExtraContext.writeln('• Phân tích xu hướng chi tiêu: ${attachedSpendingTrend.advice}');
       } else if (lowerTrimmed.contains('điểm tài chính') ||
           lowerTrimmed.contains('sức khỏe tài chính') ||
           lowerTrimmed.contains('điểm sức khỏe')) {
-        attachedHealthScore = await FinancialAdvisorService().calculateFinancialHealthScore();
-        sbExtraContext.writeln('• Phân tích điểm sức khỏe tài chính: ${attachedHealthScore.summaryAdvice}');
+        attachedHealthScore = await FinancialAdvisorService()
+            .calculateFinancialHealthScore();
+        sbExtraContext.writeln(
+          '• Phân tích điểm sức khỏe tài chính: ${attachedHealthScore.summaryAdvice}',
+        );
       } else if (lowerTrimmed.contains('khoản định kỳ') ||
           lowerTrimmed.contains('chi phí cố định') ||
           lowerTrimmed.contains('chi tiêu định kỳ')) {
-        attachedRecurring = await FinancialAdvisorService().detectRecurringTransactions();
-        sbExtraContext.writeln('• Phân tích các khoản chi phí cố định: ${attachedRecurring.summary}');
+        attachedRecurring = await FinancialAdvisorService()
+            .detectRecurringTransactions();
+        sbExtraContext.writeln(
+          '• Phân tích các khoản chi phí cố định: ${attachedRecurring.summary}',
+        );
       } else if (lowerTrimmed.contains('mức chi tiêu') ||
           lowerTrimmed.contains('đã tiêu') ||
           lowerTrimmed.contains('tiêu hết') ||
           lowerTrimmed.contains('chi hết') ||
           lowerTrimmed.contains('tiêu những gì') ||
           lowerTrimmed.contains('đã chi') ||
-          (lowerTrimmed.contains('chi tiêu') && (lowerTrimmed.contains('nhiều nhất') || lowerTrimmed.contains('như thế nào') || lowerTrimmed.contains('bao nhiêu') || lowerTrimmed.contains('việc nào'))) ||
+          (lowerTrimmed.contains('chi tiêu') &&
+              (lowerTrimmed.contains('nhiều nhất') ||
+                  lowerTrimmed.contains('như thế nào') ||
+                  lowerTrimmed.contains('bao nhiêu') ||
+                  lowerTrimmed.contains('việc nào'))) ||
           lowerTrimmed.contains('việc nào nhiều nhất') ||
           lowerTrimmed.contains('cho cái gì nhiều nhất') ||
           lowerTrimmed.contains('chi nhiều nhất') ||
           lowerTrimmed.contains('khoản chi lớn nhất')) {
-        attachedSpendingQuery = await FinancialAdvisorService().queryPersonalSpending(trimmed);
-        sbExtraContext.writeln('• Tra cứu dữ liệu chi tiêu thực tế từ sổ: ${attachedSpendingQuery.answerText}');
+        attachedSpendingQuery = await FinancialAdvisorService()
+            .queryPersonalSpending(trimmed);
+        sbExtraContext.writeln(
+          '• Tra cứu dữ liệu chi tiêu thực tế từ sổ: ${attachedSpendingQuery.answerText}',
+        );
       }
       if (isSalaryOrPersonalBudgetQuery) {
-        final salaryAdvice = await AiActionHandler().generateFinancialAdvice(specificQuery: trimmed);
-        sbExtraContext.writeln('• Kế hoạch phân bổ tài chính & tiền lương (50/30/20): ${salaryAdvice.summaryText}');
+        final salaryAdvice = await AiActionHandler().generateFinancialAdvice(
+          specificQuery: trimmed,
+        );
+        sbExtraContext.writeln(
+          '• Kế hoạch phân bổ tài chính & tiền lương (50/30/20): ${salaryAdvice.summaryText}',
+        );
       }
     } catch (e) {
       debugPrint('GeminiAiService: Lỗi trích xuất ngữ cảnh bổ sung: $e');
@@ -449,10 +501,14 @@ class GeminiAiService {
           forecastResult: attachedForecast ?? qwenRes.forecastResult,
           latteFactorResult: attachedLatteFactor ?? qwenRes.latteFactorResult,
           savingsRoadmapResult: attachedRoadmap ?? qwenRes.savingsRoadmapResult,
-          spendingQueryResult: attachedSpendingQuery ?? qwenRes.spendingQueryResult,
-          spendingTrendResult: attachedSpendingTrend ?? qwenRes.spendingTrendResult,
-          financialHealthScoreResult: attachedHealthScore ?? qwenRes.financialHealthScoreResult,
-          recurringDetectionResult: attachedRecurring ?? qwenRes.recurringDetectionResult,
+          spendingQueryResult:
+              attachedSpendingQuery ?? qwenRes.spendingQueryResult,
+          spendingTrendResult:
+              attachedSpendingTrend ?? qwenRes.spendingTrendResult,
+          financialHealthScoreResult:
+              attachedHealthScore ?? qwenRes.financialHealthScoreResult,
+          recurringDetectionResult:
+              attachedRecurring ?? qwenRes.recurringDetectionResult,
         );
 
         final dateRes = _applySmartDateTimeGuardrail(enrichedRes, trimmed);
@@ -471,13 +527,16 @@ class GeminiAiService {
     final bool isConnOnline = ConnectivityService().isOnline;
 
     if (!_configService.isLocalAi && isConnOnline && apiKey.isNotEmpty) {
-
       // 2. Bơm bức tranh tài chính thời gian thực của người dùng vào Prompt
-      final financialContext = await AiFinancialContextService().buildFinancialContextPrompt();
-      final extraContextStr = sbExtraContext.isNotEmpty ? '\n\nTHÔNG TIN BỔ TRỢ HỆ THỐNG ĐÃ TÍNH TOÁN TỪ SỔ:\n$sbExtraContext' : '';
+      final financialContext = await AiFinancialContextService()
+          .buildFinancialContextPrompt();
+      final extraContextStr = sbExtraContext.isNotEmpty
+          ? '\n\nTHÔNG TIN BỔ TRỢ HỆ THỐNG ĐÃ TÍNH TOÁN TỪ SỔ:\n$sbExtraContext'
+          : '';
       final nowDt = DateTime.now();
 
-      final systemInstruction = '''
+      final systemInstruction =
+          '''
 Bạn là Trợ lý Mono - trợ lý tài chính thông minh, tận tâm và chu đáo của ứng dụng Quản lý Thu Chi Mono.
 Thời gian hiện tại của hệ thống: ${nowDt.toIso8601String().substring(0, 19)} (Giờ Việt Nam UTC+7, ngày ${nowDt.day}/${nowDt.month}/${nowDt.year}, lúc ${nowDt.hour.toString().padLeft(2, '0')}:${nowDt.minute.toString().padLeft(2, '0')}).
 
@@ -591,14 +650,17 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       contents.add({
         'role': 'user',
         'parts': [
-          {'text': '$systemInstruction\n\nBắt đầu cuộc trò chuyện.'}
-        ]
+          {'text': '$systemInstruction\n\nBắt đầu cuộc trò chuyện.'},
+        ],
       });
       contents.add({
         'role': 'model',
         'parts': [
-          {'text': '{"intent": "GENERAL_CHAT", "actionType": "generalChat", "reply": "👋 Chào bạn! Mình là Trợ lý Mono, sẵn sàng đồng hành cùng bạn.\\n\\n• Ghi chép thu chi siêu tốc bằng tin nhắn hoặc giọng nói\\n• Phân tích số dư và báo cáo chi tiêu thông minh\\n\\n🎯 **Gợi ý tiếp theo:** Bạn có thể thử gửi cho mình một khoản chi hôm nay nhé!"}'}
-        ]
+          {
+            'text':
+                '{"intent": "GENERAL_CHAT", "actionType": "generalChat", "reply": "👋 Chào bạn! Mình là Trợ lý Mono, sẵn sàng đồng hành cùng bạn.\\n\\n• Ghi chép thu chi siêu tốc bằng tin nhắn hoặc giọng nói\\n• Phân tích số dư và báo cáo chi tiêu thông minh\\n\\n🎯 **Gợi ý tiếp theo:** Bạn có thể thử gửi cho mình một khoản chi hôm nay nhé!"}',
+          },
+        ],
       });
 
       // Giữ ngữ cảnh các lượt hội thoại gần nhất (Sliding window 8-10 lượt)
@@ -613,7 +675,9 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
           if (text.isNotEmpty) {
             contents.add({
               'role': role,
-              'parts': [{'text': text}]
+              'parts': [
+                {'text': text},
+              ],
             });
           }
         }
@@ -623,8 +687,8 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       contents.add({
         'role': 'user',
         'parts': [
-          {'text': trimmed}
-        ]
+          {'text': trimmed},
+        ],
       });
 
       final bodyPayload = {
@@ -633,14 +697,15 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
           'temperature': 0.7,
           'maxOutputTokens': 2048,
           'responseMimeType': 'application/json',
-          'thinkingConfig': {
-            'thinkingBudget': 0,
-          },
-        }
+          'thinkingConfig': {'thinkingBudget': 0},
+        },
       };
 
       // Nâng timeout lên 10.000ms (10 giây) để Gemini 3.6/3.8 Flash xử lý trọn vẹn và thông minh
-      final result = await _sendRequest(bodyPayload, timeout: const Duration(seconds: 10));
+      final result = await _sendRequest(
+        bodyPayload,
+        timeout: const Duration(seconds: 10),
+      );
 
       if (result.isSuccess) {
         // Đính kèm các thẻ dữ liệu chuyên sâu vào kết quả trả về cho UI
@@ -717,19 +782,25 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // 2. Tra cứu chi tiêu cá nhân từ SQLite (Phân tích khoảng thời gian linh hoạt, top danh mục, khoản chi lớn nhất)
-    final isSpendingQuery = lowerTrimmed.contains('mức chi tiêu') ||
+    final isSpendingQuery =
+        lowerTrimmed.contains('mức chi tiêu') ||
         lowerTrimmed.contains('đã tiêu') ||
         lowerTrimmed.contains('tiêu hết') ||
         lowerTrimmed.contains('chi hết') ||
         lowerTrimmed.contains('tiêu những gì') ||
         lowerTrimmed.contains('đã chi') ||
-        (lowerTrimmed.contains('chi tiêu') && (lowerTrimmed.contains('nhiều nhất') || lowerTrimmed.contains('như thế nào') || lowerTrimmed.contains('bao nhiêu') || lowerTrimmed.contains('việc nào'))) ||
+        (lowerTrimmed.contains('chi tiêu') &&
+            (lowerTrimmed.contains('nhiều nhất') ||
+                lowerTrimmed.contains('như thế nào') ||
+                lowerTrimmed.contains('bao nhiêu') ||
+                lowerTrimmed.contains('việc nào'))) ||
         lowerTrimmed.contains('việc nào nhiều nhất') ||
         lowerTrimmed.contains('cho cái gì nhiều nhất') ||
         lowerTrimmed.contains('khoản chi lớn nhất') ||
         lowerTrimmed.contains('chi nhiều nhất');
 
-    final hasTimeOrQueryContext = lowerTrimmed.contains('ngày') ||
+    final hasTimeOrQueryContext =
+        lowerTrimmed.contains('ngày') ||
         lowerTrimmed.contains('tuần') ||
         lowerTrimmed.contains('tháng') ||
         lowerTrimmed.contains('năm') ||
@@ -741,7 +812,9 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         lowerTrimmed.contains('cái gì');
 
     if (isSpendingQuery && hasTimeOrQueryContext) {
-      final queryRes = await FinancialAdvisorService().queryPersonalSpending(trimmed);
+      final queryRes = await FinancialAdvisorService().queryPersonalSpending(
+        trimmed,
+      );
       return AiParsedResult(
         aiReply: queryRes.answerText,
         transactions: [],
@@ -750,7 +823,8 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       );
     }
 
-    final bool hasExplicitTxAction = trimmed.startsWith('+') ||
+    final bool hasExplicitTxAction =
+        trimmed.startsWith('+') ||
         trimmed.startsWith('-') ||
         RegExp(r'(?:^|\s)[\+\-]\s*\d+').hasMatch(trimmed) ||
         lowerTrimmed.contains('vào ví') ||
@@ -758,20 +832,22 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         lowerTrimmed.contains('sang ví');
 
     // 3. Tư vấn tài chính / Phân bổ tiền lương theo 50/30/20 & Gợi ý mục tiêu
-    final isSalaryOrPersonalBudgetQuery = !hasExplicitTxAction && (
-        lowerTrimmed.contains('lương') ||
-        lowerTrimmed.contains('nhận lương') ||
-        lowerTrimmed.contains('tiền lương') ||
-        lowerTrimmed.contains('thu nhập') ||
-        lowerTrimmed.contains('chia tiền') ||
-        lowerTrimmed.contains('chia lương') ||
-        lowerTrimmed.contains('phân bổ') ||
-        lowerTrimmed.contains('quản lý') ||
-        lowerTrimmed.contains('50/30/20') ||
-        lowerTrimmed.contains('50 30 20') ||
-        lowerTrimmed.contains('tiền còn lại'));
+    final isSalaryOrPersonalBudgetQuery =
+        !hasExplicitTxAction &&
+        (lowerTrimmed.contains('lương') ||
+            lowerTrimmed.contains('nhận lương') ||
+            lowerTrimmed.contains('tiền lương') ||
+            lowerTrimmed.contains('thu nhập') ||
+            lowerTrimmed.contains('chia tiền') ||
+            lowerTrimmed.contains('chia lương') ||
+            lowerTrimmed.contains('phân bổ') ||
+            lowerTrimmed.contains('quản lý') ||
+            lowerTrimmed.contains('50/30/20') ||
+            lowerTrimmed.contains('50 30 20') ||
+            lowerTrimmed.contains('tiền còn lại'));
 
-    final isAdviceQuery = isSalaryOrPersonalBudgetQuery ||
+    final isAdviceQuery =
+        isSalaryOrPersonalBudgetQuery ||
         lowerTrimmed.contains('làm gì với số tiền') ||
         lowerTrimmed.contains('cách tiết kiệm') ||
         lowerTrimmed.contains('hướng dẫn tiết kiệm') ||
@@ -779,7 +855,9 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         lowerTrimmed.contains('quy tắc 50');
 
     if (isAdviceQuery) {
-      final advice = await AiActionHandler().generateFinancialAdvice(specificQuery: trimmed);
+      final advice = await AiActionHandler().generateFinancialAdvice(
+        specificQuery: trimmed,
+      );
       return AiParsedResult(
         aiReply: advice.summaryText,
         transactions: [],
@@ -790,13 +868,15 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // 4. Hạn mức chi an toàn mỗi ngày
-    final isSafeSpendQuery = lowerTrimmed.contains('được tiêu bao nhiêu') ||
+    final isSafeSpendQuery =
+        lowerTrimmed.contains('được tiêu bao nhiêu') ||
         lowerTrimmed.contains('mỗi ngày được tiêu') ||
         lowerTrimmed.contains('hạn mức ngày') ||
         lowerTrimmed.contains('tiêu an toàn') ||
         lowerTrimmed.contains('an toàn hôm nay');
     if (isSafeSpendQuery) {
-      final safeRes = await FinancialAdvisorService().calculateSafeDailyBudget();
+      final safeRes = await FinancialAdvisorService()
+          .calculateSafeDailyBudget();
       return AiParsedResult(
         aiReply: safeRes.advice,
         transactions: [],
@@ -806,13 +886,15 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // 5. Dự báo tài chính cuối tháng
-    final isForecastQuery = lowerTrimmed.contains('dự báo') ||
+    final isForecastQuery =
+        lowerTrimmed.contains('dự báo') ||
         lowerTrimmed.contains('dự đoán') ||
         lowerTrimmed.contains('cuối tháng') ||
         lowerTrimmed.contains('thâm hụt') ||
         lowerTrimmed.contains('cháy túi');
     if (isForecastQuery) {
-      final forecastRes = await FinancialAdvisorService().forecastMonthEndBalance();
+      final forecastRes = await FinancialAdvisorService()
+          .forecastMonthEndBalance();
       return AiParsedResult(
         aiReply: forecastRes.summary,
         transactions: [],
@@ -822,7 +904,8 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // 6. Tiêu vặt gây thủng ví (Latte Factor)
-    final isLatteFactorQuery = lowerTrimmed.contains('thủng ví') ||
+    final isLatteFactorQuery =
+        lowerTrimmed.contains('thủng ví') ||
         lowerTrimmed.contains('tiêu vặt') ||
         lowerTrimmed.contains('lặt vặt') ||
         lowerTrimmed.contains('latte factor');
@@ -837,13 +920,17 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // 7. Lộ trình tiết kiệm theo mục tiêu
-    final isRoadmapQuery = lowerTrimmed.contains('lộ trình tiết kiệm') ||
+    final isRoadmapQuery =
+        lowerTrimmed.contains('lộ trình tiết kiệm') ||
         lowerTrimmed.contains('tiết kiệm để mua') ||
         lowerTrimmed.contains('để dành mua');
     if (isRoadmapQuery) {
       final amount = GroupBillSplitService().parseAndSplit(trimmed).totalAmount;
       String goalTitle = 'Mục tiêu tiết kiệm';
-      final goalMatch = RegExp(r'(?:mua|tiết kiệm cho|để)\s+([^0-9.,]+)', caseSensitive: false).firstMatch(trimmed);
+      final goalMatch = RegExp(
+        r'(?:mua|tiết kiệm cho|để)\s+([^0-9.,]+)',
+        caseSensitive: false,
+      ).firstMatch(trimmed);
       if (goalMatch != null) {
         final raw = goalMatch.group(1)!.trim();
         if (raw.isNotEmpty && raw.length <= 30) {
@@ -863,7 +950,8 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // 8. Xu hướng chi tiêu & Biến động
-    final isTrendQuery = lowerTrimmed.contains('xu hướng chi tiêu') ||
+    final isTrendQuery =
+        lowerTrimmed.contains('xu hướng chi tiêu') ||
         lowerTrimmed.contains('xu hướng tiêu') ||
         lowerTrimmed.contains('chi tiêu bất thường') ||
         lowerTrimmed.contains('so sánh chi tiêu');
@@ -880,11 +968,13 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // 9. Điểm sức khỏe tài chính
-    final isHealthQuery = lowerTrimmed.contains('điểm tài chính') ||
+    final isHealthQuery =
+        lowerTrimmed.contains('điểm tài chính') ||
         lowerTrimmed.contains('sức khỏe tài chính') ||
         lowerTrimmed.contains('điểm sức khỏe');
     if (isHealthQuery) {
-      final healthRes = await FinancialAdvisorService().calculateFinancialHealthScore();
+      final healthRes = await FinancialAdvisorService()
+          .calculateFinancialHealthScore();
       return AiParsedResult(
         aiReply: healthRes.summaryAdvice,
         transactions: [],
@@ -894,11 +984,13 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // 10. Khoản chi phí cố định định kỳ
-    final isRecurringQuery = lowerTrimmed.contains('khoản định kỳ') ||
+    final isRecurringQuery =
+        lowerTrimmed.contains('khoản định kỳ') ||
         lowerTrimmed.contains('chi phí cố định') ||
         lowerTrimmed.contains('chi tiêu định kỳ');
     if (isRecurringQuery) {
-      final recRes = await FinancialAdvisorService().detectRecurringTransactions();
+      final recRes = await FinancialAdvisorService()
+          .detectRecurringTransactions();
       return AiParsedResult(
         aiReply: recRes.summary,
         transactions: [],
@@ -932,14 +1024,21 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // 12. Trích xuất giao dịch rõ ràng bằng Regex cục bộ (Fallback transaction extraction)
-    final fastTx = _fallbackExtractTransaction(trimmed, pendingTransaction: pendingTransaction);
-    if (fastTx != null && (fastTx.needsAmount || (fastTx.transactions.isNotEmpty && fastTx.transactions.first.amount > 0))) {
+    final fastTx = _fallbackExtractTransaction(
+      trimmed,
+      pendingTransaction: pendingTransaction,
+    );
+    if (fastTx != null &&
+        (fastTx.needsAmount ||
+            (fastTx.transactions.isNotEmpty &&
+                fastTx.transactions.first.amount > 0))) {
       return fastTx;
     }
 
     // 13. Phản hồi hướng dẫn chung khi ngoại tuyến
     return AiParsedResult(
-      aiReply: '⚡ **Trợ lý Mono đang hoạt động Ngoại tuyến**:\n\n'
+      aiReply:
+          '⚡ **Trợ lý Mono đang hoạt động Ngoại tuyến**:\n\n'
           'Bạn vẫn có thể sử dụng các tính năng thiết yếu:\n'
           '• **Ghi chép thu chi**: Nhập hoặc nói (VD: *"Ăn bún bò 35k ví MoMo"*, *"Lương 15 triệu"*)\n'
           '• **Xem báo cáo**: Tra cứu tức thì (VD: *"Báo cáo hôm nay"*, *"Tháng này tiêu bao nhiêu"*)\n'
@@ -957,7 +1056,11 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     final lower = text.toLowerCase().trim();
 
     // 1. Chế độ tối / sáng
-    if (lower.contains('chế độ tối') || lower.contains('giao diện tối') || lower.contains('dark mode') || lower.contains('bật nền đen') || lower == 'tối') {
+    if (lower.contains('chế độ tối') ||
+        lower.contains('giao diện tối') ||
+        lower.contains('dark mode') ||
+        lower.contains('bật nền đen') ||
+        lower == 'tối') {
       return AiParsedResult(
         aiReply: 'Đã chuyển sang giao diện tối cho bạn rồi nhé! 🌙',
         transactions: [],
@@ -965,7 +1068,11 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         themeMode: 'dark',
       );
     }
-    if (lower.contains('chế độ sáng') || lower.contains('giao diện sáng') || lower.contains('light mode') || lower.contains('bật nền sáng') || lower == 'sáng') {
+    if (lower.contains('chế độ sáng') ||
+        lower.contains('giao diện sáng') ||
+        lower.contains('light mode') ||
+        lower.contains('bật nền sáng') ||
+        lower == 'sáng') {
       return AiParsedResult(
         aiReply: 'Đã chuyển sang giao diện sáng cho bạn rồi nhé! ☀️',
         transactions: [],
@@ -975,7 +1082,9 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // 2. Ngôn ngữ
-    if (lower.contains('tiếng anh') || lower.contains('english') || lower.contains('chuyển sang tiếng anh')) {
+    if (lower.contains('tiếng anh') ||
+        lower.contains('english') ||
+        lower.contains('chuyển sang tiếng anh')) {
       return AiParsedResult(
         aiReply: 'App language has been switched to English! 🇺🇸',
         transactions: [],
@@ -983,7 +1092,9 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         language: 'en',
       );
     }
-    if (lower.contains('tiếng việt') || lower.contains('vietnamese') || lower.contains('chuyển sang tiếng việt')) {
+    if (lower.contains('tiếng việt') ||
+        lower.contains('vietnamese') ||
+        lower.contains('chuyển sang tiếng việt')) {
       return AiParsedResult(
         aiReply: 'Đã đổi ngôn ngữ ứng dụng sang Tiếng Việt! 🇻🇳',
         transactions: [],
@@ -993,7 +1104,10 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // 3. Báo cáo chi tiêu
-    if (lower.contains('báo cáo') || lower.contains('tiêu bao nhiêu') || lower.contains('hôm nay tiêu') || lower.contains('tháng này tiêu')) {
+    if (lower.contains('báo cáo') ||
+        lower.contains('tiêu bao nhiêu') ||
+        lower.contains('hôm nay tiêu') ||
+        lower.contains('tháng này tiêu')) {
       String period = 'today';
       if (lower.contains('tháng')) {
         period = 'month';
@@ -1018,12 +1132,17 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
 
     if (transferMatch != null) {
       final rawAmount = transferMatch.group(1) ?? '0';
-      final source = transferMatch.group(2)?.trim() ?? (lower.contains('rút') ? 'Ngân hàng' : 'Tiền mặt');
-      final target = transferMatch.group(3)?.trim() ?? (lower.contains('rút') ? 'Tiền mặt' : 'Ngân hàng');
+      final source =
+          transferMatch.group(2)?.trim() ??
+          (lower.contains('rút') ? 'Ngân hàng' : 'Tiền mặt');
+      final target =
+          transferMatch.group(3)?.trim() ??
+          (lower.contains('rút') ? 'Tiền mặt' : 'Ngân hàng');
       final amount = CurrencyUtils.parseNaturalAmount(rawAmount);
 
       if (amount > 0) {
-        final replyText = '✨ Mono đã ghi nhận yêu cầu chuyển **${CurrencyUtils.formatCurrency(amount)}** từ **$source** sang **$target**.\n\n'
+        final replyText =
+            '✨ Mono đã ghi nhận yêu cầu chuyển **${CurrencyUtils.formatCurrency(amount)}** từ **$source** sang **$target**.\n\n'
             '🎯 Bạn vui lòng nhấn nút bên dưới để xác nhận chuyển tiền nhé!';
         return AiParsedResult(
           aiReply: replyText,
@@ -1042,7 +1161,11 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
 
     // 4. ĐIỀU KHIỂN TẤT CẢ MÀN HÌNH & TÍNH NĂNG ỨNG DỤNG (0ms Fast Intent)
     // Thống kê & Biểu đồ
-    if (lower.contains('mở thống kê') || lower.contains('xem thống kê') || lower.contains('biểu đồ') || lower == 'thống kê' || lower.contains('phân tích chi tiêu')) {
+    if (lower.contains('mở thống kê') ||
+        lower.contains('xem thống kê') ||
+        lower.contains('biểu đồ') ||
+        lower == 'thống kê' ||
+        lower.contains('phân tích chi tiêu')) {
       return AiParsedResult(
         aiReply: 'Đang mở màn hình Thống kê chi tiêu cho bạn nhé! 📊',
         transactions: [],
@@ -1051,7 +1174,11 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       );
     }
     // Lịch theo dõi thu chi
-    if (lower.contains('mở lịch') || lower.contains('xem lịch') || lower == 'lịch' || lower.contains('lịch thu chi') || lower.contains('chi tiêu theo ngày')) {
+    if (lower.contains('mở lịch') ||
+        lower.contains('xem lịch') ||
+        lower == 'lịch' ||
+        lower.contains('lịch thu chi') ||
+        lower.contains('chi tiêu theo ngày')) {
       return AiParsedResult(
         aiReply: 'Đang mở Lịch theo dõi thu chi cho bạn nhé! 📅',
         transactions: [],
@@ -1060,7 +1187,11 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       );
     }
     // Quản lý ví tiền
-    if (lower.contains('mở ví') || lower.contains('quản lý ví') || lower.contains('danh sách ví') || lower.contains('xem ví') || lower == 'ví tiền') {
+    if (lower.contains('mở ví') ||
+        lower.contains('quản lý ví') ||
+        lower.contains('danh sách ví') ||
+        lower.contains('xem ví') ||
+        lower == 'ví tiền') {
       return AiParsedResult(
         aiReply: 'Đang mở màn hình Quản lý ví tiền cho bạn! 👛',
         transactions: [],
@@ -1069,7 +1200,8 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       );
     }
     // Chi tiêu nhóm (chỉ khi người dùng muốn mở tính năng hoặc quản lý nhóm, không phải câu hỏi chia tiền lương hay phân bổ tài chính)
-    final isSalaryOrPersonalBudget = lower.contains('lương') ||
+    final isSalaryOrPersonalBudget =
+        lower.contains('lương') ||
         lower.contains('nhận lương') ||
         lower.contains('tiền lương') ||
         lower.contains('thu nhập') ||
@@ -1080,13 +1212,13 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         lower.contains('50 30 20') ||
         lower.contains('như thế nào');
 
-    if (!isSalaryOrPersonalBudget && (
-        lower.contains('chi tiêu nhóm') ||
-        lower == 'chia tiền' ||
-        lower.contains('mở chia tiền') ||
-        lower.contains('quỹ nhóm') ||
-        lower.contains('mở nhóm') ||
-        lower == 'nhóm')) {
+    if (!isSalaryOrPersonalBudget &&
+        (lower.contains('chi tiêu nhóm') ||
+            lower == 'chia tiền' ||
+            lower.contains('mở chia tiền') ||
+            lower.contains('quỹ nhóm') ||
+            lower.contains('mở nhóm') ||
+            lower == 'nhóm')) {
       return AiParsedResult(
         aiReply: 'Đang mở tính năng Chi tiêu nhóm cho bạn nhé! 👥',
         transactions: [],
@@ -1105,9 +1237,14 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         lower.contains('làm sao để tiết kiệm') ||
         lower.contains('làm sao tiết kiệm') ||
         lower.contains('tiết kiệm hiệu quả') ||
-        (lower.contains('tiết kiệm') && (lower.contains('hiệu quả') || lower.contains('làm sao') || lower.contains('mẹo') || lower.contains('tip')))) {
+        (lower.contains('tiết kiệm') &&
+            (lower.contains('hiệu quả') ||
+                lower.contains('làm sao') ||
+                lower.contains('mẹo') ||
+                lower.contains('tip')))) {
       return AiParsedResult(
-        aiReply: 'Dưới đây là một số mẹo tiết kiệm chi tiêu thông minh dành riêng cho bạn: 💡\n'
+        aiReply:
+            'Dưới đây là một số mẹo tiết kiệm chi tiêu thông minh dành riêng cho bạn: 💡\n'
             '• **Quy tắc 48 giờ**: Hãy chờ 48 tiếng trước các khoản mua sắm ngoài dự tính để tránh chi tiêu bốc đồng.\n'
             '• **Nấu ăn tại nhà**: Tự chuẩn bị bữa ăn 4-5 ngày/tuần có thể giúp bạn tiết kiệm tới 30-40% chi phí ăn uống.\n'
             '• **Hạn mức ngân sách**: Hãy đặt hạn mức chi tiêu cho danh mục bạn hay tiêu nhất ngay trong app.',
@@ -1132,7 +1269,9 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       );
     }
     // Danh mục thu chi
-    if (lower.contains('danh mục') || lower.contains('quản lý danh mục') || lower.contains('loại chi tiêu')) {
+    if (lower.contains('danh mục') ||
+        lower.contains('quản lý danh mục') ||
+        lower.contains('loại chi tiêu')) {
       return AiParsedResult(
         aiReply: 'Đang mở Danh mục thu chi cho bạn nhé! 🏷️',
         transactions: [],
@@ -1141,7 +1280,11 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       );
     }
     // Xuất báo cáo
-    if (lower.contains('xuất báo cáo') || lower.contains('xuất excel') || lower.contains('tải excel') || lower.contains('xuất pdf') || lower.contains('tải báo cáo')) {
+    if (lower.contains('xuất báo cáo') ||
+        lower.contains('xuất excel') ||
+        lower.contains('tải excel') ||
+        lower.contains('xuất pdf') ||
+        lower.contains('tải báo cáo')) {
       return AiParsedResult(
         aiReply: 'Đang mở màn hình Xuất báo cáo (Excel/PDF) cho bạn! 📄',
         transactions: [],
@@ -1150,7 +1293,10 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       );
     }
     // Thư viện hóa đơn
-    if (lower.contains('hóa đơn') || lower.contains('biên lai') || lower.contains('kho ảnh hóa đơn') || lower.contains('thư viện hóa đơn')) {
+    if (lower.contains('hóa đơn') ||
+        lower.contains('biên lai') ||
+        lower.contains('kho ảnh hóa đơn') ||
+        lower.contains('thư viện hóa đơn')) {
       return AiParsedResult(
         aiReply: 'Đang mở Thư viện hóa đơn & biên lai cho bạn! 🧾',
         transactions: [],
@@ -1159,7 +1305,9 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       );
     }
     // Thông báo
-    if (lower.contains('thông báo') || lower.contains('tin nhắn thông báo') || lower.contains('hộp thư')) {
+    if (lower.contains('thông báo') ||
+        lower.contains('tin nhắn thông báo') ||
+        lower.contains('hộp thư')) {
       return AiParsedResult(
         aiReply: 'Đang mở Thông báo của ứng dụng cho bạn! 🔔',
         transactions: [],
@@ -1168,7 +1316,10 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       );
     }
     // Cài đặt AI
-    if (lower.contains('cài đặt ai') || lower.contains('cài đặt trợ lý') || lower.contains('tốc độ phản hồi') || lower.contains('cấu hình mono')) {
+    if (lower.contains('cài đặt ai') ||
+        lower.contains('cài đặt trợ lý') ||
+        lower.contains('tốc độ phản hồi') ||
+        lower.contains('cấu hình mono')) {
       return AiParsedResult(
         aiReply: 'Đang mở Cài đặt Trợ lý Mono cho bạn! 🤖',
         transactions: [],
@@ -1177,7 +1328,9 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       );
     }
     // Cài đặt giao diện
-    if (lower.contains('cài đặt giao diện') || lower.contains('chủ đề ứng dụng') || lower.contains('màu sắc app')) {
+    if (lower.contains('cài đặt giao diện') ||
+        lower.contains('chủ đề ứng dụng') ||
+        lower.contains('màu sắc app')) {
       return AiParsedResult(
         aiReply: 'Đang mở Cài đặt Giao diện cho bạn! 🎨',
         transactions: [],
@@ -1195,7 +1348,10 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       );
     }
     // Thông tin tài khoản
-    if (lower.contains('thông tin tài khoản') || lower.contains('hồ sơ cá nhân') || lower.contains('trang cá nhân') || lower.contains('tài khoản của tôi')) {
+    if (lower.contains('thông tin tài khoản') ||
+        lower.contains('hồ sơ cá nhân') ||
+        lower.contains('trang cá nhân') ||
+        lower.contains('tài khoản của tôi')) {
       return AiParsedResult(
         aiReply: 'Đang mở Thông tin tài khoản cho bạn nhé! 👤',
         transactions: [],
@@ -1204,7 +1360,10 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       );
     }
     // Giới thiệu app
-    if (lower.contains('về ứng dụng') || lower.contains('giới thiệu app') || lower.contains('thông tin ứng dụng') || lower.contains('phiên bản')) {
+    if (lower.contains('về ứng dụng') ||
+        lower.contains('giới thiệu app') ||
+        lower.contains('thông tin ứng dụng') ||
+        lower.contains('phiên bản')) {
       return AiParsedResult(
         aiReply: 'Đang mở Giới thiệu ứng dụng Mono! ℹ️',
         transactions: [],
@@ -1229,7 +1388,11 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       );
     }
     // Tất cả giao dịch / Sổ thu chi
-    if (lower.contains('tất cả giao dịch') || lower.contains('lịch sử giao dịch') || lower.contains('sổ giao dịch') || lower.contains('danh sách giao dịch') || lower.contains('lịch sử chi tiêu')) {
+    if (lower.contains('tất cả giao dịch') ||
+        lower.contains('lịch sử giao dịch') ||
+        lower.contains('sổ giao dịch') ||
+        lower.contains('danh sách giao dịch') ||
+        lower.contains('lịch sử chi tiêu')) {
       return AiParsedResult(
         aiReply: 'Đang mở Lịch sử giao dịch cho bạn nhé! 📝',
         transactions: [],
@@ -1238,7 +1401,10 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       );
     }
     // Thêm giao dịch
-    if (lower.contains('thêm giao dịch') || lower.contains('tạo giao dịch') || lower.contains('nhập giao dịch') || lower == 'nhập chi tiêu') {
+    if (lower.contains('thêm giao dịch') ||
+        lower.contains('tạo giao dịch') ||
+        lower.contains('nhập giao dịch') ||
+        lower == 'nhập chi tiêu') {
       return AiParsedResult(
         aiReply: 'Đang mở màn hình Thêm giao dịch cho bạn! ➕',
         transactions: [],
@@ -1258,7 +1424,8 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         lower.contains('làm được gì') ||
         lower.contains('chức năng gì')) {
       return AiParsedResult(
-        aiReply: '🤖 **Mình là Mono – Trợ lý tài chính cá nhân thông minh của bạn!**\n\n'
+        aiReply:
+            '🤖 **Mình là Mono – Trợ lý tài chính cá nhân thông minh của bạn!**\n\n'
             'Mình luôn sẵn sàng đồng hành và hỗ trợ bạn quản lý chi tiêu thuận tiện nhất:\n'
             '• **🎙️ Ghi nhận giọng nói:** Nhập thu chi chỉ trong 1 giây mà không cần bấm phím.\n'
             '• **📊 Báo cáo & Phân tích:** Xem ngay tình hình thu chi hôm nay, tuần này hoặc tháng này.\n'
@@ -1272,7 +1439,8 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // Lời chào thông thường
-    final isGreeting = lower == 'chào' ||
+    final isGreeting =
+        lower == 'chào' ||
         lower == 'alo' ||
         lower == 'hello' ||
         lower == 'hi' ||
@@ -1284,7 +1452,8 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         lower.startsWith('chào buổi');
     if (isGreeting) {
       return AiParsedResult(
-        aiReply: '👋 **Chào bạn! Mình là Trợ lý Mono.**\n\n'
+        aiReply:
+            '👋 **Chào bạn! Mình là Trợ lý Mono.**\n\n'
             'Rất vui được gặp bạn! Hôm nay tình hình tài chính của bạn thế nào rồi?\n'
             '• Mình luôn sẵn sàng hỗ trợ bạn ghi chép thu chi siêu tốc.\n'
             '• Phân tích báo cáo và tối ưu hóa ngân sách cá nhân.\n\n'
@@ -1295,9 +1464,13 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // Hỏi thăm
-    if (lower.contains('bạn khỏe không') || lower.contains('khỏe không') || lower == 'thế nào rồi' || lower.contains('hôm nay thế nào')) {
+    if (lower.contains('bạn khỏe không') ||
+        lower.contains('khỏe không') ||
+        lower == 'thế nào rồi' ||
+        lower.contains('hôm nay thế nào')) {
       return AiParsedResult(
-        aiReply: '✨ **Mono luôn khỏe mạnh và tràn đầy năng lượng** để phục vụ tài chính cho bạn!\n\n'
+        aiReply:
+            '✨ **Mono luôn khỏe mạnh và tràn đầy năng lượng** để phục vụ tài chính cho bạn!\n\n'
             '• Hệ thống ghi nhận thu chi và các tính năng trợ lý đang hoạt động rất tốt.\n'
             '• Sẵn sàng lắng nghe và tính toán mọi khoản tiền giúp bạn mọi lúc.\n\n'
             '💡 **Mẹo tiết kiệm:** Ghi chép ngay khi vừa phát sinh chi tiêu sẽ giúp bạn nắm bắt dòng tiền chính xác hơn 30% đấy!',
@@ -1307,9 +1480,13 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // Cảm ơn
-    if (lower.contains('cảm ơn') || lower.contains('thank you') || lower.contains('thanks') || lower.contains('mono giỏi quá')) {
+    if (lower.contains('cảm ơn') ||
+        lower.contains('thank you') ||
+        lower.contains('thanks') ||
+        lower.contains('mono giỏi quá')) {
       return AiParsedResult(
-        aiReply: '💖 **Không có chi nè! Được hỗ trợ bạn là niềm vui lớn của Mono.**\n\n'
+        aiReply:
+            '💖 **Không có chi nè! Được hỗ trợ bạn là niềm vui lớn của Mono.**\n\n'
             '• Chúc bạn luôn quản lý chi tiêu hiệu quả và ngày càng tích lũy được nhiều hơn.\n\n'
             '🎯 **Gợi ý tiếp theo:** Nếu cần kiểm tra ngân sách hay số dư các ví, bạn cứ nhắn mình bất cứ lúc nào nhé!',
         transactions: [],
@@ -1318,9 +1495,13 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // Lời khen
-    if (lower.contains('bạn thông minh') || lower.contains('tuyệt vời') || lower.contains('dễ thương') || lower.contains('mono xịn')) {
+    if (lower.contains('bạn thông minh') ||
+        lower.contains('tuyệt vời') ||
+        lower.contains('dễ thương') ||
+        lower.contains('mono xịn')) {
       return AiParsedResult(
-        aiReply: '🥰 **Cảm ơn lời khen của bạn rất nhiều nha!**\n\n'
+        aiReply:
+            '🥰 **Cảm ơn lời khen của bạn rất nhiều nha!**\n\n'
             '• Mono sẽ luôn nỗ lực học hỏi và nâng cao độ chính xác để phục vụ bạn ngày càng chu đáo hơn.\n\n'
             '💡 **Mẹo:** Bạn có thể dùng tính năng quét hóa đơn ảnh hoặc giữ phím mic để nhập nhanh hơn nữa đấy!',
         transactions: [],
@@ -1329,9 +1510,14 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // Tạm biệt
-    if (lower == 'tạm biệt' || lower == 'bye' || lower == 'bye bye' || lower.contains('hẹn gặp lại') || lower.contains('tạm biệt mono')) {
+    if (lower == 'tạm biệt' ||
+        lower == 'bye' ||
+        lower == 'bye bye' ||
+        lower.contains('hẹn gặp lại') ||
+        lower.contains('tạm biệt mono')) {
       return AiParsedResult(
-        aiReply: '👋 **Tạm biệt bạn nhé! Chúc bạn một ngày thật vui vẻ và bình an.**\n\n'
+        aiReply:
+            '👋 **Tạm biệt bạn nhé! Chúc bạn một ngày thật vui vẻ và bình an.**\n\n'
             '• Sổ thu chi của bạn đã được cập nhật an toàn và đồng bộ đầy đủ.\n\n'
             '🎯 **Gợi ý:** Bất cứ khi nào có khoản thu chi mới, hãy ghé lại để mình ghi vào sổ giúp bạn nhé!',
         transactions: [],
@@ -1344,7 +1530,8 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
 
   /// Giải mã số tiền đọc bằng chữ hoặc hỗn hợp số + chữ tiếng Việt (VD: "9 nghìn 8 trắm 8 mưới", "9 nghìn 8 trăm 80")
   static double parseVietnameseWordNumber(String text) {
-    String normalized = text.toLowerCase()
+    String normalized = text
+        .toLowerCase()
         .replaceAll('trắm', 'trăm')
         .replaceAll('mưới', 'mươi')
         .replaceAll('ngàn', 'nghìn')
@@ -1354,8 +1541,19 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         .replaceAll('đ', ' ');
 
     final Map<String, int> wordDigits = {
-      'không': 0, 'một': 1, 'mốt': 1, 'hai': 2, 'ba': 3, 'bốn': 4,
-      'năm': 5, 'lăm': 5, 'nhăm': 5, 'sáu': 6, 'bảy': 7, 'tám': 8, 'chín': 9,
+      'không': 0,
+      'một': 1,
+      'mốt': 1,
+      'hai': 2,
+      'ba': 3,
+      'bốn': 4,
+      'năm': 5,
+      'lăm': 5,
+      'nhăm': 5,
+      'sáu': 6,
+      'bảy': 7,
+      'tám': 8,
+      'chín': 9,
     };
 
     final tokens = normalized.split(RegExp(r'\s+'));
@@ -1400,7 +1598,9 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       if (wordDigits.containsKey(t)) {
         currentUnit = wordDigits[t]!.toDouble();
         hasAnyNumber = true;
-      } else if (t == 'tư' && i > 0 && (tokens[i - 1] == 'mươi' || tokens[i - 1] == 'mười')) {
+      } else if (t == 'tư' &&
+          i > 0 &&
+          (tokens[i - 1] == 'mươi' || tokens[i - 1] == 'mười')) {
         currentUnit = 4;
         hasAnyNumber = true;
       } else if (t == 'mười') {
@@ -1467,7 +1667,8 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     final lower = normalizedText.toLowerCase();
 
     // Nếu là câu hỏi tra cứu chi tiêu, tư vấn phân bổ tài chính -> Tuyệt đối không bóc tách thành giao dịch
-    final isQueryOrAdviceQuestion = lower.contains('mức chi tiêu') ||
+    final isQueryOrAdviceQuestion =
+        lower.contains('mức chi tiêu') ||
         lower.contains('nhiều nhất') ||
         lower.contains('ít nhất') ||
         lower.contains('việc nào') ||
@@ -1480,15 +1681,23 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         lower.contains('50 30 20') ||
         lower.contains('tiêu những gì') ||
         lower.contains('khoản chi lớn nhất');
-    if (isQueryOrAdviceQuestion && !lower.contains('mua') && !lower.contains('uống') && !lower.contains('được cho')) {
+    if (isQueryOrAdviceQuestion &&
+        !lower.contains('mua') &&
+        !lower.contains('uống') &&
+        !lower.contains('được cho')) {
       return null;
     }
     // Chú ý: Dấu cộng '+' đi kèm số (ví dụ Google STT tự format: "+9880₫ và Ví MoMo", "+50k") là THU NHẬP
-    final bool hasPlusSign = RegExp(r'(?:^|\s)\+\s*\d+').hasMatch(normalizedText);
-    final bool hasMinusSign = RegExp(r'(?:^|\s)-\s*\d+').hasMatch(normalizedText);
+    final bool hasPlusSign = RegExp(
+      r'(?:^|\s)\+\s*\d+',
+    ).hasMatch(normalizedText);
+    final bool hasMinusSign = RegExp(
+      r'(?:^|\s)-\s*\d+',
+    ).hasMatch(normalizedText);
 
     // Kiểm tra cấu trúc ai đó cho tiền: "[Chủ thể] cho [số tiền]" (VD: "phụng cho 15k", "mẹ cho 50k", "bạn cho 100k")
-    final bool isGiveOutExpense = lower.contains('cho vay') ||
+    final bool isGiveOutExpense =
+        lower.contains('cho vay') ||
         lower.contains('cho mượn') ||
         lower.contains('cho bạn mượn') ||
         lower.contains('cho tiền ăn xin') ||
@@ -1500,33 +1709,46 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         lower.contains('gửi cho') ||
         lower.contains('chuyển cho');
 
-    final bool hasGivenBySomeone = !isGiveOutExpense && (
-        RegExp(r'(?:^|\s)(?:[a-zà-ỹA-ZÀ-Ỹ0-9_]+)\s+cho\s+(?:\d|[\.,\d]+|tiền|vào ví|vào)', caseSensitive: false).hasMatch(normalizedText) ||
-        RegExp(r'(?:^|\s)cho\s+(?:\d|[\.,\d]+)\s*(?:k|nghìn|ngàn|tr|triệu|củ|đ|đồng|vnd)?\s+vào\s+ví', caseSensitive: false).hasMatch(normalizedText) ||
-        lower.contains('được cho') ||
-        lower.contains('cho tiền') ||
-        lower.contains('ai cho') ||
-        lower.contains('người ta cho') ||
-        lower.contains('mẹ cho') ||
-        lower.contains('bố cho') ||
-        lower.contains('ba cho') ||
-        lower.contains('bạn cho') ||
-        lower.contains('anh cho') ||
-        lower.contains('chị cho') ||
-        lower.contains('em cho') ||
-        lower.contains('sếp cho') ||
-        lower.contains('khách cho') ||
-        lower.contains('ông cho') ||
-        lower.contains('bà cho') ||
-        lower.contains('cô cho') ||
-        lower.contains('chú cho') ||
-        lower.contains('bác cho') ||
-        lower.contains('người yêu cho') ||
-        lower.contains('crush cho')
-    );
+    final bool hasGivenBySomeone =
+        !isGiveOutExpense &&
+        (RegExp(
+              r'(?:^|\s)(?:[a-zà-ỹA-ZÀ-Ỹ0-9_]+)\s+cho\s+(?:\d|[\.,\d]+|tiền|vào ví|vào)',
+              caseSensitive: false,
+            ).hasMatch(normalizedText) ||
+            RegExp(
+              r'(?:^|\s)cho\s+(?:\d|[\.,\d]+)\s*(?:k|nghìn|ngàn|tr|triệu|củ|đ|đồng|vnd)?\s+vào\s+ví',
+              caseSensitive: false,
+            ).hasMatch(normalizedText) ||
+            lower.contains('được cho') ||
+            lower.contains('cho tiền') ||
+            lower.contains('ai cho') ||
+            lower.contains('người ta cho') ||
+            lower.contains('mẹ cho') ||
+            lower.contains('bố cho') ||
+            lower.contains('ba cho') ||
+            lower.contains('bạn cho') ||
+            lower.contains('anh cho') ||
+            lower.contains('chị cho') ||
+            lower.contains('em cho') ||
+            lower.contains('sếp cho') ||
+            lower.contains('khách cho') ||
+            lower.contains('ông cho') ||
+            lower.contains('bà cho') ||
+            lower.contains('cô cho') ||
+            lower.contains('chú cho') ||
+            lower.contains('bác cho') ||
+            lower.contains('người yêu cho') ||
+            lower.contains('crush cho'));
 
-    final bool hasCreditOrIncomeAction = RegExp(r'(?:^|\s)(?:cộng|nạp|thu|nhận)\s+(?:\d|[\.,\d]+)', caseSensitive: false).hasMatch(normalizedText) ||
-        RegExp(r'(?:^|\s)cộng\s+.*?(?:vào|sang)\s+(?:ví)?', caseSensitive: false).hasMatch(normalizedText) ||
+    final bool hasCreditOrIncomeAction =
+        RegExp(
+          r'(?:^|\s)(?:cộng|nạp|thu|nhận)\s+(?:\d|[\.,\d]+)',
+          caseSensitive: false,
+        ).hasMatch(normalizedText) ||
+        RegExp(
+          r'(?:^|\s)cộng\s+.*?(?:vào|sang)\s+(?:ví)?',
+          caseSensitive: false,
+        ).hasMatch(normalizedText) ||
         lower.contains('tiền lãi') ||
         lower.contains('lãi suất') ||
         lower.contains('lãi tiết kiệm') ||
@@ -1535,7 +1757,8 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         lower.contains('khoản thu') ||
         lower.contains('khoảng thu');
 
-    bool isIncome = hasPlusSign ||
+    bool isIncome =
+        hasPlusSign ||
         hasGivenBySomeone ||
         hasCreditOrIncomeAction ||
         lower.contains('được nhận') ||
@@ -1568,7 +1791,8 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
       isIncome = false;
     }
 
-    final bool isExplicitExpense = lower.contains('mua') ||
+    final bool isExplicitExpense =
+        lower.contains('mua') ||
         lower.contains('chi') ||
         lower.contains('tiêu') ||
         lower.contains('ăn') ||
@@ -1583,7 +1807,8 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
 
     // Tìm ví
     String wallet = '';
-    if (lower.contains('momo') || RegExp(r'\b(?:ví|qua|bằng)\s+mono\b').hasMatch(lower)) {
+    if (lower.contains('momo') ||
+        RegExp(r'\b(?:ví|qua|bằng)\s+mono\b').hasMatch(lower)) {
       wallet = 'MoMo';
     } else if (lower.contains('tiền mặt')) {
       wallet = 'Tiền mặt';
@@ -1605,7 +1830,10 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         lower.contains('từ ví')) {
       final wallets = WalletRepository().latestWallets;
       if (wallets.isNotEmpty) {
-        final def = wallets.firstWhere((w) => w.isDefault, orElse: () => wallets.first);
+        final def = wallets.firstWhere(
+          (w) => w.isDefault,
+          orElse: () => wallets.first,
+        );
         wallet = def.name;
       } else {
         wallet = 'Tiền mặt';
@@ -1616,7 +1844,10 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     bool hasAmount = false;
 
     // 1. Phân cách hàng nghìn kiểu Việt Nam (VD: 15.000đ, 20.000, 100.000)
-    final thousandsSepRegex = RegExp(r'(?:\+|-)?\s*(\d{1,3}(?:\.\d{3})+)\s*(?:đ|đồng|vnd|₫)?(?:\s|$|\b)', caseSensitive: false);
+    final thousandsSepRegex = RegExp(
+      r'(?:\+|-)?\s*(\d{1,3}(?:\.\d{3})+)\s*(?:đ|đồng|vnd|₫)?(?:\s|$|\b)',
+      caseSensitive: false,
+    );
     final thousandsMatch = thousandsSepRegex.firstMatch(normalizedText);
     if (thousandsMatch != null) {
       final cleanStr = thousandsMatch.group(1)!.replaceAll('.', '');
@@ -1629,7 +1860,10 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
 
     // 2. Số thập phân đi kèm đơn vị scale (VD: 1.5tr, 2,5 triệu, 3.5k)
     if (!hasAmount) {
-      final scaleDecimalRegex = RegExp(r'(?:\+|-)?\s*(\d+[,\.]\d+)\s*(k|nghìn|ngàn|tr|triệu|củ)\b', caseSensitive: false);
+      final scaleDecimalRegex = RegExp(
+        r'(?:\+|-)?\s*(\d+[,\.]\d+)\s*(k|nghìn|ngàn|tr|triệu|củ)\b',
+        caseSensitive: false,
+      );
       final scaleDecMatch = scaleDecimalRegex.firstMatch(normalizedText);
       if (scaleDecMatch != null) {
         final numStr = scaleDecMatch.group(1)!.replaceAll(',', '.');
@@ -1659,7 +1893,10 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
 
     // 4. Số kèm đơn vị quy đổi (VD: 35k, 50 nghìn, 2 triệu, 1 củ rưỡi)
     if (!hasAmount) {
-      final scaleRegex = RegExp(r'(?:\+|-)?\s*(\d+(?:[\.,]\d+)?)\s*(k|nghìn|ngàn|tr|triệu|củ)\b', caseSensitive: false);
+      final scaleRegex = RegExp(
+        r'(?:\+|-)?\s*(\d+(?:[\.,]\d+)?)\s*(k|nghìn|ngàn|tr|triệu|củ)\b',
+        caseSensitive: false,
+      );
       final scaleMatch = scaleRegex.firstMatch(normalizedText);
       if (scaleMatch != null) {
         final numStr = scaleMatch.group(1)!.replaceAll(',', '.');
@@ -1687,13 +1924,20 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
 
     // 5. Số nguyên / số thông thường với đơn vị tiền tệ đ/đồng/vnd hoặc không có đơn vị (+9880đ, +9880)
     if (!hasAmount) {
-      final plainNumRegex = RegExp(r'(?:\+|-)?\s*(\d+)\s*(?:đ|đồng|vnd)?(?:\s|$|\b)', caseSensitive: false);
+      final plainNumRegex = RegExp(
+        r'(?:\+|-)?\s*(\d+)\s*(?:đ|đồng|vnd)?(?:\s|$|\b)',
+        caseSensitive: false,
+      );
       final plainMatches = plainNumRegex.allMatches(normalizedText);
       for (final plainMatch in plainMatches) {
         final val = double.tryParse(plainMatch.group(1)!);
         if (val != null && val > 0) {
-          final afterMatch = normalizedText.substring(plainMatch.end).trim().toLowerCase();
-          final isUnitOrTime = afterMatch.startsWith('ngày') ||
+          final afterMatch = normalizedText
+              .substring(plainMatch.end)
+              .trim()
+              .toLowerCase();
+          final isUnitOrTime =
+              afterMatch.startsWith('ngày') ||
               afterMatch.startsWith('ngay') ||
               afterMatch.startsWith('tháng') ||
               afterMatch.startsWith('thang') ||
@@ -1720,39 +1964,115 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     // 1. Phân loại danh mục thông minh qua SmartCategoryService (từ điển thương hiệu & thói quen người dùng)
-    final smartCatRes = SmartCategoryService().predictCategoryFast(text, isIncome: isIncome);
-    String category = hasGivenBySomeone ? 'Được cho/Tặng' : smartCatRes.category;
+    final smartCatRes = SmartCategoryService().predictCategoryFast(
+      text,
+      isIncome: isIncome,
+    );
+    String category = hasGivenBySomeone
+        ? 'Được cho/Tặng'
+        : smartCatRes.category;
 
     // 2. Làm sạch mô tả để trích xuất chính xác nội dung thực tế người dùng đọc
     String cleaned = text
         .replaceAll('₫', ' ')
-        .replaceAll(RegExp(r'(?:\+|-)?\s*\d{1,3}(?:\.\d{3})+\s*(?:đ|đồng|vnd|₫)?(?:\s|$|\b)', caseSensitive: false), ' ')
-        .replaceAll(RegExp(r'(?:\+|-)?\s*\d+(?:[\.,\d]+)?\s*(?:k|nghìn|ngàn|tr|triệu|củ|đ|vnd|đồng|₫)?(?:\s|$|\b)', caseSensitive: false), ' ')
-        .replaceAll(RegExp(r'\b(?:thanh toán\s+(?:bằng|qua|từ)?\s*(?:ví)?)\b', caseSensitive: false), ' ')
+        .replaceAll(
+          RegExp(
+            r'(?:\+|-)?\s*\d{1,3}(?:\.\d{3})+\s*(?:đ|đồng|vnd|₫)?(?:\s|$|\b)',
+            caseSensitive: false,
+          ),
+          ' ',
+        )
+        .replaceAll(
+          RegExp(
+            r'(?:\+|-)?\s*\d+(?:[\.,\d]+)?\s*(?:k|nghìn|ngàn|tr|triệu|củ|đ|vnd|đồng|₫)?(?:\s|$|\b)',
+            caseSensitive: false,
+          ),
+          ' ',
+        )
+        .replaceAll(
+          RegExp(
+            r'\b(?:thanh toán\s+(?:bằng|qua|từ)?\s*(?:ví)?)\b',
+            caseSensitive: false,
+          ),
+          ' ',
+        )
         .replaceAll(RegExp(r'\b(?:thanh toán)\b', caseSensitive: false), ' ')
-        .replaceAll(RegExp(r'\b(?:trả\s+(?:tiền\s+)?(?:bằng|qua|từ)?\s*(?:ví)?)\b', caseSensitive: false), ' ')
-        .replaceAll(RegExp(r'\b(?:bằng|qua|từ|vào|và)?\s*(?:ví\s+)?(?:momo|tiền mặt|zalopay|ngân hàng|techcombank|vietcombank|mbbank|bidv|agribank|vpbank|tpbank|acb)\b', caseSensitive: false), ' ')
-        .replaceAll(RegExp(r'\b(?:vào ví|từ ví|qua ví|bằng ví|và ví|bằng tiền mặt|bằng thẻ|chuyển khoản)\b', caseSensitive: false), ' ')
-        .replaceAll(RegExp(r'\b(?:hết|giá|khoảng|tầm)\b', caseSensitive: false), ' ')
+        .replaceAll(
+          RegExp(
+            r'\b(?:trả\s+(?:tiền\s+)?(?:bằng|qua|từ)?\s*(?:ví)?)\b',
+            caseSensitive: false,
+          ),
+          ' ',
+        )
+        .replaceAll(
+          RegExp(
+            r'\b(?:bằng|qua|từ|vào|và)?\s*(?:ví\s+)?(?:momo|tiền mặt|zalopay|ngân hàng|techcombank|vietcombank|mbbank|bidv|agribank|vpbank|tpbank|acb)\b',
+            caseSensitive: false,
+          ),
+          ' ',
+        )
+        .replaceAll(
+          RegExp(
+            r'\b(?:vào ví|từ ví|qua ví|bằng ví|và ví|bằng tiền mặt|bằng thẻ|chuyển khoản)\b',
+            caseSensitive: false,
+          ),
+          ' ',
+        )
+        .replaceAll(
+          RegExp(r'\b(?:hết|giá|khoảng|tầm)\b', caseSensitive: false),
+          ' ',
+        )
         .replaceAll(RegExp(r'^[+\-–—]\s*'), '')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
 
     cleaned = cleaned
-        .replaceAll(RegExp(r'^(?:tôi\s+)?(?:vừa\s+mới|mới|vừa|đã)?\s*(?:mua|ăn|uống|chi|tiêu|trả tiền|trả|cộng|nạp|thu|nhận)\s+', caseSensitive: false), '')
-        .replaceAll(RegExp(r'^(?:tôi\s+)?(?:vừa\s+mới|mới|vừa|đã)\s+', caseSensitive: false), '')
-        .replaceAll(RegExp(r'\b(?:hôm nay|hôm qua|sáng nay|chiều nay|tối nay|trưa nay)\b', caseSensitive: false), ' ')
-        .replaceAll(RegExp(r'\b(?:thanh toán|trả tiền|trả|bằng|qua|từ|vào|ví)\s*$', caseSensitive: false), '')
+        .replaceAll(
+          RegExp(
+            r'^(?:tôi\s+)?(?:vừa\s+mới|mới|vừa|đã)?\s*(?:mua|ăn|uống|chi|tiêu|trả tiền|trả|cộng|nạp|thu|nhận)\s+',
+            caseSensitive: false,
+          ),
+          '',
+        )
+        .replaceAll(
+          RegExp(
+            r'^(?:tôi\s+)?(?:vừa\s+mới|mới|vừa|đã)\s+',
+            caseSensitive: false,
+          ),
+          '',
+        )
+        .replaceAll(
+          RegExp(
+            r'\b(?:hôm nay|hôm qua|sáng nay|chiều nay|tối nay|trưa nay)\b',
+            caseSensitive: false,
+          ),
+          ' ',
+        )
+        .replaceAll(
+          RegExp(
+            r'\b(?:thanh toán|trả tiền|trả|bằng|qua|từ|vào|ví)\s*$',
+            caseSensitive: false,
+          ),
+          '',
+        )
         .replaceAll(RegExp(r'[\.,]$'), '')
         .trim();
 
     String description = '';
     // Nếu có cấu trúc người khác cho tiền (VD: "phụng cho", "mẹ cho")
-    final matchGiven = RegExp(r'(?:^|\s)([a-zà-ỹA-ZÀ-Ỹ0-9_]+)\s+cho\b', caseSensitive: false).firstMatch(text);
+    final matchGiven = RegExp(
+      r'(?:^|\s)([a-zà-ỹA-ZÀ-Ỹ0-9_]+)\s+cho\b',
+      caseSensitive: false,
+    ).firstMatch(text);
     if (matchGiven != null) {
       final subject = matchGiven.group(1)!.trim();
       final lowerSub = subject.toLowerCase();
-      if (lowerSub != 'chi' && lowerSub != 'trả' && lowerSub != 'mua' && lowerSub != 'không' && lowerSub != 'đừng' && lowerSub != 'tiền') {
+      if (lowerSub != 'chi' &&
+          lowerSub != 'trả' &&
+          lowerSub != 'mua' &&
+          lowerSub != 'không' &&
+          lowerSub != 'đừng' &&
+          lowerSub != 'tiền') {
         description = '${subject[0].toUpperCase()}${subject.substring(1)} cho';
       }
     }
@@ -1767,7 +2087,9 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
               ? category
               : (wallet.isNotEmpty ? 'Cộng tiền vào ví $wallet' : 'Thu nhập');
         } else {
-          description = wallet.isNotEmpty ? 'Chi tiêu từ ví $wallet' : 'Chi tiêu';
+          description = wallet.isNotEmpty
+              ? 'Chi tiêu từ ví $wallet'
+              : 'Chi tiêu';
         }
       }
     }
@@ -1781,10 +2103,14 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
         amount = pendingTransaction.amount;
         hasAmount = true;
       }
-      if (pendingTransaction.category.isNotEmpty && (smartCatRes.confidence < 0.6 || description.isEmpty || RegExp(r'^\d+$').hasMatch(description))) {
+      if (pendingTransaction.category.isNotEmpty &&
+          (smartCatRes.confidence < 0.6 ||
+              description.isEmpty ||
+              RegExp(r'^\d+$').hasMatch(description))) {
         category = pendingTransaction.category;
       }
-      if (pendingTransaction.description.isNotEmpty && (description.length < 3 || RegExp(r'^\d+$').hasMatch(description))) {
+      if (pendingTransaction.description.isNotEmpty &&
+          (description.length < 3 || RegExp(r'^\d+$').hasMatch(description))) {
         description = pendingTransaction.description;
       }
     }
@@ -1801,7 +2127,8 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     if (!hasAmount) {
       // Trường hợp như: "mới đi ăn bún bò trả bằng ví momo"
       return AiParsedResult(
-        aiReply: 'Mình đã ghi nhận bạn "$description"${wallet.isNotEmpty ? ' qua ví $wallet' : ''}. Bạn vui lòng cho mình biết số tiền để lưu vào sổ nhé! 👇',
+        aiReply:
+            'Mình đã ghi nhận bạn "$description"${wallet.isNotEmpty ? ' qua ví $wallet' : ''}. Bạn vui lòng cho mình biết số tiền để lưu vào sổ nhé! 👇',
         transactions: [
           AiTransactionItem(
             type: isIncome ? 'income' : 'expense',
@@ -1811,7 +2138,7 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
             description: description,
             date: fallbackDate,
             walletName: wallet,
-          )
+          ),
         ],
         actionType: AiActionType.recordTransaction,
         needsAmount: true,
@@ -1819,13 +2146,16 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
     }
 
     final formattedStr = (amount % 1 == 0)
-        ? amount.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')
+        ? amount.toInt().toString().replaceAllMapped(
+            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (m) => '${m[1]}.',
+          )
         : amount.toString();
 
     final reply = isIncome
         ? (hasGivenBySomeone
-            ? 'Đã ghi nhận khoản thu $formattedStrđ cho "$description"${wallet.isNotEmpty ? ' vào ví $wallet' : ''} rồi nhé! 💰'
-            : 'Đã ghi nhận cộng thêm $formattedStrđ${wallet.isNotEmpty ? ' vào ví $wallet' : ''} cho bạn nhé! 💰')
+              ? 'Đã ghi nhận khoản thu $formattedStrđ cho "$description"${wallet.isNotEmpty ? ' vào ví $wallet' : ''} rồi nhé! 💰'
+              : 'Đã ghi nhận cộng thêm $formattedStrđ${wallet.isNotEmpty ? ' vào ví $wallet' : ''} cho bạn nhé! 💰')
         : 'Đã nhận diện: Chi tiêu $formattedStrđ cho "$description"${wallet.isNotEmpty ? ' qua ví $wallet' : ''}.';
 
     return AiParsedResult(
@@ -1839,7 +2169,7 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
           description: description,
           date: fallbackDate,
           walletName: wallet,
-        )
+        ),
       ],
       actionType: AiActionType.recordTransaction,
       needsAmount: false,
@@ -1847,11 +2177,16 @@ BẮT BUỘC TRẢ VỀ CHỈ DUY NHẤT 1 ĐOẠN JSON HỢP LỆ THEO CẤU TR
   }
 
   /// Nhận diện hóa đơn / biên lai từ hình ảnh (Multimodal Vision)
-  Future<AiParsedResult> parseReceiptImage(Uint8List imageBytes, {String mimeType = 'image/jpeg'}) async {
+  Future<AiParsedResult> parseReceiptImage(
+    Uint8List imageBytes, {
+    String mimeType = 'image/jpeg',
+  }) async {
     await _configService.init();
     final apiKey = _configService.apiKey;
     if (apiKey.isEmpty) {
-      return AiParsedResult.error('Chưa có API Key Google AI Studio. Vui lòng cấu hình trong Cài đặt.');
+      return AiParsedResult.error(
+        'Chưa có API Key Google AI Studio. Vui lòng cấu hình trong Cài đặt.',
+      );
     }
 
     final base64Image = base64Encode(imageBytes);
@@ -1889,33 +2224,34 @@ BẮT BUỘC CHỈ TRẢ VỀ DUY NHẤT 1 KHỐI JSON:
           'parts': [
             {'text': promptText},
             {
-              'inlineData': {
-                'mimeType': mimeType,
-                'data': base64Image,
-              }
-            }
-          ]
-        }
+              'inlineData': {'mimeType': mimeType, 'data': base64Image},
+            },
+          ],
+        },
       ],
       'generationConfig': {
         'temperature': 0.1,
         'responseMimeType': 'application/json',
         'maxOutputTokens': 512,
-      }
+      },
     };
 
     return _sendRequest(bodyPayload, timeout: const Duration(seconds: 15));
   }
 
   /// Gửi câu hỏi tư vấn tài chính thông minh
-  Future<String> askFinancialAdvice(String userMessage, {String contextData = ''}) async {
+  Future<String> askFinancialAdvice(
+    String userMessage, {
+    String contextData = '',
+  }) async {
     await _configService.init();
     final apiKey = _configService.apiKey;
     if (apiKey.isEmpty) {
       return 'Vui lòng cấu hình API Key Google AI Studio trong Cài đặt để sử dụng Trợ lý Mono.';
     }
 
-    final prompt = '''
+    final prompt =
+        '''
 Bạn là Trợ lý tài chính thông minh của ứng dụng Mono.
 Hãy đưa ra lời khuyên tài chính cá nhân súc tích, thực tế và tích cực dựa trên câu hỏi của người dùng.
 Ngữ cảnh chi tiêu của người dùng:
@@ -1929,23 +2265,27 @@ Trả lời ngắn gọn, có gạch đầu dòng rõ ràng:
       'contents': [
         {
           'parts': [
-            {'text': prompt}
-          ]
-        }
+            {'text': prompt},
+          ],
+        },
       ],
-      'generationConfig': {
-        'temperature': 0.7,
-      }
+      'generationConfig': {'temperature': 0.7},
     };
 
     try {
-      final model = _configService.modelName.isNotEmpty ? _configService.modelName : _primaryModel;
-      final url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey');
-      final response = await _client.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(bodyPayload),
-      ).timeout(const Duration(seconds: 25));
+      final model = _configService.modelName.isNotEmpty
+          ? _configService.modelName
+          : _primaryModel;
+      final url = Uri.parse(
+        'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey',
+      );
+      final response = await _client
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(bodyPayload),
+          )
+          .timeout(const Duration(seconds: 25));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
@@ -1953,23 +2293,29 @@ Trả lời ngắn gọn, có gạch đầu dòng rõ ràng:
         if (candidates != null && candidates.isNotEmpty) {
           final parts = candidates[0]['content']?['parts'] as List?;
           if (parts != null && parts.isNotEmpty) {
-            return parts[0]['text'] as String? ?? 'Không có phản hồi từ Trợ lý Mono.';
+            return parts[0]['text'] as String? ??
+                'Không có phản hồi từ Trợ lý Mono.';
           }
         }
       } else if (response.statusCode == 404 && model != _fallbackModel) {
-        final fbUrl = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/$_fallbackModel:generateContent?key=$apiKey');
-        final fbResponse = await _client.post(
-          fbUrl,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(bodyPayload),
-        ).timeout(const Duration(seconds: 25));
+        final fbUrl = Uri.parse(
+          'https://generativelanguage.googleapis.com/v1beta/models/$_fallbackModel:generateContent?key=$apiKey',
+        );
+        final fbResponse = await _client
+            .post(
+              fbUrl,
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode(bodyPayload),
+            )
+            .timeout(const Duration(seconds: 25));
         if (fbResponse.statusCode == 200) {
           final data = jsonDecode(utf8.decode(fbResponse.bodyBytes));
           final candidates = data['candidates'] as List?;
           if (candidates != null && candidates.isNotEmpty) {
             final parts = candidates[0]['content']?['parts'] as List?;
             if (parts != null && parts.isNotEmpty) {
-              return parts[0]['text'] as String? ?? 'Không có phản hồi từ Trợ lý Mono.';
+              return parts[0]['text'] as String? ??
+                  'Không có phản hồi từ Trợ lý Mono.';
             }
           }
         }
@@ -1982,7 +2328,10 @@ Trả lời ngắn gọn, có gạch đầu dòng rõ ràng:
 
   /// Phiên âm giọng nói trực tiếp từ file âm thanh sang văn bản tiếng Việt bằng Gemini Multimodal Audio.
   /// Hỗ trợ cực tốt cho các thiết bị nội địa (Redmi/Xiaomi China ROM) không có Google Speech Services.
-  Future<String?> transcribeAudio(Uint8List audioBytes, {String mimeType = 'audio/mp4'}) async {
+  Future<String?> transcribeAudio(
+    Uint8List audioBytes, {
+    String mimeType = 'audio/mp4',
+  }) async {
     if (!ConnectivityService().isOnline) {
       debugPrint('GeminiAiService: Mất mạng, bỏ qua transcribeAudio');
       return null;
@@ -2017,27 +2366,28 @@ Quy tắc bắt buộc:
           'parts': [
             {'text': promptText},
             {
-              'inlineData': {
-                'mimeType': mimeType,
-                'data': base64Audio,
-              }
-            }
-          ]
-        }
+              'inlineData': {'mimeType': mimeType, 'data': base64Audio},
+            },
+          ],
+        },
       ],
-      'generationConfig': {
-        'temperature': 0.1,
-      }
+      'generationConfig': {'temperature': 0.1},
     };
 
     try {
-      final model = _configService.modelName.isNotEmpty ? _configService.modelName : _primaryModel;
-      final url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey');
-      final response = await _client.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(bodyPayload),
-      ).timeout(const Duration(seconds: 15));
+      final model = _configService.modelName.isNotEmpty
+          ? _configService.modelName
+          : _primaryModel;
+      final url = Uri.parse(
+        'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey',
+      );
+      final response = await _client
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(bodyPayload),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
@@ -2054,12 +2404,16 @@ Quy tắc bắt buộc:
           }
         }
       } else if (response.statusCode == 404) {
-        final fallbackUrl = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/$_fallbackModel:generateContent?key=$apiKey');
-        final fbResponse = await _client.post(
-          fallbackUrl,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(bodyPayload),
-        ).timeout(const Duration(seconds: 15));
+        final fallbackUrl = Uri.parse(
+          'https://generativelanguage.googleapis.com/v1beta/models/$_fallbackModel:generateContent?key=$apiKey',
+        );
+        final fbResponse = await _client
+            .post(
+              fallbackUrl,
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode(bodyPayload),
+            )
+            .timeout(const Duration(seconds: 15));
         if (fbResponse.statusCode == 200) {
           final data = jsonDecode(utf8.decode(fbResponse.bodyBytes));
           final candidates = data['candidates'] as List?;
@@ -2068,7 +2422,9 @@ Quy tắc bắt buộc:
             if (parts != null && parts.isNotEmpty) {
               String text = (parts[0]['text'] as String? ?? '').trim();
               if (text == '[SILENCE]' || text.isEmpty) return null;
-              if (text.startsWith('"') && text.endsWith('"') && text.length > 2) {
+              if (text.startsWith('"') &&
+                  text.endsWith('"') &&
+                  text.length > 2) {
                 text = text.substring(1, text.length - 1).trim();
               }
               return text;
@@ -2082,7 +2438,6 @@ Quy tắc bắt buộc:
     return null;
   }
 
-
   /// Thực thi request và parse kết quả JSON với cơ chế chuyển model dự phòng thông minh (Multi-Model Failover)
   Future<AiParsedResult> _sendRequest(
     Map<String, dynamic> bodyPayload, {
@@ -2093,11 +2448,15 @@ Quy tắc bắt buộc:
       return AiParsedResult.error('Chưa cấu hình Google Gemini API Key.');
     }
 
-    final initialModel = _configService.modelName.isNotEmpty ? _configService.modelName : _primaryModel;
+    final initialModel = _configService.modelName.isNotEmpty
+        ? _configService.modelName
+        : _primaryModel;
     final candidateModels = <String>[
       initialModel,
       if (initialModel != _fallbackModel) _fallbackModel,
-      if (initialModel != 'gemini-3.8-flash' && _fallbackModel != 'gemini-3.8-flash') 'gemini-3.8-flash',
+      if (initialModel != 'gemini-3.8-flash' &&
+          _fallbackModel != 'gemini-3.8-flash')
+        'gemini-3.8-flash',
     ];
 
     String? lastErrorMessage;
@@ -2105,12 +2464,16 @@ Quy tắc bắt buộc:
     for (final currentModel in candidateModels) {
       for (int attempt = 0; attempt < 2; attempt++) {
         try {
-          final url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/$currentModel:generateContent?key=$apiKey');
-          final response = await _client.post(
-            url,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(bodyPayload),
-          ).timeout(timeout);
+          final url = Uri.parse(
+            'https://generativelanguage.googleapis.com/v1beta/models/$currentModel:generateContent?key=$apiKey',
+          );
+          final response = await _client
+              .post(
+                url,
+                headers: {'Content-Type': 'application/json'},
+                body: jsonEncode(bodyPayload),
+              )
+              .timeout(timeout);
 
           if (response.statusCode == 200) {
             final data = jsonDecode(utf8.decode(response.bodyBytes));
@@ -2131,18 +2494,25 @@ Quy tắc bắt buộc:
           }
 
           // Khi gặp 503 (High demand / UNAVAILABLE) hoặc 404 / 429
-          debugPrint('GeminiAiService: Model $currentModel phản hồi ${response.statusCode}, chuyển model dự phòng tiếp theo...');
-          lastErrorMessage = 'Hệ thống AI hiện đang xử lý nhiều lượt truy vấn. Bạn vui lòng thử lại sau giây lát nhé! 🤖';
+          debugPrint(
+            'GeminiAiService: Model $currentModel phản hồi ${response.statusCode}, chuyển model dự phòng tiếp theo...',
+          );
+          lastErrorMessage =
+              'Hệ thống AI hiện đang xử lý nhiều lượt truy vấn. Bạn vui lòng thử lại sau giây lát nhé! 🤖';
           // Chuyển sang model tiếp theo ngay lập tức, không để người dùng chờ
           break;
         } catch (e) {
           debugPrint('GeminiAiService: Model $currentModel exception: $e');
           if (e.toString().contains('TimeoutException')) {
-            lastErrorMessage = 'Kết nối mạng đang chậm khiến yêu cầu phản hồi lâu hơn thường lệ. Bạn vui lòng thử gửi lại nhé! ⏳';
-          } else if (e.toString().contains('SocketException') || e.toString().contains('ClientException')) {
-            lastErrorMessage = 'Không thể kết nối đến máy chủ AI. Bạn vui lòng kiểm tra lại kết nối WiFi hoặc dữ liệu di động nhé! 🌐';
+            lastErrorMessage =
+                'Kết nối mạng đang chậm khiến yêu cầu phản hồi lâu hơn thường lệ. Bạn vui lòng thử gửi lại nhé! ⏳';
+          } else if (e.toString().contains('SocketException') ||
+              e.toString().contains('ClientException')) {
+            lastErrorMessage =
+                'Không thể kết nối đến máy chủ AI. Bạn vui lòng kiểm tra lại kết nối WiFi hoặc dữ liệu di động nhé! 🌐';
           } else {
-            lastErrorMessage = 'Trợ lý Mono đang tạm thời gián đoạn kết nối. Bạn hãy thử lại sau ít giây nhé! ✨';
+            lastErrorMessage =
+                'Trợ lý Mono đang tạm thời gián đoạn kết nối. Bạn hãy thử lại sau ít giây nhé! ✨';
           }
           if (attempt == 0 && e.toString().contains('SocketException')) {
             await Future.delayed(const Duration(milliseconds: 600));
@@ -2153,7 +2523,10 @@ Quy tắc bắt buộc:
       }
     }
 
-    return AiParsedResult.error(lastErrorMessage ?? 'Trợ lý Mono hiện chưa thể xử lý yêu cầu lúc này. Bạn vui lòng thử lại nhé!');
+    return AiParsedResult.error(
+      lastErrorMessage ??
+          'Trợ lý Mono hiện chưa thể xử lý yêu cầu lúc này. Bạn vui lòng thử lại nhé!',
+    );
   }
 
   /// Tách và trích xuất JSON từ chuỗi text của AI
@@ -2174,11 +2547,15 @@ Quy tắc bắt buộc:
       }
 
       // Tự động làm sạch các lỗi JSON phổ biến do LLM sinh ra (trailing commas)
-      jsonStr = jsonStr.replaceAll(RegExp(r',\s*}'), '}').replaceAll(RegExp(r',\s*]'), ']');
+      jsonStr = jsonStr
+          .replaceAll(RegExp(r',\s*}'), '}')
+          .replaceAll(RegExp(r',\s*]'), ']');
 
       final jsonMap = jsonDecode(jsonStr) as Map<String, dynamic>;
-      final reply = jsonMap['reply'] as String? ?? 'Đã nhận diện yêu cầu của bạn';
-      final actionTypeStr = (jsonMap['actionType'] ?? 'recordTransaction').toString();
+      final reply =
+          jsonMap['reply'] as String? ?? 'Đã nhận diện yêu cầu của bạn';
+      final actionTypeStr = (jsonMap['actionType'] ?? 'recordTransaction')
+          .toString();
       final themeMode = jsonMap['themeMode'] as String?;
       final language = jsonMap['language'] as String?;
       final reportPeriod = jsonMap['reportPeriod'] as String?;
@@ -2207,8 +2584,10 @@ Quy tắc bắt buộc:
 
         transferData = TransferMoneyData(
           amount: tAmount,
-          sourceWalletName: (tMap['source_wallet'] ?? tMap['from_wallet'] ?? '').toString(),
-          targetWalletName: (tMap['target_wallet'] ?? tMap['to_wallet'] ?? '').toString(),
+          sourceWalletName: (tMap['source_wallet'] ?? tMap['from_wallet'] ?? '')
+              .toString(),
+          targetWalletName: (tMap['target_wallet'] ?? tMap['to_wallet'] ?? '')
+              .toString(),
           fee: tFee,
           note: (tMap['note'] ?? '').toString(),
         );
@@ -2216,7 +2595,9 @@ Quy tắc bắt buộc:
 
       AiActionType actionType = AiActionType.recordTransaction;
       final intentStr = (jsonMap['intent'] ?? '').toString().toUpperCase();
-      if (actionTypeStr == 'transferMoney' || intentStr == 'TRANSFER_MONEY' || transferData != null) {
+      if (actionTypeStr == 'transferMoney' ||
+          intentStr == 'TRANSFER_MONEY' ||
+          transferData != null) {
         actionType = AiActionType.transferMoney;
       } else if (actionTypeStr == 'changeTheme') {
         actionType = AiActionType.changeTheme;
@@ -2226,7 +2607,8 @@ Quy tắc bắt buộc:
         actionType = AiActionType.spendingReport;
       } else if (actionTypeStr == 'navigateScreen') {
         actionType = AiActionType.navigateScreen;
-      } else if (actionTypeStr == 'financialAdvice' || actionTypeStr == 'savingTips') {
+      } else if (actionTypeStr == 'financialAdvice' ||
+          actionTypeStr == 'savingTips') {
         actionType = AiActionType.financialAdvice;
       } else if (actionTypeStr == 'generalChat') {
         actionType = AiActionType.generalChat;
@@ -2236,8 +2618,10 @@ Quy tắc bắt buộc:
       for (var item in txList) {
         if (item is Map<String, dynamic>) {
           final type = (item['type'] ?? 'expense').toString().toLowerCase();
-          final category = (item['category'] ?? (type == 'income' ? 'Thu khác' : 'Chi khác')).toString();
-          
+          final category =
+              (item['category'] ?? (type == 'income' ? 'Thu khác' : 'Chi khác'))
+                  .toString();
+
           // Xử lý amount linh hoạt: hỗ trợ cả số thực lẫn chuỗi có dấu chấm/phẩy phân cách hàng nghìn ("125.000", "45,000đ")
           double amount = 0.0;
           final rawAmount = item['amount'];
@@ -2257,27 +2641,59 @@ Quy tắc bắt buộc:
             if (parsedIso != null) {
               date = parsedIso;
               // Nếu parsedIso chỉ chứa ngày (hour = 0, minute = 0) và chuỗi không có thông tin giờ (không chứa ':' hay 'T')
-              if (parsedIso.hour == 0 && parsedIso.minute == 0 && !rawDate.contains(':')) {
+              if (parsedIso.hour == 0 &&
+                  parsedIso.minute == 0 &&
+                  !rawDate.contains(':')) {
                 if (item['time'] != null) {
-                  final tMatch = RegExp(r'(\d{1,2})[:h](\d{1,2})?').firstMatch(item['time'].toString());
+                  final tMatch = RegExp(
+                    r'(\d{1,2})[:h](\d{1,2})?',
+                  ).firstMatch(item['time'].toString());
                   if (tMatch != null) {
                     final h = int.parse(tMatch.group(1)!);
-                    final m = tMatch.group(2) != null ? int.parse(tMatch.group(2)!) : 0;
-                    date = DateTime(parsedIso.year, parsedIso.month, parsedIso.day, h, m);
+                    final m = tMatch.group(2) != null
+                        ? int.parse(tMatch.group(2)!)
+                        : 0;
+                    date = DateTime(
+                      parsedIso.year,
+                      parsedIso.month,
+                      parsedIso.day,
+                      h,
+                      m,
+                    );
                   } else {
-                    date = DateTime(parsedIso.year, parsedIso.month, parsedIso.day, DateTime.now().hour, DateTime.now().minute);
+                    date = DateTime(
+                      parsedIso.year,
+                      parsedIso.month,
+                      parsedIso.day,
+                      DateTime.now().hour,
+                      DateTime.now().minute,
+                    );
                   }
                 } else {
-                  date = DateTime(parsedIso.year, parsedIso.month, parsedIso.day, DateTime.now().hour, DateTime.now().minute);
+                  date = DateTime(
+                    parsedIso.year,
+                    parsedIso.month,
+                    parsedIso.day,
+                    DateTime.now().hour,
+                    DateTime.now().minute,
+                  );
                 }
               }
             } else {
-              final match = RegExp(r'^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})').firstMatch(rawDate);
+              final match = RegExp(
+                r'^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})',
+              ).firstMatch(rawDate);
               if (match != null) {
                 final d = int.tryParse(match.group(1)!) ?? 1;
                 final m = int.tryParse(match.group(2)!) ?? 1;
                 final y = int.tryParse(match.group(3)!) ?? DateTime.now().year;
-                date = DateTime(y, m, d, DateTime.now().hour, DateTime.now().minute);
+                date = DateTime(
+                  y,
+                  m,
+                  d,
+                  DateTime.now().hour,
+                  DateTime.now().minute,
+                );
               }
             }
           }
@@ -2285,15 +2701,17 @@ Quy tắc bắt buộc:
           final walletName = (item['walletName'] ?? '').toString();
           final iconData = CategoryUtils.getCategoryIcon(category);
 
-          items.add(AiTransactionItem(
-            type: type == 'income' ? 'income' : 'expense',
-            category: category,
-            categoryIconCode: iconData.codePoint,
-            amount: amount,
-            description: description,
-            date: date,
-            walletName: walletName,
-          ));
+          items.add(
+            AiTransactionItem(
+              type: type == 'income' ? 'income' : 'expense',
+              category: category,
+              categoryIconCode: iconData.codePoint,
+              amount: amount,
+              description: description,
+              date: date,
+              walletName: walletName,
+            ),
+          );
         }
       }
 
@@ -2305,7 +2723,9 @@ Quy tắc bắt buộc:
         language: language,
         reportPeriod: reportPeriod,
         navigationTarget: navigationTarget,
-        needsAmount: needsAmount || (items.isNotEmpty && items.any((tx) => tx.amount <= 0)),
+        needsAmount:
+            needsAmount ||
+            (items.isNotEmpty && items.any((tx) => tx.amount <= 0)),
         transferData: transferData,
         isSuccess: true,
       );
@@ -2320,7 +2740,8 @@ Quy tắc bắt buộc:
       final replyRegex = RegExp(r'"reply"\s*:\s*"((?:[^"\\]|\\.)*)');
       final match = replyRegex.firstMatch(cleanText);
       if (match != null && match.group(1) != null) {
-        cleanText = match.group(1)!
+        cleanText = match
+            .group(1)!
             .replaceAll(r'\"', '"')
             .replaceAll(r'\n', '\n')
             .replaceAll(r'\t', ' ')
@@ -2328,24 +2749,32 @@ Quy tắc bắt buộc:
             .trim();
       } else {
         // Nếu chuỗi chứa cú pháp JSON thô bị rò rỉ mà không có nội dung rõ ràng
-        if (cleanText.contains('"actionType"') || cleanText.contains('{') || cleanText.contains('"transactions"')) {
-          cleanText = '👋 **Chào bạn! Mình là Trợ lý Mono.**\n\n'
+        if (cleanText.contains('"actionType"') ||
+            cleanText.contains('{') ||
+            cleanText.contains('"transactions"')) {
+          cleanText =
+              '👋 **Chào bạn! Mình là Trợ lý Mono.**\n\n'
               '• Mình có thể giúp bạn ghi chép thu chi siêu tốc bằng tin nhắn hoặc giọng nói.\n'
               '• Tra cứu báo cáo tài chính và gợi ý quản lý chi tiêu thông minh.\n\n'
               '🎯 **Gợi ý tiếp theo:** Bạn hãy thử nói hoặc nhập: *"Ăn bún bò 35k"* nhé!';
         }
       }
 
-      final isAdvice = cleanText.toLowerCase().contains('tiết kiệm') ||
+      final isAdvice =
+          cleanText.toLowerCase().contains('tiết kiệm') ||
           cleanText.toLowerCase().contains('phân bổ') ||
           cleanText.toLowerCase().contains('số dư') ||
           cleanText.toLowerCase().contains('50/30/20') ||
           cleanText.toLowerCase().contains('ngân sách');
 
       return AiParsedResult(
-        aiReply: cleanText.isNotEmpty ? cleanText : 'Mono đã nhận diện yêu cầu của bạn rồi nhé! 😊',
+        aiReply: cleanText.isNotEmpty
+            ? cleanText
+            : 'Mono đã nhận diện yêu cầu của bạn rồi nhé! 😊',
         transactions: [],
-        actionType: isAdvice ? AiActionType.financialAdvice : AiActionType.generalChat,
+        actionType: isAdvice
+            ? AiActionType.financialAdvice
+            : AiActionType.generalChat,
         isSuccess: true,
       );
     }
@@ -2354,7 +2783,10 @@ Quy tắc bắt buộc:
   /// Bảo đảm ngày và giờ cho giao dịch luôn khớp chính xác với ngôn ngữ tự nhiên tiếng Việt
   /// (Xử lý dứt điểm các trường hợp: "sáng nay", "hôm qua", "tối qua", "lúc 8h", "hôm kia",
   /// và tránh tuyệt đối việc AI trả về 00:00:00 cho giao dịch thực tế).
-  AiParsedResult _applySmartDateTimeGuardrail(AiParsedResult result, String userText) {
+  AiParsedResult _applySmartDateTimeGuardrail(
+    AiParsedResult result,
+    String userText,
+  ) {
     if (result.transactions.isEmpty) return result;
 
     final dtInfo = VoiceService().parseVietnameseDateTime(userText);
@@ -2374,7 +2806,9 @@ Quy tắc bắt buộc:
       int min = tx.date.minute;
 
       if (hasExplicitDate) {
-        if (y != expectedDate.year || m != expectedDate.month || d != expectedDate.day) {
+        if (y != expectedDate.year ||
+            m != expectedDate.month ||
+            d != expectedDate.day) {
           y = expectedDate.year;
           m = expectedDate.month;
           d = expectedDate.day;
@@ -2391,7 +2825,10 @@ Quy tắc bắt buộc:
       } else {
         // Người dùng không nói giờ cụ thể, nhưng nếu giờ đang là 00:00 (do parser ISO date tạo ra)
         // và người dùng không hề nói "0h" hay "12h đêm", ta gán giờ hiện tại của hệ thống!
-        if (h == 0 && min == 0 && !userText.contains('0h') && !userText.contains('12h đêm')) {
+        if (h == 0 &&
+            min == 0 &&
+            !userText.contains('0h') &&
+            !userText.contains('12h đêm')) {
           h = now.hour;
           min = now.minute;
           hasChanged = true;
@@ -2399,9 +2836,7 @@ Quy tắc bắt buộc:
       }
 
       if (hasChanged) {
-        updatedList.add(tx.copyWith(
-          date: DateTime(y, m, d, h, min),
-        ));
+        updatedList.add(tx.copyWith(date: DateTime(y, m, d, h, min)));
       } else {
         updatedList.add(tx);
       }
@@ -2438,12 +2873,16 @@ Quy tắc bắt buộc:
   /// Hiệu chỉnh và bảo vệ ngữ nghĩa thông minh (Semantic Intent Guardrail)
   /// Đảm bảo không bao giờ nhận diện sai giữa Thu nhập (income) và Chi phí (expense),
   /// đặc biệt là câu có cấu trúc người khác cho tiền (VD: "phụng cho 15.000đ vào ví tiền mặt")
-  AiParsedResult _applySmartSemanticGuardrail(AiParsedResult result, String originalText) {
+  AiParsedResult _applySmartSemanticGuardrail(
+    AiParsedResult result,
+    String originalText,
+  ) {
     if (result.transactions.isEmpty) return result;
 
     final lower = originalText.toLowerCase().trim();
 
-    final bool isGiveOutExpense = lower.contains('cho vay') ||
+    final bool isGiveOutExpense =
+        lower.contains('cho vay') ||
         lower.contains('cho mượn') ||
         lower.contains('cho bạn mượn') ||
         lower.contains('cho tiền ăn xin') ||
@@ -2455,34 +2894,47 @@ Quy tắc bắt buộc:
         lower.contains('gửi cho') ||
         lower.contains('chuyển cho');
 
-    final bool hasGivenBySomeone = !isGiveOutExpense && (
-        RegExp(r'(?:^|\s)(?:[a-zà-ỹA-ZÀ-Ỹ0-9_]+)\s+cho\s+(?:\d|[\.,\d]+|tiền|vào ví|vào)', caseSensitive: false).hasMatch(originalText) ||
-        RegExp(r'(?:^|\s)cho\s+(?:\d|[\.,\d]+)\s*(?:k|nghìn|ngàn|tr|triệu|củ|đ|đồng|vnd)?\s+vào\s+ví', caseSensitive: false).hasMatch(originalText) ||
-        lower.contains('được cho') ||
-        lower.contains('cho tiền') ||
-        lower.contains('ai cho') ||
-        lower.contains('người ta cho') ||
-        lower.contains('mẹ cho') ||
-        lower.contains('bố cho') ||
-        lower.contains('ba cho') ||
-        lower.contains('bạn cho') ||
-        lower.contains('anh cho') ||
-        lower.contains('chị cho') ||
-        lower.contains('em cho') ||
-        lower.contains('sếp cho') ||
-        lower.contains('khách cho') ||
-        lower.contains('ông cho') ||
-        lower.contains('bà cho') ||
-        lower.contains('cô cho') ||
-        lower.contains('chú cho') ||
-        lower.contains('bác cho') ||
-        lower.contains('người yêu cho') ||
-        lower.contains('crush cho')
-    );
+    final bool hasGivenBySomeone =
+        !isGiveOutExpense &&
+        (RegExp(
+              r'(?:^|\s)(?:[a-zà-ỹA-ZÀ-Ỹ0-9_]+)\s+cho\s+(?:\d|[\.,\d]+|tiền|vào ví|vào)',
+              caseSensitive: false,
+            ).hasMatch(originalText) ||
+            RegExp(
+              r'(?:^|\s)cho\s+(?:\d|[\.,\d]+)\s*(?:k|nghìn|ngàn|tr|triệu|củ|đ|đồng|vnd)?\s+vào\s+ví',
+              caseSensitive: false,
+            ).hasMatch(originalText) ||
+            lower.contains('được cho') ||
+            lower.contains('cho tiền') ||
+            lower.contains('ai cho') ||
+            lower.contains('người ta cho') ||
+            lower.contains('mẹ cho') ||
+            lower.contains('bố cho') ||
+            lower.contains('ba cho') ||
+            lower.contains('bạn cho') ||
+            lower.contains('anh cho') ||
+            lower.contains('chị cho') ||
+            lower.contains('em cho') ||
+            lower.contains('sếp cho') ||
+            lower.contains('khách cho') ||
+            lower.contains('ông cho') ||
+            lower.contains('bà cho') ||
+            lower.contains('cô cho') ||
+            lower.contains('chú cho') ||
+            lower.contains('bác cho') ||
+            lower.contains('người yêu cho') ||
+            lower.contains('crush cho'));
 
-    final bool hasCreditOrIncome = hasGivenBySomeone ||
-        RegExp(r'(?:^|\s)(?:cộng|nạp|thu|nhận)\s+(?:\d|[\.,\d]+)', caseSensitive: false).hasMatch(originalText) ||
-        RegExp(r'(?:^|\s)cộng\s+.*?(?:vào|sang)\s+(?:ví)?', caseSensitive: false).hasMatch(originalText) ||
+    final bool hasCreditOrIncome =
+        hasGivenBySomeone ||
+        RegExp(
+          r'(?:^|\s)(?:cộng|nạp|thu|nhận)\s+(?:\d|[\.,\d]+)',
+          caseSensitive: false,
+        ).hasMatch(originalText) ||
+        RegExp(
+          r'(?:^|\s)cộng\s+.*?(?:vào|sang)\s+(?:ví)?',
+          caseSensitive: false,
+        ).hasMatch(originalText) ||
         lower.contains('tiền lãi') ||
         lower.contains('lãi tiết kiệm') ||
         lower.contains('lãi suất') ||
@@ -2496,7 +2948,8 @@ Quy tắc bắt buộc:
       return result;
     }
 
-    final bool isExplicitExpense = lower.contains('uống') ||
+    final bool isExplicitExpense =
+        lower.contains('uống') ||
         lower.contains('ăn') ||
         lower.contains('mua') ||
         lower.contains('chi') ||
@@ -2508,7 +2961,8 @@ Quy tắc bắt buộc:
         lower.contains('cafe') ||
         lower.contains('cà phê');
 
-    final bool hasExplicitIncomeSignal = hasGivenBySomeone ||
+    final bool hasExplicitIncomeSignal =
+        hasGivenBySomeone ||
         lower.contains('được cộng') ||
         lower.contains('cộng vào') ||
         lower.contains('cộng thêm') ||
@@ -2541,7 +2995,10 @@ Quy tắc bắt buộc:
     final updatedList = <AiTransactionItem>[];
 
     for (var tx in result.transactions) {
-      final shouldBeIncome = tx.type == 'expense' || tx.category == 'Chi khác' || tx.category == 'Ăn uống';
+      final shouldBeIncome =
+          tx.type == 'expense' ||
+          tx.category == 'Chi khác' ||
+          tx.category == 'Ăn uống';
       String targetCategory;
       if (hasGivenBySomeone) {
         targetCategory = 'Được cho/Tặng';
@@ -2552,28 +3009,39 @@ Quy tắc bắt buộc:
       } else if (lower.contains('thưởng')) {
         targetCategory = 'Tiền thưởng';
       } else {
-        targetCategory = tx.category.isNotEmpty && tx.category != 'Chi khác' && tx.category != 'Ăn uống'
+        targetCategory =
+            tx.category.isNotEmpty &&
+                tx.category != 'Chi khác' &&
+                tx.category != 'Ăn uống'
             ? tx.category
             : 'Thu khác';
       }
 
-      final targetWallet = tx.walletName.isNotEmpty ? tx.walletName : detectedWallet;
+      final targetWallet = tx.walletName.isNotEmpty
+          ? tx.walletName
+          : detectedWallet;
       final iconData = CategoryUtils.getCategoryIcon(targetCategory);
 
       String desc = tx.description;
-      if (desc.isEmpty || desc.toLowerCase().startsWith('cộng ') || desc.toLowerCase().contains('không xác định')) {
+      if (desc.isEmpty ||
+          desc.toLowerCase().startsWith('cộng ') ||
+          desc.toLowerCase().contains('không xác định')) {
         desc = targetCategory;
       }
 
-      if (shouldBeIncome || tx.category != targetCategory || (targetWallet.isNotEmpty && tx.walletName.isEmpty)) {
+      if (shouldBeIncome ||
+          tx.category != targetCategory ||
+          (targetWallet.isNotEmpty && tx.walletName.isEmpty)) {
         hasChanged = true;
-        updatedList.add(tx.copyWith(
-          type: 'income',
-          category: targetCategory,
-          categoryIconCode: iconData.codePoint,
-          description: desc,
-          walletName: targetWallet,
-        ));
+        updatedList.add(
+          tx.copyWith(
+            type: 'income',
+            category: targetCategory,
+            categoryIconCode: iconData.codePoint,
+            description: desc,
+            walletName: targetWallet,
+          ),
+        );
       } else {
         updatedList.add(tx);
       }
@@ -2583,9 +3051,12 @@ Quy tắc bắt buộc:
 
     final firstTx = updatedList.first;
     final formattedStr = CurrencyUtils.formatCurrency(firstTx.amount);
-    final walletPart = firstTx.walletName.isNotEmpty ? ' vào ví **${firstTx.walletName}**' : '';
+    final walletPart = firstTx.walletName.isNotEmpty
+        ? ' vào ví **${firstTx.walletName}**'
+        : '';
 
-    final newReply = '✨ Mono đã ghi nhận khoản thu **$formattedStr** cho "${firstTx.description}"$walletPart vào sổ của bạn rồi nhé! 💰\n\n'
+    final newReply =
+        '✨ Mono đã ghi nhận khoản thu **$formattedStr** cho "${firstTx.description}"$walletPart vào sổ của bạn rồi nhé! 💰\n\n'
         '• Số tiền: **$formattedStr**\n'
         '• Danh mục: **${firstTx.category}**\n'
         '${firstTx.walletName.isNotEmpty ? '• Ví nhận: **${firstTx.walletName}**\n' : ''}\n'

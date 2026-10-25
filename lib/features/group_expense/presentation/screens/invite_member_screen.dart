@@ -1,12 +1,12 @@
-import '../../../../services/language_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../data/repositories/user_repository.dart';
 import '../../../../widgets/animated_scale_button.dart';
 import '../../../../widgets/mono_toast.dart';
 import '../../../../services/device_contacts_service.dart';
 import '../../../../services/notification_service.dart';
+import '../../../../services/language_service.dart';
 
 class InviteMemberScreen extends StatefulWidget {
   final String groupId;
@@ -23,6 +23,7 @@ class InviteMemberScreen extends StatefulWidget {
 }
 
 class _InviteMemberScreenState extends State<InviteMemberScreen> {
+  bool get isVi => LanguageService.instance.isVietnamese;
   final _phoneController = TextEditingController();
   bool _isLoading = false;
   String? _foundUserName;
@@ -38,7 +39,8 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
 
   Future<void> _pickFromContacts() async {
     HapticFeedback.selectionClick();
-    final hasPermission = await DeviceContactsService.instance.requestPermission();
+    final hasPermission = await DeviceContactsService.instance
+        .requestPermission();
     if (!hasPermission) {
       if (mounted) {
         MonoToast.warning(
@@ -67,10 +69,8 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _ContactPickerModal(
-        isDark: isDark,
-        primaryColor: primaryColor,
-      ),
+      builder: (ctx) =>
+          _ContactPickerModal(isDark: isDark, primaryColor: primaryColor),
     );
   }
 
@@ -91,25 +91,24 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
     });
 
     try {
-      final usersSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('phone', isEqualTo: phone)
-          .limit(1)
-          .get();
+      final user = await UserRepository().findUserByPhone(phone);
 
-      if (usersSnapshot.docs.isEmpty) {
+      if (user == null) {
         setState(() {
           _foundUserName = null;
           _foundUserId = null;
-          _searchError = isVi ? 'Không tìm thấy người dùng với số này' : 'User not found with this phone';
+          _searchError = isVi
+              ? 'Không tìm thấy người dùng với số này'
+              : 'User not found with this phone';
           _isSearching = false;
         });
         return;
       }
 
-      final userData = usersSnapshot.docs.first.data();
-      final userName = userData['name'] as String? ?? (isVi ? 'Người dùng' : 'User');
-      final userId = usersSnapshot.docs.first.id;
+      final userName = user.name.isNotEmpty
+          ? user.name
+          : (isVi ? 'Người dùng' : 'User');
+      final userId = user.uid;
 
       setState(() {
         _foundUserName = userName;
@@ -121,7 +120,9 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
       setState(() {
         _foundUserName = null;
         _foundUserId = null;
-        _searchError = '${isVi ? 'Lỗi tìm kiếm' : 'Search error'}: $e';
+        _searchError = isVi
+            ? 'Lỗi tìm kiếm người dùng'
+            : 'Error searching user';
         _isSearching = false;
       });
     }
@@ -149,7 +150,9 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
       if (mounted) {
         MonoToast.success(
           context,
-          isVi ? 'Đã gửi lời mời đến $_foundUserName' : 'Invitation sent to $_foundUserName',
+          isVi
+              ? 'Đã gửi lời mời đến $_foundUserName'
+              : 'Invitation sent to $_foundUserName',
         );
         _phoneController.clear();
         setState(() {
@@ -160,10 +163,7 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
       }
     } catch (e) {
       if (mounted) {
-        MonoToast.error(
-          context,
-          '${isVi ? 'Lỗi' : 'Error'}: $e',
-        );
+        MonoToast.error(context, '${isVi ? 'Lỗi' : 'Error'}: $e');
       }
     } finally {
       if (mounted) {
@@ -296,7 +296,9 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            isVi ? 'Mời tham gia quỹ nhóm' : 'Invite to Group Fund',
+                            isVi
+                                ? 'Mời tham gia quỹ nhóm'
+                                : 'Invite to Group Fund',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 18,
@@ -344,13 +346,22 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
                         enabled: !_isLoading,
-                        style: TextStyle(color: textPrimary, fontSize: 15, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                         onChanged: (phone) {
                           _searchUser(phone.trim());
                         },
                         decoration: InputDecoration(
-                          hintText: isVi ? 'Ví dụ: 0912345678' : 'e.g. 0912345678',
-                          hintStyle: TextStyle(color: textSecondary.withValues(alpha: 0.6), fontSize: 14),
+                          hintText: isVi
+                              ? 'Ví dụ: 0912345678'
+                              : 'e.g. 0912345678',
+                          hintStyle: TextStyle(
+                            color: textSecondary.withValues(alpha: 0.6),
+                            fontSize: 14,
+                          ),
                           prefixIcon: Icon(
                             Icons.phone_rounded,
                             color: primaryColor,
@@ -361,7 +372,9 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                             children: [
                               if (_isSearching)
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
                                   child: SizedBox(
                                     width: 18,
                                     height: 18,
@@ -378,13 +391,20 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                                   Icons.contacts_rounded,
                                   color: primaryColor,
                                 ),
-                                tooltip: isVi ? 'Chọn từ danh bạ' : 'Pick from contacts',
-                                onPressed: _isLoading ? null : _pickFromContacts,
+                                tooltip: isVi
+                                    ? 'Chọn từ danh bạ'
+                                    : 'Pick from contacts',
+                                onPressed: _isLoading
+                                    ? null
+                                    : _pickFromContacts,
                               ),
                             ],
                           ),
                           border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -396,17 +416,27 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: context.warning.withValues(alpha: isDark ? 0.15 : 0.08),
+                            color: context.warning.withValues(
+                              alpha: isDark ? 0.15 : 0.08,
+                            ),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.info_outline, size: 16, color: context.warning),
+                              Icon(
+                                Icons.info_outline,
+                                size: 16,
+                                color: context.warning,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   _searchError!,
-                                  style: TextStyle(color: context.warning, fontSize: 13, fontWeight: FontWeight.w500),
+                                  style: TextStyle(
+                                    color: context.warning,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ],
@@ -542,7 +572,9 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                               end: Alignment.bottomRight,
                             ),
                       color: (_isLoading || _foundUserId == null)
-                          ? (isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFF1F5F9))
+                          ? (isDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : const Color(0xFFF1F5F9))
                           : null,
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: (_isLoading || _foundUserId == null)
@@ -570,14 +602,20 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
                               children: [
                                 Icon(
                                   Icons.send_rounded,
-                                  color: (_isLoading || _foundUserId == null) ? textSecondary : Colors.white,
+                                  color: (_isLoading || _foundUserId == null)
+                                      ? textSecondary
+                                      : Colors.white,
                                   size: 18,
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  isVi ? 'Gửi Lời Mời Ngay' : 'Send Invitation Now',
+                                  isVi
+                                      ? 'Gửi Lời Mời Ngay'
+                                      : 'Send Invitation Now',
                                   style: TextStyle(
-                                    color: (_isLoading || _foundUserId == null) ? textSecondary : Colors.white,
+                                    color: (_isLoading || _foundUserId == null)
+                                        ? textSecondary
+                                        : Colors.white,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -600,10 +638,7 @@ class _ContactPickerModal extends StatefulWidget {
   final bool isDark;
   final Color primaryColor;
 
-  const _ContactPickerModal({
-    required this.isDark,
-    required this.primaryColor,
-  });
+  const _ContactPickerModal({required this.isDark, required this.primaryColor});
 
   @override
   State<_ContactPickerModal> createState() => _ContactPickerModalState();
@@ -727,7 +762,9 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
               onChanged: _onSearch,
               style: TextStyle(color: textP, fontSize: 14),
               decoration: InputDecoration(
-                hintText: isVi ? 'Tìm kiếm tên hoặc số điện thoại...' : 'Search name or phone number...',
+                hintText: isVi
+                    ? 'Tìm kiếm tên hoặc số điện thoại...'
+                    : 'Search name or phone number...',
                 hintStyle: TextStyle(
                   color: textS.withValues(alpha: 0.6),
                   fontSize: 14,
@@ -744,7 +781,10 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
                     : null,
                 filled: true,
                 fillColor: context.inputBgColor,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
@@ -763,72 +803,68 @@ class _ContactPickerModalState extends State<_ContactPickerModal> {
                     ),
                   )
                 : _filtered.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.person_search_rounded,
-                              size: 44,
-                              color: textS.withValues(alpha: 0.4),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              isVi ? 'Không tìm thấy liên hệ nào' : 'No contacts found',
-                              style: TextStyle(color: textS, fontSize: 14),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.person_search_rounded,
+                          size: 44,
+                          color: textS.withValues(alpha: 0.4),
                         ),
-                      )
-                    : ListView.separated(
-                        itemCount: _filtered.length,
-                        separatorBuilder: (context, index) => Divider(
-                          height: 1,
-                          indent: 68,
-                          color: dividerColor,
+                        const SizedBox(height: 12),
+                        Text(
+                          isVi
+                              ? 'Không tìm thấy liên hệ nào'
+                              : 'No contacts found',
+                          style: TextStyle(color: textS, fontSize: 14),
                         ),
-                        itemBuilder: (ctx, index) {
-                          final contact = _filtered[index];
-                          final initial = contact.name.isNotEmpty
-                              ? contact.name.characters.first.toUpperCase()
-                              : '?';
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: _filtered.length,
+                    separatorBuilder: (context, index) =>
+                        Divider(height: 1, indent: 68, color: dividerColor),
+                    itemBuilder: (ctx, index) {
+                      final contact = _filtered[index];
+                      final initial = contact.name.isNotEmpty
+                          ? contact.name.characters.first.toUpperCase()
+                          : '?';
 
-                          return ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: primaryColor.withValues(alpha: 0.15),
-                              foregroundColor: primaryColor,
-                              child: Text(
-                                initial,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            title: Text(
-                              contact.name,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                                color: textP,
-                              ),
-                            ),
-                            subtitle: Text(
-                              contact.phone,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: textS,
-                              ),
-                            ),
-                            trailing: Icon(
-                              Icons.arrow_forward_ios_rounded,
-                              size: 14,
-                              color: textS.withValues(alpha: 0.6),
-                            ),
-                            onTap: () {
-                              HapticFeedback.selectionClick();
-                              Navigator.pop(context, contact.phone);
-                            },
-                          );
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: primaryColor.withValues(alpha: 0.15),
+                          foregroundColor: primaryColor,
+                          child: Text(
+                            initial,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        title: Text(
+                          contact.name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                            color: textP,
+                          ),
+                        ),
+                        subtitle: Text(
+                          contact.phone,
+                          style: TextStyle(fontSize: 13, color: textS),
+                        ),
+                        trailing: Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 14,
+                          color: textS.withValues(alpha: 0.6),
+                        ),
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          Navigator.pop(context, contact.phone);
                         },
-                      ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

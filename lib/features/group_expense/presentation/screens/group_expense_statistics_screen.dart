@@ -13,10 +13,9 @@ import '../../../../utils/currency_format_utils.dart';
 
 // Helper function để format tiền
 String _formatMoney(double amount) {
-  return amount.toStringAsFixed(0).replaceAllMapped(
-    RegExp(r'\B(?=(\d{3})+(?!\d))'),
-    (match) => '.',
-  );
+  return amount
+      .toStringAsFixed(0)
+      .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.');
 }
 
 class GroupExpenseStatisticsScreen extends ConsumerStatefulWidget {
@@ -32,10 +31,12 @@ class GroupExpenseStatisticsScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<GroupExpenseStatisticsScreen> createState() => _GroupExpenseStatisticsScreenState();
+  ConsumerState<GroupExpenseStatisticsScreen> createState() =>
+      _GroupExpenseStatisticsScreenState();
 }
 
-class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStatisticsScreen> {
+class _GroupExpenseStatisticsScreenState
+    extends ConsumerState<GroupExpenseStatisticsScreen> {
   bool get isVi => LanguageService.instance.isVietnamese;
   int touchedIndex = -1;
   late int selectedTab; // Sẽ khởi tạo từ initialTab
@@ -48,17 +49,21 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
 
   @override
   Widget build(BuildContext context) {
-    final expensesAsync = ref.watch(groupExpensesStreamProvider(widget.groupId));
-    final fundTransactionsAsync = ref.watch(groupFundTransactionsProvider(widget.groupId));
+    final expensesAsync = ref.watch(
+      groupExpensesStreamProvider(widget.groupId),
+    );
+    final fundTransactionsAsync = ref.watch(
+      groupFundTransactionsProvider(widget.groupId),
+    );
 
     final isDark = context.isDarkMode;
     final primaryColor = context.colors.primary;
     final expenses = expensesAsync.asData?.value ?? [];
     final transactions = fundTransactionsAsync.asData?.value ?? [];
-    
+
     double totalIncome = 0;
     double totalExpense = 0;
-    
+
     for (var tx in transactions) {
       if (tx.type == TransactionType.contribute) {
         totalIncome += tx.amount;
@@ -105,12 +110,16 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
               centerTitle: true,
               title: LayoutBuilder(
                 builder: (context, constraints) {
-                  final isCollapsed = constraints.maxHeight <= kToolbarHeight + (MediaQuery.of(context).padding.top);
+                  final isCollapsed =
+                      constraints.maxHeight <=
+                      kToolbarHeight + (MediaQuery.of(context).padding.top);
                   return AnimatedOpacity(
                     duration: const Duration(milliseconds: 200),
                     opacity: isCollapsed ? 1.0 : 0.0,
                     child: Text(
-                      isVi ? 'Thống kê - ${widget.groupName}' : 'Statistics - ${widget.groupName}',
+                      isVi
+                          ? 'Thống kê - ${widget.groupName}'
+                          : 'Statistics - ${widget.groupName}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -118,7 +127,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                       ),
                     ),
                   );
-                }
+                },
               ),
               background: Container(
                 decoration: BoxDecoration(
@@ -178,11 +187,17 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                         ),
                         const SizedBox(height: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 0.5),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              width: 0.5,
+                            ),
                           ),
                           child: Text(
                             widget.groupName,
@@ -208,12 +223,14 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
               width: double.infinity,
               decoration: BoxDecoration(
                 color: isDark ? AppColors.bgDark : AppColors.bgLight,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(32),
+                ),
               ),
               child: Column(
                 children: [
                   const SizedBox(height: 32),
-                  
+
                   // Toggle Control - Re-engineered for Pixel-Perfect Alignment
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -222,16 +239,14 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                         final width = constraints.maxWidth;
                         final innerPadding = 6.0;
                         final indicatorWidth = (width - (innerPadding * 2)) / 2;
-                        
+
                         return Container(
                           height: 58,
                           padding: EdgeInsets.all(innerPadding),
                           decoration: BoxDecoration(
                             color: context.inputBgColor,
                             borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: context.borderColor,
-                            ),
+                            border: Border.all(color: context.borderColor),
                           ),
                           child: Stack(
                             children: [
@@ -256,7 +271,9 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                                     borderRadius: BorderRadius.circular(14),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: primaryColor.withValues(alpha: 0.35),
+                                        color: primaryColor.withValues(
+                                          alpha: 0.35,
+                                        ),
                                         blurRadius: 12,
                                         offset: const Offset(0, 4),
                                       ),
@@ -267,19 +284,31 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                               // Foreground Items
                               Row(
                                 children: [
-                                  _buildToggleItem(context, isVi ? 'Chi phí' : 'Expense', 0, Icons.arrow_circle_up_rounded, isDark),
-                                  _buildToggleItem(context, isVi ? 'Thu nhập' : 'Income', 1, Icons.arrow_circle_down_rounded, isDark),
+                                  _buildToggleItem(
+                                    context,
+                                    isVi ? 'Chi phí' : 'Expense',
+                                    0,
+                                    Icons.arrow_circle_up_rounded,
+                                    isDark,
+                                  ),
+                                  _buildToggleItem(
+                                    context,
+                                    isVi ? 'Thu nhập' : 'Income',
+                                    1,
+                                    Icons.arrow_circle_down_rounded,
+                                    isDark,
+                                  ),
                                 ],
                               ),
                             ],
                           ),
                         );
-                      }
+                      },
                     ),
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Statistics Charts & Lists
                   expensesAsync.when(
                     data: (expenses) => fundTransactionsAsync.when(
@@ -287,15 +316,25 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 40),
                           child: selectedTab == 0
-                              ? _buildExpensesTab(expenses, transactions, isDark)
+                              ? _buildExpensesTab(
+                                  expenses,
+                                  transactions,
+                                  isDark,
+                                )
                               : _buildIncomeTab(transactions, isDark),
                         );
                       },
-                      loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (error, _) => Center(child: Text('${isVi ? 'Lỗi' : 'Error'}: $error')),
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (error, _) => Center(
+                        child: Text('${isVi ? 'Lỗi' : 'Error'}: $error'),
+                      ),
                     ),
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (error, _) => Center(child: Text('${isVi ? 'Lỗi' : 'Error'}: $error')),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (error, _) => Center(
+                      child: Text('${isVi ? 'Lỗi' : 'Error'}: $error'),
+                    ),
                   ),
                 ],
               ),
@@ -306,13 +345,21 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
     );
   }
 
-  Widget _buildHeaderSummaryItem(String label, double amount, IconData icon, Color color) {
+  Widget _buildHeaderSummaryItem(
+    String label,
+    double amount,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08), width: 1),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.08),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -335,7 +382,10 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
           const SizedBox(height: 12),
           Text(
             label,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
@@ -353,7 +403,13 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
     );
   }
 
-  Widget _buildToggleItem(BuildContext context, String label, int tabIndex, IconData icon, bool isDark) {
+  Widget _buildToggleItem(
+    BuildContext context,
+    String label,
+    int tabIndex,
+    IconData icon,
+    bool isDark,
+  ) {
     final isSelected = selectedTab == tabIndex;
     return Expanded(
       child: InkWell(
@@ -371,13 +427,17 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
               Icon(
                 icon,
                 size: 20,
-                color: isSelected ? Colors.white : context.colors.onSurfaceVariant,
+                color: isSelected
+                    ? Colors.white
+                    : context.colors.onSurfaceVariant,
               ),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : context.colors.onSurfaceVariant,
+                  color: isSelected
+                      ? Colors.white
+                      : context.colors.onSurfaceVariant,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w700,
                   fontSize: 14,
                   letterSpacing: 0.2,
@@ -390,21 +450,30 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
     );
   }
 
-  Widget _buildExpensesTab(List<ExpenseModel> expenses, List<FundTransactionModel> transactions, bool isDark) {
+  Widget _buildExpensesTab(
+    List<ExpenseModel> expenses,
+    List<FundTransactionModel> transactions,
+    bool isDark,
+  ) {
     // Collect all expenses from ExpenseModel
     final Map<String, double> categorySums = {};
     double totalSum = 0;
-    
+
     for (var expense in expenses) {
-      categorySums[expense.category] = (categorySums[expense.category] ?? 0) + expense.amount;
+      categorySums[expense.category] =
+          (categorySums[expense.category] ?? 0) + expense.amount;
       totalSum += expense.amount;
     }
 
     // ADD withdrawals to expenses
     // Group withdrawals BY USER to match Income tab consistency
-    final withdrawals = transactions.where((tx) => tx.type == TransactionType.withdraw).toList();
+    final withdrawals = transactions
+        .where((tx) => tx.type == TransactionType.withdraw)
+        .toList();
     for (var tx in withdrawals) {
-      final key = isVi ? "Rút quỹ - ${tx.userName}" : "Withdrawal - ${tx.userName}";
+      final key = isVi
+          ? "Rút quỹ - ${tx.userName}"
+          : "Withdrawal - ${tx.userName}";
       categorySums[key] = (categorySums[key] ?? 0) + tx.amount;
       totalSum += tx.amount;
     }
@@ -415,15 +484,16 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
 
     final List<PieChartSectionData> sections = [];
     final categories = categorySums.keys.toList();
-    
+
     for (int i = 0; i < categories.length; i++) {
       final category = categories[i];
       final amount = categorySums[category]!;
       final percentage = (amount / totalSum) * 100;
       final isTouched = i == touchedIndex;
-      
+
       // Use dynamic color based on index or category
-      final color = category.startsWith('Rút quỹ') || category.startsWith('Góp quỹ')
+      final color =
+          category.startsWith('Rút quỹ') || category.startsWith('Góp quỹ')
           ? Colors.primaries[i % Colors.primaries.length]
           : CategoryUtils.getVibrantColor(category);
 
@@ -438,7 +508,10 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
-          borderSide: BorderSide(color: isDark ? const Color(0xFF000000) : Colors.white, width: 2),
+          borderSide: BorderSide(
+            color: isDark ? const Color(0xFF000000) : Colors.white,
+            width: 2,
+          ),
         ),
       );
     }
@@ -457,17 +530,24 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
 
   Widget _buildIncomeTab(List<FundTransactionModel> transactions, bool isDark) {
     // ONLY contributions for income
-    final contributions = transactions.where((tx) => tx.type == TransactionType.contribute).toList();
-    
+    final contributions = transactions
+        .where((tx) => tx.type == TransactionType.contribute)
+        .toList();
+
     if (contributions.isEmpty) {
-      return _buildEmptyState(isDark, isVi ? 'thu nhập/góp quỹ' : 'income/contributions');
+      return _buildEmptyState(
+        isDark,
+        isVi ? 'thu nhập/góp quỹ' : 'income/contributions',
+      );
     }
 
     final Map<String, double> groupedData = {};
     double totalSum = 0;
-    
+
     for (var tx in contributions) {
-      final key = isVi ? "Góp quỹ - ${tx.userName}" : "Contribution - ${tx.userName}";
+      final key = isVi
+          ? "Góp quỹ - ${tx.userName}"
+          : "Contribution - ${tx.userName}";
       groupedData[key] = (groupedData[key] ?? 0) + tx.amount;
       totalSum += tx.amount;
     }
@@ -480,7 +560,7 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
       final amount = groupedData[key]!;
       final percentage = (amount / totalSum) * 100;
       final isTouched = i == touchedIndex;
-      
+
       final color = Colors.primaries[i % Colors.primaries.length];
 
       sections.add(
@@ -494,7 +574,10 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
-          borderSide: BorderSide(color: isDark ? const Color(0xFF000000) : Colors.white, width: 2),
+          borderSide: BorderSide(
+            color: isDark ? const Color(0xFF000000) : Colors.white,
+            width: 2,
+          ),
         ),
       );
     }
@@ -511,8 +594,12 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
     );
   }
 
-
-  Widget _buildChartSection(List<PieChartSectionData> sections, double total, String label, bool isDark) {
+  Widget _buildChartSection(
+    List<PieChartSectionData> sections,
+    double total,
+    String label,
+    bool isDark,
+  ) {
     return Column(
       children: [
         const SizedBox(height: 30),
@@ -528,11 +615,15 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                     pieTouchData: PieTouchData(
                       touchCallback: (FlTouchEvent event, pieTouchResponse) {
                         setState(() {
-                          if (!event.isInterestedForInteractions || pieTouchResponse == null || pieTouchResponse.touchedSection == null) {
+                          if (!event.isInterestedForInteractions ||
+                              pieTouchResponse == null ||
+                              pieTouchResponse.touchedSection == null) {
                             touchedIndex = -1;
                             return;
                           }
-                          touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                          touchedIndex = pieTouchResponse
+                              .touchedSection!
+                              .touchedSectionIndex;
                         });
                       },
                     ),
@@ -549,7 +640,10 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                   children: [
                     Text(
                       '${isVi ? "Tổng" : "Total"} ${selectedTab == 0 ? (isVi ? "chi" : "expense") : (isVi ? "thu" : "income")}',
-                      style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 13),
+                      style: TextStyle(
+                        color: context.colors.onSurfaceVariant,
+                        fontSize: 13,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -562,7 +656,11 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                     ),
                     Text(
                       isVi ? 'VNĐ' : 'VND',
-                      style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 11, letterSpacing: 1),
+                      style: TextStyle(
+                        color: context.colors.onSurfaceVariant,
+                        fontSize: 11,
+                        letterSpacing: 1,
+                      ),
                     ),
                   ],
                 ),
@@ -575,12 +673,20 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
     );
   }
 
-  Widget _buildCategoryList(List<FundTransactionModel> transactions, bool isDark, bool isIncome) {
+  Widget _buildCategoryList(
+    List<FundTransactionModel> transactions,
+    bool isDark,
+    bool isIncome,
+  ) {
     // Filter transactions based on current tab (Income or Expense)
-    final filteredTransactions = transactions.where((tx) => 
-      isIncome ? tx.type == TransactionType.contribute : tx.type == TransactionType.withdraw
-    ).toList();
-    
+    final filteredTransactions = transactions
+        .where(
+          (tx) => isIncome
+              ? tx.type == TransactionType.contribute
+              : tx.type == TransactionType.withdraw,
+        )
+        .toList();
+
     // Sort by date (newest first)
     filteredTransactions.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
@@ -602,10 +708,15 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
             ),
           ),
           ...filteredTransactions.map((tx) {
-            final color = tx.type == TransactionType.contribute ? context.income : context.expense;
-            final icon = tx.type == TransactionType.contribute ? Icons.person_add_rounded : Icons.person_remove_rounded;
-            final timeStr = '${tx.createdAt.day}/${tx.createdAt.month} • ${tx.createdAt.hour}:${tx.createdAt.minute.toString().padLeft(2, '0')}';
-            
+            final color = tx.type == TransactionType.contribute
+                ? context.income
+                : context.expense;
+            final icon = tx.type == TransactionType.contribute
+                ? Icons.person_add_rounded
+                : Icons.person_remove_rounded;
+            final timeStr =
+                '${tx.createdAt.day}/${tx.createdAt.month} • ${tx.createdAt.hour}:${tx.createdAt.minute.toString().padLeft(2, '0')}';
+
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
@@ -614,11 +725,12 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: context.borderColor, width: 1),
                 boxShadow: [
-                  if (!isDark) BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
+                  if (!isDark)
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
                 ],
               ),
               child: Row(
@@ -647,7 +759,9 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          tx.type == TransactionType.contribute ? (isVi ? 'Đã góp quỹ' : 'Contributed') : (isVi ? 'Đã rút quỹ' : 'Withdrawn'),
+                          tx.type == TransactionType.contribute
+                              ? (isVi ? 'Đã góp quỹ' : 'Contributed')
+                              : (isVi ? 'Đã rút quỹ' : 'Withdrawn'),
                           style: TextStyle(
                             fontSize: 12,
                             color: context.colors.onSurfaceVariant,
@@ -692,9 +806,16 @@ class _GroupExpenseStatisticsScreenState extends ConsumerState<GroupExpenseStati
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.pie_chart_outline, size: 80, color: Colors.grey.withValues(alpha: 0.3)),
+          Icon(
+            Icons.pie_chart_outline,
+            size: 80,
+            color: Colors.grey.withValues(alpha: 0.3),
+          ),
           const SizedBox(height: 16),
-          Text(isVi ? 'Không có $type nào' : 'No $type recorded', style: TextStyle(color: context.colors.onSurfaceVariant)),
+          Text(
+            isVi ? 'Không có $type nào' : 'No $type recorded',
+            style: TextStyle(color: context.colors.onSurfaceVariant),
+          ),
         ],
       ),
     );

@@ -17,18 +17,20 @@ class StorageService {
     try {
       // 1. Thử upload lên Firebase Storage
       final ref = _storage.ref().child('avatars/$_uid.jpg');
-      
+
       final metadata = SettableMetadata(
         contentType: 'image/jpeg',
         cacheControl: 'public, max-age=31536000',
       );
       final uploadTask = await ref.putFile(imageFile, metadata);
-      
+
       final downloadUrl = await uploadTask.ref.getDownloadURL();
       return downloadUrl;
     } catch (e) {
-      debugPrint('Firebase Storage upload failed: $e. Kích hoạt fallback Base64 lưu Firestore...');
-      
+      debugPrint(
+        'Firebase Storage upload failed: $e. Kích hoạt fallback Base64 lưu Firestore...',
+      );
+
       // 2. Dự phòng: Nếu Firebase Storage gặp lỗi (HTTP 402 billing closed, mạng lỗi...),
       // Tự động chuyển sang Base64 Data URI để đồng bộ an toàn qua Cloud Firestore
       try {

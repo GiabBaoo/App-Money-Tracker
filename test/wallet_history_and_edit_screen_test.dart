@@ -63,96 +63,123 @@ void main() {
     ];
 
     test('1. Lọc giao dịch theo từng ví cụ thể', () {
-      final wallet1Txs = allTxs.where((tx) => tx.walletId == 'wallet_1').toList();
+      final wallet1Txs = allTxs
+          .where((tx) => tx.walletId == 'wallet_1')
+          .toList();
       expect(wallet1Txs.length, equals(3));
-      expect(wallet1Txs.map((t) => t.id), containsAll(['tx_1', 'tx_2', 'tx_4']));
+      expect(
+        wallet1Txs.map((t) => t.id),
+        containsAll(['tx_1', 'tx_2', 'tx_4']),
+      );
 
-      final wallet2Txs = allTxs.where((tx) => tx.walletId == 'wallet_2').toList();
+      final wallet2Txs = allTxs
+          .where((tx) => tx.walletId == 'wallet_2')
+          .toList();
       expect(wallet2Txs.length, equals(1));
       expect(wallet2Txs.first.id, equals('tx_3'));
     });
 
-    test('2. Lọc theo Loại giao dịch: Tất cả, Chi tiêu, Thu nhập, Chuyển ví', () {
-      // Chi tiêu thuần (không tính chuyển tiền)
-      final expenseTxs = allTxs.where((tx) => tx.type == 'expense' && !tx.isTransfer).toList();
-      expect(expenseTxs.length, equals(2));
-      expect(expenseTxs.map((t) => t.category), containsAll(['Ăn uống', 'Mua sắm']));
+    test(
+      '2. Lọc theo Loại giao dịch: Tất cả, Chi tiêu, Thu nhập, Chuyển ví',
+      () {
+        // Chi tiêu thuần (không tính chuyển tiền)
+        final expenseTxs = allTxs
+            .where((tx) => tx.type == 'expense' && !tx.isTransfer)
+            .toList();
+        expect(expenseTxs.length, equals(2));
+        expect(
+          expenseTxs.map((t) => t.category),
+          containsAll(['Ăn uống', 'Mua sắm']),
+        );
 
-      // Thu nhập
-      final incomeTxs = allTxs.where((tx) => tx.type == 'income' && !tx.isTransfer).toList();
-      expect(incomeTxs.length, equals(1));
-      expect(incomeTxs.first.category, equals('Tiền lương'));
+        // Thu nhập
+        final incomeTxs = allTxs
+            .where((tx) => tx.type == 'income' && !tx.isTransfer)
+            .toList();
+        expect(incomeTxs.length, equals(1));
+        expect(incomeTxs.first.category, equals('Tiền lương'));
 
-      // Chuyển ví
-      final transferTxs = allTxs.where((tx) => tx.isTransfer).toList();
-      expect(transferTxs.length, equals(1));
-      expect(transferTxs.first.category, equals('Chuyển tiền'));
-    });
+        // Chuyển ví
+        final transferTxs = allTxs.where((tx) => tx.isTransfer).toList();
+        expect(transferTxs.length, equals(1));
+        expect(transferTxs.first.category, equals('Chuyển tiền'));
+      },
+    );
 
-    test('3. Tính toán Tóm tắt dòng tiền ví (Income, Expense, Net cashflow)', () {
-      final wallet1Txs = allTxs.where((tx) => tx.walletId == 'wallet_1').toList();
+    test(
+      '3. Tính toán Tóm tắt dòng tiền ví (Income, Expense, Net cashflow)',
+      () {
+        final wallet1Txs = allTxs
+            .where((tx) => tx.walletId == 'wallet_1')
+            .toList();
 
-      double inc = 0;
-      double exp = 0;
-      for (final tx in wallet1Txs) {
-        if (tx.type == 'income') {
-          inc += tx.amount;
-        } else if (tx.type == 'expense') {
-          exp += tx.amount;
+        double inc = 0;
+        double exp = 0;
+        for (final tx in wallet1Txs) {
+          if (tx.type == 'income') {
+            inc += tx.amount;
+          } else if (tx.type == 'expense') {
+            exp += tx.amount;
+          }
         }
-      }
 
-      expect(inc, equals(2000000.0));
-      expect(exp, equals(350000.0)); // 50k + 300k transfer
-      expect(inc - exp, equals(1650000.0));
-    });
+        expect(inc, equals(2000000.0));
+        expect(exp, equals(350000.0)); // 50k + 300k transfer
+        expect(inc - exp, equals(1650000.0));
+      },
+    );
 
-    test('4. Phân loại danh mục theo ví (Category Breakdown) được sắp xếp giảm dần', () {
-      final txA = TransactionModel(
-        id: 'a',
-        uid: 'u',
-        type: 'expense',
-        category: 'Ăn uống',
-        categoryIconCode: 1,
-        amount: 80000,
-        date: now,
-        walletId: 'wallet_1',
-      );
-      final txB = TransactionModel(
-        id: 'b',
-        uid: 'u',
-        type: 'expense',
-        category: 'Di chuyển',
-        categoryIconCode: 2,
-        amount: 120000,
-        date: now,
-        walletId: 'wallet_1',
-      );
-      final txC = TransactionModel(
-        id: 'c',
-        uid: 'u',
-        type: 'expense',
-        category: 'Ăn uống',
-        categoryIconCode: 1,
-        amount: 40000,
-        date: now,
-        walletId: 'wallet_1',
-      );
+    test(
+      '4. Phân loại danh mục theo ví (Category Breakdown) được sắp xếp giảm dần',
+      () {
+        final txA = TransactionModel(
+          id: 'a',
+          uid: 'u',
+          type: 'expense',
+          category: 'Ăn uống',
+          categoryIconCode: 1,
+          amount: 80000,
+          date: now,
+          walletId: 'wallet_1',
+        );
+        final txB = TransactionModel(
+          id: 'b',
+          uid: 'u',
+          type: 'expense',
+          category: 'Di chuyển',
+          categoryIconCode: 2,
+          amount: 120000,
+          date: now,
+          walletId: 'wallet_1',
+        );
+        final txC = TransactionModel(
+          id: 'c',
+          uid: 'u',
+          type: 'expense',
+          category: 'Ăn uống',
+          categoryIconCode: 1,
+          amount: 40000,
+          date: now,
+          walletId: 'wallet_1',
+        );
 
-      final testList = [txA, txB, txC];
-      final Map<String, double> breakdownMap = {};
-      for (final tx in testList) {
-        if (tx.type == 'expense' && !tx.isTransfer) {
-          breakdownMap[tx.category] = (breakdownMap[tx.category] ?? 0) + tx.amount;
+        final testList = [txA, txB, txC];
+        final Map<String, double> breakdownMap = {};
+        for (final tx in testList) {
+          if (tx.type == 'expense' && !tx.isTransfer) {
+            breakdownMap[tx.category] =
+                (breakdownMap[tx.category] ?? 0) + tx.amount;
+          }
         }
-      }
 
-      final sorted = breakdownMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-      expect(sorted.length, equals(2));
-      // 'Ăn uống' = 120.000, 'Di chuyển' = 120.000
-      expect(breakdownMap['Ăn uống'], equals(120000.0));
-      expect(breakdownMap['Di chuyển'], equals(120000.0));
-    });
+        final sorted = breakdownMap.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+        expect(sorted.length, equals(2));
+        // 'Ăn uống' = 120.000, 'Di chuyển' = 120.000
+        expect(breakdownMap['Ăn uống'], equals(120000.0));
+        expect(breakdownMap['Di chuyển'], equals(120000.0));
+      },
+    );
 
     test('5. Bộ lọc thời gian: Today, Custom Date Range, All Time', () {
       final yesterday = now.subtract(const Duration(days: 1));
@@ -192,8 +219,14 @@ void main() {
       final list = [txToday, txYesterday, txPast];
 
       // Lọc Hôm nay
-      final todayMatches = list.where((tx) =>
-          tx.date.year == now.year && tx.date.month == now.month && tx.date.day == now.day).toList();
+      final todayMatches = list
+          .where(
+            (tx) =>
+                tx.date.year == now.year &&
+                tx.date.month == now.month &&
+                tx.date.day == now.day,
+          )
+          .toList();
       expect(todayMatches.length, equals(1));
       expect(todayMatches.first.id, equals('t_today'));
 
@@ -202,10 +235,17 @@ void main() {
         start: now.subtract(const Duration(days: 2)),
         end: now.add(const Duration(days: 1)),
       );
-      final rangeMatches = list.where((tx) =>
-          !tx.date.isBefore(range.start) && !tx.date.isAfter(range.end)).toList();
+      final rangeMatches = list
+          .where(
+            (tx) =>
+                !tx.date.isBefore(range.start) && !tx.date.isAfter(range.end),
+          )
+          .toList();
       expect(rangeMatches.length, equals(2));
-      expect(rangeMatches.map((t) => t.id), containsAll(['t_today', 't_yesterday']));
+      expect(
+        rangeMatches.map((t) => t.id),
+        containsAll(['t_today', 't_yesterday']),
+      );
     });
 
     test('6. Định dạng tiền tệ VND đồng bộ không bị lỗi dấu', () {
@@ -217,34 +257,37 @@ void main() {
   });
 
   group('EditTransactionScreen Widget Unit Tests', () {
-    testWidgets('EditTransactionScreen khởi tạo thành công không văng exception', (tester) async {
-      final mockTx = TransactionModel(
-        id: 'edit_test_1',
-        uid: 'user_mock',
-        type: 'expense',
-        category: 'Ăn uống',
-        categoryIconCode: Icons.restaurant.codePoint,
-        amount: 75000,
-        date: DateTime.now(),
-        time: '12:30',
-        description: 'Bữa trưa công ty',
-        walletId: 'wallet_mock_1',
-      );
+    testWidgets(
+      'EditTransactionScreen khởi tạo thành công không văng exception',
+      (tester) async {
+        final mockTx = TransactionModel(
+          id: 'edit_test_1',
+          uid: 'user_mock',
+          type: 'expense',
+          category: 'Ăn uống',
+          categoryIconCode: Icons.restaurant.codePoint,
+          amount: 75000,
+          date: DateTime.now(),
+          time: '12:30',
+          description: 'Bữa trưa công ty',
+          walletId: 'wallet_mock_1',
+        );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: ThemeData.light(),
-          darkTheme: ThemeData.dark(),
-          home: EditTransactionScreen(transaction: mockTx),
-        ),
-      );
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: ThemeData.light(),
+            darkTheme: ThemeData.dark(),
+            home: EditTransactionScreen(transaction: mockTx),
+          ),
+        );
 
-      // Verify tiêu đề và các trường khởi tạo
-      expect(find.text('Chỉnh sửa giao dịch'), findsOneWidget);
-      expect(find.text('Khoản chi'), findsOneWidget);
-      expect(find.byType(TextFormField), findsWidgets);
-      expect(find.text('Cập nhật giao dịch'), findsOneWidget);
-      expect(find.text('Xóa giao dịch này'), findsOneWidget);
-    });
+        // Verify tiêu đề và các trường khởi tạo
+        expect(find.text('Chỉnh sửa giao dịch'), findsOneWidget);
+        expect(find.text('KHOẢN CHI'), findsOneWidget);
+        expect(find.byType(TextFormField), findsWidgets);
+        expect(find.text('Cập nhật giao dịch'), findsOneWidget);
+        expect(find.text('Xóa giao dịch này'), findsOneWidget);
+      },
+    );
   });
 }

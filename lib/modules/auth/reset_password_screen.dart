@@ -47,19 +47,43 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       _hasMinLength = password.length >= 8;
       _hasLetter = RegExp(r'[a-zA-Z]').hasMatch(password);
       _hasNumber = RegExp(r'[0-9]').hasMatch(password);
-      _hasSpecialChar = RegExp(r"""[!@#$%^&*()_+\-=\[\]{};:'",./<>?\\|`~]""").hasMatch(password);
+      _hasSpecialChar = RegExp(
+        r"""[!@#$%^&*()_+\-=\[\]{};:'",./<>?\\|`~]""",
+      ).hasMatch(password);
       _hasUpperCase = RegExp(r'[A-Z]').hasMatch(password);
       _passwordError = _validatePassword(password, isVi);
     });
   }
 
   String? _validatePassword(String? value, bool isVi) {
-    if (value == null || value.isEmpty) return isVi ? 'Vui lòng nhập mật khẩu!' : 'Please enter password!';
-    if (!_hasMinLength) return isVi ? 'Mật khẩu phải có ít nhất 8 ký tự!' : 'Password must be at least 8 characters!';
-    if (!_hasLetter) return isVi ? 'Mật khẩu phải chứa ít nhất một chữ cái!' : 'Password must contain at least one letter!';
-    if (!_hasNumber) return isVi ? 'Mật khẩu phải chứa ít nhất một chữ số!' : 'Password must contain at least one digit!';
-    if (!_hasSpecialChar) return isVi ? 'Mật khẩu phải chứa ít nhất một ký tự đặc biệt!' : 'Password must contain at least one special character!';
-    if (!_hasUpperCase) return isVi ? 'Mật khẩu phải chứa ít nhất một chữ cái in hoa!' : 'Password must contain at least one uppercase letter!';
+    if (value == null || value.isEmpty) {
+      return isVi ? 'Vui lòng nhập mật khẩu!' : 'Please enter password!';
+    }
+    if (!_hasMinLength) {
+      return isVi
+          ? 'Mật khẩu phải có ít nhất 8 ký tự!'
+          : 'Password must be at least 8 characters!';
+    }
+    if (!_hasLetter) {
+      return isVi
+          ? 'Mật khẩu phải chứa ít nhất một chữ cái!'
+          : 'Password must contain at least one letter!';
+    }
+    if (!_hasNumber) {
+      return isVi
+          ? 'Mật khẩu phải chứa ít nhất một chữ số!'
+          : 'Password must contain at least one digit!';
+    }
+    if (!_hasSpecialChar) {
+      return isVi
+          ? 'Mật khẩu phải chứa ít nhất một ký tự đặc biệt!'
+          : 'Password must contain at least one special character!';
+    }
+    if (!_hasUpperCase) {
+      return isVi
+          ? 'Mật khẩu phải chứa ít nhất một chữ cái in hoa!'
+          : 'Password must contain at least one uppercase letter!';
+    }
     return null;
   }
 
@@ -67,9 +91,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final isVi = LanguageScope.of(context).isVietnamese;
     setState(() {
       if (value.isEmpty) {
-        _confirmPasswordError = isVi ? 'Vui lòng nhập lại mật khẩu!' : 'Please re-enter password!';
+        _confirmPasswordError = isVi
+            ? 'Vui lòng nhập lại mật khẩu!'
+            : 'Please re-enter password!';
       } else if (value != _newPasswordController.text) {
-        _confirmPasswordError = isVi ? 'Mật khẩu nhập lại không khớp!' : 'Passwords do not match!';
+        _confirmPasswordError = isVi
+            ? 'Mật khẩu nhập lại không khớp!'
+            : 'Passwords do not match!';
       } else {
         _confirmPasswordError = null;
       }
@@ -89,7 +117,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final confirmPassword = _confirmPasswordController.text;
 
     if (newPassword.isEmpty || confirmPassword.isEmpty) {
-      _showSnackBar(isVi ? 'Vui lòng nhập đầy đủ mật khẩu!' : 'Please enter both passwords!', isError: true);
+      _showSnackBar(
+        isVi
+            ? 'Vui lòng nhập đầy đủ mật khẩu!'
+            : 'Please enter both passwords!',
+        isError: true,
+      );
       return;
     }
     if (_passwordError != null) {
@@ -101,7 +134,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
     if (newPassword != confirmPassword) {
-      _showSnackBar(isVi ? 'Mật khẩu nhập lại không khớp!' : 'Passwords do not match!', isError: true);
+      _showSnackBar(
+        isVi ? 'Mật khẩu nhập lại không khớp!' : 'Passwords do not match!',
+        isError: true,
+      );
       return;
     }
 
@@ -109,10 +145,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     if (widget.isFromSecurity) {
       // LUONG DOI MK TU CAI DAT
-      final updateResult = await _authService.updateCurrentPassword(newPassword: newPassword);
-      
+      final updateResult = await _authService.updateCurrentPassword(
+        newPassword: newPassword,
+      );
+
       setState(() => _isLoading = false);
-      
+
       if (!mounted) return;
       if (!updateResult.success) {
         _showSnackBar(updateResult.message, isError: true);
@@ -171,7 +209,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         );
       } else {
         setState(() => _isLoading = false);
-        _showSnackBar(isVi ? 'Lỗi: Không tìm thấy email!' : 'Error: Email not found!', isError: true);
+        _showSnackBar(
+          isVi ? 'Lỗi: Không tìm thấy email!' : 'Error: Email not found!',
+          isError: true,
+        );
       }
     }
   }
@@ -188,9 +229,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = context.isDark;
-    
+
     return Scaffold(
-      backgroundColor: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
+      backgroundColor: isDark
+          ? AppColors.primaryTealDark
+          : AppColors.primaryTeal,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -200,7 +243,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.arrow_back_ios, color: context.colors.onPrimary, size: 20),
+                    icon: Icon(
+                      Icons.arrow_back_ios,
+                      color: context.colors.onPrimary,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Spacer(),
@@ -212,7 +259,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         )
-                      : AppLogo.wordmark(height: 32, color: context.colors.onPrimary),
+                      : AppLogo.wordmark(
+                          height: 32,
+                          color: context.colors.onPrimary,
+                        ),
                   const Spacer(flex: 2),
                 ],
               ),
@@ -223,11 +273,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: context.colors.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                   boxShadow: AppShadows.modal(isDark),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 30,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -250,20 +305,28 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ),
                       const SizedBox(height: 30),
 
-                      _buildLabel(isVi ? 'Nhập mật khẩu mới' : 'Enter new password'),
+                      _buildLabel(
+                        isVi ? 'Nhập mật khẩu mới' : 'Enter new password',
+                      ),
                       _buildTextField(
                         controller: _newPasswordController,
-                        hintText: isVi ? 'Nhập mật khẩu mới' : 'Enter new password',
+                        hintText: isVi
+                            ? 'Nhập mật khẩu mới'
+                            : 'Enter new password',
                         isObscure: _obscureNewPassword,
                         errorText: _passwordError,
                         onChanged: _updatePasswordValidation,
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscureNewPassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                            _obscureNewPassword
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
                             color: context.colors.onSurfaceVariant,
                             size: 20,
                           ),
-                          onPressed: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
+                          onPressed: () => setState(
+                            () => _obscureNewPassword = !_obscureNewPassword,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -275,41 +338,62 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: context.borderColor),
                         ),
-                        child: Column(children: [
-                          _buildPasswordRule(
-                            isVi ? 'Hiển thị từ 8 ký tự trở lên' : 'At least 8 characters',
-                            _hasMinLength,
-                          ),
-                          _buildPasswordRule(
-                            isVi ? 'Bao gồm chữ cái và chữ số' : 'Includes letters and numbers',
-                            _hasLetter && _hasNumber,
-                          ),
-                          _buildPasswordRule(
-                            isVi ? 'Bao gồm ký tự đặc biệt' : 'Includes special characters',
-                            _hasSpecialChar,
-                          ),
-                          _buildPasswordRule(
-                            isVi ? 'Bao gồm chữ cái in hoa' : 'Includes uppercase letter',
-                            _hasUpperCase,
-                          ),
-                        ]),
+                        child: Column(
+                          children: [
+                            _buildPasswordRule(
+                              isVi
+                                  ? 'Hiển thị từ 8 ký tự trở lên'
+                                  : 'At least 8 characters',
+                              _hasMinLength,
+                            ),
+                            _buildPasswordRule(
+                              isVi
+                                  ? 'Bao gồm chữ cái và chữ số'
+                                  : 'Includes letters and numbers',
+                              _hasLetter && _hasNumber,
+                            ),
+                            _buildPasswordRule(
+                              isVi
+                                  ? 'Bao gồm ký tự đặc biệt'
+                                  : 'Includes special characters',
+                              _hasSpecialChar,
+                            ),
+                            _buildPasswordRule(
+                              isVi
+                                  ? 'Bao gồm chữ cái in hoa'
+                                  : 'Includes uppercase letter',
+                              _hasUpperCase,
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 16),
 
-                      _buildLabel(isVi ? 'Nhập lại mật khẩu mới' : 'Re-enter new password'),
+                      _buildLabel(
+                        isVi
+                            ? 'Nhập lại mật khẩu mới'
+                            : 'Re-enter new password',
+                      ),
                       _buildTextField(
                         controller: _confirmPasswordController,
-                        hintText: isVi ? 'Nhập lại mật khẩu mới' : 'Re-enter new password',
+                        hintText: isVi
+                            ? 'Nhập lại mật khẩu mới'
+                            : 'Re-enter new password',
                         isObscure: _obscureConfirmPassword,
                         errorText: _confirmPasswordError,
                         onChanged: _onConfirmPasswordChanged,
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscureConfirmPassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                            _obscureConfirmPassword
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
                             color: context.colors.onSurfaceVariant,
                             size: 20,
                           ),
-                          onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                          onPressed: () => setState(
+                            () => _obscureConfirmPassword =
+                                !_obscureConfirmPassword,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 40),
@@ -323,15 +407,23 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: _isLoading
-                                  ? [context.colors.surfaceContainerHighest, context.colors.surfaceContainerHighest]
-                                  : [AppColors.primaryTealLight, AppColors.primaryTeal],
+                                  ? [
+                                      context.colors.surfaceContainerHighest,
+                                      context.colors.surfaceContainerHighest,
+                                    ]
+                                  : [
+                                      AppColors.primaryTealLight,
+                                      AppColors.primaryTeal,
+                                    ],
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                             ),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: context.colors.primary.withValues(alpha: 0.3),
+                                color: context.colors.primary.withValues(
+                                  alpha: 0.3,
+                                ),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -339,13 +431,21 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           ),
                           child: Center(
                             child: _isLoading
-                                ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: context.colors.onPrimary, strokeWidth: 2.5))
+                                ? SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      color: context.colors.onPrimary,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
                                 : Text(
                                     isVi ? 'Lưu mật khẩu' : 'Save Password',
-                                    style: context.textTheme.titleMedium?.copyWith(
-                                      color: context.colors.onPrimary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: context.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: context.colors.onPrimary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                   ),
                           ),
                         ),
@@ -398,7 +498,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         hintStyle: context.textTheme.bodyMedium?.copyWith(
           color: context.colors.onSurfaceVariant.withValues(alpha: 0.7),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: context.borderColor),
@@ -425,21 +528,29 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget _buildPasswordRule(String text, bool isValid) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Row(children: [
-        Icon(
-          isValid ? Icons.check_circle_rounded : Icons.check_circle_outline_rounded,
-          color: isValid ? context.income : context.colors.onSurfaceVariant.withValues(alpha: 0.6),
-          size: 16,
-        ),
-        const SizedBox(width: 8),
-        Text(
-          text,
-          style: context.textTheme.bodySmall?.copyWith(
-            color: isValid ? context.income : context.colors.onSurfaceVariant.withValues(alpha: 0.8),
-            fontWeight: isValid ? FontWeight.w600 : FontWeight.normal,
+      child: Row(
+        children: [
+          Icon(
+            isValid
+                ? Icons.check_circle_rounded
+                : Icons.check_circle_outline_rounded,
+            color: isValid
+                ? context.income
+                : context.colors.onSurfaceVariant.withValues(alpha: 0.6),
+            size: 16,
           ),
-        ),
-      ]),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: context.textTheme.bodySmall?.copyWith(
+              color: isValid
+                  ? context.income
+                  : context.colors.onSurfaceVariant.withValues(alpha: 0.8),
+              fontWeight: isValid ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

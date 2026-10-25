@@ -16,7 +16,8 @@ class PageTransitions {
   static Route<T> slideRight<T>(Widget page) {
     return PageRouteBuilder<T>(
       opaque: true,
-      pageBuilder: (context, animation, secondaryAnimation) => RepaintBoundary(child: page),
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          RepaintBoundary(child: page),
       transitionDuration: _duration,
       reverseTransitionDuration: _reverseDuration,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -29,17 +30,32 @@ class PageTransitions {
   static Route<T> slideUp<T>(Widget page) {
     return PageRouteBuilder<T>(
       opaque: true,
-      pageBuilder: (context, animation, secondaryAnimation) => RepaintBoundary(child: page),
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          RepaintBoundary(child: page),
       transitionDuration: _duration,
       reverseTransitionDuration: _reverseDuration,
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(parent: animation, curve: _curve, reverseCurve: _reverseCurve);
-        final secondaryCurved = CurvedAnimation(parent: secondaryAnimation, curve: _curve, reverseCurve: _reverseCurve);
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: _curve,
+          reverseCurve: _reverseCurve,
+        );
+        final secondaryCurved = CurvedAnimation(
+          parent: secondaryAnimation,
+          curve: _curve,
+          reverseCurve: _reverseCurve,
+        );
 
         return SlideTransition(
-          position: Tween<Offset>(begin: Offset.zero, end: const Offset(0.0, -0.03)).animate(secondaryCurved),
+          position: Tween<Offset>(
+            begin: Offset.zero,
+            end: const Offset(0.0, -0.03),
+          ).animate(secondaryCurved),
           child: SlideTransition(
-            position: Tween<Offset>(begin: const Offset(0.0, 0.12), end: Offset.zero).animate(curved),
+            position: Tween<Offset>(
+              begin: const Offset(0.0, 0.12),
+              end: Offset.zero,
+            ).animate(curved),
             child: FadeTransition(
               opacity: Tween<double>(begin: 0.35, end: 1.0).animate(curved),
               child: child,
@@ -54,11 +70,15 @@ class PageTransitions {
   static Route<T> fade<T>(Widget page) {
     return PageRouteBuilder<T>(
       opaque: true,
-      pageBuilder: (context, animation, secondaryAnimation) => RepaintBoundary(child: page),
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          RepaintBoundary(child: page),
       transitionDuration: const Duration(milliseconds: 180),
       reverseTransitionDuration: const Duration(milliseconds: 140),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOut);
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOut,
+        );
         return FadeTransition(opacity: curved, child: child);
       },
     );
@@ -68,14 +88,22 @@ class PageTransitions {
   static Route<T> scale<T>(Widget page) {
     return PageRouteBuilder<T>(
       opaque: true,
-      pageBuilder: (context, animation, secondaryAnimation) => RepaintBoundary(child: page),
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          RepaintBoundary(child: page),
       transitionDuration: const Duration(milliseconds: 200),
       reverseTransitionDuration: const Duration(milliseconds: 160),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        );
         return ScaleTransition(
           scale: Tween<double>(begin: 0.92, end: 1.0).animate(curved),
-          child: FadeTransition(opacity: Tween<double>(begin: 0.2, end: 1.0).animate(curved), child: child),
+          child: FadeTransition(
+            opacity: Tween<double>(begin: 0.2, end: 1.0).animate(curved),
+            child: child,
+          ),
         );
       },
     );
@@ -87,13 +115,27 @@ class PageTransitions {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    final curved = CurvedAnimation(parent: animation, curve: _curve, reverseCurve: _reverseCurve);
-    final secondaryCurved = CurvedAnimation(parent: secondaryAnimation, curve: _curve, reverseCurve: _reverseCurve);
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: _curve,
+      reverseCurve: _reverseCurve,
+    );
+    final secondaryCurved = CurvedAnimation(
+      parent: secondaryAnimation,
+      curve: _curve,
+      reverseCurve: _reverseCurve,
+    );
 
     return SlideTransition(
-      position: Tween<Offset>(begin: Offset.zero, end: const Offset(-0.06, 0.0)).animate(secondaryCurved),
+      position: Tween<Offset>(
+        begin: Offset.zero,
+        end: const Offset(-0.06, 0.0),
+      ).animate(secondaryCurved),
       child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0.20, 0.0), end: Offset.zero).animate(curved),
+        position: Tween<Offset>(
+          begin: const Offset(0.20, 0.0),
+          end: Offset.zero,
+        ).animate(curved),
         child: FadeTransition(
           opacity: Tween<double>(begin: 0.35, end: 1.0).animate(curved),
           child: child,

@@ -1,32 +1,47 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 import '../local/database_helper.dart';
+import '../local/owned_table_ops.dart';
+import '../local/sync_queue_writer.dart';
 import '../../models/message_model.dart';
 
 /// Repository quản lý tin nhắn hỗ trợ — đọc/ghi từ SQLite.
-class MessageRepository {
+class MessageRepository with OwnedTableOps {
+  static final MessageRepository _instance = MessageRepository._internal();
+  factory MessageRepository() => _instance;
+
+  MessageRepository._internal() {
+    session.changes.listen((_) {
+      _loadAndEmit();
+    });
+  }
+
   final DatabaseHelper _dbHelper = DatabaseHelper();
   final _uuid = const Uuid();
 
   final _messagesController = StreamController<List<MessageModel>>.broadcast();
 
-  String? _currentUid;
+  String? get currentUid => session.uidOrNull;
 
+  @Deprecated('UID lấy từ SessionManager; không còn tác dụng')
   void setUid(String uid) {
-    _currentUid = uid;
+    assert(
+      uid == session.uidOrNull,
+      'setUid($uid) lệch phiên ${session.uidOrNull}',
+    );
   }
 
   // ════════ CRUD ════════
 
   Future<void> addMessage(MessageModel message) async {
+    final uid = session.requireUid();
     final db = await _dbHelper.database;
     final id = message.id.isEmpty ? _uuid.v4() : message.id;
 
     final msg = MessageModel(
       id: id,
-      uid: message.uid,
+      uid: uid,
       iconCode: message.iconCode,
       iconBgColorValue: message.iconBgColorValue,
       title: message.title,
@@ -36,16 +51,38 @@ class MessageRepository {
       createdAt: message.createdAt,
       syncStatus: 'pending',
     );
+    final row = stampOwner(msg.toSqlite(), uid);
 
-    await db.insert('messages', msg.toSqlite());
-    await _enqueueSyncAction('messages', id, 'INSERT', msg.toSqlite());
+    await db.transaction((txn) async {
+      await txn.insert('messages', row);
+      await SyncQueueWriter.enqueue(
+        txn,
+        ownerUid: uid,
+        table: 'messages',
+        recordId: id,
+        action: 'INSERT',
+        data: row,
+      );
+    });
+
     _notifyChanged();
   }
 
   Future<void> deleteMessage(String messageId) async {
+    final uid = session.requireUid();
     final db = await _dbHelper.database;
-    await db.delete('messages', where: 'id = ?', whereArgs: [messageId]);
-    await _enqueueSyncAction('messages', messageId, 'DELETE', null);
+
+    await db.transaction((txn) async {
+      await deleteOwned(txn, 'messages', messageId, uid);
+      await SyncQueueWriter.enqueue(
+        txn,
+        ownerUid: uid,
+        table: 'messages',
+        recordId: messageId,
+        action: 'DELETE',
+      );
+    });
+
     _notifyChanged();
   }
 
@@ -59,14 +96,18 @@ class MessageRepository {
   // ════════ SYNC HELPERS ════════
 
   Future<void> upsertFromFirestore(List<MessageModel> messages) async {
+    final currentUid = session.uidOrNull;
+    if (currentUid == null || messages.isEmpty) return;
+
     final db = await _dbHelper.database;
     final batch = db.batch();
     for (final msg in messages) {
+      if (msg.uid != currentUid) continue; // Bỏ qua doc khác uid
       batch.insert(
         'messages',
         MessageModel(
           id: msg.id,
-          uid: msg.uid,
+          uid: currentUid,
           iconCode: msg.iconCode,
           iconBgColorValue: msg.iconBgColorValue,
           title: msg.title,
@@ -86,7 +127,8 @@ class MessageRepository {
   // ════════ INTERNAL ════════
 
   Future<void> _loadAndEmit() async {
-    if (_currentUid == null) {
+    final uid = session.uidOrNull;
+    if (uid == null) {
       _messagesController.add([]);
       return;
     }
@@ -94,7 +136,7 @@ class MessageRepository {
     final results = await db.query(
       'messages',
       where: 'uid = ?',
-      whereArgs: [_currentUid],
+      whereArgs: [uid],
       orderBy: 'createdAt DESC',
     );
     final list = results.map((row) => MessageModel.fromSqlite(row)).toList();
@@ -103,18 +145,6 @@ class MessageRepository {
 
   void _notifyChanged() {
     _loadAndEmit();
-  }
-
-  Future<void> _enqueueSyncAction(String table, String recordId, String action, Map<String, dynamic>? data) async {
-    final db = await _dbHelper.database;
-    await db.insert('sync_queue', {
-      'tableName': table,
-      'recordId': recordId,
-      'action': action,
-      'data': data != null ? json.encode(data) : null,
-      'createdAt': DateTime.now().millisecondsSinceEpoch,
-      'retryCount': 0,
-    });
   }
 
   void dispose() {

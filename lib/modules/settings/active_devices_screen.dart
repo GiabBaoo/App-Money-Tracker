@@ -37,7 +37,9 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
       final info = await DeviceUtils.getDeviceInfo();
       final installId = await DeviceUtils.getInstallationId();
       final uid = _authService.currentUid;
-      final sessionId = uid != null ? await DeviceUtils.getSessionId(uid) : null;
+      final sessionId = uid != null
+          ? await DeviceUtils.getSessionId(uid)
+          : null;
 
       if (mounted) {
         setState(() {
@@ -78,7 +80,10 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
     }
   }
 
-  Future<void> _confirmRemoveSession(DeviceSessionModel session, bool isVi) async {
+  Future<void> _confirmRemoveSession(
+    DeviceSessionModel session,
+    bool isVi,
+  ) async {
     final confirmed = await MonoDialog.confirm(
       context,
       title: isVi ? 'Hủy phiên đăng nhập?' : 'Revoke session?',
@@ -96,15 +101,22 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
       if (!mounted) return;
       MonoToast.success(
         context,
-        isVi ? 'Đã gỡ phiên đăng nhập thành công.' : 'Session revoked successfully.',
+        isVi
+            ? 'Đã gỡ phiên đăng nhập thành công.'
+            : 'Session revoked successfully.',
       );
     }
   }
 
-  Future<void> _confirmLogoutAllOtherDevices(String currentSessionId, bool isVi) async {
+  Future<void> _confirmLogoutAllOtherDevices(
+    String currentSessionId,
+    bool isVi,
+  ) async {
     final confirmed = await MonoDialog.confirm(
       context,
-      title: isVi ? 'Đăng xuất tất cả thiết bị khác?' : 'Log out all other devices?',
+      title: isVi
+          ? 'Đăng xuất tất cả thiết bị khác?'
+          : 'Log out all other devices?',
       message: isVi
           ? 'Tất cả các phiên đăng nhập khác ngoại trừ thiết bị hiện tại sẽ bị hủy bỏ.'
           : 'All sessions on other devices except this current device will be terminated.',
@@ -119,7 +131,9 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
       if (!mounted) return;
       MonoToast.success(
         context,
-        isVi ? 'Đã đăng xuất khỏi tất cả thiết bị khác.' : 'Logged out of all other devices.',
+        isVi
+            ? 'Đã đăng xuất khỏi tất cả thiết bị khác.'
+            : 'Logged out of all other devices.',
       );
     }
   }
@@ -130,7 +144,9 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
     final isDark = context.isDark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.bgDark : Theme.of(context).primaryColor,
+      backgroundColor: isDark
+          ? AppColors.bgDark
+          : Theme.of(context).primaryColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -141,15 +157,27 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                    icon: const Icon(
+                      Icons.arrow_back_ios,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                   Text(
                     isVi ? 'Thiết bị đang hoạt động' : 'Active Devices',
-                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 22),
+                    icon: const Icon(
+                      Icons.refresh_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
                     tooltip: isVi ? 'Làm mới' : 'Refresh',
                     onPressed: () {
                       _loadCurrentDevice();
@@ -164,28 +192,45 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: _isLoading
-                    ? Center(child: CircularProgressIndicator(color: context.brandColor))
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          color: context.brandColor,
+                        ),
+                      )
                     : StreamBuilder<List<DeviceSessionModel>>(
                         stream: _firestoreService.getDeviceSessionsStream(),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return Center(child: CircularProgressIndicator(color: context.brandColor));
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Center(
+                              child: CircularProgressIndicator(
+                                color: context.brandColor,
+                              ),
+                            );
                           }
 
                           final sessions = snapshot.data ?? [];
-                          final currentName = _currentDeviceInfo?['name']?.toLowerCase() ?? '';
+                          final currentName =
+                              _currentDeviceInfo?['name']?.toLowerCase() ?? '';
 
                           // Phân loại thiết bị hiện tại và thiết bị khác dựa trên session ID hoặc install UUID
                           DeviceSessionModel? currentSession;
                           final otherSessions = <DeviceSessionModel>[];
 
                           for (var s in sessions) {
-                            final bool isThisDevice = (_currentSessionId != null && s.id == _currentSessionId) ||
-                                (_currentInstallationId != null && s.id.endsWith(_currentInstallationId!)) ||
-                                (currentSession == null && currentName.isNotEmpty && s.deviceName.toLowerCase() == currentName);
+                            final bool isThisDevice =
+                                (_currentSessionId != null &&
+                                    s.id == _currentSessionId) ||
+                                (_currentInstallationId != null &&
+                                    s.id.endsWith(_currentInstallationId!)) ||
+                                (currentSession == null &&
+                                    currentName.isNotEmpty &&
+                                    s.deviceName.toLowerCase() == currentName);
 
                             if (isThisDevice && currentSession == null) {
                               currentSession = s;
@@ -195,11 +240,19 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                           }
 
                           return SingleChildScrollView(
-                            padding: const EdgeInsets.only(top: 24, bottom: 40, left: 24, right: 24),
+                            padding: const EdgeInsets.only(
+                              top: 24,
+                              bottom: 40,
+                              left: 24,
+                              right: 24,
+                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildSectionTitle(context, isVi ? 'THIẾT BỊ HIỆN TẠI' : 'CURRENT DEVICE'),
+                                _buildSectionTitle(
+                                  context,
+                                  isVi ? 'THIẾT BỊ HIỆN TẠI' : 'CURRENT DEVICE',
+                                ),
                                 _buildInfoBox(context, [
                                   if (currentSession != null)
                                     _buildDeviceItem(
@@ -207,29 +260,48 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                                       session: currentSession,
                                       isCurrent: true,
                                       isVi: isVi,
-                                      onRemove: () => _confirmLogoutCurrentDevice(isVi),
+                                      onRemove: () =>
+                                          _confirmLogoutCurrentDevice(isVi),
                                       showDivider: false,
                                     )
                                   else
-                                    _buildSyncingDeviceItem(context, isVi, isDark),
+                                    _buildSyncingDeviceItem(
+                                      context,
+                                      isVi,
+                                      isDark,
+                                    ),
                                 ]),
                                 const SizedBox(height: 24),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    _buildSectionTitle(context, isVi ? 'CÁC PHIÊN ĐĂNG NHẬP KHÁC' : 'OTHER SESSIONS'),
+                                    _buildSectionTitle(
+                                      context,
+                                      isVi
+                                          ? 'CÁC PHIÊN ĐĂNG NHẬP KHÁC'
+                                          : 'OTHER SESSIONS',
+                                    ),
                                     if (otherSessions.isNotEmpty)
                                       TextButton(
-                                        onPressed: () => _confirmLogoutAllOtherDevices(
-                                          currentSession?.id ?? _currentSessionId ?? '',
-                                          isVi,
-                                        ),
+                                        onPressed: () =>
+                                            _confirmLogoutAllOtherDevices(
+                                              currentSession?.id ??
+                                                  _currentSessionId ??
+                                                  '',
+                                              isVi,
+                                            ),
                                         style: TextButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 0,
+                                          ),
                                           visualDensity: VisualDensity.compact,
                                         ),
                                         child: Text(
-                                          isVi ? 'Đăng xuất tất cả' : 'Log out all',
+                                          isVi
+                                              ? 'Đăng xuất tất cả'
+                                              : 'Log out all',
                                           style: const TextStyle(
                                             color: Colors.redAccent,
                                             fontSize: 12,
@@ -240,7 +312,11 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                                   ],
                                 ),
                                 if (otherSessions.isEmpty)
-                                  _buildEmptyOtherSessions(context, isDark, isVi)
+                                  _buildEmptyOtherSessions(
+                                    context,
+                                    isDark,
+                                    isVi,
+                                  )
                                 else
                                   _buildInfoBox(
                                     context,
@@ -251,8 +327,10 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                                         session: s,
                                         isCurrent: false,
                                         isVi: isVi,
-                                        onRemove: () => _confirmRemoveSession(s, isVi),
-                                        showDivider: e.key != otherSessions.length - 1,
+                                        onRemove: () =>
+                                            _confirmRemoveSession(s, isVi),
+                                        showDivider:
+                                            e.key != otherSessions.length - 1,
                                       );
                                     }).toList(),
                                   ),
@@ -270,7 +348,8 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
   }
 
   Widget _buildSyncingDeviceItem(BuildContext context, bool isVi, bool isDark) {
-    final devName = _currentDeviceInfo?['name'] ?? (isVi ? 'Thiết bị này' : 'This device');
+    final devName =
+        _currentDeviceInfo?['name'] ?? (isVi ? 'Thiết bị này' : 'This device');
     final devType = _currentDeviceInfo?['type'] ?? 'mobile';
 
     return Padding(
@@ -280,11 +359,15 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isDark ? context.surfaceElevatedColor : context.brandColor.withValues(alpha: 0.12),
+              color: isDark
+                  ? context.surfaceElevatedColor
+                  : context.brandColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              devType == 'mobile' ? Icons.phone_android_rounded : Icons.computer_rounded,
+              devType == 'mobile'
+                  ? Icons.phone_android_rounded
+                  : Icons.computer_rounded,
               color: context.brandColor,
               size: 24,
             ),
@@ -299,38 +382,51 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                     Flexible(
                       child: Text(
                         devName,
-                        style: context.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: context.colors.onSurface,
-                        ) ?? TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: context.colors.onSurface,
-                        ),
+                        style:
+                            context.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: context.colors.onSurface,
+                            ) ??
+                            TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: context.colors.onSurface,
+                            ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: context.warning.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         isVi ? 'Đang đồng bộ...' : 'Syncing...',
-                        style: TextStyle(color: context.warning, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: context.warning,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  isVi ? 'Đang đăng ký phiên thiết bị...' : 'Registering device session...',
-                  style: context.textTheme.bodySmall?.copyWith(
-                    color: context.colors.onSurfaceVariant,
-                  ) ?? const TextStyle(color: Colors.grey, fontSize: 12),
+                  isVi
+                      ? 'Đang đăng ký phiên thiết bị...'
+                      : 'Registering device session...',
+                  style:
+                      context.textTheme.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ) ??
+                      const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ],
             ),
@@ -340,7 +436,11 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
     );
   }
 
-  Widget _buildEmptyOtherSessions(BuildContext context, bool isDark, bool isVi) {
+  Widget _buildEmptyOtherSessions(
+    BuildContext context,
+    bool isDark,
+    bool isVi,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
@@ -354,15 +454,19 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
           Icon(Icons.verified_user_outlined, color: context.income, size: 36),
           const SizedBox(height: 8),
           Text(
-            isVi ? 'Chỉ có thiết bị này đang kết nối' : 'Only this device is connected',
-            style: context.textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: context.colors.onSurface,
-            ) ?? TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: context.colors.onSurface,
-            ),
+            isVi
+                ? 'Chỉ có thiết bị này đang kết nối'
+                : 'Only this device is connected',
+            style:
+                context.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: context.colors.onSurface,
+                ) ??
+                TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: context.colors.onSurface,
+                ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -370,9 +474,11 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                 ? 'Không phát hiện phiên đăng nhập nào khác trên tài khoản của bạn.'
                 : 'No other login sessions detected on your account.',
             textAlign: TextAlign.center,
-            style: context.textTheme.bodySmall?.copyWith(
-              color: context.colors.onSurfaceVariant,
-            ) ?? TextStyle(fontSize: 12, color: context.colors.onSurfaceVariant),
+            style:
+                context.textTheme.bodySmall?.copyWith(
+                  color: context.colors.onSurfaceVariant,
+                ) ??
+                TextStyle(fontSize: 12, color: context.colors.onSurfaceVariant),
           ),
         ],
       ),
@@ -384,16 +490,18 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
       padding: const EdgeInsets.only(bottom: 12, left: 4),
       child: Text(
         title,
-        style: context.textTheme.labelMedium?.copyWith(
-          color: context.colors.onSurfaceVariant,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
-        ) ?? TextStyle(
-          color: context.colors.onSurfaceVariant,
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
-        ),
+        style:
+            context.textTheme.labelMedium?.copyWith(
+              color: context.colors.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ) ??
+            TextStyle(
+              color: context.colors.onSurfaceVariant,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ),
       ),
     );
   }
@@ -418,7 +526,9 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
     required bool showDivider,
   }) {
     final isDark = context.isDark;
-    final timeStr = isCurrent ? (isVi ? 'Đang hoạt động' : 'Active now') : TimeUtils.timeAgo(session.lastActive, isVi: isVi);
+    final timeStr = isCurrent
+        ? (isVi ? 'Đang hoạt động' : 'Active now')
+        : TimeUtils.timeAgo(session.lastActive, isVi: isVi);
 
     return Column(
       children: [
@@ -429,11 +539,15 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isDark ? context.surfaceElevatedColor : context.brandColor.withValues(alpha: 0.12),
+                  color: isDark
+                      ? context.surfaceElevatedColor
+                      : context.brandColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  session.deviceType == 'mobile' ? Icons.phone_android_rounded : Icons.computer_rounded,
+                  session.deviceType == 'mobile'
+                      ? Icons.phone_android_rounded
+                      : Icons.computer_rounded,
                   color: context.brandColor,
                   size: 24,
                 ),
@@ -448,14 +562,16 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                         Flexible(
                           child: Text(
                             session.deviceName,
-                            style: context.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: context.colors.onSurface,
-                            ) ?? TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: context.colors.onSurface,
-                            ),
+                            style:
+                                context.textTheme.bodyLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: context.colors.onSurface,
+                                ) ??
+                                TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: context.colors.onSurface,
+                                ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -463,14 +579,21 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                         if (isCurrent) ...[
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: context.income.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               isVi ? 'Thiết bị này' : 'This device',
-                              style: TextStyle(color: context.income, fontSize: 10, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: context.income,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
@@ -479,9 +602,11 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                     const SizedBox(height: 2),
                     Text(
                       '${session.location} • $timeStr',
-                      style: context.textTheme.bodySmall?.copyWith(
-                        color: context.colors.onSurfaceVariant,
-                      ) ?? const TextStyle(color: Colors.grey, fontSize: 12),
+                      style:
+                          context.textTheme.bodySmall?.copyWith(
+                            color: context.colors.onSurfaceVariant,
+                          ) ??
+                          const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                   ],
                 ),
@@ -490,11 +615,17 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
                 IconButton(
                   onPressed: onRemove,
                   tooltip: isCurrent
-                      ? (isVi ? 'Đăng xuất khỏi thiết bị này' : 'Log out this device')
-                      : (isVi ? 'Gỡ phiên đăng nhập này' : 'Revoke this session'),
+                      ? (isVi
+                            ? 'Đăng xuất khỏi thiết bị này'
+                            : 'Log out this device')
+                      : (isVi
+                            ? 'Gỡ phiên đăng nhập này'
+                            : 'Revoke this session'),
                   icon: Icon(
                     Icons.logout_rounded,
-                    color: isCurrent ? context.colors.onSurfaceVariant.withValues(alpha: 0.5) : context.expense,
+                    color: isCurrent
+                        ? context.colors.onSurfaceVariant.withValues(alpha: 0.5)
+                        : context.expense,
                     size: 20,
                   ),
                 ),
@@ -512,4 +643,3 @@ class _ActiveDevicesScreenState extends State<ActiveDevicesScreen> {
     );
   }
 }
-

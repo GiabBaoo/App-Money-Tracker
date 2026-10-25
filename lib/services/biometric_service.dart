@@ -2,11 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 
-enum BiometricSupportStatus {
-  supported,
-  notSupported,
-  notEnrolled,
-}
+enum BiometricSupportStatus { supported, notSupported, notEnrolled }
 
 class BiometricService {
   BiometricService._();
@@ -40,7 +36,9 @@ class BiometricService {
   void setPickerActive(bool active) {
     _isPickerActive = active;
     if (!active) {
-      _pickerGraceUntil = DateTime.now().add(const Duration(milliseconds: 1500));
+      _pickerGraceUntil = DateTime.now().add(
+        const Duration(milliseconds: 1500),
+      );
     } else {
       _pickerGraceUntil = null;
     }
@@ -110,7 +108,7 @@ class BiometricService {
       if (cached != null) {
         return cached == 'true';
       }
-      
+
       // Mặc định thiết bị mới: TẮT xác thực vân tay cho đến khi người dùng chủ động bật trong Cài đặt
       await _secureStorage.write(
         key: 'fingerprint_enabled_$uid',
@@ -144,13 +142,11 @@ class BiometricService {
       await _firestore
           .collection('biometric_prefs')
           .doc(uid)
-          .set(
-        {
-          'fingerprintEnabled': enabled,
-          'updatedAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      ).timeout(const Duration(seconds: 3));
+          .set({
+            'fingerprintEnabled': enabled,
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true))
+          .timeout(const Duration(seconds: 3));
     } catch (_) {}
   }
 
@@ -158,18 +154,15 @@ class BiometricService {
     await _secureStorage.delete(key: _secureUidKey);
   }
 
-  Future<void> recordFingerprintLogin({
-    required String uid,
-  }) async {
+  Future<void> recordFingerprintLogin({required String uid}) async {
     try {
       await _firestore
           .collection('biometric_prefs')
           .doc(uid)
-          .set(
-        {'lastFingerprintLoginAt': FieldValue.serverTimestamp()},
-        SetOptions(merge: true),
-      ).timeout(const Duration(seconds: 3));
+          .set({
+            'lastFingerprintLoginAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true))
+          .timeout(const Duration(seconds: 3));
     } catch (_) {}
   }
 }
-

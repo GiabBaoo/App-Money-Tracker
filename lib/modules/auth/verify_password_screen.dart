@@ -32,7 +32,10 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
     final password = _passwordController.text;
     if (password.isEmpty) {
       final isVi = LanguageScope.of(context).isVietnamese;
-      MonoToast.error(context, isVi ? 'Vui lòng nhập mật khẩu!' : 'Please enter your password!');
+      MonoToast.error(
+        context,
+        isVi ? 'Vui lòng nhập mật khẩu!' : 'Please enter your password!',
+      );
       return;
     }
     setState(() => _isLoading = true);
@@ -41,7 +44,12 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
 
     if (!mounted) return;
     if (result.success) {
-      Navigator.push(context, PageTransitions.slideRight(const ResetPasswordScreen(isFromSecurity: true)));
+      Navigator.push(
+        context,
+        PageTransitions.slideRight(
+          const ResetPasswordScreen(isFromSecurity: true),
+        ),
+      );
     } else {
       MonoToast.error(context, result.message);
     }
@@ -50,9 +58,11 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
-    
+
     return Scaffold(
-      backgroundColor: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
+      backgroundColor: isDark
+          ? AppColors.primaryTealDark
+          : AppColors.primaryTeal,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -73,7 +83,12 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: context.colors.onPrimary.withValues(alpha: 0.15),
-                        border: Border.all(color: context.colors.onPrimary.withValues(alpha: 0.24), width: 1),
+                        border: Border.all(
+                          color: context.colors.onPrimary.withValues(
+                            alpha: 0.24,
+                          ),
+                          width: 1,
+                        ),
                       ),
                       child: Icon(
                         Icons.arrow_back_ios_new_rounded,
@@ -106,7 +121,9 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: context.colors.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                   boxShadow: AppShadows.modal(isDark),
                 ),
                 child: SingleChildScrollView(
@@ -115,7 +132,9 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isVi ? 'Nhập mật khẩu hiện tại' : 'Enter Current Password',
+                        isVi
+                            ? 'Nhập mật khẩu hiện tại'
+                            : 'Enter Current Password',
                         style: context.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: context.colors.primary,
@@ -123,7 +142,9 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        isVi ? 'Vui lòng nhập mật khẩu bạn đang sử dụng để xác minh danh tính trước khi đổi mật khẩu mới.' : 'Please enter your current password to verify your identity before changing your password.',
+                        isVi
+                            ? 'Vui lòng nhập mật khẩu bạn đang sử dụng để xác minh danh tính trước khi đổi mật khẩu mới.'
+                            : 'Please enter your current password to verify your identity before changing your password.',
                         style: context.textTheme.bodyMedium?.copyWith(
                           color: context.colors.onSurfaceVariant,
                           height: 1.5,
@@ -151,9 +172,13 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                           color: context.colors.onSurface,
                         ),
                         decoration: InputDecoration(
-                          hintText: isVi ? 'Nhập mật khẩu hiện tại' : 'Enter Current Password',
+                          hintText: isVi
+                              ? 'Nhập mật khẩu hiện tại'
+                              : 'Enter Current Password',
                           hintStyle: context.textTheme.bodyMedium?.copyWith(
-                            color: context.colors.onSurfaceVariant.withValues(alpha: 0.7),
+                            color: context.colors.onSurfaceVariant.withValues(
+                              alpha: 0.7,
+                            ),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -163,9 +188,7 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                           fillColor: context.inputBgColor,
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(
-                              color: context.borderColor,
-                            ),
+                            borderSide: BorderSide(color: context.borderColor),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -205,13 +228,21 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: _isLoading
-                                  ? [context.colors.surfaceContainerHighest, context.colors.surfaceContainerHighest]
-                                  : [AppColors.primaryTealLight, AppColors.primaryTeal],
+                                  ? [
+                                      context.colors.surfaceContainerHighest,
+                                      context.colors.surfaceContainerHighest,
+                                    ]
+                                  : [
+                                      AppColors.primaryTealLight,
+                                      AppColors.primaryTeal,
+                                    ],
                             ),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: context.colors.primary.withValues(alpha: 0.35),
+                                color: context.colors.primary.withValues(
+                                  alpha: 0.35,
+                                ),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -229,10 +260,11 @@ class _VerifyPasswordScreenState extends State<VerifyPasswordScreen> {
                                   )
                                 : Text(
                                     isVi ? 'Tiếp tục' : 'Continue',
-                                    style: context.textTheme.titleMedium?.copyWith(
-                                      color: context.colors.onPrimary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: context.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: context.colors.onPrimary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                   ),
                           ),
                         ),

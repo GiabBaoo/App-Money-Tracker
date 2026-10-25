@@ -16,7 +16,8 @@ class CreateExpenseScreen extends ConsumerStatefulWidget {
   const CreateExpenseScreen({super.key, required this.groupId});
 
   @override
-  ConsumerState<CreateExpenseScreen> createState() => _CreateExpenseScreenState();
+  ConsumerState<CreateExpenseScreen> createState() =>
+      _CreateExpenseScreenState();
 }
 
 class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
@@ -25,7 +26,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
   final _notesController = TextEditingController();
-  
+
   String? _selectedPayerId;
   final List<String> _selectedParticipantIds = [];
   SplitMethod _splitMethod = SplitMethod.equal;
@@ -91,10 +92,7 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
       }
     } catch (e) {
       if (mounted) {
-        MonoToast.error(
-          context,
-          '${isVi ? 'Lỗi' : 'Error'}: $e',
-        );
+        MonoToast.error(context, '${isVi ? 'Lỗi' : 'Error'}: $e');
       }
     } finally {
       if (mounted) {
@@ -153,19 +151,27 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                 ],
               ),
             ),
-            
+
             // Content
             Expanded(
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.bgDark : Colors.white,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: groupAsync.when(
                   data: (group) {
                     if (group == null) {
-                      return Center(child: Text(isVi ? 'Không tìm thấy dữ liệu nhóm' : 'Group data not found'));
+                      return Center(
+                        child: Text(
+                          isVi
+                              ? 'Không tìm thấy dữ liệu nhóm'
+                              : 'Group data not found',
+                        ),
+                      );
                     }
                     final members = group.memberIds;
 
@@ -180,24 +186,34 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                         children: [
                           TextFormField(
                             controller: _nameController,
-                            style: context.textTheme.bodyMedium?.copyWith(color: context.colors.onSurface),
+                            style: context.textTheme.bodyMedium?.copyWith(
+                              color: context.colors.onSurface,
+                            ),
                             decoration: InputDecoration(
                               labelText: isVi ? 'Tên chi tiêu' : 'Expense name',
-                              labelStyle: TextStyle(color: context.textSecondaryColor),
+                              labelStyle: TextStyle(
+                                color: context.textSecondaryColor,
+                              ),
                               filled: true,
                               fillColor: context.inputBgColor,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: context.borderColor),
+                                borderSide: BorderSide(
+                                  color: context.borderColor,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: context.borderColor),
+                                borderSide: BorderSide(
+                                  color: context.borderColor,
+                                ),
                               ),
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return isVi ? 'Vui lòng nhập tên chi tiêu' : 'Please enter expense name';
+                                return isVi
+                                    ? 'Vui lòng nhập tên chi tiêu'
+                                    : 'Please enter expense name';
                               }
                               return null;
                             },
@@ -205,31 +221,45 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _amountController,
-                            style: context.textTheme.bodyMedium?.copyWith(color: context.colors.onSurface),
+                            style: context.textTheme.bodyMedium?.copyWith(
+                              color: context.colors.onSurface,
+                            ),
                             decoration: InputDecoration(
                               labelText: isVi ? 'Số tiền' : 'Amount',
-                              labelStyle: TextStyle(color: context.textSecondaryColor),
+                              labelStyle: TextStyle(
+                                color: context.textSecondaryColor,
+                              ),
                               filled: true,
                               fillColor: context.inputBgColor,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: context.borderColor),
+                                borderSide: BorderSide(
+                                  color: context.borderColor,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: context.borderColor),
+                                borderSide: BorderSide(
+                                  color: context.borderColor,
+                                ),
                               ),
                               suffixText: 'đ',
-                              suffixStyle: TextStyle(color: context.textSecondaryColor),
+                              suffixStyle: TextStyle(
+                                color: context.textSecondaryColor,
+                              ),
                             ),
                             keyboardType: TextInputType.number,
                             inputFormatters: [CurrencyInputFormatter()],
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return isVi ? 'Vui lòng nhập số tiền' : 'Please enter amount';
+                                return isVi
+                                    ? 'Vui lòng nhập số tiền'
+                                    : 'Please enter amount';
                               }
                               if (CurrencyUtils.parseCurrency(value) <= 0) {
-                                return isVi ? 'Số tiền phải lớn hơn 0' : 'Amount must be greater than 0';
+                                return isVi
+                                    ? 'Số tiền phải lớn hơn 0'
+                                    : 'Amount must be greater than 0';
                               }
                               return null;
                             },
@@ -238,25 +268,35 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           DropdownButtonFormField<String>(
                             initialValue: _selectedPayerId,
                             dropdownColor: context.cardBg,
-                            style: context.textTheme.bodyMedium?.copyWith(color: context.colors.onSurface),
+                            style: context.textTheme.bodyMedium?.copyWith(
+                              color: context.colors.onSurface,
+                            ),
                             decoration: InputDecoration(
                               labelText: isVi ? 'Người trả tiền' : 'Payer',
-                              labelStyle: TextStyle(color: context.textSecondaryColor),
+                              labelStyle: TextStyle(
+                                color: context.textSecondaryColor,
+                              ),
                               filled: true,
                               fillColor: context.inputBgColor,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: context.borderColor),
+                                borderSide: BorderSide(
+                                  color: context.borderColor,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: context.borderColor),
+                                borderSide: BorderSide(
+                                  color: context.borderColor,
+                                ),
                               ),
                             ),
                             items: members.map((memberId) {
                               return DropdownMenuItem(
                                 value: memberId,
-                                child: Text('${isVi ? 'Thành viên' : 'Member'} ${memberId.substring(0, 8)}...'),
+                                child: Text(
+                                  '${isVi ? 'Thành viên' : 'Member'} ${memberId.substring(0, 8)}...',
+                                ),
                               );
                             }).toList(),
                             onChanged: (value) {
@@ -277,7 +317,9 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                             return CheckboxListTile(
                               title: Text(
                                 '${isVi ? 'Thành viên' : 'Member'} ${memberId.substring(0, 8)}...',
-                                style: context.textTheme.bodyMedium?.copyWith(color: context.colors.onSurface),
+                                style: context.textTheme.bodyMedium?.copyWith(
+                                  color: context.colors.onSurface,
+                                ),
                               ),
                               activeColor: primaryColor,
                               value: _selectedParticipantIds.contains(memberId),
@@ -296,29 +338,41 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           DropdownButtonFormField<SplitMethod>(
                             initialValue: _splitMethod,
                             dropdownColor: context.cardBg,
-                            style: context.textTheme.bodyMedium?.copyWith(color: context.colors.onSurface),
+                            style: context.textTheme.bodyMedium?.copyWith(
+                              color: context.colors.onSurface,
+                            ),
                             decoration: InputDecoration(
                               labelText: isVi ? 'Cách chia' : 'Split method',
-                              labelStyle: TextStyle(color: context.textSecondaryColor),
+                              labelStyle: TextStyle(
+                                color: context.textSecondaryColor,
+                              ),
                               filled: true,
                               fillColor: context.inputBgColor,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: context.borderColor),
+                                borderSide: BorderSide(
+                                  color: context.borderColor,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: context.borderColor),
+                                borderSide: BorderSide(
+                                  color: context.borderColor,
+                                ),
                               ),
                             ),
                             items: [
                               DropdownMenuItem(
                                 value: SplitMethod.equal,
-                                child: Text(isVi ? 'Chia đều' : 'Split equally'),
+                                child: Text(
+                                  isVi ? 'Chia đều' : 'Split equally',
+                                ),
                               ),
                               DropdownMenuItem(
                                 value: SplitMethod.singlePayer,
-                                child: Text(isVi ? 'Một người trả' : 'Single payer'),
+                                child: Text(
+                                  isVi ? 'Một người trả' : 'Single payer',
+                                ),
                               ),
                             ],
                             onChanged: (value) {
@@ -331,27 +385,52 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           DropdownButtonFormField<String>(
                             initialValue: _category,
                             dropdownColor: context.cardBg,
-                            style: context.textTheme.bodyMedium?.copyWith(color: context.colors.onSurface),
+                            style: context.textTheme.bodyMedium?.copyWith(
+                              color: context.colors.onSurface,
+                            ),
                             decoration: InputDecoration(
                               labelText: isVi ? 'Danh mục' : 'Category',
-                              labelStyle: TextStyle(color: context.textSecondaryColor),
+                              labelStyle: TextStyle(
+                                color: context.textSecondaryColor,
+                              ),
                               filled: true,
                               fillColor: context.inputBgColor,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: context.borderColor),
+                                borderSide: BorderSide(
+                                  color: context.borderColor,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: context.borderColor),
+                                borderSide: BorderSide(
+                                  color: context.borderColor,
+                                ),
                               ),
                             ),
                             items: [
-                              DropdownMenuItem(value: 'Ăn uống', child: Text(isVi ? 'Ăn uống' : 'Food & Dining')),
-                              DropdownMenuItem(value: 'Di chuyển', child: Text(isVi ? 'Di chuyển' : 'Transport')),
-                              DropdownMenuItem(value: 'Mua sắm', child: Text(isVi ? 'Mua sắm' : 'Shopping')),
-                              DropdownMenuItem(value: 'Giải trí', child: Text(isVi ? 'Giải trí' : 'Entertainment')),
-                              DropdownMenuItem(value: 'Khác', child: Text(isVi ? 'Khác' : 'Other')),
+                              DropdownMenuItem(
+                                value: 'Ăn uống',
+                                child: Text(isVi ? 'Ăn uống' : 'Food & Dining'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Di chuyển',
+                                child: Text(isVi ? 'Di chuyển' : 'Transport'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Mua sắm',
+                                child: Text(isVi ? 'Mua sắm' : 'Shopping'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Giải trí',
+                                child: Text(
+                                  isVi ? 'Giải trí' : 'Entertainment',
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'Khác',
+                                child: Text(isVi ? 'Khác' : 'Other'),
+                              ),
                             ],
                             onChanged: (value) {
                               if (value != null) {
@@ -362,19 +441,29 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _notesController,
-                            style: context.textTheme.bodyMedium?.copyWith(color: context.colors.onSurface),
+                            style: context.textTheme.bodyMedium?.copyWith(
+                              color: context.colors.onSurface,
+                            ),
                             decoration: InputDecoration(
-                              labelText: isVi ? 'Ghi chú (tùy chọn)' : 'Notes (optional)',
-                              labelStyle: TextStyle(color: context.textSecondaryColor),
+                              labelText: isVi
+                                  ? 'Ghi chú (tùy chọn)'
+                                  : 'Notes (optional)',
+                              labelStyle: TextStyle(
+                                color: context.textSecondaryColor,
+                              ),
                               filled: true,
                               fillColor: context.inputBgColor,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: context.borderColor),
+                                borderSide: BorderSide(
+                                  color: context.borderColor,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: context.borderColor),
+                                borderSide: BorderSide(
+                                  color: context.borderColor,
+                                ),
                               ),
                             ),
                             maxLines: 3,
@@ -398,7 +487,10 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: _isLoading
                                     ? null
-                                    : AppShadows.glow(primaryColor, alpha: 0.35),
+                                    : AppShadows.glow(
+                                        primaryColor,
+                                        alpha: 0.35,
+                                      ),
                               ),
                               child: Center(
                                 child: _isLoading
@@ -411,12 +503,15 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                                         ),
                                       )
                                     : Text(
-                                        isVi ? 'Tạo Chi Tiêu' : 'Create Expense',
-                                        style: context.textTheme.titleMedium?.copyWith(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                        isVi
+                                            ? 'Tạo Chi Tiêu'
+                                            : 'Create Expense',
+                                        style: context.textTheme.titleMedium
+                                            ?.copyWith(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                       ),
                               ),
                             ),
@@ -426,7 +521,8 @@ class _CreateExpenseScreenState extends ConsumerState<CreateExpenseScreen> {
                       ),
                     );
                   },
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (error, stack) => Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),

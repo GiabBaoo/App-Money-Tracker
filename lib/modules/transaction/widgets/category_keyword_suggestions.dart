@@ -112,23 +112,9 @@ class CategoryKeywordSuggestions extends StatelessWidget {
       'Tiền đặt cọc',
       'Lợi nhuận',
     ],
-    'Đầu tư': [
-      'Lãi chứng khoán',
-      'Lãi tiền gửi',
-      'Bán tài sản',
-      'Cổ tức',
-    ],
-    'Bán đồ': [
-      'Thanh lý đồ cũ',
-      'Bán xe',
-      'Bán điện thoại',
-      'Bán phế liệu',
-    ],
-    'Tiền lãi': [
-      'Lãi tiết kiệm',
-      'Lãi suất ngân hàng',
-      'Tiền cho vay',
-    ],
+    'Đầu tư': ['Lãi chứng khoán', 'Lãi tiền gửi', 'Bán tài sản', 'Cổ tức'],
+    'Bán đồ': ['Thanh lý đồ cũ', 'Bán xe', 'Bán điện thoại', 'Bán phế liệu'],
+    'Tiền lãi': ['Lãi tiết kiệm', 'Lãi suất ngân hàng', 'Tiền cho vay'],
     'Thu khác': [
       'Được tặng / Cho',
       'Đòi nợ thành công',
@@ -138,15 +124,68 @@ class CategoryKeywordSuggestions extends StatelessWidget {
   };
 
   static const Map<String, List<String>> _enKeywordsMap = {
-    'Ăn uống': ['Breakfast', 'Lunch', 'Dinner', 'Coffee', 'Milk Tea', 'Groceries', 'Snacks', 'Dining Out'],
-    'Di chuyển': ['Gasoline', 'Grab/Taxi', 'Parking', 'Car Wash', 'Maintenance', 'Bus/Train', 'Flight Ticket'],
-    'Mua sắm': ['Supermarket', 'Clothes', 'Home Decor', 'Cosmetics', 'Electronics', 'Footwear'],
-    'Hóa đơn': ['Electricity', 'Water', 'Internet', 'Mobile Topup', 'Service Fee'],
-    'Tiền nhà': ['House Rent', 'Apartment Fee', 'Repairs', 'Furniture', 'Cleaning'],
+    'Ăn uống': [
+      'Breakfast',
+      'Lunch',
+      'Dinner',
+      'Coffee',
+      'Milk Tea',
+      'Groceries',
+      'Snacks',
+      'Dining Out',
+    ],
+    'Di chuyển': [
+      'Gasoline',
+      'Grab/Taxi',
+      'Parking',
+      'Car Wash',
+      'Maintenance',
+      'Bus/Train',
+      'Flight Ticket',
+    ],
+    'Mua sắm': [
+      'Supermarket',
+      'Clothes',
+      'Home Decor',
+      'Cosmetics',
+      'Electronics',
+      'Footwear',
+    ],
+    'Hóa đơn': [
+      'Electricity',
+      'Water',
+      'Internet',
+      'Mobile Topup',
+      'Service Fee',
+    ],
+    'Tiền nhà': [
+      'House Rent',
+      'Apartment Fee',
+      'Repairs',
+      'Furniture',
+      'Cleaning',
+    ],
     'Giải trí': ['Movies', 'Gaming', 'Travel', 'Books', 'Outing', 'Concert'],
-    'Sức khỏe': ['Pharmacy', 'Doctor Visit', 'Vitamins', 'Gym/Yoga', 'Health Insurance'],
-    'Chi khác': ['Personal', 'Wedding/Party', 'Donation', 'Fees', 'Miscellaneous'],
-    'Lương': ['Monthly Salary', 'Advance Salary', 'Overtime (OT)', 'Project Payout'],
+    'Sức khỏe': [
+      'Pharmacy',
+      'Doctor Visit',
+      'Vitamins',
+      'Gym/Yoga',
+      'Health Insurance',
+    ],
+    'Chi khác': [
+      'Personal',
+      'Wedding/Party',
+      'Donation',
+      'Fees',
+      'Miscellaneous',
+    ],
+    'Lương': [
+      'Monthly Salary',
+      'Advance Salary',
+      'Overtime (OT)',
+      'Project Payout',
+    ],
     'Tiền thưởng': ['KPI Bonus', 'Holiday Bonus', 'Commission', 'Cash Prize'],
     'Kinh doanh': ['Product Sales', 'Client Payment', 'Deposit', 'Profit'],
     'Đầu tư': ['Stock Gain', 'Deposit Interest', 'Asset Sale', 'Dividends'],
@@ -167,13 +206,7 @@ class CategoryKeywordSuggestions extends StatelessWidget {
           ];
     } else {
       return _enKeywordsMap[categoryName] ??
-          const [
-            'Expense',
-            'Daily spending',
-            'Shopping',
-            'Payment',
-            'Other',
-          ];
+          const ['Expense', 'Daily spending', 'Shopping', 'Payment', 'Other'];
     }
   }
 
@@ -197,12 +230,15 @@ class CategoryKeywordSuggestions extends StatelessWidget {
               ),
               const SizedBox(width: 5),
               Text(
-                isVi ? 'Gợi ý nội dung nhanh (${context.trCat(categoryName)}):' : 'Quick note suggestions (${context.trCat(categoryName)}):',
-                style: (context.textTheme.labelSmall ?? const TextStyle()).copyWith(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                  color: context.textSecondaryColor,
-                ),
+                isVi
+                    ? 'Gợi ý nội dung nhanh (${context.trCat(categoryName)}):'
+                    : 'Quick note suggestions (${context.trCat(categoryName)}):',
+                style: (context.textTheme.labelSmall ?? const TextStyle())
+                    .copyWith(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: context.textSecondaryColor,
+                    ),
               ),
             ],
           ),
@@ -225,25 +261,27 @@ class CategoryKeywordSuggestions extends StatelessWidget {
                   onSelectKeyword(keyword);
                 },
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: isDark
                         ? context.colors.surfaceContainerHighest
                         : context.inputBgColor,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: context.borderColor,
-                    ),
+                    border: Border.all(color: context.borderColor),
                   ),
                   child: Center(
                     child: Text(
                       keyword,
-                      style: (context.textTheme.labelMedium ?? const TextStyle()).copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: context.textPrimaryColor,
-                      ),
+                      style:
+                          (context.textTheme.labelMedium ?? const TextStyle())
+                              .copyWith(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: context.textPrimaryColor,
+                              ),
                     ),
                   ),
                 ),

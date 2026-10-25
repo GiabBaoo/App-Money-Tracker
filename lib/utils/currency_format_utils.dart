@@ -15,7 +15,7 @@ class CurrencyInputFormatter extends TextInputFormatter {
 
     // Remove all non-numeric characters
     String cleanText = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
-    
+
     if (cleanText.isEmpty) {
       return newValue.copyWith(
         text: '',
@@ -28,21 +28,24 @@ class CurrencyInputFormatter extends TextInputFormatter {
 
     return newValue.copyWith(
       text: newText,
-      selection: TextSelection.collapsed(offset: newText.length - 1), // Place cursor before 'đ'
+      selection: TextSelection.collapsed(
+        offset: newText.length - 1,
+      ), // Place cursor before 'đ'
     );
   }
 }
+
 class CurrencyUtils {
   static String formatCurrency(double amount) {
     // Format tiền kiểu Việt: 1000000 -> 1.000.000đ, -455964 -> -455.964đ
     final isNegative = amount < 0;
     final absAmount = amount.abs();
     String amountStr = absAmount.toStringAsFixed(0);
-    
+
     // Thêm dấu chấm vào mỗi 3 chữ số từ phải sang
     final buffer = StringBuffer();
     int count = 0;
-    
+
     for (int i = amountStr.length - 1; i >= 0; i--) {
       if (count > 0 && count % 3 == 0) {
         buffer.write('.');
@@ -50,7 +53,7 @@ class CurrencyUtils {
       buffer.write(amountStr[i]);
       count++;
     }
-    
+
     // Đảo lại chuỗi và thêm đ
     final reversed = buffer.toString().split('').reversed.join('');
     return isNegative ? '-$reversedđ' : '$reversedđ';
@@ -91,9 +94,13 @@ class CurrencyUtils {
     if (clean.isEmpty) return 0.0;
 
     // 1. Kiểm tra mẫu có hậu tố đơn vị: số + (k|nghìn|ngàn|tr|triệu|củ)
-    final unitMatch = RegExp(r'^(\d+(?:[.,]\d+)?)\s*(k|nghìn|ngàn|tr|triệu|củ)(?:\s*(?:đ|đồng|vnd))?$', caseSensitive: false).firstMatch(clean);
+    final unitMatch = RegExp(
+      r'^(\d+(?:[.,]\d+)?)\s*(k|nghìn|ngàn|tr|triệu|củ)(?:\s*(?:đ|đồng|vnd))?$',
+      caseSensitive: false,
+    ).firstMatch(clean);
     if (unitMatch != null) {
-      final numPart = double.tryParse(unitMatch.group(1)!.replaceAll(',', '.')) ?? 0.0;
+      final numPart =
+          double.tryParse(unitMatch.group(1)!.replaceAll(',', '.')) ?? 0.0;
       final unit = unitMatch.group(2)?.toLowerCase();
       if (unit == 'tr' || unit == 'triệu' || unit == 'củ') {
         return numPart * 1000000;
@@ -105,19 +112,25 @@ class CurrencyUtils {
     }
 
     // 2. Chứa từ khóa triệu/củ/tr trong cụm
-    if (clean.contains('triệu') || clean.contains('củ') || clean.contains('tr')) {
+    if (clean.contains('triệu') ||
+        clean.contains('củ') ||
+        clean.contains('tr')) {
       final numMatch = RegExp(r'(\d+(?:[.,]\d+)?)').firstMatch(clean);
       if (numMatch != null) {
-        final val = double.tryParse(numMatch.group(1)!.replaceAll(',', '.')) ?? 0.0;
+        final val =
+            double.tryParse(numMatch.group(1)!.replaceAll(',', '.')) ?? 0.0;
         return val * 1000000;
       }
     }
 
     // 3. Chứa từ khóa nghìn/ngàn/k trong cụm
-    if (clean.contains('nghìn') || clean.contains('ngàn') || clean.contains('k')) {
+    if (clean.contains('nghìn') ||
+        clean.contains('ngàn') ||
+        clean.contains('k')) {
       final numMatch = RegExp(r'(\d+(?:[.,]\d+)?)').firstMatch(clean);
       if (numMatch != null) {
-        final val = double.tryParse(numMatch.group(1)!.replaceAll(',', '.')) ?? 0.0;
+        final val =
+            double.tryParse(numMatch.group(1)!.replaceAll(',', '.')) ?? 0.0;
         return val * 1000;
       }
     }
@@ -131,7 +144,9 @@ class CurrencyUtils {
   }
 
   /// Tính tổng tiền lũy kế (tính đến thời điểm ghi thu/chi) cho từng giao dịch
-  static Map<String, double> calculateRunningTotals(List<TransactionModel> transactions) {
+  static Map<String, double> calculateRunningTotals(
+    List<TransactionModel> transactions,
+  ) {
     if (transactions.isEmpty) return {};
 
     final sorted = List<TransactionModel>.from(transactions)
@@ -151,11 +166,15 @@ class CurrencyUtils {
       final tx = sorted[i];
       if (tx.isIncome) {
         incomeSum += tx.amount;
-        final key = tx.id.isNotEmpty ? tx.id : '${tx.date.millisecondsSinceEpoch}_$i';
+        final key = tx.id.isNotEmpty
+            ? tx.id
+            : '${tx.date.millisecondsSinceEpoch}_$i';
         totals[key] = incomeSum;
       } else {
         expenseSum += tx.amount;
-        final key = tx.id.isNotEmpty ? tx.id : '${tx.date.millisecondsSinceEpoch}_$i';
+        final key = tx.id.isNotEmpty
+            ? tx.id
+            : '${tx.date.millisecondsSinceEpoch}_$i';
         totals[key] = expenseSum;
       }
     }
@@ -167,7 +186,10 @@ class CurrencyUtils {
   /// 2. Giờ phút giao dịch (chuỗi 'HH:mm', ví dụ '18:30' > '09:15')
   /// 3. Thời điểm tạo giao dịch (createdAt)
   /// 4. ID giao dịch (tie-breaker tuyệt đối)
-  static int compareTransactionsChronological(TransactionModel a, TransactionModel b) {
+  static int compareTransactionsChronological(
+    TransactionModel a,
+    TransactionModel b,
+  ) {
     // 1. So sánh ngày (Mới nhất lên đầu)
     final dateA = DateTime(a.date.year, a.date.month, a.date.day);
     final dateB = DateTime(b.date.year, b.date.month, b.date.day);
@@ -209,7 +231,10 @@ class CurrencyUtils {
     };
 
     final defaultWallet = effectiveWallets.isNotEmpty
-        ? effectiveWallets.firstWhere((w) => w.isDefault, orElse: () => effectiveWallets.first)
+        ? effectiveWallets.firstWhere(
+            (w) => w.isDefault,
+            orElse: () => effectiveWallets.first,
+          )
         : null;
     final defaultWalletId = defaultWallet?.id ?? '';
     final defaultBalance = defaultWallet?.balance ?? 0.0;

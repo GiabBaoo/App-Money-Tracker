@@ -66,30 +66,45 @@ class SettlementConfirmScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            
+
             // Content
             Expanded(
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.bgDark : AppColors.bgLight,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: FutureBuilder<SettlementModel>(
-                  future: settlementService.getGroupSettlements(settlementId).then(
-                    (settlements) => settlements.firstWhere((s) => s.id == settlementId),
-                  ),
+                  future: settlementService
+                      .getGroupSettlements(settlementId)
+                      .then(
+                        (settlements) =>
+                            settlements.firstWhere((s) => s.id == settlementId),
+                      ),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
                     }
 
                     if (snapshot.hasError) {
-                      return Center(child: Text('${isVi ? 'Lỗi' : 'Error'}: ${snapshot.error}'));
+                      return Center(
+                        child: Text(
+                          '${isVi ? 'Lỗi' : 'Error'}: ${snapshot.error}',
+                        ),
+                      );
                     }
 
                     if (!snapshot.hasData) {
-                      return Center(child: Text(isVi ? 'Không tìm thấy thanh toán' : 'Settlement not found'));
+                      return Center(
+                        child: Text(
+                          isVi
+                              ? 'Không tìm thấy thanh toán'
+                              : 'Settlement not found',
+                        ),
+                      );
                     }
 
                     final settlement = snapshot.data!;
@@ -105,9 +120,7 @@ class SettlementConfirmScreen extends ConsumerWidget {
                             decoration: BoxDecoration(
                               color: context.cardBg,
                               borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: context.borderColor,
-                              ),
+                              border: Border.all(color: context.borderColor),
                               boxShadow: AppShadows.card(isDark),
                             ),
                             child: Column(
@@ -118,47 +131,88 @@ class SettlementConfirmScreen extends ConsumerWidget {
                                     Container(
                                       padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
-                                        color: primaryColor.withValues(alpha: 0.1),
+                                        color: primaryColor.withValues(
+                                          alpha: 0.1,
+                                        ),
                                         borderRadius: BorderRadius.circular(14),
                                       ),
-                                      child: Icon(Icons.receipt_long_rounded, color: primaryColor, size: 24),
+                                      child: Icon(
+                                        Icons.receipt_long_rounded,
+                                        color: primaryColor,
+                                        size: 24,
+                                      ),
                                     ),
                                     const SizedBox(width: 12),
                                     Text(
-                                      isVi ? 'Thông tin thanh toán' : 'Settlement Information',
-                                      style: context.textTheme.titleMedium?.copyWith(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: context.colors.onSurface,
-                                      ),
+                                      isVi
+                                          ? 'Thông tin thanh toán'
+                                          : 'Settlement Information',
+                                      style: context.textTheme.titleMedium
+                                          ?.copyWith(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: context.colors.onSurface,
+                                          ),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 20),
-                                _buildInfoRow(context, isVi ? 'Người trả:' : 'Payer:', settlement.payerId, isDark),
-                                _buildInfoRow(context, isVi ? 'Người nhận:' : 'Recipient:', settlement.payeeId, isDark),
-                                _buildInfoRow(context, isVi ? 'Số tiền:' : 'Amount:', currencyFormat.format(settlement.amount), isDark, isHighlight: true),
-                                _buildInfoRow(context, isVi ? 'Trạng thái:' : 'Status:', _getStatusText(settlement.status), isDark),
+                                _buildInfoRow(
+                                  context,
+                                  isVi ? 'Người trả:' : 'Payer:',
+                                  settlement.payerId,
+                                  isDark,
+                                ),
+                                _buildInfoRow(
+                                  context,
+                                  isVi ? 'Người nhận:' : 'Recipient:',
+                                  settlement.payeeId,
+                                  isDark,
+                                ),
+                                _buildInfoRow(
+                                  context,
+                                  isVi ? 'Số tiền:' : 'Amount:',
+                                  currencyFormat.format(settlement.amount),
+                                  isDark,
+                                  isHighlight: true,
+                                ),
+                                _buildInfoRow(
+                                  context,
+                                  isVi ? 'Trạng thái:' : 'Status:',
+                                  _getStatusText(settlement.status),
+                                  isDark,
+                                ),
                                 if (settlement.notes != null)
-                                  _buildInfoRow(context, isVi ? 'Ghi chú:' : 'Notes:', settlement.notes!, isDark),
+                                  _buildInfoRow(
+                                    context,
+                                    isVi ? 'Ghi chú:' : 'Notes:',
+                                    settlement.notes!,
+                                    isDark,
+                                  ),
                                 _buildInfoRow(
                                   context,
                                   isVi ? 'Ngày tạo:' : 'Created date:',
-                                  DateFormat('dd/MM/yyyy HH:mm').format(settlement.createdAt),
+                                  DateFormat(
+                                    'dd/MM/yyyy HH:mm',
+                                  ).format(settlement.createdAt),
                                   isDark,
                                 ),
                                 if (settlement.confirmedAt != null)
                                   _buildInfoRow(
                                     context,
                                     isVi ? 'Ngày xác nhận:' : 'Confirmed date:',
-                                    DateFormat('dd/MM/yyyy HH:mm').format(settlement.confirmedAt!),
+                                    DateFormat(
+                                      'dd/MM/yyyy HH:mm',
+                                    ).format(settlement.confirmedAt!),
                                     isDark,
                                   ),
                               ],
                             ),
                           ),
                           const SizedBox(height: 28),
-                          if (isPayee && settlement.status == SettlementStatus.pendingConfirmation) ...[
+                          if (isPayee &&
+                              settlement.status ==
+                                  SettlementStatus.pendingConfirmation) ...[
                             AnimatedScaleButton(
                               onTap: () {
                                 HapticFeedback.mediumImpact();
@@ -166,20 +220,28 @@ class SettlementConfirmScreen extends ConsumerWidget {
                               },
                               child: Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 decoration: BoxDecoration(
                                   color: context.income,
                                   borderRadius: BorderRadius.circular(16),
-                                  boxShadow: AppShadows.glow(context.income, alpha: 0.35),
+                                  boxShadow: AppShadows.glow(
+                                    context.income,
+                                    alpha: 0.35,
+                                  ),
                                 ),
                                 child: Center(
                                   child: Text(
-                                    isVi ? 'Xác Nhận Đã Nhận Tiền' : 'Confirm Received Money',
-                                    style: context.textTheme.titleMedium?.copyWith(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    isVi
+                                        ? 'Xác Nhận Đã Nhận Tiền'
+                                        : 'Confirm Received Money',
+                                    style: context.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                   ),
                                 ),
                               ),
@@ -192,20 +254,28 @@ class SettlementConfirmScreen extends ConsumerWidget {
                               },
                               child: Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
                                 decoration: BoxDecoration(
                                   color: context.expense.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: context.expense.withValues(alpha: 0.4), width: 1.5),
+                                  border: Border.all(
+                                    color: context.expense.withValues(
+                                      alpha: 0.4,
+                                    ),
+                                    width: 1.5,
+                                  ),
                                 ),
                                 child: Center(
                                   child: Text(
                                     isVi ? 'Từ Chối' : 'Decline',
-                                    style: context.textTheme.titleMedium?.copyWith(
-                                      color: context.expense,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    style: context.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: context.expense,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                   ),
                                 ),
                               ),
@@ -224,7 +294,13 @@ class SettlementConfirmScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoRow(BuildContext context, String label, String value, bool isDark, {bool isHighlight = false}) {
+  Widget _buildInfoRow(
+    BuildContext context,
+    String label,
+    String value,
+    bool isDark, {
+    bool isHighlight = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -269,17 +345,25 @@ class SettlementConfirmScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _confirmSettlement(BuildContext context, WidgetRef ref, String settlementId) async {
+  Future<void> _confirmSettlement(
+    BuildContext context,
+    WidgetRef ref,
+    String settlementId,
+  ) async {
     final currentUserId = ref.read(currentUserIdProvider);
     if (currentUserId == null) return;
 
     try {
-      await ref.read(settlementServiceProvider).confirmSettlement(settlementId, currentUserId);
+      await ref
+          .read(settlementServiceProvider)
+          .confirmSettlement(settlementId, currentUserId);
 
       if (context.mounted) {
         MonoToast.success(
           context,
-          LanguageService.instance.isVietnamese ? 'Đã xác nhận thanh toán' : 'Payment confirmed',
+          LanguageService.instance.isVietnamese
+              ? 'Đã xác nhận thanh toán'
+              : 'Payment confirmed',
         );
         Navigator.pop(context);
       }
@@ -293,17 +377,25 @@ class SettlementConfirmScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _rejectSettlement(BuildContext context, WidgetRef ref, String settlementId) async {
+  Future<void> _rejectSettlement(
+    BuildContext context,
+    WidgetRef ref,
+    String settlementId,
+  ) async {
     final currentUserId = ref.read(currentUserIdProvider);
     if (currentUserId == null) return;
 
     try {
-      await ref.read(settlementServiceProvider).rejectSettlement(settlementId, currentUserId);
+      await ref
+          .read(settlementServiceProvider)
+          .rejectSettlement(settlementId, currentUserId);
 
       if (context.mounted) {
         MonoToast.info(
           context,
-          LanguageService.instance.isVietnamese ? 'Đã từ chối thanh toán' : 'Payment declined',
+          LanguageService.instance.isVietnamese
+              ? 'Đã từ chối thanh toán'
+              : 'Payment declined',
         );
         Navigator.pop(context);
       }

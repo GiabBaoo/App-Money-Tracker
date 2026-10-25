@@ -77,13 +77,16 @@ class AboutAppScreen extends StatelessWidget {
                 children: List.generate(5, (index) {
                   return IconButton(
                     icon: Icon(
-                      index < selectedRating ? Icons.star_rounded : Icons.star_outline_rounded,
+                      index < selectedRating
+                          ? Icons.star_rounded
+                          : Icons.star_outline_rounded,
                       color: const Color(0xFFFFB800),
                       size: 34,
                     ),
                     onPressed: isSubmitting
                         ? null
-                        : () => setDialogState(() => selectedRating = index + 1),
+                        : () =>
+                              setDialogState(() => selectedRating = index + 1),
                   );
                 }),
               ),
@@ -93,32 +96,30 @@ class AboutAppScreen extends StatelessWidget {
                 maxLines: 3,
                 minLines: 2,
                 enabled: !isSubmitting,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: context.colors.onSurface,
-                ),
+                style: TextStyle(fontSize: 13, color: context.colors.onSurface),
                 decoration: InputDecoration(
                   hintText: isVi
                       ? 'Gửi thêm góp ý để nhóm phát triển cải thiện app nhé...'
                       : 'Share your feedback to help us improve...',
                   hintStyle: TextStyle(
                     fontSize: 12,
-                    color: context.colors.onSurfaceVariant.withValues(alpha: 0.6),
+                    color: context.colors.onSurfaceVariant.withValues(
+                      alpha: 0.6,
+                    ),
                   ),
                   filled: true,
                   fillColor: context.cardBg,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(
-                      color: context.borderColor,
-                    ),
+                    borderSide: BorderSide(color: context.borderColor),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(
-                      color: context.borderColor,
-                    ),
+                    borderSide: BorderSide(color: context.borderColor),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -134,15 +135,21 @@ class AboutAppScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: isSubmitting ? null : () => Navigator.pop(context),
+                      onPressed: isSubmitting
+                          ? null
+                          : () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                         side: BorderSide(color: context.borderColor),
                       ),
                       child: Text(
                         isVi ? 'Để sau' : 'Later',
-                        style: TextStyle(color: context.colors.onSurfaceVariant),
+                        style: TextStyle(
+                          color: context.colors.onSurfaceVariant,
+                        ),
                       ),
                     ),
                   ),
@@ -154,7 +161,9 @@ class AboutAppScreen extends StatelessWidget {
                         foregroundColor: Colors.white,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       onPressed: isSubmitting
                           ? null
@@ -164,15 +173,18 @@ class AboutAppScreen extends StatelessWidget {
                               try {
                                 final user = FirebaseAuth.instance.currentUser;
                                 final uid = user?.uid ?? 'anonymous';
-                                await FirebaseFirestore.instance.collection('app_reviews').add({
-                                  'uid': uid,
-                                  'rating': selectedRating,
-                                  'comment': comment,
-                                  'userEmail': user?.email ?? '',
-                                  'platform': defaultTargetPlatform.name,
-                                  'createdAt': FieldValue.serverTimestamp(),
-                                });
-                                final prefs = await SharedPreferences.getInstance();
+                                await FirebaseFirestore.instance
+                                    .collection('app_reviews')
+                                    .add({
+                                      'uid': uid,
+                                      'rating': selectedRating,
+                                      'comment': comment,
+                                      'userEmail': user?.email ?? '',
+                                      'platform': defaultTargetPlatform.name,
+                                      'createdAt': FieldValue.serverTimestamp(),
+                                    });
+                                final prefs =
+                                    await SharedPreferences.getInstance();
                                 await prefs.setBool('has_rated_app', true);
                               } catch (e) {
                                 debugPrint('Error recording app review: $e');
@@ -192,9 +204,17 @@ class AboutAppScreen extends StatelessWidget {
                           ? const SizedBox(
                               width: 16,
                               height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
-                          : Text(isVi ? 'Gửi đánh giá' : 'Submit', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          : Text(
+                              isVi ? 'Gửi đánh giá' : 'Submit',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -210,13 +230,13 @@ class AboutAppScreen extends StatelessWidget {
     final isVi = LanguageScope.of(context).isVietnamese;
     final message = isVi
         ? '1. Chấp thuận điều khoản: Bằng việc sử dụng Mono, bạn đồng ý với các quy định về lưu trữ và bảo mật dữ liệu.\n\n'
-            '2. Quyền riêng tư: Mọi thông tin thu chi cá nhân thuộc quyền sở hữu riêng của bạn và được bảo vệ theo chuẩn mã hóa cao nhất.\n\n'
-            '3. Tính sẵn sàng: Hệ thống hỗ trợ làm việc ngoại tuyến (Offline SQLite) và tự động đồng bộ khi có kết nối Internet.\n\n'
-            '4. Trợ lý AI: Tính năng AI Gemini hỗ trợ phân tích và gợi ý quản lý chi tiêu mang tính chất tham khảo hữu ích cho kế hoạch tài chính của bạn.'
+              '2. Quyền riêng tư: Mọi thông tin thu chi cá nhân thuộc quyền sở hữu riêng của bạn và được bảo vệ theo chuẩn mã hóa cao nhất.\n\n'
+              '3. Tính sẵn sàng: Hệ thống hỗ trợ làm việc ngoại tuyến (Offline SQLite) và tự động đồng bộ khi có kết nối Internet.\n\n'
+              '4. Trợ lý AI: Tính năng AI Gemini hỗ trợ phân tích và gợi ý quản lý chi tiêu mang tính chất tham khảo hữu ích cho kế hoạch tài chính của bạn.'
         : '1. Acceptance of Terms: By using Mono, agree to the provisions on data storage and security.\n\n'
-            '2. Privacy: All personal financial data belongs solely to you and is protected under the highest encryption standards.\n\n'
-            '3. Availability: The app supports offline operations (SQLite) and synchronizes seamlessly when Internet is restored.\n\n'
-            '4. AI Assistant: AI insights provide helpful financial suggestions for reference in your personal financial planning.';
+              '2. Privacy: All personal financial data belongs solely to you and is protected under the highest encryption standards.\n\n'
+              '3. Availability: The app supports offline operations (SQLite) and synchronizes seamlessly when Internet is restored.\n\n'
+              '4. AI Assistant: AI insights provide helpful financial suggestions for reference in your personal financial planning.';
 
     MonoDialog.alert(
       context,
@@ -245,12 +265,20 @@ class AboutAppScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                   Text(
                     isVi ? 'Về ứng dụng' : 'About App',
-                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(width: 44),
                 ],
@@ -264,10 +292,15 @@ class AboutAppScreen extends StatelessWidget {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 24,
+                  ),
                   child: Column(
                     children: [
                       // App Identity Hero Box
@@ -306,20 +339,30 @@ class AboutAppScreen extends StatelessWidget {
                       FutureBuilder<String>(
                         future: _getAppVersion(),
                         builder: (context, snapshot) {
-                          final versionStr = snapshot.data ?? AppConstants.appVersionFull;
+                          final versionStr =
+                              snapshot.data ?? AppConstants.appVersionFull;
                           return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 5,
+                            ),
                             decoration: BoxDecoration(
                               color: context.brandColor.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: context.brandColor.withValues(alpha: 0.3),
+                                color: context.brandColor.withValues(
+                                  alpha: 0.3,
+                                ),
                               ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.verified_rounded, size: 14, color: context.brandColor),
+                                Icon(
+                                  Icons.verified_rounded,
+                                  size: 14,
+                                  color: context.brandColor,
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
                                   isVi
@@ -353,34 +396,46 @@ class AboutAppScreen extends StatelessWidget {
                           _buildAboutRow(
                             context,
                             icon: Icons.privacy_tip_outlined,
-                            title: isVi ? 'Chính sách bảo mật' : 'Privacy Policy',
+                            title: isVi
+                                ? 'Chính sách bảo mật'
+                                : 'Privacy Policy',
                             onTap: () => Navigator.push(
                               context,
-                              PageTransitions.slideRight(const PrivacyPolicyScreen()),
+                              PageTransitions.slideRight(
+                                const PrivacyPolicyScreen(),
+                              ),
                             ),
                           ),
                           _buildDivider(context),
                           _buildAboutRow(
                             context,
                             icon: Icons.description_outlined,
-                            title: isVi ? 'Điều khoản dịch vụ' : 'Terms of Service',
+                            title: isVi
+                                ? 'Điều khoản dịch vụ'
+                                : 'Terms of Service',
                             onTap: () => _showTermsDialog(context),
                           ),
                           _buildDivider(context),
                           _buildAboutRow(
                             context,
                             icon: Icons.star_outline_rounded,
-                            title: isVi ? 'Đánh giá ứng dụng' : 'Rate Application',
+                            title: isVi
+                                ? 'Đánh giá ứng dụng'
+                                : 'Rate Application',
                             onTap: () => _showRatingDialog(context),
                           ),
                           _buildDivider(context),
                           _buildAboutRow(
                             context,
                             icon: Icons.support_agent_rounded,
-                            title: isVi ? 'Liên hệ & Phản hồi hỗ trợ' : 'Contact & Support',
+                            title: isVi
+                                ? 'Liên hệ & Phản hồi hỗ trợ'
+                                : 'Contact & Support',
                             onTap: () => Navigator.push(
                               context,
-                              PageTransitions.slideRight(const SupportRequestScreen()),
+                              PageTransitions.slideRight(
+                                const SupportRequestScreen(),
+                              ),
                             ),
                           ),
                         ],
@@ -452,9 +507,7 @@ class AboutAppScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: context.cardBg,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: context.borderColor,
-            ),
+            border: Border.all(color: context.borderColor),
           ),
           child: Row(
             children: [
@@ -464,7 +517,11 @@ class AboutAppScreen extends StatelessWidget {
                   color: context.brandColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(f['icon'] as IconData, size: 18, color: context.brandColor),
+                child: Icon(
+                  f['icon'] as IconData,
+                  size: 18,
+                  color: context.brandColor,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -502,7 +559,11 @@ class AboutAppScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildVersion2ChangelogCard(BuildContext context, bool isDark, bool isVi) {
+  Widget _buildVersion2ChangelogCard(
+    BuildContext context,
+    bool isDark,
+    bool isVi,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -553,7 +614,9 @@ class AboutAppScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            isVi ? AppConstants.appReleaseDescriptionVi : AppConstants.appReleaseDescriptionEn,
+            isVi
+                ? AppConstants.appReleaseDescriptionVi
+                : AppConstants.appReleaseDescriptionEn,
             style: TextStyle(
               fontSize: 12,
               height: 1.45,
@@ -594,17 +657,20 @@ class AboutAppScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCardContainer(BuildContext context, {required List<Widget> children}) {
+  Widget _buildCardContainer(
+    BuildContext context, {
+    required List<Widget> children,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: context.cardBg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: context.borderColor,
-        ),
+        border: Border.all(color: context.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: context.isDarkMode ? 0.3 : 0.02),
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.3 : 0.02,
+            ),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -646,7 +712,11 @@ class AboutAppScreen extends StatelessWidget {
                 ),
               ),
             ),
-            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: context.colors.onSurfaceVariant),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: context.colors.onSurfaceVariant,
+            ),
           ],
         ),
       ),

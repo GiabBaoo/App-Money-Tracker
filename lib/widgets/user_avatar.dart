@@ -98,7 +98,11 @@ class UserAvatar extends StatelessWidget {
   /// Lấy 1-2 chữ cái viết tắt từ tên người dùng
   static String getInitials(String? fullName) {
     if (fullName == null || fullName.trim().isEmpty) return 'U';
-    final parts = fullName.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final parts = fullName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return 'U';
     if (parts.length == 1) {
       return parts[0].substring(0, 1).toUpperCase();
@@ -154,11 +158,7 @@ class UserAvatar extends StatelessWidget {
           ),
         ),
         child: Center(
-          child: Icon(
-            preset.icon,
-            size: radius * 1.05,
-            color: Colors.white,
-          ),
+          child: Icon(preset.icon, size: radius * 1.05, color: Colors.white),
         ),
       );
     } else if (avatarLocalPath != null &&
@@ -173,14 +173,19 @@ class UserAvatar extends StatelessWidget {
           fit: BoxFit.cover,
           cacheWidth: (size * 2.5).round(),
           cacheHeight: (size * 2.5).round(),
-          errorBuilder: (context, error, stackTrace) => _buildInitialsFallback(context, size, gradient),
+          errorBuilder: (context, error, stackTrace) =>
+              _buildInitialsFallback(context, size, gradient),
         ),
       );
-    } else if (avatarUrl != null && avatarUrl!.trim().isNotEmpty && avatarUrl!.startsWith('data:image')) {
+    } else if (avatarUrl != null &&
+        avatarUrl!.trim().isNotEmpty &&
+        avatarUrl!.startsWith('data:image')) {
       // Ảnh mã hóa Base64 dự phòng khi Firebase Storage bị gián đoạn/khóa billing
       try {
         final commaIndex = avatarUrl!.indexOf(',');
-        final base64Data = commaIndex != -1 ? avatarUrl!.substring(commaIndex + 1) : avatarUrl!;
+        final base64Data = commaIndex != -1
+            ? avatarUrl!.substring(commaIndex + 1)
+            : avatarUrl!;
         final bytes = base64Decode(base64Data);
         innerContent = ClipOval(
           child: Image.memory(
@@ -188,13 +193,16 @@ class UserAvatar extends StatelessWidget {
             width: size,
             height: size,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => _buildInitialsFallback(context, size, gradient),
+            errorBuilder: (context, error, stackTrace) =>
+                _buildInitialsFallback(context, size, gradient),
           ),
         );
       } catch (e) {
         innerContent = _buildInitialsFallback(context, size, gradient);
       }
-    } else if (avatarUrl != null && avatarUrl!.trim().isNotEmpty && avatarUrl!.startsWith('http')) {
+    } else if (avatarUrl != null &&
+        avatarUrl!.trim().isNotEmpty &&
+        avatarUrl!.startsWith('http')) {
       // Ảnh từ URL mạng qua CachedNetworkImage với disk cache và fallback tức thì (0ms)
       innerContent = ClipOval(
         child: CachedNetworkImage(
@@ -205,8 +213,10 @@ class UserAvatar extends StatelessWidget {
           memCacheWidth: (size * 2).toInt(),
           memCacheHeight: (size * 2).toInt(),
           fadeInDuration: const Duration(milliseconds: 150),
-          placeholder: (context, url) => _buildInitialsFallback(context, size, gradient),
-          errorWidget: (context, url, error) => _buildInitialsFallback(context, size, gradient),
+          placeholder: (context, url) =>
+              _buildInitialsFallback(context, size, gradient),
+          errorWidget: (context, url, error) =>
+              _buildInitialsFallback(context, size, gradient),
         ),
       );
     } else {
@@ -222,23 +232,26 @@ class UserAvatar extends StatelessWidget {
         padding: EdgeInsets.all(borderWidth),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: borderColor ?? (isDark ? AppColors.borderDarkHighlight : context.borderColor),
+          color:
+              borderColor ??
+              (isDark ? AppColors.borderDarkHighlight : context.borderColor),
         ),
         child: avatarWidget,
       );
     }
 
     if (onTap != null) {
-      return GestureDetector(
-        onTap: onTap,
-        child: avatarWidget,
-      );
+      return GestureDetector(onTap: onTap, child: avatarWidget);
     }
 
     return avatarWidget;
   }
 
-  Widget _buildInitialsFallback(BuildContext context, double size, List<Color> gradient) {
+  Widget _buildInitialsFallback(
+    BuildContext context,
+    double size,
+    List<Color> gradient,
+  ) {
     final initials = getInitials(name);
     final calculatedFontSize = fontSize ?? (radius * 0.85);
 
@@ -257,17 +270,19 @@ class UserAvatar extends StatelessWidget {
       child: Center(
         child: Text(
           initials,
-          style: context.textTheme.titleMedium?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: calculatedFontSize,
-            letterSpacing: 0.5,
-          ) ?? TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: calculatedFontSize,
-            letterSpacing: 0.5,
-          ),
+          style:
+              context.textTheme.titleMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: calculatedFontSize,
+                letterSpacing: 0.5,
+              ) ??
+              TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: calculatedFontSize,
+                letterSpacing: 0.5,
+              ),
         ),
       ),
     );

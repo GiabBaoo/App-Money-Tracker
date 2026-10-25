@@ -37,12 +37,8 @@ class UserModel {
     this.customCategories = const [],
     this.lastPasswordUpdate,
     this.syncStatus = 'synced',
-  })  : joinDate = joinDate ?? DateTime.now(),
-        dataUsage = dataUsage ??
-            {
-              'location': true,
-              'contacts': false,
-            };
+  }) : joinDate = joinDate ?? DateTime.now(),
+       dataUsage = dataUsage ?? {'location': true, 'contacts': false};
 
   // ════════ FIRESTORE ════════
 
@@ -97,8 +93,9 @@ class UserModel {
       'email': email,
       'phone': phone,
       'gender': gender,
-      'dateOfBirth':
-          dateOfBirth != null ? Timestamp.fromDate(dateOfBirth!) : null,
+      'dateOfBirth': dateOfBirth != null
+          ? Timestamp.fromDate(dateOfBirth!)
+          : null,
       'avatarUrl': avatarUrl,
       'accountType': accountType,
       'joinDate': Timestamp.fromDate(joinDate),
@@ -151,7 +148,9 @@ class UserModel {
       dataUsage: dataUsage,
       customCategories: customCategories,
       lastPasswordUpdate: map['lastPasswordUpdate'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['lastPasswordUpdate'] as int)
+          ? DateTime.fromMillisecondsSinceEpoch(
+              map['lastPasswordUpdate'] as int,
+            )
           : null,
       syncStatus: map['syncStatus'] as String? ?? 'synced',
     );
@@ -178,4 +177,3 @@ class UserModel {
     };
   }
 }
-

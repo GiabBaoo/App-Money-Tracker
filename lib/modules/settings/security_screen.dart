@@ -22,7 +22,9 @@ class SecurityScreen extends StatelessWidget {
     final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.bgDark : Theme.of(context).primaryColor,
+      backgroundColor: isDark
+          ? AppColors.bgDark
+          : Theme.of(context).primaryColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -46,7 +48,11 @@ class SecurityScreen extends StatelessWidget {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white24, width: 0.8),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 18,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   Text(
@@ -70,7 +76,9 @@ class SecurityScreen extends StatelessWidget {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(32),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.08),
@@ -85,9 +93,11 @@ class SecurityScreen extends StatelessWidget {
                     final user = snapshot.data;
                     final passwordNote = user?.lastPasswordUpdate != null
                         ? (isVi
-                            ? 'Cập nhật ${TimeUtils.timeAgo(user!.lastPasswordUpdate, isVi: true)}'
-                            : 'Updated ${TimeUtils.timeAgo(user!.lastPasswordUpdate, isVi: false)}')
-                        : (isVi ? 'Mật khẩu đang được bảo vệ an toàn' : 'Password is secure and protected');
+                              ? 'Cập nhật ${TimeUtils.timeAgo(user!.lastPasswordUpdate, isVi: true)}'
+                              : 'Updated ${TimeUtils.timeAgo(user!.lastPasswordUpdate, isVi: false)}')
+                        : (isVi
+                              ? 'Mật khẩu đang được bảo vệ an toàn'
+                              : 'Password is secure and protected');
 
                     return SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
@@ -100,7 +110,12 @@ class SecurityScreen extends StatelessWidget {
                           const SizedBox(height: 24),
 
                           // Section 1: PHƯƠNG THỨC XÁC THỰC
-                          _buildSectionTitle(context, isVi ? 'PHƯƠNG THỨC XÁC THỰC' : 'AUTHENTICATION METHODS'),
+                          _buildSectionTitle(
+                            context,
+                            isVi
+                                ? 'PHƯƠNG THỨC XÁC THỰC'
+                                : 'AUTHENTICATION METHODS',
+                          ),
                           _buildCardContainer(
                             context,
                             isDark: isDark,
@@ -109,13 +124,17 @@ class SecurityScreen extends StatelessWidget {
                                 context,
                                 isDark: isDark,
                                 icon: Icons.lock_outline_rounded,
-                                title: isVi ? 'Đổi mật khẩu' : 'Change Password',
+                                title: isVi
+                                    ? 'Đổi mật khẩu'
+                                    : 'Change Password',
                                 subtitle: passwordNote,
                                 onTap: () {
                                   HapticFeedback.lightImpact();
                                   Navigator.push(
                                     context,
-                                    PageTransitions.slideRight(const VerifyPasswordScreen()),
+                                    PageTransitions.slideRight(
+                                      const VerifyPasswordScreen(),
+                                    ),
                                   );
                                 },
                               ),
@@ -124,13 +143,19 @@ class SecurityScreen extends StatelessWidget {
                                 context,
                                 isDark: isDark,
                                 icon: Icons.fingerprint_rounded,
-                                title: isVi ? 'Đăng nhập sinh trắc học' : 'Biometric Login',
-                                subtitle: isVi ? 'Vân tay hoặc FaceID để truy cập tức thì' : 'Fingerprint or FaceID for instant access',
+                                title: isVi
+                                    ? 'Đăng nhập sinh trắc học'
+                                    : 'Biometric Login',
+                                subtitle: isVi
+                                    ? 'Vân tay hoặc FaceID để truy cập tức thì'
+                                    : 'Fingerprint or FaceID for instant access',
                                 onTap: () {
                                   HapticFeedback.lightImpact();
                                   Navigator.push(
                                     context,
-                                    PageTransitions.slideRight(const BiometricScreen()),
+                                    PageTransitions.slideRight(
+                                      const BiometricScreen(),
+                                    ),
                                   );
                                 },
                               ),
@@ -139,12 +164,21 @@ class SecurityScreen extends StatelessWidget {
                                 context,
                                 isDark: isDark,
                                 icon: Icons.devices_rounded,
-                                title: isVi ? 'Thiết bị đang hoạt động' : 'Active Devices',
-                                subtitle: isVi ? 'Kiểm tra và đăng xuất khỏi các thiết bị lạ' : 'Review and log out of unrecognized devices',
+                                title: isVi
+                                    ? 'Thiết bị đang hoạt động'
+                                    : 'Active Devices',
+                                subtitle: isVi
+                                    ? 'Kiểm tra và đăng xuất khỏi các thiết bị lạ'
+                                    : 'Review and log out of unrecognized devices',
                                 badge: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: context.brandColor.withValues(alpha: 0.12),
+                                    color: context.brandColor.withValues(
+                                      alpha: 0.12,
+                                    ),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
@@ -160,7 +194,9 @@ class SecurityScreen extends StatelessWidget {
                                   HapticFeedback.lightImpact();
                                   Navigator.push(
                                     context,
-                                    PageTransitions.slideRight(const ActiveDevicesScreen()),
+                                    PageTransitions.slideRight(
+                                      const ActiveDevicesScreen(),
+                                    ),
                                   );
                                 },
                               ),
@@ -169,7 +205,10 @@ class SecurityScreen extends StatelessWidget {
                           const SizedBox(height: 24),
 
                           // Section 2: TÍNH NĂNG BẢO MẬT NÂNG CAO
-                          _buildSectionTitle(context, isVi ? 'TÍNH NĂNG BẢO VỆ' : 'SECURITY FEATURES'),
+                          _buildSectionTitle(
+                            context,
+                            isVi ? 'TÍNH NĂNG BẢO VỆ' : 'SECURITY FEATURES',
+                          ),
                           _buildCardContainer(
                             context,
                             isDark: isDark,
@@ -178,12 +217,21 @@ class SecurityScreen extends StatelessWidget {
                                 context,
                                 isDark: isDark,
                                 icon: Icons.security_update_good_rounded,
-                                title: isVi ? 'Ghi nhớ đăng nhập' : 'Remember Login',
-                                subtitle: isVi ? 'Duy trì trạng thái đăng nhập để mở app nhanh chóng' : 'Stay logged in to quickly open the app',
+                                title: isVi
+                                    ? 'Ghi nhớ đăng nhập'
+                                    : 'Remember Login',
+                                subtitle: isVi
+                                    ? 'Duy trì trạng thái đăng nhập để mở app nhanh chóng'
+                                    : 'Stay logged in to quickly open the app',
                                 badge: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: context.income.withValues(alpha: 0.14),
+                                    color: context.income.withValues(
+                                      alpha: 0.14,
+                                    ),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
@@ -201,12 +249,21 @@ class SecurityScreen extends StatelessWidget {
                                 context,
                                 isDark: isDark,
                                 icon: Icons.shield_moon_outlined,
-                                title: isVi ? 'Bảo vệ dữ liệu cục bộ' : 'Local Data Protection',
-                                subtitle: isVi ? 'Mã hóa cơ sở dữ liệu SQLite chuẩn AES-256' : 'AES-256 encrypted local SQLite database',
+                                title: isVi
+                                    ? 'Bảo vệ dữ liệu cục bộ'
+                                    : 'Local Data Protection',
+                                subtitle: isVi
+                                    ? 'Mã hóa cơ sở dữ liệu SQLite chuẩn AES-256'
+                                    : 'AES-256 encrypted local SQLite database',
                                 badge: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: context.brandColor.withValues(alpha: 0.14),
+                                    color: context.brandColor.withValues(
+                                      alpha: 0.14,
+                                    ),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(
@@ -240,12 +297,16 @@ class SecurityScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: isDark ? AppColors.brandGradientDark : AppColors.brandGradientLight,
+        gradient: isDark
+            ? AppColors.brandGradientDark
+            : AppColors.brandGradientLight,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: context.borderColor),
         boxShadow: [
           BoxShadow(
-            color: (isDark ? Colors.black : context.brandColor).withValues(alpha: 0.35),
+            color: (isDark ? Colors.black : context.brandColor).withValues(
+              alpha: 0.35,
+            ),
             blurRadius: 14,
             offset: const Offset(0, 6),
           ),
@@ -260,7 +321,11 @@ class SecurityScreen extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.verified_user_rounded, color: Colors.white, size: 28),
+            child: const Icon(
+              Icons.verified_user_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -271,18 +336,29 @@ class SecurityScreen extends StatelessWidget {
                   children: [
                     Text(
                       isVi ? 'Tài khoản an toàn' : 'Account Secure',
-                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF69F0AE),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         isVi ? 'Cấp độ cao' : 'High Level',
-                        style: const TextStyle(color: Color(0xFF1B5E20), fontSize: 10.5, fontWeight: FontWeight.w800),
+                        style: const TextStyle(
+                          color: Color(0xFF1B5E20),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ],
@@ -311,21 +387,27 @@ class SecurityScreen extends StatelessWidget {
       padding: const EdgeInsets.only(left: 4, bottom: 10),
       child: Text(
         title,
-        style: context.textTheme.labelMedium?.copyWith(
-          color: context.colors.onSurfaceVariant,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.8,
-        ) ?? TextStyle(
-          color: context.colors.onSurfaceVariant,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.8,
-        ),
+        style:
+            context.textTheme.labelMedium?.copyWith(
+              color: context.colors.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ) ??
+            TextStyle(
+              color: context.colors.onSurfaceVariant,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ),
       ),
     );
   }
 
-  Widget _buildCardContainer(BuildContext context, {required bool isDark, required List<Widget> children}) {
+  Widget _buildCardContainer(
+    BuildContext context, {
+    required bool isDark,
+    required List<Widget> children,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: context.cardBg,
@@ -362,7 +444,9 @@ class SecurityScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: isDark ? context.surfaceElevatedColor : context.brandColor.withValues(alpha: 0.12),
+                color: isDark
+                    ? context.surfaceElevatedColor
+                    : context.brandColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(icon, color: context.brandColor, size: 22),
@@ -374,37 +458,42 @@ class SecurityScreen extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: context.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: context.colors.onSurface,
-                    ) ?? TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: context.colors.onSurface,
-                    ),
+                    style:
+                        context.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: context.colors.onSurface,
+                        ) ??
+                        TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: context.colors.onSurface,
+                        ),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     subtitle,
-                    style: context.textTheme.bodySmall?.copyWith(
-                      color: context.colors.onSurfaceVariant,
-                      height: 1.25,
-                    ) ?? TextStyle(
-                      fontSize: 12.5,
-                      color: context.colors.onSurfaceVariant,
-                      height: 1.25,
-                    ),
+                    style:
+                        context.textTheme.bodySmall?.copyWith(
+                          color: context.colors.onSurfaceVariant,
+                          height: 1.25,
+                        ) ??
+                        TextStyle(
+                          fontSize: 12.5,
+                          color: context.colors.onSurfaceVariant,
+                          height: 1.25,
+                        ),
                   ),
                 ],
               ),
             ),
-            if (badge != null) ...[
-              const SizedBox(width: 8),
-              badge,
-            ],
+            if (badge != null) ...[const SizedBox(width: 8), badge],
             if (onTap != null) ...[
               const SizedBox(width: 6),
-              Icon(Icons.arrow_forward_ios_rounded, size: 14, color: context.colors.onSurfaceVariant.withValues(alpha: 0.5)),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: context.colors.onSurfaceVariant.withValues(alpha: 0.5),
+              ),
             ],
           ],
         ),

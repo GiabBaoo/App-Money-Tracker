@@ -82,7 +82,10 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
     }
   }
 
-  Future<void> _updateAvatarDirectly(String avatarUrl, {String? localPath}) async {
+  Future<void> _updateAvatarDirectly(
+    String avatarUrl, {
+    String? localPath,
+  }) async {
     final isVi = LanguageScope.of(context).isVietnamese;
     try {
       // 1. Cập nhật tức thì vào SQLite và phát tín hiệu cho toàn bộ UI
@@ -95,7 +98,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
         });
         TopToast.show(
           context,
-          isVi ? 'Cập nhật ảnh đại diện thành công!' : 'Profile picture updated successfully!',
+          isVi
+              ? 'Cập nhật ảnh đại diện thành công!'
+              : 'Profile picture updated successfully!',
         );
       }
 
@@ -141,7 +146,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
 
       // 2. Đồng bộ lên Firebase Auth & Firestore
       try {
-        await FirebaseAuth.instance.currentUser?.updateDisplayName(_nameController.text.trim());
+        await FirebaseAuth.instance.currentUser?.updateDisplayName(
+          _nameController.text.trim(),
+        );
       } catch (_) {}
 
       try {
@@ -160,7 +167,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
       if (mounted) {
         TopToast.show(
           context,
-          isVi ? 'Cập nhật thông tin thành công!' : 'Profile updated successfully!',
+          isVi
+              ? 'Cập nhật thông tin thành công!'
+              : 'Profile updated successfully!',
         );
       }
     } catch (e) {
@@ -217,13 +226,22 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                       color: context.brandColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.auto_awesome_rounded, color: context.brandColor),
+                    child: Icon(
+                      Icons.auto_awesome_rounded,
+                      color: context.brandColor,
+                    ),
                   ),
                   title: Text(
-                    isVi ? 'Chọn ảnh mẫu có sẵn (Preset)' : 'Choose preset avatar',
+                    isVi
+                        ? 'Chọn ảnh mẫu có sẵn (Preset)'
+                        : 'Choose preset avatar',
                     style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  subtitle: Text(isVi ? 'Bộ sưu tập icon phong cách' : 'Stylish avatar collection'),
+                  subtitle: Text(
+                    isVi
+                        ? 'Bộ sưu tập icon phong cách'
+                        : 'Stylish avatar collection',
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     _showPresetPickerSheet();
@@ -236,7 +254,10 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                       color: Colors.blue.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.camera_alt_rounded, color: Colors.blue),
+                    child: const Icon(
+                      Icons.camera_alt_rounded,
+                      color: Colors.blue,
+                    ),
                   ),
                   title: Text(
                     isVi ? 'Chụp ảnh mới' : 'Take a new photo',
@@ -251,7 +272,10 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                       color: Colors.orange.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.photo_library_rounded, color: Colors.orange),
+                    child: const Icon(
+                      Icons.photo_library_rounded,
+                      color: Colors.orange,
+                    ),
                   ),
                   title: Text(
                     isVi ? 'Chọn từ thư viện ảnh' : 'Choose from photo library',
@@ -268,38 +292,51 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
 
     if (source != null) {
       try {
-        final XFile? pickedFile = await BiometricService.instance.runWithPickerSuspended(() async {
-          return await _imagePicker.pickImage(
-            source: source,
-            maxWidth: 1920,
-            maxHeight: 1920,
-            imageQuality: 92,
-          );
-        });
+        final XFile? pickedFile = await BiometricService.instance
+            .runWithPickerSuspended(() async {
+              return await _imagePicker.pickImage(
+                source: source,
+                maxWidth: 1920,
+                maxHeight: 1920,
+                imageQuality: 92,
+              );
+            });
 
         if (pickedFile != null && mounted) {
           final croppedFile = await Navigator.push<File?>(
             context,
-            PageTransitions.slideUp<File?>(AvatarCropScreen(imageFile: File(pickedFile.path))),
+            PageTransitions.slideUp<File?>(
+              AvatarCropScreen(imageFile: File(pickedFile.path)),
+            ),
           );
 
           if (croppedFile != null && mounted) {
             // Cập nhật ngay tức thì bằng file đã crop
-            await _updateAvatarDirectly(croppedFile.path, localPath: croppedFile.path);
+            await _updateAvatarDirectly(
+              croppedFile.path,
+              localPath: croppedFile.path,
+            );
 
             setState(() => _isUploadingImage = true);
 
             // Upload ngầm lên Firebase Storage & cập nhật Firestore
             unawaited(() async {
               try {
-                final downloadUrl = await _storageService.uploadAvatar(croppedFile);
+                final downloadUrl = await _storageService.uploadAvatar(
+                  croppedFile,
+                );
                 final updateData = <String, dynamic>{
                   'avatarUrl': downloadUrl,
                   'avatarLocalPath': croppedFile.path,
                 };
-                await FirebaseAuth.instance.currentUser?.updatePhotoURL(downloadUrl);
+                await FirebaseAuth.instance.currentUser?.updatePhotoURL(
+                  downloadUrl,
+                );
                 await _firestoreService.updateUserProfile(updateData);
-                await UserRepository().updateAvatar(downloadUrl, localPath: croppedFile.path);
+                await UserRepository().updateAvatar(
+                  downloadUrl,
+                  localPath: croppedFile.path,
+                );
               } catch (e) {
                 debugPrint('Lỗi upload avatar lên Firebase Storage: $e');
               } finally {
@@ -381,23 +418,36 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            border: isSelected ? Border.all(color: context.brandColor, width: 3) : null,
+                            border: isSelected
+                                ? Border.all(
+                                    color: context.brandColor,
+                                    width: 3,
+                                  )
+                                : null,
                             boxShadow: [
                               BoxShadow(
-                                color: preset.gradient[0].withValues(alpha: 0.3),
+                                color: preset.gradient[0].withValues(
+                                  alpha: 0.3,
+                                ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 3),
                               ),
                             ],
                           ),
-                          child: Icon(preset.icon, color: Colors.white, size: 28),
+                          child: Icon(
+                            preset.icon,
+                            color: Colors.white,
+                            size: 28,
+                          ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           preset.label,
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.w500,
                             color: isSelected
                                 ? context.brandColor
                                 : context.colors.onSurfaceVariant,
@@ -468,7 +518,10 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
 
     if (confirmed == true && mounted) {
       await _authService.logout();
-      nav.pushAndRemoveUntil(PageTransitions.fade(const LoginScreen()), (route) => false);
+      nav.pushAndRemoveUntil(
+        PageTransitions.fade(const LoginScreen()),
+        (route) => false,
+      );
     }
   }
 
@@ -502,7 +555,11 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white24, width: 0.8),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 18,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   Text(
@@ -522,7 +579,10 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                         _saveProfile();
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
@@ -538,7 +598,10 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                             ? SizedBox(
                                 width: 16,
                                 height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: context.brandColor),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: context.brandColor,
+                                ),
                               )
                             : Text(
                                 isVi ? 'Lưu' : 'Save',
@@ -564,7 +627,11 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white24, width: 0.8),
                         ),
-                        child: const Icon(Icons.edit_note_rounded, color: Colors.white, size: 24),
+                        child: const Icon(
+                          Icons.edit_note_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                     ),
                 ],
@@ -578,7 +645,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: StreamBuilder<UserModel?>(
                   initialData: UserRepository().currentUser,
@@ -586,14 +655,21 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                   builder: (context, snapshot) {
                     final user = snapshot.data ?? UserRepository().currentUser;
                     if (user == null) {
-                      return Center(child: CircularProgressIndicator(color: context.brandColor));
+                      return Center(
+                        child: CircularProgressIndicator(
+                          color: context.brandColor,
+                        ),
+                      );
                     }
                     _initializeControllers(user);
 
                     return Form(
                       key: _formKey,
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 24,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -607,7 +683,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                 border: Border.all(color: context.borderColor),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: context.isDarkMode ? 0.2 : 0.03),
+                                    color: Colors.black.withValues(
+                                      alpha: context.isDarkMode ? 0.2 : 0.03,
+                                    ),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   ),
@@ -624,11 +702,17 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
                                           gradient: LinearGradient(
-                                            colors: [context.brandColor.withValues(alpha: 0.7), context.brandColor],
+                                            colors: [
+                                              context.brandColor.withValues(
+                                                alpha: 0.7,
+                                              ),
+                                              context.brandColor,
+                                            ],
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: context.brandColor.withValues(alpha: 0.25),
+                                              color: context.brandColor
+                                                  .withValues(alpha: 0.25),
                                               blurRadius: 12,
                                               offset: const Offset(0, 4),
                                             ),
@@ -637,10 +721,14 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                         child: UserAvatar(
                                           radius: 44,
                                           name: user.name,
-                                          avatarUrl: _newAvatarUrl ?? user.avatarUrl,
-                                          avatarLocalPath: _selectedImageFile != null
+                                          avatarUrl:
+                                              _newAvatarUrl ?? user.avatarUrl,
+                                          avatarLocalPath:
+                                              _selectedImageFile != null
                                               ? _selectedImageFile!.path
-                                              : (_newAvatarUrl != null ? null : user.avatarLocalPath),
+                                              : (_newAvatarUrl != null
+                                                    ? null
+                                                    : user.avatarLocalPath),
                                           showBorder: false,
                                         ),
                                       ),
@@ -652,11 +740,17 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                             color: context.brandColor,
                                             shape: BoxShape.circle,
                                             border: Border.all(
-                                              color: isDark ? const Color(0xFF2E2E2E) : Colors.white,
+                                              color: isDark
+                                                  ? const Color(0xFF2E2E2E)
+                                                  : Colors.white,
                                               width: 2.5,
                                             ),
                                           ),
-                                          child: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
+                                          child: const Icon(
+                                            Icons.camera_alt_rounded,
+                                            size: 16,
+                                            color: Colors.white,
+                                          ),
                                         ),
                                       ),
                                       if (_isUploadingImage)
@@ -667,7 +761,10 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                               shape: BoxShape.circle,
                                             ),
                                             child: const Center(
-                                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                              child: CircularProgressIndicator(
+                                                color: Colors.white,
+                                                strokeWidth: 2,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -686,22 +783,46 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                         color: context.colors.onSurface,
                                       ),
                                       decoration: InputDecoration(
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                        hintText: isVi ? 'Nhập họ và tên...' : 'Enter full name...',
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 8,
+                                            ),
+                                        hintText: isVi
+                                            ? 'Nhập họ và tên...'
+                                            : 'Enter full name...',
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: context.brandColor),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: context.brandColor,
+                                          ),
                                         ),
                                         enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: context.borderColor),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: context.borderColor,
+                                          ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(color: context.brandColor, width: 1.5),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: context.brandColor,
+                                            width: 1.5,
+                                          ),
                                         ),
                                       ),
-                                      validator: (v) => (v == null || v.trim().isEmpty) ? (isVi ? 'Tên không được để trống' : 'Name cannot be empty') : null,
+                                      validator: (v) =>
+                                          (v == null || v.trim().isEmpty)
+                                          ? (isVi
+                                                ? 'Tên không được để trống'
+                                                : 'Name cannot be empty')
+                                          : null,
                                     )
                                   else
                                     Text(
@@ -717,14 +838,26 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                   // UID badge & copy button
                                   InkWell(
                                     onTap: () {
-                                      Clipboard.setData(ClipboardData(text: user.uid));
-                                      TopToast.show(context, isVi ? 'Đã sao chép mã tài khoản vào bộ nhớ tạm' : 'Account ID copied to clipboard');
+                                      Clipboard.setData(
+                                        ClipboardData(text: user.uid),
+                                      );
+                                      TopToast.show(
+                                        context,
+                                        isVi
+                                            ? 'Đã sao chép mã tài khoản vào bộ nhớ tạm'
+                                            : 'Account ID copied to clipboard',
+                                      );
                                     },
                                     borderRadius: BorderRadius.circular(20),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 5,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: context.brandColor.withValues(alpha: 0.12),
+                                        color: context.brandColor.withValues(
+                                          alpha: 0.12,
+                                        ),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Row(
@@ -735,14 +868,17 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                             style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w600,
-                                              color: context.colors.onSurfaceVariant,
+                                              color: context
+                                                  .colors
+                                                  .onSurfaceVariant,
                                             ),
                                           ),
                                           const SizedBox(width: 6),
                                           Icon(
                                             Icons.copy_rounded,
                                             size: 13,
-                                            color: context.colors.onSurfaceVariant,
+                                            color:
+                                                context.colors.onSurfaceVariant,
                                           ),
                                         ],
                                       ),
@@ -754,7 +890,11 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                             const SizedBox(height: 24),
 
                             // Group 1: THÔNG TIN CÁ NHÂN
-                            _buildSectionHeader(isVi ? 'THÔNG TIN CÁ NHÂN' : 'PERSONAL INFORMATION'),
+                            _buildSectionHeader(
+                              isVi
+                                  ? 'THÔNG TIN CÁ NHÂN'
+                                  : 'PERSONAL INFORMATION',
+                            ),
                             _buildCardContainer(
                               context,
                               children: [
@@ -769,7 +909,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                           decoration: InputDecoration(
                                             isDense: true,
                                             border: InputBorder.none,
-                                            hintText: isVi ? 'Nhập họ tên' : 'Enter name',
+                                            hintText: isVi
+                                                ? 'Nhập họ tên'
+                                                : 'Enter name',
                                           ),
                                         )
                                       : null,
@@ -779,14 +921,30 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                   context,
                                   icon: Icons.wc_outlined,
                                   title: isVi ? 'Giới tính' : 'Gender',
-                                  value: _isEditing ? null : _getGenderLabel(_selectedGender ?? user.gender, isVi),
+                                  value: _isEditing
+                                      ? null
+                                      : _getGenderLabel(
+                                          _selectedGender ?? user.gender,
+                                          isVi,
+                                        ),
                                   customWidget: _isEditing
                                       ? DropdownButtonHideUnderline(
                                           child: DropdownButton<String>(
                                             value: _selectedGender,
                                             isDense: true,
-                                            items: ['Nam', 'Nữ', 'Khác'].map((s) => DropdownMenuItem(value: s, child: Text(_getGenderLabel(s, isVi)))).toList(),
-                                            onChanged: (val) => setState(() => _selectedGender = val),
+                                            items: ['Nam', 'Nữ', 'Khác']
+                                                .map(
+                                                  (s) => DropdownMenuItem(
+                                                    value: s,
+                                                    child: Text(
+                                                      _getGenderLabel(s, isVi),
+                                                    ),
+                                                  ),
+                                                )
+                                                .toList(),
+                                            onChanged: (val) => setState(
+                                              () => _selectedGender = val,
+                                            ),
                                           ),
                                         )
                                       : null,
@@ -797,26 +955,43 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                   icon: Icons.cake_outlined,
                                   title: isVi ? 'Ngày sinh' : 'Date of Birth',
                                   value: _selectedDOB != null
-                                      ? DateFormat('dd/MM/yyyy').format(_selectedDOB!)
-                                      : (isVi ? 'Chưa cập nhật' : 'Not updated'),
-                                  trailingIcon: _isEditing ? Icons.calendar_today_rounded : null,
-                                  onTap: _isEditing ? () => _selectDate(context) : null,
+                                      ? DateFormat(
+                                          'dd/MM/yyyy',
+                                        ).format(_selectedDOB!)
+                                      : (isVi
+                                            ? 'Chưa cập nhật'
+                                            : 'Not updated'),
+                                  trailingIcon: _isEditing
+                                      ? Icons.calendar_today_rounded
+                                      : null,
+                                  onTap: _isEditing
+                                      ? () => _selectDate(context)
+                                      : null,
                                 ),
                                 _buildDivider(context),
                                 _buildSettingRow(
                                   context,
                                   icon: Icons.currency_exchange_rounded,
                                   title: isVi ? 'Loại tiền tệ' : 'Currency',
-                                  value: _isEditing ? null : (_selectedCurrency ?? user.currency),
+                                  value: _isEditing
+                                      ? null
+                                      : (_selectedCurrency ?? user.currency),
                                   customWidget: _isEditing
                                       ? DropdownButtonHideUnderline(
                                           child: DropdownButton<String>(
                                             value: _selectedCurrency,
                                             isDense: true,
                                             items: ['VND', 'USD', 'EUR', 'JPY']
-                                                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                                                .map(
+                                                  (s) => DropdownMenuItem(
+                                                    value: s,
+                                                    child: Text(s),
+                                                  ),
+                                                )
                                                 .toList(),
-                                            onChanged: (val) => setState(() => _selectedCurrency = val),
+                                            onChanged: (val) => setState(
+                                              () => _selectedCurrency = val,
+                                            ),
                                           ),
                                         )
                                       : null,
@@ -826,7 +1001,11 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                             const SizedBox(height: 24),
 
                             // Group 2: THÔNG TIN LIÊN LẠC
-                            _buildSectionHeader(isVi ? 'THÔNG TIN LIÊN LẠC' : 'CONTACT INFORMATION'),
+                            _buildSectionHeader(
+                              isVi
+                                  ? 'THÔNG TIN LIÊN LẠC'
+                                  : 'CONTACT INFORMATION',
+                            ),
                             _buildCardContainer(
                               context,
                               children: [
@@ -836,9 +1015,14 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                   title: 'Email',
                                   value: user.email,
                                   badge: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: context.income.withValues(alpha: 0.15),
+                                      color: context.income.withValues(
+                                        alpha: 0.15,
+                                      ),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Text(
@@ -855,8 +1039,16 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                 _buildSettingRow(
                                   context,
                                   icon: Icons.phone_android_rounded,
-                                  title: isVi ? 'Số điện thoại' : 'Phone Number',
-                                  value: _isEditing ? null : (user.phone.isNotEmpty ? user.phone : (isVi ? 'Chưa cập nhật' : 'Not updated')),
+                                  title: isVi
+                                      ? 'Số điện thoại'
+                                      : 'Phone Number',
+                                  value: _isEditing
+                                      ? null
+                                      : (user.phone.isNotEmpty
+                                            ? user.phone
+                                            : (isVi
+                                                  ? 'Chưa cập nhật'
+                                                  : 'Not updated')),
                                   customWidget: _isEditing
                                       ? TextFormField(
                                           controller: _phoneController,
@@ -864,7 +1056,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                           decoration: InputDecoration(
                                             isDense: true,
                                             border: InputBorder.none,
-                                            hintText: isVi ? 'Nhập số điện thoại' : 'Enter phone number',
+                                            hintText: isVi
+                                                ? 'Nhập số điện thoại'
+                                                : 'Enter phone number',
                                           ),
                                         )
                                       : null,
@@ -874,22 +1068,32 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                             const SizedBox(height: 24),
 
                             // Group 3: CHI TIẾT TÀI KHOẢN
-                            _buildSectionHeader(isVi ? 'CHI TIẾT TÀI KHOẢN' : 'ACCOUNT DETAILS'),
+                            _buildSectionHeader(
+                              isVi ? 'CHI TIẾT TÀI KHOẢN' : 'ACCOUNT DETAILS',
+                            ),
                             _buildCardContainer(
                               context,
                               children: [
                                 _buildSettingRow(
                                   context,
                                   icon: Icons.verified_user_outlined,
-                                  title: isVi ? 'Loại tài khoản' : 'Account Type',
-                                  value: user.accountType.isNotEmpty ? (user.accountType == 'Miễn phí' ? (isVi ? 'Miễn phí' : 'Free') : user.accountType) : (isVi ? 'Miễn phí' : 'Free'),
+                                  title: isVi
+                                      ? 'Loại tài khoản'
+                                      : 'Account Type',
+                                  value: user.accountType.isNotEmpty
+                                      ? (user.accountType == 'Miễn phí'
+                                            ? (isVi ? 'Miễn phí' : 'Free')
+                                            : user.accountType)
+                                      : (isVi ? 'Miễn phí' : 'Free'),
                                 ),
                                 _buildDivider(context),
                                 _buildSettingRow(
                                   context,
                                   icon: Icons.calendar_month_rounded,
                                   title: isVi ? 'Ngày gia nhập' : 'Join Date',
-                                  value: DateFormat('dd/MM/yyyy').format(user.joinDate),
+                                  value: DateFormat(
+                                    'dd/MM/yyyy',
+                                  ).format(user.joinDate),
                                 ),
                               ],
                             ),
@@ -905,14 +1109,24 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: context.brandColor,
                                     foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
                                     elevation: 2,
                                   ),
                                   child: _isSaving
-                                      ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                                      ? const CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        )
                                       : Text(
-                                          isVi ? 'Lưu thay đổi' : 'Save Changes',
-                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                          isVi
+                                              ? 'Lưu thay đổi'
+                                              : 'Save Changes',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                 ),
                               ),
@@ -921,10 +1135,15 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                 width: double.infinity,
                                 height: 50,
                                 child: OutlinedButton(
-                                  onPressed: () => setState(() => _isEditing = false),
+                                  onPressed: () =>
+                                      setState(() => _isEditing = false),
                                   style: OutlinedButton.styleFrom(
-                                    side: BorderSide(color: context.borderColor),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    side: BorderSide(
+                                      color: context.borderColor,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
                                   ),
                                   child: Text(
                                     isVi ? 'Hủy chỉnh sửa' : 'Cancel Editing',
@@ -942,16 +1161,25 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
                                 borderRadius: BorderRadius.circular(16),
                                 child: Container(
                                   width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: context.expense.withValues(alpha: 0.12),
+                                    color: context.expense.withValues(
+                                      alpha: 0.12,
+                                    ),
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   child: Center(
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.logout_rounded, color: context.expense, size: 20),
+                                        Icon(
+                                          Icons.logout_rounded,
+                                          color: context.expense,
+                                          size: 20,
+                                        ),
                                         const SizedBox(width: 8),
                                         Text(
                                           isVi ? 'Đăng xuất' : 'Log Out',
@@ -997,7 +1225,10 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
     );
   }
 
-  Widget _buildCardContainer(BuildContext context, {required List<Widget> children}) {
+  Widget _buildCardContainer(
+    BuildContext context, {
+    required List<Widget> children,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: context.cardBg,
@@ -1005,7 +1236,9 @@ class _AccountInfoScreenState extends State<AccountInfoScreen> {
         border: Border.all(color: context.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: context.isDarkMode ? 0.2 : 0.02),
+            color: Colors.black.withValues(
+              alpha: context.isDarkMode ? 0.2 : 0.02,
+            ),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

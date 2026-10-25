@@ -16,7 +16,8 @@ class TransactionGalleryScreen extends StatefulWidget {
   const TransactionGalleryScreen({super.key});
 
   @override
-  State<TransactionGalleryScreen> createState() => _TransactionGalleryScreenState();
+  State<TransactionGalleryScreen> createState() =>
+      _TransactionGalleryScreenState();
 }
 
 class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
@@ -50,9 +51,16 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          width: 1,
+                        ),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 18,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   Column(
@@ -68,7 +76,9 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        isVi ? 'Chứng từ thu chi đã lưu' : 'Saved financial receipts',
+                        isVi
+                            ? 'Chứng từ thu chi đã lưu'
+                            : 'Saved financial receipts',
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 11.5,
@@ -91,9 +101,16 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          width: 1,
+                        ),
                       ),
-                      child: const Icon(Icons.add_a_photo_rounded, size: 20, color: Colors.white),
+                      child: const Icon(
+                        Icons.add_a_photo_rounded,
+                        size: 20,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
@@ -107,7 +124,9 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(32),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.08),
@@ -121,7 +140,9 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Center(
-                        child: CircularProgressIndicator(color: context.brandColor),
+                        child: CircularProgressIndicator(
+                          color: context.brandColor,
+                        ),
                       );
                     }
 
@@ -131,8 +152,16 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                     }
 
                     photos.sort((a, b) {
-                      final dateA = DateTime(a.date.year, a.date.month, a.date.day);
-                      final dateB = DateTime(b.date.year, b.date.month, b.date.day);
+                      final dateA = DateTime(
+                        a.date.year,
+                        a.date.month,
+                        a.date.day,
+                      );
+                      final dateB = DateTime(
+                        b.date.year,
+                        b.date.month,
+                        b.date.day,
+                      );
                       final dayCompare = dateB.compareTo(dateA);
                       if (dayCompare != 0) return dayCompare;
                       return b.createdAt.compareTo(a.createdAt);
@@ -165,7 +194,10 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 16,
+                              ),
                               decoration: BoxDecoration(
                                 color: context.cardBgColor,
                                 borderRadius: BorderRadius.circular(18),
@@ -180,7 +212,9 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                                     width: 48,
                                     height: 48,
                                     decoration: BoxDecoration(
-                                      color: context.brandColor.withValues(alpha: isDark ? 0.35 : 0.15),
+                                      color: context.brandColor.withValues(
+                                        alpha: isDark ? 0.35 : 0.15,
+                                      ),
                                       borderRadius: BorderRadius.circular(14),
                                     ),
                                     child: Icon(
@@ -192,33 +226,52 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                                   const SizedBox(width: 14),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          isVi ? '${photos.length} hóa đơn đã lưu trữ' : '${photos.length} receipts archived',
-                                          style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
-                                            fontWeight: FontWeight.w800,
-                                            color: context.textPrimaryColor,
-                                          ),
+                                          isVi
+                                              ? '${photos.length} hóa đơn đã lưu trữ'
+                                              : '${photos.length} receipts archived',
+                                          style:
+                                              (context.textTheme.titleMedium ??
+                                                      const TextStyle())
+                                                  .copyWith(
+                                                    fontWeight: FontWeight.w800,
+                                                    color: context
+                                                        .textPrimaryColor,
+                                                  ),
                                         ),
                                         const SizedBox(height: 4),
                                         Row(
                                           children: [
                                             Text(
                                               'Chi: -${CurrencyUtils.formatCurrency(totalExpense)}',
-                                              style: (context.textTheme.labelMedium ?? const TextStyle()).copyWith(
-                                                fontWeight: FontWeight.w700,
-                                                color: context.expense,
-                                              ),
+                                              style:
+                                                  (context
+                                                              .textTheme
+                                                              .labelMedium ??
+                                                          const TextStyle())
+                                                      .copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color: context.expense,
+                                                      ),
                                             ),
                                             if (totalIncome > 0) ...[
                                               const SizedBox(width: 10),
                                               Text(
                                                 'Thu: +${CurrencyUtils.formatCurrency(totalIncome)}',
-                                                style: (context.textTheme.labelMedium ?? const TextStyle()).copyWith(
-                                                  fontWeight: FontWeight.w700,
-                                                  color: context.income,
-                                                ),
+                                                style:
+                                                    (context
+                                                                .textTheme
+                                                                .labelMedium ??
+                                                            const TextStyle())
+                                                        .copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          color: context.income,
+                                                        ),
                                               ),
                                             ],
                                           ],
@@ -236,9 +289,15 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                         for (final month in monthKeys) ...[
                           SliverToBoxAdapter(
                             child: Padding(
-                              padding: const EdgeInsets.fromLTRB(22, 16, 22, 12),
+                              padding: const EdgeInsets.fromLTRB(
+                                22,
+                                16,
+                                22,
+                                12,
+                              ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Row(
                                     children: [
@@ -254,7 +313,11 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                                       Text(
                                         _monthLabel(month),
                                         style: TextStyle(
-                                          color: isDark ? Colors.white.withValues(alpha: 0.85) : const Color(0xFF1E293B),
+                                          color: isDark
+                                              ? Colors.white.withValues(
+                                                  alpha: 0.85,
+                                                )
+                                              : const Color(0xFF1E293B),
                                           fontSize: 14,
                                           fontWeight: FontWeight.w700,
                                           letterSpacing: 0.2,
@@ -263,7 +326,10 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                                     ],
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 3,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: isDark
                                           ? Colors.white.withValues(alpha: 0.08)
@@ -271,9 +337,13 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
-                                      isVi ? '${grouped[month]!.length} ảnh' : '${grouped[month]!.length} photos',
+                                      isVi
+                                          ? '${grouped[month]!.length} ảnh'
+                                          : '${grouped[month]!.length} photos',
                                       style: TextStyle(
-                                        color: isDark ? Colors.white60 : Colors.grey.shade700,
+                                        color: isDark
+                                            ? Colors.white60
+                                            : Colors.grey.shade700,
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -286,35 +356,36 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
                           SliverPadding(
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             sliver: SliverGrid(
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                                childAspectRatio: 0.9,
-                              ),
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) {
-                                  final tx = grouped[month]![index];
-                                  return _PhotoGridTile(
-                                    transaction: tx,
-                                    onTap: () {
-                                      HapticFeedback.lightImpact();
-                                      Navigator.push(
-                                        context,
-                                        PageTransitions.slideRight(
-                                          TransactionPhotoDetailScreen(transaction: tx),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                    childAspectRatio: 0.9,
+                                  ),
+                              delegate: SliverChildBuilderDelegate((
+                                context,
+                                index,
+                              ) {
+                                final tx = grouped[month]![index];
+                                return _PhotoGridTile(
+                                  transaction: tx,
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    Navigator.push(
+                                      context,
+                                      PageTransitions.slideRight(
+                                        TransactionPhotoDetailScreen(
+                                          transaction: tx,
                                         ),
-                                      );
-                                    },
-                                  );
-                                },
-                                childCount: grouped[month]!.length,
-                              ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              }, childCount: grouped[month]!.length),
                             ),
                           ),
-                          const SliverToBoxAdapter(
-                            child: SizedBox(height: 12),
-                          ),
+                          const SliverToBoxAdapter(child: SizedBox(height: 12)),
                         ],
                         const SliverToBoxAdapter(child: SizedBox(height: 36)),
                       ],
@@ -329,7 +400,9 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
     );
   }
 
-  Map<DateTime, List<TransactionModel>> _groupByMonth(List<TransactionModel> txs) {
+  Map<DateTime, List<TransactionModel>> _groupByMonth(
+    List<TransactionModel> txs,
+  ) {
     final Map<DateTime, List<TransactionModel>> result = {};
     for (final tx in txs) {
       final monthKey = DateTime(tx.date.year, tx.date.month);
@@ -341,7 +414,9 @@ class _TransactionGalleryScreenState extends State<TransactionGalleryScreen> {
 
   String _monthLabel(DateTime month) {
     final isVi = LanguageService.instance.isVietnamese;
-    return isVi ? 'Tháng ${month.month}, ${month.year}' : 'Month ${month.month}, ${month.year}';
+    return isVi
+        ? 'Tháng ${month.month}, ${month.year}'
+        : 'Month ${month.month}, ${month.year}';
   }
 }
 
@@ -378,21 +453,25 @@ class _GalleryEmptyState extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               isVi ? 'Chưa có hóa đơn nào' : 'No receipts yet',
-              style: (context.textTheme.titleLarge ?? const TextStyle()).copyWith(
-                color: context.textPrimaryColor,
-                fontSize: 19,
-                fontWeight: FontWeight.w800,
-              ),
+              style: (context.textTheme.titleLarge ?? const TextStyle())
+                  .copyWith(
+                    color: context.textPrimaryColor,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
             const SizedBox(height: 10),
             Text(
-              isVi ? 'Khi thêm khoản thu chi hoặc dùng Trợ lý Mono quét hóa đơn, ảnh chứng từ sẽ tự động lưu trữ tại đây.' : 'When you add transactions or scan receipts with Mono Assistant, photos will be stored here.',
+              isVi
+                  ? 'Khi thêm khoản thu chi hoặc dùng Trợ lý Mono quét hóa đơn, ảnh chứng từ sẽ tự động lưu trữ tại đây.'
+                  : 'When you add transactions or scan receipts with Mono Assistant, photos will be stored here.',
               textAlign: TextAlign.center,
-              style: (context.textTheme.bodyMedium ?? const TextStyle()).copyWith(
-                color: context.textSecondaryColor,
-                fontSize: 14,
-                height: 1.5,
-              ),
+              style: (context.textTheme.bodyMedium ?? const TextStyle())
+                  .copyWith(
+                    color: context.textSecondaryColor,
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
             ),
             const SizedBox(height: 28),
             AnimatedScaleButton(
@@ -404,7 +483,10 @@ class _GalleryEmptyState extends StatelessWidget {
                 );
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [context.colors.primary, context.brandColor],
@@ -423,7 +505,11 @@ class _GalleryEmptyState extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.camera_alt_rounded, size: 20, color: Colors.white),
+                    const Icon(
+                      Icons.camera_alt_rounded,
+                      size: 20,
+                      color: Colors.white,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       isVi ? 'Chụp hóa đơn mới' : 'Scan New Receipt',
@@ -448,10 +534,7 @@ class _PhotoGridTile extends StatelessWidget {
   final TransactionModel transaction;
   final VoidCallback onTap;
 
-  const _PhotoGridTile({
-    required this.transaction,
-    required this.onTap,
-  });
+  const _PhotoGridTile({required this.transaction, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -515,15 +598,19 @@ class _PhotoGridTile extends StatelessWidget {
                     right: 6,
                     child: Text(
                       '${isIncome ? '+' : '-'}${CurrencyUtils.formatCurrency(transaction.amount)}',
-                      style: (context.textTheme.labelSmall ?? const TextStyle()).copyWith(
-                        color: isIncome ? context.income : Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.2,
-                        shadows: [
-                          Shadow(color: Colors.black.withValues(alpha: 0.8), blurRadius: 4),
-                        ],
-                      ),
+                      style: (context.textTheme.labelSmall ?? const TextStyle())
+                          .copyWith(
+                            color: isIncome ? context.income : Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withValues(alpha: 0.8),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
@@ -541,7 +628,11 @@ class _PhotoGridTile extends StatelessWidget {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white24, width: 0.5),
                       ),
-                      child: Icon(transaction.icon, size: 12, color: statusColor),
+                      child: Icon(
+                        transaction.icon,
+                        size: 12,
+                        color: statusColor,
+                      ),
                     ),
                   ),
                 ],

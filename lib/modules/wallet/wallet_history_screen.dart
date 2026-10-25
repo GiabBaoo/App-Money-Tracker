@@ -22,10 +22,7 @@ import '../../core/theme/app_theme.dart';
 class WalletHistoryScreen extends StatefulWidget {
   final String? initialWalletId;
 
-  const WalletHistoryScreen({
-    super.key,
-    this.initialWalletId,
-  });
+  const WalletHistoryScreen({super.key, this.initialWalletId});
 
   @override
   State<WalletHistoryScreen> createState() => _WalletHistoryScreenState();
@@ -38,7 +35,8 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
 
   late String? _selectedWalletId;
   String _selectedTxType = 'all'; // 'all', 'expense', 'income', 'transfer'
-  String _timeFilterMode = 'month'; // 'month', 'today', 'week', 'custom', 'all_time'
+  String _timeFilterMode =
+      'month'; // 'month', 'today', 'week', 'custom', 'all_time'
   DateTimeRange? _customDateRange;
   String? _selectedCategoryFilter;
   late DateTime _selectedMonth;
@@ -108,7 +106,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
     final isVi = LanguageScope.of(context).isVietnamese;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F2625) : const Color(0xFF438883),
+      backgroundColor: isDark
+          ? const Color(0xFF0F2625)
+          : const Color(0xFF438883),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -129,7 +129,11 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                         color: Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -164,7 +168,10 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                     AnimatedScaleButton(
                       onTap: _resetFilters,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
@@ -172,11 +179,19 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.refresh_rounded, color: Colors.white, size: 14),
+                            const Icon(
+                              Icons.refresh_rounded,
+                              color: Colors.white,
+                              size: 14,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               isVi ? 'Đặt lại' : 'Reset',
-                              style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
@@ -192,15 +207,21 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               child: Container(
                 height: 44,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF163230) : const Color(0xFFF1F5F9),
+                  color: isDark
+                      ? const Color(0xFF163230)
+                      : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: isDark ? Colors.white.withValues(alpha: 0.25) : const Color(0xFFE2E8F0),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.25)
+                        : const Color(0xFFE2E8F0),
                     width: 1.0,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.2 : 0.06,
+                      ),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -215,15 +236,21 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                   ),
                   cursorColor: isDark ? Colors.white : context.colors.onSurface,
                   decoration: InputDecoration(
-                    hintText: isVi ? 'Tìm kiếm theo tên món, ghi chú, danh mục...' : 'Search by item, note, category...',
+                    hintText: isVi
+                        ? 'Tìm kiếm theo tên món, ghi chú, danh mục...'
+                        : 'Search by item, note, category...',
                     hintStyle: TextStyle(
-                      color: isDark ? Colors.white.withValues(alpha: 0.65) : context.colors.onSurfaceVariant,
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.65)
+                          : context.colors.onSurfaceVariant,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
                     prefixIcon: Icon(
                       Icons.search_rounded,
-                      color: isDark ? Colors.white70 : context.colors.onSurfaceVariant,
+                      color: isDark
+                          ? Colors.white70
+                          : context.colors.onSurfaceVariant,
                       size: 20,
                     ),
                     suffixIcon: _searchQuery.isNotEmpty
@@ -234,13 +261,18 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                             },
                             child: Icon(
                               Icons.close_rounded,
-                              color: isDark ? Colors.white70 : context.colors.onSurfaceVariant,
+                              color: isDark
+                                  ? Colors.white70
+                                  : context.colors.onSurfaceVariant,
                               size: 18,
                             ),
                           )
                         : null,
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 11, horizontal: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 11,
+                      horizontal: 12,
+                    ),
                   ),
                 ),
               ),
@@ -252,7 +284,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
                 ),
                 child: StreamBuilder<List<WalletModel>>(
                   stream: _walletRepo.getWalletsStream(),
@@ -277,27 +311,40 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                           child: StreamBuilder<List<TransactionModel>>(
                             stream: _txRepo.getTransactionsStream(),
                             builder: (context, txSnapshot) {
-                              if (txSnapshot.connectionState == ConnectionState.waiting && !txSnapshot.hasData) {
-                                return const Center(child: CircularProgressIndicator(color: Color(0xFF438883)));
+                              if (txSnapshot.connectionState ==
+                                      ConnectionState.waiting &&
+                                  !txSnapshot.hasData) {
+                                return const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xFF438883),
+                                  ),
+                                );
                               }
 
                               final allTx = txSnapshot.data ?? [];
                               final filteredTx = _applyFilters(allTx);
-                              filteredTx.sort(CurrencyUtils.compareTransactionsChronological);
+                              filteredTx.sort(
+                                CurrencyUtils.compareTransactionsChronological,
+                              );
 
                               // Tính toán tổng kết dòng tiền & phân loại danh mục
                               final summary = _calculateSummary(filteredTx);
-                              final breakdown = _getCategoryBreakdown(filteredTx);
+                              final breakdown = _getCategoryBreakdown(
+                                filteredTx,
+                              );
 
                               final effectiveWallets = _cachedWallets.isNotEmpty
                                   ? _cachedWallets
                                   : _walletRepo.latestWallets;
-                              final walletMap = {for (final w in effectiveWallets) w.id: w};
+                              final walletMap = {
+                                for (final w in effectiveWallets) w.id: w,
+                              };
 
-                              final reverseBalances = CurrencyUtils.calculateReverseWalletBalances(
-                                allTransactions: allTx,
-                                wallets: effectiveWallets,
-                              );
+                              final reverseBalances =
+                                  CurrencyUtils.calculateReverseWalletBalances(
+                                    allTransactions: allTx,
+                                    wallets: effectiveWallets,
+                                  );
 
                               final grouped = _groupByDate(filteredTx);
 
@@ -306,31 +353,48 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                               int globalTxCounter = 0;
 
                               for (final entry in grouped.entries) {
-                                flatRows.add(_WalletHistoryRow.header(date: entry.key, txs: entry.value));
+                                flatRows.add(
+                                  _WalletHistoryRow.header(
+                                    date: entry.key,
+                                    txs: entry.value,
+                                  ),
+                                );
                                 for (final tx in entry.value) {
-                                  flatRows.add(_WalletHistoryRow.transaction(
-                                    tx: tx,
-                                    wallet: walletMap[tx.walletId],
-                                    runningTotal: reverseBalances[tx.id],
-                                    globalIndex: globalTxCounter++,
-                                  ));
+                                  flatRows.add(
+                                    _WalletHistoryRow.transaction(
+                                      tx: tx,
+                                      wallet: walletMap[tx.walletId],
+                                      runningTotal: reverseBalances[tx.id],
+                                      globalIndex: globalTxCounter++,
+                                    ),
+                                  );
                                 }
                               }
 
                               return CustomScrollView(
-                                key: const PageStorageKey('wallet_history_scroll'),
+                                key: const PageStorageKey(
+                                  'wallet_history_scroll',
+                                ),
                                 physics: const BouncingScrollPhysics(),
                                 cacheExtent: 600,
                                 slivers: [
                                   // Tóm tắt dòng tiền Thu/Chi/Ròng
                                   SliverToBoxAdapter(
-                                    child: _buildCashflowSummaryBar(summary.income, summary.expense, summary.net, isDark),
+                                    child: _buildCashflowSummaryBar(
+                                      summary.income,
+                                      summary.expense,
+                                      summary.net,
+                                      isDark,
+                                    ),
                                   ),
 
                                   // Phân loại danh mục theo ví
                                   if (breakdown.isNotEmpty)
                                     SliverToBoxAdapter(
-                                      child: _buildCategoryBreakdownSection(breakdown, isDark),
+                                      child: _buildCategoryBreakdownSection(
+                                        breakdown,
+                                        isDark,
+                                      ),
                                     ),
 
                                   // Danh sách giao dịch hoặc Empty state
@@ -341,31 +405,40 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                                     )
                                   else
                                     SliverPadding(
-                                      padding: const EdgeInsets.fromLTRB(18, 4, 18, 40),
+                                      padding: const EdgeInsets.fromLTRB(
+                                        18,
+                                        4,
+                                        18,
+                                        40,
+                                      ),
                                       sliver: SliverList(
-                                        delegate: SliverChildBuilderDelegate(
-                                          (context, index) {
-                                            final row = flatRows[index];
-                                            if (row.isHeader) {
-                                              return _buildDateHeader(row.date, row.txs!, isDark);
-                                            }
-                                            final txWidget = TransactionItem(
-                                              transaction: row.tx!,
-                                              showDate: false,
-                                              runningTotal: row.runningTotal,
-                                              wallet: row.wallet,
+                                        delegate: SliverChildBuilderDelegate((
+                                          context,
+                                          index,
+                                        ) {
+                                          final row = flatRows[index];
+                                          if (row.isHeader) {
+                                            return _buildDateHeader(
+                                              row.date,
+                                              row.txs!,
+                                              isDark,
                                             );
-                                            // Chỉ kích hoạt animation cho 5 giao dịch đầu tiên trên viewport, các mục sau tức thì để tránh khựng giật
-                                            if (row.globalIndex < 5) {
-                                              return StaggeredListItem(
-                                                index: row.globalIndex,
-                                                child: txWidget,
-                                              );
-                                            }
-                                            return txWidget;
-                                          },
-                                          childCount: flatRows.length,
-                                        ),
+                                          }
+                                          final txWidget = TransactionItem(
+                                            transaction: row.tx!,
+                                            showDate: false,
+                                            runningTotal: row.runningTotal,
+                                            wallet: row.wallet,
+                                          );
+                                          // Chỉ kích hoạt animation cho 5 giao dịch đầu tiên trên viewport, các mục sau tức thì để tránh khựng giật
+                                          if (row.globalIndex < 5) {
+                                            return StaggeredListItem(
+                                              index: row.globalIndex,
+                                              child: txWidget,
+                                            );
+                                          }
+                                          return txWidget;
+                                        }, childCount: flatRows.length),
                                       ),
                                     ),
                                 ],
@@ -388,12 +461,14 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
   // === CÁC TIÊU ĐỀ HEADER ===
   String _getHeaderTitle(bool isVi) {
     if (_selectedWalletId == null) {
-      return isVi ? 'Lịch sử thu / chi tất cả ví' : 'Cash flow history for all wallets';
+      return isVi
+          ? 'Lịch sử thu / chi tất cả ví'
+          : 'Cash flow history for all wallets';
     }
     final wallet = _cachedWallets.cast<WalletModel?>().firstWhere(
-          (w) => w?.id == _selectedWalletId,
-          orElse: () => null,
-        );
+      (w) => w?.id == _selectedWalletId,
+      orElse: () => null,
+    );
     if (wallet != null) {
       return isVi ? 'Lịch sử: ${wallet.name}' : 'History: ${wallet.name}';
     }
@@ -406,13 +481,17 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
       return isVi ? '$count ví đang hoạt động' : '$count active wallets';
     }
     final wallet = _cachedWallets.cast<WalletModel?>().firstWhere(
-          (w) => w?.id == _selectedWalletId,
-          orElse: () => null,
-        );
+      (w) => w?.id == _selectedWalletId,
+      orElse: () => null,
+    );
     if (wallet != null) {
-      return isVi ? 'Số dư hiện tại: ${CurrencyUtils.formatCurrency(wallet.balance)}' : 'Current balance: ${CurrencyUtils.formatCurrency(wallet.balance)}';
+      return isVi
+          ? 'Số dư hiện tại: ${CurrencyUtils.formatCurrency(wallet.balance)}'
+          : 'Current balance: ${CurrencyUtils.formatCurrency(wallet.balance)}';
     }
-    return isVi ? 'Theo dõi dòng tiền thu chi' : 'Track cash flow & transactions';
+    return isVi
+        ? 'Theo dõi dòng tiền thu chi'
+        : 'Track cash flow & transactions';
   }
 
   // === SMART ERGONOMIC FILTER BAR (1 HÀNG DUY NHẤT TỐI ƯU THUMB ZONE) ===
@@ -445,15 +524,20 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
     } else if (_timeFilterMode == 'last_month') {
       timeLabel = isVi ? 'Tháng trước' : 'Last month';
     } else if (_timeFilterMode == 'this_year') {
-      timeLabel = isVi ? 'Năm ${DateTime.now().year}' : 'Year ${DateTime.now().year}';
+      timeLabel = isVi
+          ? 'Năm ${DateTime.now().year}'
+          : 'Year ${DateTime.now().year}';
     } else if (_timeFilterMode == 'year_2020') {
       timeLabel = isVi ? 'Năm 2020' : 'Year 2020';
     } else if (_timeFilterMode == 'month') {
-      timeLabel = isVi ? 'Tháng ${DateFormat('MM/yy').format(_selectedMonth)}' : 'Month ${DateFormat('MM/yy').format(_selectedMonth)}';
+      timeLabel = isVi
+          ? 'Tháng ${DateFormat('MM/yy').format(_selectedMonth)}'
+          : 'Month ${DateFormat('MM/yy').format(_selectedMonth)}';
     } else if (_timeFilterMode == 'week') {
       timeLabel = isVi ? 'Tuần này' : 'This week';
     } else if (_timeFilterMode == 'custom' && _customDateRange != null) {
-      timeLabel = '${DateFormat('dd/MM').format(_customDateRange!.start)}-${DateFormat('dd/MM').format(_customDateRange!.end)}';
+      timeLabel =
+          '${DateFormat('dd/MM').format(_customDateRange!.start)}-${DateFormat('dd/MM').format(_customDateRange!.end)}';
     } else {
       timeLabel = isVi ? 'Tất cả time' : 'All time';
     }
@@ -477,17 +561,24 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                       _showWalletPickerSheet(context, wallets, isDark);
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 7,
+                      ),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: _selectedWalletId != null
                             ? const Color(0xFF438883)
-                            : (isDark ? const Color(0xFF1E2D2B) : const Color(0xFFE8F5F1)),
+                            : (isDark
+                                  ? const Color(0xFF1E2D2B)
+                                  : const Color(0xFFE8F5F1)),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: _selectedWalletId != null
                               ? Colors.transparent
-                              : (isDark ? Colors.white12 : const Color(0xFFD0E6E1)),
+                              : (isDark
+                                    ? Colors.white12
+                                    : const Color(0xFFD0E6E1)),
                         ),
                       ),
                       child: Row(
@@ -496,11 +587,14 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Icon(
-                            curWallet?.icon ?? Icons.account_balance_wallet_rounded,
+                            curWallet?.icon ??
+                                Icons.account_balance_wallet_rounded,
                             size: 14,
                             color: _selectedWalletId != null
                                 ? Colors.white
-                                : (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)),
+                                : (isDark
+                                      ? const Color(0xFF2DD4BF)
+                                      : const Color(0xFF438883)),
                           ),
                           const SizedBox(width: 5),
                           Text(
@@ -510,7 +604,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                               fontWeight: FontWeight.bold,
                               color: _selectedWalletId != null
                                   ? Colors.white
-                                  : (isDark ? Colors.white : const Color(0xFF1E293B)),
+                                  : (isDark
+                                        ? Colors.white
+                                        : const Color(0xFF1E293B)),
                             ),
                           ),
                           const SizedBox(width: 4),
@@ -519,7 +615,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                             size: 15,
                             color: _selectedWalletId != null
                                 ? Colors.white70
-                                : (isDark ? Colors.white60 : Colors.grey.shade600),
+                                : (isDark
+                                      ? Colors.white60
+                                      : Colors.grey.shade600),
                           ),
                         ],
                       ),
@@ -539,12 +637,19 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                       },
                       child: Container(
                         margin: const EdgeInsets.only(left: 6),
-                        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 11,
+                          vertical: 7,
+                        ),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: isSel
-                              ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
-                              : (isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF1F5F9)),
+                              ? (isDark
+                                    ? const Color(0xFF2DD4BF)
+                                    : const Color(0xFF438883))
+                              : (isDark
+                                    ? const Color(0xFF1E2D2B)
+                                    : const Color(0xFFF1F5F9)),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Center(
@@ -553,10 +658,16 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 11.5,
-                              fontWeight: isSel ? FontWeight.bold : FontWeight.w600,
+                              fontWeight: isSel
+                                  ? FontWeight.bold
+                                  : FontWeight.w600,
                               color: isSel
-                                  ? (isDark ? const Color(0xFF0F2625) : Colors.white)
-                                  : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                                  ? (isDark
+                                        ? const Color(0xFF0F2625)
+                                        : Colors.white)
+                                  : (isDark
+                                        ? Colors.white70
+                                        : const Color(0xFF64748B)),
                               height: 1.2,
                             ),
                           ),
@@ -578,13 +689,21 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                     },
                     child: Container(
                       margin: const EdgeInsets.only(left: 6),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 7,
+                      ),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E2D2B) : const Color(0xFFE8F5F1),
+                        color: isDark
+                            ? const Color(0xFF1E2D2B)
+                            : const Color(0xFFE8F5F1),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isDark ? Colors.white12 : const Color(0xFFD0E6E1)),
+                          color: isDark
+                              ? Colors.white12
+                              : const Color(0xFFD0E6E1),
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -594,7 +713,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                           Icon(
                             Icons.calendar_month_rounded,
                             size: 13,
-                            color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883),
+                            color: isDark
+                                ? const Color(0xFF2DD4BF)
+                                : const Color(0xFF438883),
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -602,7 +723,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                             style: TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : const Color(0xFF1E293B),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1E293B),
                             ),
                           ),
                           const SizedBox(width: 2),
@@ -634,7 +757,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               decoration: BoxDecoration(
                 color: _hasActiveFilters
                     ? const Color(0xFF438883)
-                    : (isDark ? const Color(0xFF1E2D2B) : const Color(0xFFE8F5F1)),
+                    : (isDark
+                          ? const Color(0xFF1E2D2B)
+                          : const Color(0xFFE8F5F1)),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: _hasActiveFilters
@@ -652,7 +777,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                     size: 14,
                     color: _hasActiveFilters
                         ? Colors.white
-                        : (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)),
+                        : (isDark
+                              ? const Color(0xFF2DD4BF)
+                              : const Color(0xFF438883)),
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -662,7 +789,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                       fontWeight: FontWeight.bold,
                       color: _hasActiveFilters
                           ? Colors.white
-                          : (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)),
+                          : (isDark
+                                ? const Color(0xFF2DD4BF)
+                                : const Color(0xFF438883)),
                     ),
                   ),
                   if (_hasActiveFilters) ...[
@@ -686,14 +815,20 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
   }
 
   // === BOTTOM SHEET CHỌN VÍ TIỀN (THUMB ZONE) ===
-  void _showWalletPickerSheet(BuildContext context, List<WalletModel> wallets, bool isDark) {
+  void _showWalletPickerSheet(
+    BuildContext context,
+    List<WalletModel> wallets,
+    bool isDark,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (ctx) {
         return Container(
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.65),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.65,
+          ),
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF162523) : Colors.white,
@@ -727,7 +862,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      LanguageScope.of(context).isVietnamese ? 'Chọn ví xem lịch sử' : 'Select wallet for history',
+                      LanguageScope.of(context).isVietnamese
+                          ? 'Chọn ví xem lịch sử'
+                          : 'Select wallet for history',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
@@ -742,7 +879,11 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                           color: isDark ? Colors.white10 : Colors.grey.shade200,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(Icons.close_rounded, size: 16, color: isDark ? Colors.white70 : Colors.grey.shade700),
+                        child: Icon(
+                          Icons.close_rounded,
+                          size: 16,
+                          color: isDark ? Colors.white70 : Colors.grey.shade700,
+                        ),
                       ),
                     ),
                   ],
@@ -755,33 +896,54 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                     children: [
                       // Tất cả ví
                       ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 2,
+                        ),
                         leading: Container(
                           width: 38,
                           height: 38,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF438883).withValues(alpha: 0.15),
+                            color: const Color(
+                              0xFF438883,
+                            ).withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF438883), size: 20),
+                          child: const Icon(
+                            Icons.account_balance_wallet_rounded,
+                            color: Color(0xFF438883),
+                            size: 20,
+                          ),
                         ),
                         title: Text(
-                          LanguageScope.of(context).isVietnamese ? 'Tất cả ví' : 'All Wallets',
+                          LanguageScope.of(context).isVietnamese
+                              ? 'Tất cả ví'
+                              : 'All Wallets',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1E293B),
                           ),
                         ),
                         subtitle: Text(
-                          LanguageScope.of(context).isVietnamese ? '${wallets.length} ví hoạt động' : '${wallets.length} active wallets',
+                          LanguageScope.of(context).isVietnamese
+                              ? '${wallets.length} ví hoạt động'
+                              : '${wallets.length} active wallets',
                           style: TextStyle(
                             fontSize: 11.5,
-                            color: isDark ? Colors.white54 : Colors.grey.shade600,
+                            color: isDark
+                                ? Colors.white54
+                                : Colors.grey.shade600,
                           ),
                         ),
                         trailing: _selectedWalletId == null
-                            ? const Icon(Icons.check_circle_rounded, color: Color(0xFF438883), size: 20)
+                            ? const Icon(
+                                Icons.check_circle_rounded,
+                                color: Color(0xFF438883),
+                                size: 20,
+                              )
                             : null,
                         onTap: () {
                           HapticFeedback.selectionClick();
@@ -797,7 +959,10 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                         final isSelected = _selectedWalletId == w.id;
                         final wColor = Color(w.colorValue);
                         return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 2,
+                          ),
                           leading: Container(
                             width: 38,
                             height: 38,
@@ -812,7 +977,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white : const Color(0xFF1E293B),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1E293B),
                             ),
                           ),
                           subtitle: Text(
@@ -820,11 +987,17 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white70 : Colors.grey.shade700,
+                              color: isDark
+                                  ? Colors.white70
+                                  : Colors.grey.shade700,
                             ),
                           ),
                           trailing: isSelected
-                              ? Icon(Icons.check_circle_rounded, color: wColor, size: 20)
+                              ? Icon(
+                                  Icons.check_circle_rounded,
+                                  color: wColor,
+                                  size: 20,
+                                )
                               : null,
                           onTap: () {
                             HapticFeedback.selectionClick();
@@ -856,11 +1029,15 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
             return Container(
-              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF162523) : Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.15),
@@ -882,7 +1059,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                           width: 36,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.white24 : Colors.grey.shade300,
+                            color: isDark
+                                ? Colors.white24
+                                : Colors.grey.shade300,
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -893,14 +1072,22 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.tune_rounded, size: 18, color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)),
+                              Icon(
+                                Icons.tune_rounded,
+                                size: 18,
+                                color: isDark
+                                    ? const Color(0xFF2DD4BF)
+                                    : const Color(0xFF438883),
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 isVi ? 'Bộ lọc nâng cao' : 'Advanced Filters',
                                 style: TextStyle(
                                   fontSize: 16.5,
                                   fontWeight: FontWeight.w800,
-                                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF1E293B),
                                 ),
                               ),
                             ],
@@ -930,7 +1117,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                          color: isDark
+                              ? Colors.white70
+                              : const Color(0xFF64748B),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -938,36 +1127,62 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          _buildFilterSheetTimeChip(isVi ? 'Tháng này' : 'This Month', 'month', isDark, setSheetState, () {
-                            final now = DateTime.now();
-                            setState(() {
-                              _timeFilterMode = 'month';
-                              _selectedMonth = DateTime(now.year, now.month);
-                              _customDateRange = null;
-                            });
-                          }),
-                          _buildFilterSheetTimeChip(isVi ? 'Hôm nay' : 'Today', 'today', isDark, setSheetState, () {
-                            setState(() {
-                              _timeFilterMode = 'today';
-                              _customDateRange = null;
-                            });
-                          }),
-                          _buildFilterSheetTimeChip(isVi ? 'Tuần này' : 'This Week', 'week', isDark, setSheetState, () {
-                            setState(() {
-                              _timeFilterMode = 'week';
-                              _customDateRange = null;
-                            });
-                          }),
-                          _buildFilterSheetTimeChip(isVi ? 'Tất cả thời gian' : 'All Time', 'all_time', isDark, setSheetState, () {
-                            setState(() {
-                              _timeFilterMode = 'all_time';
-                              _customDateRange = null;
-                            });
-                          }),
+                          _buildFilterSheetTimeChip(
+                            isVi ? 'Tháng này' : 'This Month',
+                            'month',
+                            isDark,
+                            setSheetState,
+                            () {
+                              final now = DateTime.now();
+                              setState(() {
+                                _timeFilterMode = 'month';
+                                _selectedMonth = DateTime(now.year, now.month);
+                                _customDateRange = null;
+                              });
+                            },
+                          ),
+                          _buildFilterSheetTimeChip(
+                            isVi ? 'Hôm nay' : 'Today',
+                            'today',
+                            isDark,
+                            setSheetState,
+                            () {
+                              setState(() {
+                                _timeFilterMode = 'today';
+                                _customDateRange = null;
+                              });
+                            },
+                          ),
+                          _buildFilterSheetTimeChip(
+                            isVi ? 'Tuần này' : 'This Week',
+                            'week',
+                            isDark,
+                            setSheetState,
+                            () {
+                              setState(() {
+                                _timeFilterMode = 'week';
+                                _customDateRange = null;
+                              });
+                            },
+                          ),
+                          _buildFilterSheetTimeChip(
+                            isVi ? 'Tất cả thời gian' : 'All Time',
+                            'all_time',
+                            isDark,
+                            setSheetState,
+                            () {
+                              setState(() {
+                                _timeFilterMode = 'all_time';
+                                _customDateRange = null;
+                              });
+                            },
+                          ),
                           _buildFilterSheetTimeChip(
                             _customDateRange != null
                                 ? '${DateFormat('dd/MM').format(_customDateRange!.start)} - ${DateFormat('dd/MM').format(_customDateRange!.end)}'
-                                : (isVi ? 'Tùy chọn ngày...' : 'Custom Range...'),
+                                : (isVi
+                                      ? 'Tùy chọn ngày...'
+                                      : 'Custom Range...'),
                             'custom',
                             isDark,
                             setSheetState,
@@ -976,9 +1191,12 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                                 context: context,
                                 firstDate: DateTime(2020),
                                 lastDate: DateTime.now(),
-                                initialDateRange: _customDateRange ??
+                                initialDateRange:
+                                    _customDateRange ??
                                     DateTimeRange(
-                                      start: DateTime.now().subtract(const Duration(days: 7)),
+                                      start: DateTime.now().subtract(
+                                        const Duration(days: 7),
+                                      ),
                                       end: DateTime.now(),
                                     ),
                                 builder: (context, child) {
@@ -1013,55 +1231,81 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                          color: isDark
+                              ? Colors.white70
+                              : const Color(0xFF64748B),
                         ),
                       ),
                       const SizedBox(height: 8),
                       Row(
-                        children: [
-                          {'key': 'all', 'label': isVi ? 'Tất cả' : 'All'},
-                          {'key': 'expense', 'label': isVi ? 'Chi tiêu' : 'Expense'},
-                          {'key': 'income', 'label': isVi ? 'Thu nhập' : 'Income'},
-                          {'key': 'transfer', 'label': isVi ? 'Chuyển ví' : 'Transfer'},
-                        ].map((t) {
-                          final isSel = _selectedTxType == t['key'];
-                          return Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                setState(() {
-                                  _selectedTxType = t['key']!;
-                                });
-                                setSheetState(() {});
+                        children:
+                            [
+                              {'key': 'all', 'label': isVi ? 'Tất cả' : 'All'},
+                              {
+                                'key': 'expense',
+                                'label': isVi ? 'Chi tiêu' : 'Expense',
                               },
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 3),
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: isSel
-                                      ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
-                                      : (isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF1F5F9)),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    t['label']!,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: isSel ? FontWeight.bold : FontWeight.w600,
+                              {
+                                'key': 'income',
+                                'label': isVi ? 'Thu nhập' : 'Income',
+                              },
+                              {
+                                'key': 'transfer',
+                                'label': isVi ? 'Chuyển ví' : 'Transfer',
+                              },
+                            ].map((t) {
+                              final isSel = _selectedTxType == t['key'];
+                              return Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    HapticFeedback.selectionClick();
+                                    setState(() {
+                                      _selectedTxType = t['key']!;
+                                    });
+                                    setSheetState(() {});
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 3,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
                                       color: isSel
-                                          ? (isDark ? const Color(0xFF0F2625) : Colors.white)
-                                          : (isDark ? Colors.white70 : const Color(0xFF475569)),
-                                      height: 1.2,
+                                          ? (isDark
+                                                ? const Color(0xFF2DD4BF)
+                                                : const Color(0xFF438883))
+                                          : (isDark
+                                                ? const Color(0xFF1E2D2B)
+                                                : const Color(0xFFF1F5F9)),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        t['label']!,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          fontWeight: isSel
+                                              ? FontWeight.bold
+                                              : FontWeight.w600,
+                                          color: isSel
+                                              ? (isDark
+                                                    ? const Color(0xFF0F2625)
+                                                    : Colors.white)
+                                              : (isDark
+                                                    ? Colors.white70
+                                                    : const Color(0xFF475569)),
+                                          height: 1.2,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                              );
+                            }).toList(),
                       ),
 
                       const SizedBox(height: 26),
@@ -1082,7 +1326,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF438883).withValues(alpha: 0.3),
+                                color: const Color(
+                                  0xFF438883,
+                                ).withValues(alpha: 0.3),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -1132,7 +1378,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               : (isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF1F5F9)),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? Colors.transparent : (isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
+            color: isSelected
+                ? Colors.transparent
+                : (isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
           ),
         ),
         child: Center(
@@ -1155,7 +1403,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
 
   // === ACTIVE FILTER CHIPS ===
   Widget _buildActiveFilterChips(bool isDark) {
-    if (_timeFilterMode == 'month' && _selectedCategoryFilter == null && _searchQuery.isEmpty) {
+    if (_timeFilterMode == 'month' &&
+        _selectedCategoryFilter == null &&
+        _searchQuery.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -1174,29 +1424,44 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.date_range_rounded, size: 12, color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)),
+                  Icon(
+                    Icons.date_range_rounded,
+                    size: 12,
+                    color: isDark
+                        ? const Color(0xFF2DD4BF)
+                        : const Color(0xFF438883),
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     _timeFilterMode == 'month_to_date'
                         ? (isVi ? 'Đầu tháng đến nay' : 'Month to date')
                         : _timeFilterMode == 'today'
-                            ? (isVi ? 'Hôm nay' : 'Today')
-                            : _timeFilterMode == 'last_7_days'
-                                ? (isVi ? '7 ngày qua' : 'Last 7 days')
-                                : _timeFilterMode == 'last_30_days'
-                                    ? (isVi ? '30 ngày qua' : 'Last 30 days')
-                                    : _timeFilterMode == 'last_month'
-                                        ? (isVi ? 'Tháng trước' : 'Last month')
-                                        : _timeFilterMode == 'this_year'
-                                            ? (isVi ? 'Năm ${DateTime.now().year}' : 'Year ${DateTime.now().year}')
-                                            : _timeFilterMode == 'year_2020'
-                                                ? (isVi ? 'Năm 2020' : 'Year 2020')
-                                                : _timeFilterMode == 'week'
-                                                    ? (isVi ? 'Tuần này' : 'This week')
-                                                    : _timeFilterMode == 'custom' && _customDateRange != null
-                                                        ? '${DateFormat('dd/MM').format(_customDateRange!.start)} - ${DateFormat('dd/MM').format(_customDateRange!.end)}'
-                                                        : (isVi ? 'Tất cả thời gian' : 'All time'),
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883)),
+                        ? (isVi ? 'Hôm nay' : 'Today')
+                        : _timeFilterMode == 'last_7_days'
+                        ? (isVi ? '7 ngày qua' : 'Last 7 days')
+                        : _timeFilterMode == 'last_30_days'
+                        ? (isVi ? '30 ngày qua' : 'Last 30 days')
+                        : _timeFilterMode == 'last_month'
+                        ? (isVi ? 'Tháng trước' : 'Last month')
+                        : _timeFilterMode == 'this_year'
+                        ? (isVi
+                              ? 'Năm ${DateTime.now().year}'
+                              : 'Year ${DateTime.now().year}')
+                        : _timeFilterMode == 'year_2020'
+                        ? (isVi ? 'Năm 2020' : 'Year 2020')
+                        : _timeFilterMode == 'week'
+                        ? (isVi ? 'Tuần này' : 'This week')
+                        : _timeFilterMode == 'custom' &&
+                              _customDateRange != null
+                        ? '${DateFormat('dd/MM').format(_customDateRange!.start)} - ${DateFormat('dd/MM').format(_customDateRange!.end)}'
+                        : (isVi ? 'Tất cả thời gian' : 'All time'),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: isDark
+                          ? const Color(0xFF2DD4BF)
+                          : const Color(0xFF438883),
+                    ),
                   ),
                   const SizedBox(width: 3),
                   GestureDetector(
@@ -1206,7 +1471,11 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                         _customDateRange = null;
                       });
                     },
-                    child: const Icon(Icons.close_rounded, size: 12, color: Color(0xFF438883)),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      size: 12,
+                      color: Color(0xFF438883),
+                    ),
                   ),
                 ],
               ),
@@ -1222,16 +1491,28 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(CategoryUtils.getCategoryIcon(_selectedCategoryFilter!), size: 12, color: const Color(0xFF3A86FF)),
+                  Icon(
+                    CategoryUtils.getCategoryIcon(_selectedCategoryFilter!),
+                    size: 12,
+                    color: const Color(0xFF3A86FF),
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     context.trCat(_selectedCategoryFilter!),
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF3A86FF)),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF3A86FF),
+                    ),
                   ),
                   const SizedBox(width: 3),
                   GestureDetector(
                     onTap: () => setState(() => _selectedCategoryFilter = null),
-                    child: const Icon(Icons.close_rounded, size: 12, color: Color(0xFF3A86FF)),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      size: 12,
+                      color: Color(0xFF3A86FF),
+                    ),
                   ),
                 ],
               ),
@@ -1247,16 +1528,30 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.history_rounded, size: 12, color: Color(0xFFE07A5F)),
+                  const Icon(
+                    Icons.history_rounded,
+                    size: 12,
+                    color: Color(0xFFE07A5F),
+                  ),
                   const SizedBox(width: 4),
                   Text(
-                    isVi ? 'Toàn bộ lịch sử: "$_searchQuery"' : 'All history: "$_searchQuery"',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFE07A5F)),
+                    isVi
+                        ? 'Toàn bộ lịch sử: "$_searchQuery"'
+                        : 'All history: "$_searchQuery"',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFE07A5F),
+                    ),
                   ),
                   const SizedBox(width: 3),
                   GestureDetector(
                     onTap: () => _searchController.clear(),
-                    child: const Icon(Icons.close_rounded, size: 12, color: Color(0xFFE07A5F)),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      size: 12,
+                      color: Color(0xFFE07A5F),
+                    ),
                   ),
                 ],
               ),
@@ -1279,7 +1574,12 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
   }
 
   // === TÓM TẮT THU - CHI - RÒNG (MINI CASHFLOW GLANCE BAR) ===
-  Widget _buildCashflowSummaryBar(double income, double expense, double net, bool isDark) {
+  Widget _buildCashflowSummaryBar(
+    double income,
+    double expense,
+    double net,
+    bool isDark,
+  ) {
     final isVi = LanguageScope.of(context).isVietnamese;
     final totalFlow = income + expense;
     final incomePercent = totalFlow > 0 ? (income / totalFlow) : 0.5;
@@ -1300,16 +1600,38 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildSummaryColumn(isVi ? 'Thu nhập' : 'Income', income, const Color(0xFF2E7D32), isDark),
-              Container(height: 22, width: 1, color: isDark ? Colors.white12 : Colors.grey.shade300),
-              _buildSummaryColumn(isVi ? 'Chi tiêu' : 'Expense', expense, const Color(0xFFD32F2F), isDark),
-              Container(height: 22, width: 1, color: isDark ? Colors.white12 : Colors.grey.shade300),
+              _buildSummaryColumn(
+                isVi ? 'Thu nhập' : 'Income',
+                income,
+                const Color(0xFF2E7D32),
+                isDark,
+              ),
+              Container(
+                height: 22,
+                width: 1,
+                color: isDark ? Colors.white12 : Colors.grey.shade300,
+              ),
+              _buildSummaryColumn(
+                isVi ? 'Chi tiêu' : 'Expense',
+                expense,
+                const Color(0xFFD32F2F),
+                isDark,
+              ),
+              Container(
+                height: 22,
+                width: 1,
+                color: isDark ? Colors.white12 : Colors.grey.shade300,
+              ),
               _buildSummaryColumn(
                 isVi ? 'Dòng tiền ròng' : 'Net Cashflow',
                 net,
                 net >= 0
-                    ? (isDark ? const Color(0xFF4ADE80) : const Color(0xFF2E7D32))
-                    : (isDark ? const Color(0xFFF87171) : const Color(0xFFD32F2F)),
+                    ? (isDark
+                          ? const Color(0xFF4ADE80)
+                          : const Color(0xFF2E7D32))
+                    : (isDark
+                          ? const Color(0xFFF87171)
+                          : const Color(0xFFD32F2F)),
                 isDark,
               ),
             ],
@@ -1341,7 +1663,12 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
     );
   }
 
-  Widget _buildSummaryColumn(String title, double amount, Color valueColor, bool isDark) {
+  Widget _buildSummaryColumn(
+    String title,
+    double amount,
+    Color valueColor,
+    bool isDark,
+  ) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1367,7 +1694,10 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
   }
 
   // === PHÂN LOẠI DANH MỤC THEO VÍ ===
-  Widget _buildCategoryBreakdownSection(List<MapEntry<String, double>> breakdown, bool isDark) {
+  Widget _buildCategoryBreakdownSection(
+    List<MapEntry<String, double>> breakdown,
+    bool isDark,
+  ) {
     final total = breakdown.fold<double>(0, (sum, item) => sum + item.value);
 
     return Container(
@@ -1404,7 +1734,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883),
+                      color: isDark
+                          ? const Color(0xFF2DD4BF)
+                          : const Color(0xFF438883),
                     ),
                   ),
                 ),
@@ -1417,7 +1749,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               children: breakdown.map((entry) {
                 final cat = entry.key;
                 final amount = entry.value;
-                final percent = total > 0 ? (amount / total * 100).toStringAsFixed(1) : '0';
+                final percent = total > 0
+                    ? (amount / total * 100).toStringAsFixed(1)
+                    : '0';
                 final isCatSelected = _selectedCategoryFilter == cat;
                 final catColor = CategoryUtils.getVibrantColor(cat);
 
@@ -1435,15 +1769,22 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                   },
                   child: Container(
                     margin: const EdgeInsets.only(right: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 5,
+                    ),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: isCatSelected
                           ? catColor
-                          : (isDark ? const Color(0xFF1E2D2B) : const Color(0xFFF1F5F9)),
+                          : (isDark
+                                ? const Color(0xFF1E2D2B)
+                                : const Color(0xFFF1F5F9)),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isCatSelected ? Colors.transparent : catColor.withValues(alpha: 0.3),
+                        color: isCatSelected
+                            ? Colors.transparent
+                            : catColor.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -1462,11 +1803,15 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight: isCatSelected ? FontWeight.bold : FontWeight.w500,
+                            fontWeight: isCatSelected
+                                ? FontWeight.bold
+                                : FontWeight.w500,
                             height: 1.2,
                             color: isCatSelected
                                 ? Colors.white
-                                : (isDark ? Colors.white70 : const Color(0xFF333333)),
+                                : (isDark
+                                      ? Colors.white70
+                                      : const Color(0xFF333333)),
                           ),
                         ),
                       ],
@@ -1498,8 +1843,12 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
             const SizedBox(height: 12),
             Text(
               _searchQuery.isNotEmpty
-                  ? (isVi ? 'Không tìm thấy giao dịch nào khớp với "$_searchQuery"' : 'No transactions matching "$_searchQuery"')
-                  : (isVi ? 'Không có giao dịch nào phù hợp bộ lọc' : 'No transactions match current filters'),
+                  ? (isVi
+                        ? 'Không tìm thấy giao dịch nào khớp với "$_searchQuery"'
+                        : 'No transactions matching "$_searchQuery"')
+                  : (isVi
+                        ? 'Không có giao dịch nào phù hợp bộ lọc'
+                        : 'No transactions match current filters'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13.5,
@@ -1511,7 +1860,10 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
             AnimatedScaleButton(
               onTap: _resetFilters,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF438883).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(18),
@@ -1519,7 +1871,11 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.refresh_rounded, size: 14, color: Color(0xFF438883)),
+                    const Icon(
+                      Icons.refresh_rounded,
+                      size: 14,
+                      color: Color(0xFF438883),
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       isVi ? 'Xem tất cả giao dịch' : 'View all transactions',
@@ -1572,7 +1928,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
         final desc = tx.description.toLowerCase();
         final cat = tx.category.toLowerCase();
         final amountStr = tx.amount.toString();
-        final formattedAmt = CurrencyUtils.formatCurrency(tx.amount).toLowerCase();
+        final formattedAmt = CurrencyUtils.formatCurrency(
+          tx.amount,
+        ).toLowerCase();
         final dateFormatted = CurrencyUtils.formatDate(tx.date).toLowerCase();
         final yearStr = tx.date.year.toString();
         if (!desc.contains(_searchQuery) &&
@@ -1597,19 +1955,29 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
             break;
           case 'today':
             final now = DateTime.now();
-            if (date.year != now.year || date.month != now.month || date.day != now.day) {
+            if (date.year != now.year ||
+                date.month != now.month ||
+                date.day != now.day) {
               return false;
             }
             break;
           case 'last_7_days':
             final now = DateTime.now();
-            final start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
+            final start = DateTime(
+              now.year,
+              now.month,
+              now.day,
+            ).subtract(const Duration(days: 6));
             final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
             if (date.isBefore(start) || date.isAfter(end)) return false;
             break;
           case 'last_30_days':
             final now = DateTime.now();
-            final start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 29));
+            final start = DateTime(
+              now.year,
+              now.month,
+              now.day,
+            ).subtract(const Duration(days: 29));
             final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
             if (date.isBefore(start) || date.isAfter(end)) return false;
             break;
@@ -1622,16 +1990,38 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
           case 'week':
             final now = DateTime.now();
             final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-            final startDay = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
-            final endDay = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day + 7, 23, 59, 59);
+            final startDay = DateTime(
+              startOfWeek.year,
+              startOfWeek.month,
+              startOfWeek.day,
+            );
+            final endDay = DateTime(
+              startOfWeek.year,
+              startOfWeek.month,
+              startOfWeek.day + 7,
+              23,
+              59,
+              59,
+            );
             if (date.isBefore(startDay) || date.isAfter(endDay)) {
               return false;
             }
             break;
           case 'custom':
             if (_customDateRange != null) {
-              final start = DateTime(_customDateRange!.start.year, _customDateRange!.start.month, _customDateRange!.start.day);
-              final end = DateTime(_customDateRange!.end.year, _customDateRange!.end.month, _customDateRange!.end.day, 23, 59, 59);
+              final start = DateTime(
+                _customDateRange!.start.year,
+                _customDateRange!.start.month,
+                _customDateRange!.start.day,
+              );
+              final end = DateTime(
+                _customDateRange!.end.year,
+                _customDateRange!.end.month,
+                _customDateRange!.end.day,
+                23,
+                59,
+                59,
+              );
               if (date.isBefore(start) || date.isAfter(end)) {
                 return false;
               }
@@ -1647,7 +2037,8 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
             break;
           case 'month':
           default:
-            if (date.year != _selectedMonth.year || date.month != _selectedMonth.month) {
+            if (date.year != _selectedMonth.year ||
+                date.month != _selectedMonth.month) {
               return false;
             }
             break;
@@ -1658,7 +2049,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
     }).toList();
   }
 
-  ({double income, double expense, double net}) _calculateSummary(List<TransactionModel> txs) {
+  ({double income, double expense, double net}) _calculateSummary(
+    List<TransactionModel> txs,
+  ) {
     double inc = 0.0;
     double exp = 0.0;
 
@@ -1673,7 +2066,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
     return (income: inc, expense: exp, net: inc - exp);
   }
 
-  List<MapEntry<String, double>> _getCategoryBreakdown(List<TransactionModel> txs) {
+  List<MapEntry<String, double>> _getCategoryBreakdown(
+    List<TransactionModel> txs,
+  ) {
     final Map<String, double> map = {};
     for (final tx in txs) {
       if (tx.isTransfer) continue;
@@ -1688,11 +2083,14 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
         }
       }
     }
-    final sorted = map.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final sorted = map.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
     return sorted;
   }
 
-  Map<DateTime, List<TransactionModel>> _groupByDate(List<TransactionModel> txs) {
+  Map<DateTime, List<TransactionModel>> _groupByDate(
+    List<TransactionModel> txs,
+  ) {
     final Map<DateTime, List<TransactionModel>> groups = {};
     for (final tx in txs) {
       final dateKey = DateTime(tx.date.year, tx.date.month, tx.date.day);
@@ -1711,18 +2109,44 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
     final diff = today.difference(target).inDays;
 
     if (diff == 0) {
-      return isVi ? 'Hôm nay - ${DateFormat('dd/MM/yyyy').format(date)}' : 'Today - ${DateFormat('dd/MM/yyyy').format(date)}';
+      return isVi
+          ? 'Hôm nay - ${DateFormat('dd/MM/yyyy').format(date)}'
+          : 'Today - ${DateFormat('dd/MM/yyyy').format(date)}';
     } else if (diff == 1) {
-      return isVi ? 'Hôm qua - ${DateFormat('dd/MM/yyyy').format(date)}' : 'Yesterday - ${DateFormat('dd/MM/yyyy').format(date)}';
+      return isVi
+          ? 'Hôm qua - ${DateFormat('dd/MM/yyyy').format(date)}'
+          : 'Yesterday - ${DateFormat('dd/MM/yyyy').format(date)}';
     } else {
-      final weekdayNamesVi = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
-      final weekdayNamesEn = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-      final weekday = isVi ? weekdayNamesVi[date.weekday - 1] : weekdayNamesEn[date.weekday - 1];
+      final weekdayNamesVi = [
+        'Thứ Hai',
+        'Thứ Ba',
+        'Thứ Tư',
+        'Thứ Năm',
+        'Thứ Sáu',
+        'Thứ Bảy',
+        'Chủ Nhật',
+      ];
+      final weekdayNamesEn = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+      ];
+      final weekday = isVi
+          ? weekdayNamesVi[date.weekday - 1]
+          : weekdayNamesEn[date.weekday - 1];
       return '$weekday - ${DateFormat('dd/MM/yyyy').format(date)}';
     }
   }
 
-  Widget _buildDateHeader(DateTime date, List<TransactionModel> txs, bool isDark) {
+  Widget _buildDateHeader(
+    DateTime date,
+    List<TransactionModel> txs,
+    bool isDark,
+  ) {
     double dailyIncome = 0;
     double dailyExpense = 0;
     for (final tx in txs) {
@@ -1737,7 +2161,10 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
     final isVi = LanguageScope.of(context).isVietnamese;
     final dateLabel = _formatFriendlyDate(date, isVi);
     final now = DateTime.now();
-    final isToday = (date.year == now.year && date.month == now.month && date.day == now.day);
+    final isToday =
+        (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day);
 
     return Padding(
       padding: const EdgeInsets.only(top: 16, bottom: 8),
@@ -1750,13 +2177,17 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
             decoration: BoxDecoration(
               color: isToday
                   ? const Color(0xFF438883).withValues(alpha: 0.16)
-                  : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.05)),
+                  : (isDark
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.black.withValues(alpha: 0.05)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
               isToday ? Icons.today_rounded : Icons.calendar_today_rounded,
               size: 13,
-              color: isToday ? const Color(0xFF438883) : (isDark ? Colors.white70 : Colors.black54),
+              color: isToday
+                  ? const Color(0xFF438883)
+                  : (isDark ? Colors.white70 : Colors.black54),
             ),
           ),
           Expanded(
@@ -1765,7 +2196,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white.withValues(alpha: 0.9) : const Color(0xFF1E293B),
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.9)
+                    : const Color(0xFF1E293B),
                 letterSpacing: 0.1,
               ),
               maxLines: 1,
@@ -1777,7 +2210,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               margin: const EdgeInsets.only(left: 6),
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
               decoration: BoxDecoration(
-                color: const Color(0xFF2ECC71).withValues(alpha: isDark ? 0.2 : 0.1),
+                color: const Color(
+                  0xFF2ECC71,
+                ).withValues(alpha: isDark ? 0.2 : 0.1),
                 borderRadius: BorderRadius.circular(7),
                 border: Border.all(
                   color: const Color(0xFF2ECC71).withValues(alpha: 0.25),
@@ -1787,7 +2222,11 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.arrow_downward_rounded, size: 10, color: Color(0xFF2ECC71)),
+                  const Icon(
+                    Icons.arrow_downward_rounded,
+                    size: 10,
+                    color: Color(0xFF2ECC71),
+                  ),
                   const SizedBox(width: 2),
                   Text(
                     '+${CurrencyUtils.formatCurrency(dailyIncome)}',
@@ -1805,7 +2244,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               margin: const EdgeInsets.only(left: 6),
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
               decoration: BoxDecoration(
-                color: const Color(0xFFE63946).withValues(alpha: isDark ? 0.2 : 0.1),
+                color: const Color(
+                  0xFFE63946,
+                ).withValues(alpha: isDark ? 0.2 : 0.1),
                 borderRadius: BorderRadius.circular(7),
                 border: Border.all(
                   color: const Color(0xFFE63946).withValues(alpha: 0.25),
@@ -1815,7 +2256,11 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.arrow_upward_rounded, size: 10, color: Color(0xFFE63946)),
+                  const Icon(
+                    Icons.arrow_upward_rounded,
+                    size: 10,
+                    color: Color(0xFFE63946),
+                  ),
                   const SizedBox(width: 2),
                   Text(
                     '-${CurrencyUtils.formatCurrency(dailyExpense)}',
@@ -1832,8 +2277,6 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
       ),
     );
   }
-
-
 
   // === BOTTOM SHEET CHỌN THÁNG ===
   void _showMonthPickerSheet(BuildContext context) {
@@ -1852,7 +2295,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF162523) : Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.15),
@@ -1883,13 +2328,20 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w800,
-                            color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1A1A1A),
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF243332) : const Color(0xFFF3F4F6),
+                            color: isDark
+                                ? const Color(0xFF243332)
+                                : const Color(0xFFF3F4F6),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -1898,10 +2350,15 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                               IconButton(
                                 icon: Icon(
                                   Icons.chevron_left_rounded,
-                                  color: isDark ? Colors.white70 : const Color(0xFF333333),
+                                  color: isDark
+                                      ? Colors.white70
+                                      : const Color(0xFF333333),
                                   size: 22,
                                 ),
-                                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                constraints: const BoxConstraints(
+                                  minWidth: 36,
+                                  minHeight: 36,
+                                ),
                                 padding: EdgeInsets.zero,
                                 onPressed: () {
                                   setSheetState(() => tempYear--);
@@ -1912,7 +2369,9 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w800,
-                                  color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF1A1A1A),
                                 ),
                               ),
                               IconButton(
@@ -1920,10 +2379,15 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                                   Icons.chevron_right_rounded,
                                   color: tempYear >= now.year
                                       ? Colors.grey.withValues(alpha: 0.3)
-                                      : (isDark ? Colors.white70 : const Color(0xFF333333)),
+                                      : (isDark
+                                            ? Colors.white70
+                                            : const Color(0xFF333333)),
                                   size: 22,
                                 ),
-                                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                constraints: const BoxConstraints(
+                                  minWidth: 36,
+                                  minHeight: 36,
+                                ),
                                 padding: EdgeInsets.zero,
                                 onPressed: tempYear >= now.year
                                     ? null
@@ -1941,17 +2405,23 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: 12,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 2.2,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 2.2,
+                          ),
                       itemBuilder: (context, i) {
                         final month = i + 1;
-                        final isSel = _selectedMonth.year == tempYear && _selectedMonth.month == month;
-                        final isFuture = (tempYear > now.year) || (tempYear == now.year && month > now.month);
-                        final isCurrentMonth = (tempYear == now.year && month == now.month);
+                        final isSel =
+                            _selectedMonth.year == tempYear &&
+                            _selectedMonth.month == month;
+                        final isFuture =
+                            (tempYear > now.year) ||
+                            (tempYear == now.year && month > now.month);
+                        final isCurrentMonth =
+                            (tempYear == now.year && month == now.month);
 
                         return Material(
                           color: Colors.transparent,
@@ -1960,7 +2430,10 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                                 ? null
                                 : () {
                                     setState(() {
-                                      _selectedMonth = DateTime(tempYear, month);
+                                      _selectedMonth = DateTime(
+                                        tempYear,
+                                        month,
+                                      );
                                       _timeFilterMode = 'month';
                                       _customDateRange = null;
                                     });
@@ -1973,7 +2446,10 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                               decoration: BoxDecoration(
                                 gradient: isSel
                                     ? const LinearGradient(
-                                        colors: [Color(0xFF438883), Color(0xFF2DD4BF)],
+                                        colors: [
+                                          Color(0xFF438883),
+                                          Color(0xFF2DD4BF),
+                                        ],
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
                                       )
@@ -1981,17 +2457,31 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                                 color: isSel
                                     ? null
                                     : isFuture
-                                        ? (isDark ? Colors.white.withValues(alpha: 0.03) : const Color(0xFFF9FAFB))
-                                        : (isDark ? const Color(0xFF243332) : const Color(0xFFF3F4F6)),
+                                    ? (isDark
+                                          ? Colors.white.withValues(alpha: 0.03)
+                                          : const Color(0xFFF9FAFB))
+                                    : (isDark
+                                          ? const Color(0xFF243332)
+                                          : const Color(0xFFF3F4F6)),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
                                   color: isSel
                                       ? Colors.transparent
                                       : isCurrentMonth
-                                          ? const Color(0xFF438883).withValues(alpha: 0.5)
-                                          : isFuture
-                                              ? (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade200)
-                                              : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade200),
+                                      ? const Color(
+                                          0xFF438883,
+                                        ).withValues(alpha: 0.5)
+                                      : isFuture
+                                      ? (isDark
+                                            ? Colors.white.withValues(
+                                                alpha: 0.05,
+                                              )
+                                            : Colors.grey.shade200)
+                                      : (isDark
+                                            ? Colors.white.withValues(
+                                                alpha: 0.08,
+                                              )
+                                            : Colors.grey.shade200),
                                   width: isCurrentMonth && !isSel ? 1.5 : 1,
                                 ),
                               ),
@@ -1999,12 +2489,18 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                                 isVi ? 'Tháng $month' : 'Month $month',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  fontWeight: isSel || isCurrentMonth ? FontWeight.w700 : FontWeight.w500,
+                                  fontWeight: isSel || isCurrentMonth
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
                                   color: isSel
                                       ? Colors.white
                                       : isFuture
-                                          ? (isDark ? Colors.white24 : Colors.grey.shade400)
-                                          : (isDark ? Colors.white : const Color(0xFF1A1A1A)),
+                                      ? (isDark
+                                            ? Colors.white24
+                                            : Colors.grey.shade400)
+                                      : (isDark
+                                            ? Colors.white
+                                            : const Color(0xFF1A1A1A)),
                                 ),
                               ),
                             ),
@@ -2051,70 +2547,139 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
                     ),
                   ),
                 ),
-                    const SizedBox(height: 16),
-                    Text(
-                      isVi ? 'Chọn phạm vi thời gian' : 'Select Time Range',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : const Color(0xFF1E293B),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTimeFilterOption(isVi ? 'Từ đầu tháng đến nay' : 'Month to date', 'month_to_date', Icons.trending_up_rounded, isDark, ctx),
-                    _buildTimeFilterOption(isVi ? 'Hôm nay' : 'Today', 'today', Icons.today_rounded, isDark, ctx),
-                    _buildTimeFilterOption(isVi ? '7 ngày qua' : 'Last 7 days', 'last_7_days', Icons.date_range_rounded, isDark, ctx),
-                    _buildTimeFilterOption(isVi ? '30 ngày qua' : 'Last 30 days', 'last_30_days', Icons.calendar_view_day_rounded, isDark, ctx),
-                    _buildTimeFilterOption(isVi ? 'Tháng này (${DateFormat('MM/yyyy').format(DateTime.now())})' : 'This month (${DateFormat('MM/yyyy').format(DateTime.now())})', 'month', Icons.calendar_month_rounded, isDark, ctx, onTap: () {
-                      final now = DateTime.now();
-                      setState(() {
-                        _timeFilterMode = 'month';
-                        _selectedMonth = DateTime(now.year, now.month);
-                        _customDateRange = null;
-                      });
-                      Navigator.pop(ctx);
-                    }),
-                    _buildTimeFilterOption(isVi ? 'Tháng trước' : 'Last month', 'last_month', Icons.history_rounded, isDark, ctx),
-                    _buildTimeFilterOption(isVi ? 'Năm nay (${DateTime.now().year})' : 'This year (${DateTime.now().year})', 'this_year', Icons.calendar_today_rounded, isDark, ctx),
-                    _buildTimeFilterOption(isVi ? 'Năm 2020 (Lịch sử cũ)' : 'Year 2020 (Old history)', 'year_2020', Icons.history_toggle_off_rounded, isDark, ctx),
-                    _buildTimeFilterOption(isVi ? 'Khoảng ngày tùy chọn...' : 'Custom date range...', 'custom', Icons.edit_calendar_rounded, isDark, ctx, onTap: () async {
-                      Navigator.pop(ctx);
-                      final picked = await showDateRangePicker(
-                        context: context,
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime.now(),
-                        initialDateRange: _customDateRange ??
-                            DateTimeRange(
-                              start: DateTime.now().subtract(const Duration(days: 7)),
-                              end: DateTime.now(),
-                            ),
-                        builder: (context, child) {
-                          return Theme(
-                            data: Theme.of(context).copyWith(
-                              colorScheme: const ColorScheme.light(
-                                primary: Color(0xFF438883),
-                                onPrimary: Colors.white,
-                                onSurface: Color(0xFF1E293B),
-                              ),
-                            ),
-                            child: child!,
-                          );
-                        },
-                      );
-                      if (picked != null) {
-                        setState(() {
-                          _timeFilterMode = 'custom';
-                          _customDateRange = picked;
-                        });
-                      }
-                    }),
-                    _buildTimeFilterOption(isVi ? 'Tất cả thời gian' : 'All time', 'all_time', Icons.all_inclusive_rounded, isDark, ctx),
-                  ],
+                const SizedBox(height: 16),
+                Text(
+                  isVi ? 'Chọn phạm vi thời gian' : 'Select Time Range',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  ),
                 ),
-              ),
-            );
-          },
+                const SizedBox(height: 16),
+                _buildTimeFilterOption(
+                  isVi ? 'Từ đầu tháng đến nay' : 'Month to date',
+                  'month_to_date',
+                  Icons.trending_up_rounded,
+                  isDark,
+                  ctx,
+                ),
+                _buildTimeFilterOption(
+                  isVi ? 'Hôm nay' : 'Today',
+                  'today',
+                  Icons.today_rounded,
+                  isDark,
+                  ctx,
+                ),
+                _buildTimeFilterOption(
+                  isVi ? '7 ngày qua' : 'Last 7 days',
+                  'last_7_days',
+                  Icons.date_range_rounded,
+                  isDark,
+                  ctx,
+                ),
+                _buildTimeFilterOption(
+                  isVi ? '30 ngày qua' : 'Last 30 days',
+                  'last_30_days',
+                  Icons.calendar_view_day_rounded,
+                  isDark,
+                  ctx,
+                ),
+                _buildTimeFilterOption(
+                  isVi
+                      ? 'Tháng này (${DateFormat('MM/yyyy').format(DateTime.now())})'
+                      : 'This month (${DateFormat('MM/yyyy').format(DateTime.now())})',
+                  'month',
+                  Icons.calendar_month_rounded,
+                  isDark,
+                  ctx,
+                  onTap: () {
+                    final now = DateTime.now();
+                    setState(() {
+                      _timeFilterMode = 'month';
+                      _selectedMonth = DateTime(now.year, now.month);
+                      _customDateRange = null;
+                    });
+                    Navigator.pop(ctx);
+                  },
+                ),
+                _buildTimeFilterOption(
+                  isVi ? 'Tháng trước' : 'Last month',
+                  'last_month',
+                  Icons.history_rounded,
+                  isDark,
+                  ctx,
+                ),
+                _buildTimeFilterOption(
+                  isVi
+                      ? 'Năm nay (${DateTime.now().year})'
+                      : 'This year (${DateTime.now().year})',
+                  'this_year',
+                  Icons.calendar_today_rounded,
+                  isDark,
+                  ctx,
+                ),
+                _buildTimeFilterOption(
+                  isVi ? 'Năm 2020 (Lịch sử cũ)' : 'Year 2020 (Old history)',
+                  'year_2020',
+                  Icons.history_toggle_off_rounded,
+                  isDark,
+                  ctx,
+                ),
+                _buildTimeFilterOption(
+                  isVi ? 'Khoảng ngày tùy chọn...' : 'Custom date range...',
+                  'custom',
+                  Icons.edit_calendar_rounded,
+                  isDark,
+                  ctx,
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    final picked = await showDateRangePicker(
+                      context: context,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime.now(),
+                      initialDateRange:
+                          _customDateRange ??
+                          DateTimeRange(
+                            start: DateTime.now().subtract(
+                              const Duration(days: 7),
+                            ),
+                            end: DateTime.now(),
+                          ),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: const ColorScheme.light(
+                              primary: Color(0xFF438883),
+                              onPrimary: Colors.white,
+                              onSurface: Color(0xFF1E293B),
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _timeFilterMode = 'custom';
+                        _customDateRange = picked;
+                      });
+                    }
+                  },
+                ),
+                _buildTimeFilterOption(
+                  isVi ? 'Tất cả thời gian' : 'All time',
+                  'all_time',
+                  Icons.all_inclusive_rounded,
+                  isDark,
+                  ctx,
+                ),
+              ],
+            ),
+          ),
         );
+      },
+    );
   }
 
   Widget _buildTimeFilterOption(
@@ -2151,7 +2716,8 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
               size: 20,
             )
           : null,
-      onTap: onTap ??
+      onTap:
+          onTap ??
           () {
             setState(() {
               _timeFilterMode = modeKey;
@@ -2173,21 +2739,19 @@ class _WalletHistoryRow {
   final double? runningTotal;
   final int globalIndex;
 
-  _WalletHistoryRow.header({
-    required this.date,
-    required this.txs,
-  })  : isHeader = true,
-        tx = null,
-        wallet = null,
-        runningTotal = null,
-        globalIndex = 0;
+  _WalletHistoryRow.header({required this.date, required this.txs})
+    : isHeader = true,
+      tx = null,
+      wallet = null,
+      runningTotal = null,
+      globalIndex = 0;
 
   _WalletHistoryRow.transaction({
     required this.tx,
     required this.wallet,
     required this.runningTotal,
     required this.globalIndex,
-  })  : isHeader = false,
-        date = DateTime.fromMillisecondsSinceEpoch(0),
-        txs = null;
+  }) : isHeader = false,
+       date = DateTime.fromMillisecondsSinceEpoch(0),
+       txs = null;
 }

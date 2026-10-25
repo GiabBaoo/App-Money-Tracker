@@ -14,9 +14,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
     final isDark = context.isDark;
 
     return Scaffold(
-      backgroundColor: isDark 
-        ? AppColors.bgDark 
-        : context.brandColor,
+      backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -56,7 +54,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.only(
@@ -70,9 +70,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
                     children: [
                       // Lời chào và cam kết
                       Text(
-                        isVi 
-                          ? 'Sự riêng tư của bạn là ưu tiên hàng đầu' 
-                          : 'Your privacy is our top priority',
+                        isVi
+                            ? 'Sự riêng tư của bạn là ưu tiên hàng đầu'
+                            : 'Your privacy is our top priority',
                         style: TextStyle(
                           color: context.colors.onSurface,
                           fontSize: 18,
@@ -82,8 +82,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       const SizedBox(height: 12),
                       Text(
                         isVi
-                          ? 'Chào mừng bạn đến với ứng dụng của chúng tôi. Chúng tôi cam kết bảo vệ thông tin cá nhân và quyền riêng tư của bạn một cách tuyệt đối theo các tiêu chuẩn bảo mật hiện đại nhất.'
-                          : 'Welcome to our application. We are committed to protecting your personal information and privacy with the highest modern security standards.',
+                            ? 'Chào mừng bạn đến với ứng dụng của chúng tôi. Chúng tôi cam kết bảo vệ thông tin cá nhân và quyền riêng tư của bạn một cách tuyệt đối theo các tiêu chuẩn bảo mật hiện đại nhất.'
+                            : 'Welcome to our application. We are committed to protecting your personal information and privacy with the highest modern security standards.',
                         style: TextStyle(
                           color: context.colors.onSurfaceVariant,
                           fontSize: 15,
@@ -100,7 +100,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: context.brandColor.withValues(alpha: isDark ? 0.2 : 0.12),
+                          color: context.brandColor.withValues(
+                            alpha: isDark ? 0.2 : 0.12,
+                          ),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -113,7 +115,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              isVi ? 'CẬP NHẬT LẦN CUỐI: 24-5-2024' : 'LAST UPDATED: 24-05-2024',
+                              isVi
+                                  ? 'CẬP NHẬT LẦN CUỐI: 24-5-2024'
+                                  : 'LAST UPDATED: 24-05-2024',
                               style: TextStyle(
                                 color: context.brandColor,
                                 fontSize: 13,
@@ -154,7 +158,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
                       _buildPolicyItem(
                         context: context,
                         step: '4',
-                        title: isVi ? 'Chia sẻ với bên thứ ba' : 'Third-Party Sharing',
+                        title: isVi
+                            ? 'Chia sẻ với bên thứ ba'
+                            : 'Third-Party Sharing',
                         content: isVi
                             ? 'Chúng tôi không bán hoặc cho thuê dữ liệu của bạn. Thông tin chỉ được chia sẻ khi có yêu cầu hợp pháp từ cơ quan chức năng hoặc các đối tác cung cấp dịch vụ được chọn lọc.'
                             : 'We do not sell or lease your data. Information is only shared upon lawful request by authorities or with vetted service partners.',
@@ -176,9 +182,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: context.cardBg,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: context.borderColor,
-                          ),
+                          border: Border.all(color: context.borderColor),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -194,8 +198,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
                             const SizedBox(height: 8),
                             Text(
                               isVi
-                                ? 'Nếu bạn có bất kỳ thắc mắc nào về Chính sách bảo mật này, xin liên hệ với chúng tôi.'
-                                : 'If you have any questions regarding this Privacy Policy, please contact us.',
+                                  ? 'Nếu bạn có bất kỳ thắc mắc nào về Chính sách bảo mật này, xin liên hệ với chúng tôi.'
+                                  : 'If you have any questions regarding this Privacy Policy, please contact us.',
                               style: TextStyle(
                                 color: context.colors.onSurfaceVariant,
                                 fontSize: 14,
@@ -207,7 +211,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
                               onTap: () {
                                 Navigator.push(
                                   context,
-                                  PageTransitions.slideRight(const SupportRequestScreen()),
+                                  PageTransitions.slideRight(
+                                    const SupportRequestScreen(),
+                                  ),
                                 );
                               },
                               borderRadius: BorderRadius.circular(8),
@@ -216,7 +222,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
                                   vertical: 12,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: context.brandColor.withValues(alpha: isDark ? 0.2 : 0.12),
+                                  color: context.brandColor.withValues(
+                                    alpha: isDark ? 0.2 : 0.12,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
@@ -229,7 +237,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      isVi ? 'Liên hệ hỗ trợ' : 'Contact Support',
+                                      isVi
+                                          ? 'Liên hệ hỗ trợ'
+                                          : 'Contact Support',
                                       style: TextStyle(
                                         color: context.brandColor,
                                         fontSize: 15,
@@ -267,9 +277,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.cardBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: context.borderColor,
-        ),
+        border: Border.all(color: context.borderColor),
       ),
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),

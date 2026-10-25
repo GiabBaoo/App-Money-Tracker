@@ -21,13 +21,11 @@ import '../../utils/currency_format_utils.dart';
 class TransactionDetailScreen extends StatefulWidget {
   final TransactionModel transaction;
 
-  const TransactionDetailScreen({
-    super.key,
-    required this.transaction,
-  });
+  const TransactionDetailScreen({super.key, required this.transaction});
 
   @override
-  State<TransactionDetailScreen> createState() => _TransactionDetailScreenState();
+  State<TransactionDetailScreen> createState() =>
+      _TransactionDetailScreenState();
 }
 
 class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
@@ -43,10 +41,14 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     _loadWalletInfo();
     _refreshTransaction();
 
-    _txSubscription = TransactionRepository().getTransactionsStream().listen((list) {
+    _txSubscription = TransactionRepository().getTransactionsStream().listen((
+      list,
+    ) {
       if (!mounted) return;
       final match = list.where((t) => t.id == _transaction.id).firstOrNull;
-      if (match != null && (match.syncStatus != _transaction.syncStatus || match.amount != _transaction.amount)) {
+      if (match != null &&
+          (match.syncStatus != _transaction.syncStatus ||
+              match.amount != _transaction.amount)) {
         setState(() {
           _transaction = match;
         });
@@ -87,7 +89,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     try {
       // Đồng bộ trực tiếp giao dịch này lên Firestore
       await SyncService().syncSingleTransaction(_transaction.id);
-      final recheck = await TransactionRepository().getTransactionById(_transaction.id);
+      final recheck = await TransactionRepository().getTransactionById(
+        _transaction.id,
+      );
       if (recheck != null && mounted) {
         setState(() {
           _transaction = recheck;
@@ -109,7 +113,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   }
 
   Future<void> _refreshTransaction() async {
-    final updated = await TransactionRepository().getTransactionById(_transaction.id);
+    final updated = await TransactionRepository().getTransactionById(
+      _transaction.id,
+    );
     if (updated != null && mounted) {
       setState(() {
         _transaction = updated;
@@ -119,7 +125,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       // Nếu đang online nhưng SQLite ghi nhận chưa synced, chạy sync nền để đẩy lên cloud
       if (updated.syncStatus != 'synced') {
         SyncService().syncNow().then((_) async {
-          final recheck = await TransactionRepository().getTransactionById(_transaction.id);
+          final recheck = await TransactionRepository().getTransactionById(
+            _transaction.id,
+          );
           if (recheck != null && mounted) {
             setState(() {
               _transaction = recheck;
@@ -133,19 +141,19 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     final isIncome = _transaction.isIncome;
     final category = _transaction.category;
     final description = _transaction.description;
-    final date = '${_transaction.date.day.toString().padLeft(2, '0')}/${_transaction.date.month.toString().padLeft(2, '0')}/${_transaction.date.year}';
+    final date =
+        '${_transaction.date.day.toString().padLeft(2, '0')}/${_transaction.date.month.toString().padLeft(2, '0')}/${_transaction.date.year}';
     final time = _transaction.time;
-    final amount = '${isIncome ? "+" : "-"} ${CurrencyUtils.formatCurrency(_transaction.amount)}'; 
+    final amount =
+        '${isIncome ? "+" : "-"} ${CurrencyUtils.formatCurrency(_transaction.amount)}';
     final icon = _transaction.icon;
 
     // Tự động chọn màu tùy theo trạng thái Thu / Chi
-    final Color statusColor = isIncome
-        ? context.income
-        : context.expense;
+    final Color statusColor = isIncome ? context.income : context.expense;
     final String statusText = isIncome ? 'Khoản Thu' : 'Khoản Chi';
 
     return Scaffold(
@@ -184,12 +192,16 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert, color: Colors.white),
                     offset: const Offset(0, 50),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
                     onSelected: (value) async {
                       if (value == 'edit') {
                         final result = await Navigator.push(
-                          context, 
-                          PageTransitions.slideRight(EditTransactionScreen(transaction: _transaction)),
+                          context,
+                          PageTransitions.slideRight(
+                            EditTransactionScreen(transaction: _transaction),
+                          ),
                         );
                         if (result == true) {
                           await _refreshTransaction();
@@ -209,7 +221,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         if (confirm == true) {
                           try {
                             // Xóa giao dịch và hoàn lại số dư ví trong 1 transaction nguyên tử
-                            await TransactionBalanceService().deleteTransactionAtomic(_transaction);
+                            await TransactionBalanceService()
+                                .deleteTransactionAtomic(_transaction);
 
                             // 3. Đồng bộ lên Firestore nếu có mạng
                             try {
@@ -217,12 +230,19 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                             } catch (_) {}
 
                             if (context.mounted) {
-                              TopToast.show(context, 'Đã xóa giao dịch thành công!');
+                              TopToast.show(
+                                context,
+                                'Đã xóa giao dịch thành công!',
+                              );
                               Navigator.pop(context, true);
                             }
                           } catch (e) {
                             if (context.mounted) {
-                              TopToast.show(context, 'Lỗi khi xóa giao dịch: $e', isError: true);
+                              TopToast.show(
+                                context,
+                                'Lỗi khi xóa giao dịch: $e',
+                                isError: true,
+                              );
                             }
                           }
                         }
@@ -234,7 +254,11 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                           value: 'edit',
                           child: Row(
                             children: [
-                              Icon(Icons.edit_outlined, color: context.brandColor, size: 20),
+                              Icon(
+                                Icons.edit_outlined,
+                                color: context.brandColor,
+                                size: 20,
+                              ),
                               const SizedBox(width: 10),
                               const Text('Chỉnh sửa'),
                             ],
@@ -244,9 +268,16 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         value: 'delete',
                         child: Row(
                           children: [
-                            Icon(Icons.delete_outline, color: context.expense, size: 20),
+                            Icon(
+                              Icons.delete_outline,
+                              color: context.expense,
+                              size: 20,
+                            ),
                             const SizedBox(width: 10),
-                            Text('Xóa giao dịch', style: TextStyle(color: context.expense)),
+                            Text(
+                              'Xóa giao dịch',
+                              style: TextStyle(color: context.expense),
+                            ),
                           ],
                         ),
                       ),
@@ -264,7 +295,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                   boxShadow: const [
                     BoxShadow(
                       color: Colors.black12,
@@ -287,10 +320,17 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         width: 70,
                         height: 70,
                         decoration: BoxDecoration(
-                          color: CategoryUtils.getLightBgColor(category, isDark),
+                          color: CategoryUtils.getLightBgColor(
+                            category,
+                            isDark,
+                          ),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(icon, color: CategoryUtils.getVibrantColor(category), size: 36),
+                        child: Icon(
+                          icon,
+                          color: CategoryUtils.getVibrantColor(category),
+                          size: 36,
+                        ),
                       ),
                       const SizedBox(height: 14),
 
@@ -306,12 +346,15 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         ),
                         child: Text(
                           statusText,
-                          style: (context.textTheme.labelMedium ?? const TextStyle()).copyWith(
-                            color: statusColor,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                          ),
+                          style:
+                              (context.textTheme.labelMedium ??
+                                      const TextStyle())
+                                  .copyWith(
+                                    color: statusColor,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.5,
+                                  ),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -319,12 +362,15 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       // SỐ TIỀN TO BỰ
                       Text(
                         amount,
-                        style: (context.textTheme.headlineLarge ?? const TextStyle()).copyWith(
-                          color: context.textPrimaryColor,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
-                        ),
+                        style:
+                            (context.textTheme.headlineLarge ??
+                                    const TextStyle())
+                                .copyWith(
+                                  color: context.textPrimaryColor,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.5,
+                                ),
                       ),
 
                       const SizedBox(height: 28),
@@ -335,20 +381,21 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         decoration: BoxDecoration(
                           color: context.cardBgColor,
                           borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: context.borderColor,
-                          ),
+                          border: Border.all(color: context.borderColor),
                         ),
                         child: Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: Color(_wallet?.colorValue ?? 0xFF438883).withValues(alpha: 0.15),
+                                color: Color(
+                                  _wallet?.colorValue ?? 0xFF438883,
+                                ).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
-                                _wallet?.icon ?? Icons.account_balance_wallet_rounded,
+                                _wallet?.icon ??
+                                    Icons.account_balance_wallet_rounded,
                                 color: Color(_wallet?.colorValue ?? 0xFF438883),
                                 size: 24,
                               ),
@@ -359,35 +406,48 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    isIncome ? 'Tiền nhận vào ví' : 'Tiền lấy từ ví',
-                                    style: (context.textTheme.bodySmall ?? const TextStyle()).copyWith(
-                                      color: context.textSecondaryColor,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                    isIncome
+                                        ? 'Tiền nhận vào ví'
+                                        : 'Tiền lấy từ ví',
+                                    style:
+                                        (context.textTheme.bodySmall ??
+                                                const TextStyle())
+                                            .copyWith(
+                                              color: context.textSecondaryColor,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     _wallet != null
                                         ? _wallet!.name
                                         : (_transaction.walletId.isNotEmpty
-                                            ? (_isLoadingWallet ? 'Đang tải thông tin ví...' : 'Ví đã xóa / chưa rõ')
-                                            : 'Chưa gắn ví'),
-                                    style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
-                                      color: context.textPrimaryColor,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                              ? (_isLoadingWallet
+                                                    ? 'Đang tải thông tin ví...'
+                                                    : 'Ví đã xóa / chưa rõ')
+                                              : 'Chưa gắn ví'),
+                                    style:
+                                        (context.textTheme.titleMedium ??
+                                                const TextStyle())
+                                            .copyWith(
+                                              color: context.textPrimaryColor,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
+                                            ),
                                   ),
                                   if (_wallet != null) ...[
                                     const SizedBox(height: 2),
                                     Text(
                                       _wallet!.typeDisplayName,
-                                      style: (context.textTheme.bodySmall ?? const TextStyle()).copyWith(
-                                        color: context.textMutedColor,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                      style:
+                                          (context.textTheme.bodySmall ??
+                                                  const TextStyle())
+                                              .copyWith(
+                                                color: context.textMutedColor,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                              ),
                                     ),
                                   ],
                                 ],
@@ -404,11 +464,14 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         children: [
                           Text(
                             'Chi tiết thông tin',
-                            style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: context.textPrimaryColor,
-                            ),
+                            style:
+                                (context.textTheme.titleMedium ??
+                                        const TextStyle())
+                                    .copyWith(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: context.textPrimaryColor,
+                                    ),
                           ),
                         ],
                       ),
@@ -416,23 +479,36 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
                       // CÁC DÒNG THÔNG TIN CHI TIẾT
                       _buildDetailRow('Danh mục', category),
-                      _buildDetailRow('Nội dung', description.isEmpty ? 'Không có nội dung' : description),
-                      _buildDetailRow('Thời gian', time.isEmpty ? '--:--' : time),
+                      _buildDetailRow(
+                        'Nội dung',
+                        description.isEmpty ? 'Không có nội dung' : description,
+                      ),
+                      _buildDetailRow(
+                        'Thời gian',
+                        time.isEmpty ? '--:--' : time,
+                      ),
                       _buildDetailRow('Ngày', date),
-                      if (_transaction.location != null && _transaction.location!.isNotEmpty)
+                      if (_transaction.location != null &&
+                          _transaction.location!.isNotEmpty)
                         _buildDetailRow(
-                          LanguageService.instance.isVietnamese ? 'Vị trí' : 'Location',
+                          LanguageService.instance.isVietnamese
+                              ? 'Vị trí'
+                              : 'Location',
                           _transaction.location!,
                           valueColor: const Color(0xFFF59E0B),
                         ),
                       _buildDetailRow(
-                        'Phân loại nguồn', 
+                        'Phân loại nguồn',
                         _transaction.isTransfer
                             ? 'Chuyển tiền giữa các ví'
-                            : (_transaction.source == 'fund' ? 'Quỹ chi tiêu nhóm' : 'Chi tiêu cá nhân'),
+                            : (_transaction.source == 'fund'
+                                  ? 'Quỹ chi tiêu nhóm'
+                                  : 'Chi tiêu cá nhân'),
                         valueColor: _transaction.isTransfer
                             ? const Color(0xFF0284C7)
-                            : (_transaction.source == 'fund' ? const Color(0xFF438883) : null),
+                            : (_transaction.source == 'fund'
+                                  ? const Color(0xFF438883)
+                                  : null),
                       ),
                       // TRẠNG THÁI ĐỒNG BỘ TƯƠNG TÁC (CHẠM ĐỂ ĐỒNG BỘ NGAY)
                       Padding(
@@ -444,7 +520,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                             Text(
                               context.tr('sync_status'),
                               style: TextStyle(
-                                color: isDark ? Colors.white70 : const Color(0xFF6B7280),
+                                color: isDark
+                                    ? Colors.white70
+                                    : const Color(0xFF6B7280),
                                 fontSize: 15,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -454,22 +532,29 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                               child: Align(
                                 alignment: Alignment.centerRight,
                                 child: InkWell(
-                                  onTap: _isManualSyncing ? null : _triggerManualSync,
+                                  onTap: _isManualSyncing
+                                      ? null
+                                      : _triggerManualSync,
                                   borderRadius: BorderRadius.circular(12),
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 200),
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 5,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: (_transaction.syncStatus == 'synced'
-                                              ? context.income
-                                              : context.warning)
-                                          .withValues(alpha: 0.12),
+                                      color:
+                                          (_transaction.syncStatus == 'synced'
+                                                  ? context.income
+                                                  : context.warning)
+                                              .withValues(alpha: 0.12),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
-                                        color: (_transaction.syncStatus == 'synced'
-                                                ? context.income
-                                                : context.warning)
-                                            .withValues(alpha: 0.35),
+                                        color:
+                                            (_transaction.syncStatus == 'synced'
+                                                    ? context.income
+                                                    : context.warning)
+                                                .withValues(alpha: 0.35),
                                       ),
                                     ),
                                     child: FittedBox(
@@ -483,7 +568,10 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                               height: 12,
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 2,
-                                                valueColor: AlwaysStoppedAnimation<Color>(context.brandColor),
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(context.brandColor),
                                               ),
                                             ),
                                             const SizedBox(width: 6),
@@ -497,21 +585,27 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                             ),
                                           ] else ...[
                                             Icon(
-                                              _transaction.syncStatus == 'synced'
+                                              _transaction.syncStatus ==
+                                                      'synced'
                                                   ? Icons.cloud_done_rounded
                                                   : Icons.sync_rounded,
                                               size: 16,
-                                              color: _transaction.syncStatus == 'synced'
+                                              color:
+                                                  _transaction.syncStatus ==
+                                                      'synced'
                                                   ? context.income
                                                   : context.warning,
                                             ),
                                             const SizedBox(width: 6),
                                             Text(
-                                              _transaction.syncStatus == 'synced'
+                                              _transaction.syncStatus ==
+                                                      'synced'
                                                   ? context.tr('synced_cloud')
                                                   : 'Chưa đồng bộ (Chạm để đồng bộ)',
                                               style: TextStyle(
-                                                color: _transaction.syncStatus == 'synced'
+                                                color:
+                                                    _transaction.syncStatus ==
+                                                        'synced'
                                                     ? context.income
                                                     : context.warning,
                                                 fontSize: 13,
@@ -532,10 +626,13 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
                       // ẢNH HÓA ĐƠN / CHỨNG TỪ
                       () {
-                        final hasLocalPhoto = _transaction.photoLocalPath.isNotEmpty &&
+                        final hasLocalPhoto =
+                            _transaction.photoLocalPath.isNotEmpty &&
                             File(_transaction.photoLocalPath).existsSync();
                         final hasRemotePhoto = _transaction.photoUrl.isNotEmpty;
-                        final hasAnyPhoto = _transaction.hasPhoto && (hasLocalPhoto || hasRemotePhoto);
+                        final hasAnyPhoto =
+                            _transaction.hasPhoto &&
+                            (hasLocalPhoto || hasRemotePhoto);
 
                         if (!hasAnyPhoto) return const SizedBox.shrink();
 
@@ -550,26 +647,42 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                               children: [
                                 Text(
                                   'Ảnh hóa đơn / Chứng từ',
-                                  style: (context.textTheme.titleMedium ?? const TextStyle()).copyWith(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: context.textPrimaryColor,
-                                  ),
+                                  style:
+                                      (context.textTheme.titleMedium ??
+                                              const TextStyle())
+                                          .copyWith(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                            color: context.textPrimaryColor,
+                                          ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: context.brandColor.withValues(alpha: 0.12),
+                                    color: context.brandColor.withValues(
+                                      alpha: 0.12,
+                                    ),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.zoom_in_rounded, size: 14, color: context.brandColor),
+                                      Icon(
+                                        Icons.zoom_in_rounded,
+                                        size: 14,
+                                        color: context.brandColor,
+                                      ),
                                       const SizedBox(width: 4),
                                       Text(
                                         'Chạm để xem',
-                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: context.brandColor),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: context.brandColor,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -581,14 +694,19 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                               onTap: () => Navigator.push(
                                 context,
                                 PageTransitions.slideRight(
-                                  TransactionPhotoDetailScreen(transaction: _transaction),
+                                  TransactionPhotoDetailScreen(
+                                    transaction: _transaction,
+                                  ),
                                 ),
                               ),
                               child: Hero(
                                 tag: 'tx_photo_${_transaction.id}',
                                 child: Container(
                                   width: double.infinity,
-                                  constraints: const BoxConstraints(maxHeight: 280, minHeight: 160),
+                                  constraints: const BoxConstraints(
+                                    maxHeight: 280,
+                                    minHeight: 160,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: context.inputBgColor,
                                     borderRadius: BorderRadius.circular(18),
@@ -598,11 +716,13 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                   ),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(18),
-                                    child: ReceiptStorageService.buildReceiptImage(
-                                      photoLocalPath: _transaction.photoLocalPath,
-                                      photoUrl: _transaction.photoUrl,
-                                      fit: BoxFit.contain,
-                                    ),
+                                    child:
+                                        ReceiptStorageService.buildReceiptImage(
+                                          photoLocalPath:
+                                              _transaction.photoLocalPath,
+                                          photoUrl: _transaction.photoUrl,
+                                          fit: BoxFit.contain,
+                                        ),
                                   ),
                                 ),
                               ),
@@ -621,19 +741,25 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         children: [
                           Text(
                             'Tổng cộng',
-                            style: (context.textTheme.bodyLarge ?? const TextStyle()).copyWith(
-                              color: context.textSecondaryColor,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style:
+                                (context.textTheme.bodyLarge ??
+                                        const TextStyle())
+                                    .copyWith(
+                                      color: context.textSecondaryColor,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                           ),
                           Text(
                             amount,
-                            style: (context.textTheme.titleLarge ?? const TextStyle()).copyWith(
-                              color: statusColor,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style:
+                                (context.textTheme.titleLarge ??
+                                        const TextStyle())
+                                    .copyWith(
+                                      color: statusColor,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                           ),
                         ],
                       ),
@@ -660,28 +786,30 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             children: [
               Text(
                 label,
-                style: (context.textTheme.bodyMedium ?? const TextStyle()).copyWith(
-                  color: context.textSecondaryColor,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: (context.textTheme.bodyMedium ?? const TextStyle())
+                    .copyWith(
+                      color: context.textSecondaryColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
               ),
               const SizedBox(width: 16),
               Flexible(
                 child: Text(
                   value,
                   textAlign: TextAlign.right,
-                  style: (context.textTheme.bodyLarge ?? const TextStyle()).copyWith(
-                    color: valueColor ?? context.textPrimaryColor,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: (context.textTheme.bodyLarge ?? const TextStyle())
+                      .copyWith(
+                        color: valueColor ?? context.textPrimaryColor,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
               ),
             ],
           ),
         );
-      }
+      },
     );
   }
 }

@@ -26,7 +26,11 @@ class OfflineBanner extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.wifi_off_rounded, color: Colors.white, size: 13),
+                      const Icon(
+                        Icons.wifi_off_rounded,
+                        color: Colors.white,
+                        size: 13,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         LanguageScope.of(context).isVietnamese

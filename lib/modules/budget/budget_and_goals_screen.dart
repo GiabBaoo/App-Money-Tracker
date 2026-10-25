@@ -24,7 +24,8 @@ class BudgetAndGoalsScreen extends StatefulWidget {
   State<BudgetAndGoalsScreen> createState() => _BudgetAndGoalsScreenState();
 }
 
-class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with SingleTickerProviderStateMixin {
+class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen>
+    with SingleTickerProviderStateMixin {
   bool get isVi => LanguageService.instance.isVietnamese;
   late TabController _tabController;
   final BudgetRepository _budgetRepo = BudgetRepository();
@@ -59,24 +60,20 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
   }
 
   void _showAddBudgetDialog() {
-    showDialog(
-      context: context,
-      builder: (_) => const AddBudgetDialog(),
-    );
+    showDialog(context: context, builder: (_) => const AddBudgetDialog());
   }
 
   void _showAddGoalDialog() {
-    showDialog(
-      context: context,
-      builder: (_) => const AddGoalDialog(),
-    );
+    showDialog(context: context, builder: (_) => const AddGoalDialog());
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     final isVi = LanguageScope.of(context).isVietnamese;
-    final headerColor = isDark ? AppColors.primaryTealDark : AppColors.primaryTeal;
+    final headerColor = isDark
+        ? AppColors.primaryTealDark
+        : AppColors.primaryTeal;
 
     return Scaffold(
       backgroundColor: headerColor,
@@ -101,9 +98,16 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.24), width: 0.8),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.24),
+                          width: 0.8,
+                        ),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 18,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   Text(
@@ -139,9 +143,16 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.24), width: 0.8),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.24),
+                          width: 0.8,
+                        ),
                       ),
-                      child: const Icon(Icons.add_rounded, size: 24, color: Colors.white),
+                      child: const Icon(
+                        Icons.add_rounded,
+                        size: 24,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
@@ -171,16 +182,25 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: _tabController.index == 0
-                                ? (isDark ? context.colors.surface : Colors.white)
+                                ? (isDark
+                                      ? context.colors.surface
+                                      : Colors.white)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(16),
                             border: _tabController.index == 0 && isDark
-                                ? Border.all(color: context.colors.outline.withValues(alpha: 0.25), width: 1)
+                                ? Border.all(
+                                    color: context.colors.outline.withValues(
+                                      alpha: 0.25,
+                                    ),
+                                    width: 1,
+                                  )
                                 : null,
                             boxShadow: _tabController.index == 0
                                 ? [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
+                                      color: Colors.black.withValues(
+                                        alpha: isDark ? 0.3 : 0.12,
+                                      ),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
@@ -194,7 +214,9 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                                 Icons.pie_chart_rounded,
                                 size: 17,
                                 color: _tabController.index == 0
-                                    ? (isDark ? AppColors.primaryTealVibrant : context.colors.primary)
+                                    ? (isDark
+                                          ? AppColors.primaryTealVibrant
+                                          : context.colors.primary)
                                     : Colors.white.withValues(alpha: 0.75),
                               ),
                               const SizedBox(width: 6),
@@ -202,7 +224,9 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                                 isVi ? 'Ngân Sách Chi' : 'Expense Budgets',
                                 style: context.textTheme.labelMedium?.copyWith(
                                   color: _tabController.index == 0
-                                      ? (isDark ? AppColors.primaryTealVibrant : context.colors.primary)
+                                      ? (isDark
+                                            ? AppColors.primaryTealVibrant
+                                            : context.colors.primary)
                                       : Colors.white.withValues(alpha: 0.75),
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -223,16 +247,25 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
                             color: _tabController.index == 1
-                                ? (isDark ? context.colors.surface : Colors.white)
+                                ? (isDark
+                                      ? context.colors.surface
+                                      : Colors.white)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(16),
                             border: _tabController.index == 1 && isDark
-                                ? Border.all(color: context.colors.outline.withValues(alpha: 0.25), width: 1)
+                                ? Border.all(
+                                    color: context.colors.outline.withValues(
+                                      alpha: 0.25,
+                                    ),
+                                    width: 1,
+                                  )
                                 : null,
                             boxShadow: _tabController.index == 1
                                 ? [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
+                                      color: Colors.black.withValues(
+                                        alpha: isDark ? 0.3 : 0.12,
+                                      ),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
@@ -246,7 +279,9 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                                 Icons.savings_rounded,
                                 size: 17,
                                 color: _tabController.index == 1
-                                    ? (isDark ? AppColors.primaryTealVibrant : context.colors.primary)
+                                    ? (isDark
+                                          ? AppColors.primaryTealVibrant
+                                          : context.colors.primary)
                                     : Colors.white.withValues(alpha: 0.75),
                               ),
                               const SizedBox(width: 6),
@@ -254,7 +289,9 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                                 isVi ? 'Mục Tiêu Tích Lũy' : 'Savings Goals',
                                 style: context.textTheme.labelMedium?.copyWith(
                                   color: _tabController.index == 1
-                                      ? (isDark ? AppColors.primaryTealVibrant : context.colors.primary)
+                                      ? (isDark
+                                            ? AppColors.primaryTealVibrant
+                                            : context.colors.primary)
                                       : Colors.white.withValues(alpha: 0.75),
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -275,7 +312,9 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(32),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.08),
@@ -286,10 +325,7 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                 ),
                 child: TabBarView(
                   controller: _tabController,
-                  children: [
-                    _buildBudgetTab(isDark),
-                    _buildGoalsTab(isDark),
-                  ],
+                  children: [_buildBudgetTab(isDark), _buildGoalsTab(isDark)],
                 ),
               ),
             ),
@@ -332,14 +368,16 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      _tabController.index == 0 ? Icons.add_chart_rounded : Icons.add_circle_outline_rounded,
+                      _tabController.index == 0
+                          ? Icons.add_chart_rounded
+                          : Icons.add_circle_outline_rounded,
                       color: Colors.white,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      _tabController.index == 0 
-                          ? (isVi ? 'Thêm Ngân Sách Mới' : 'Add New Budget') 
+                      _tabController.index == 0
+                          ? (isVi ? 'Thêm Ngân Sách Mới' : 'Add New Budget')
                           : (isVi ? 'Tạo Mục Tiêu Mới' : 'Create New Goal'),
                       style: context.textTheme.labelLarge?.copyWith(
                         color: Colors.white,
@@ -360,7 +398,10 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
   // ════════ TAB 1: NGÂN SÁCH CHI TIÊU ════════
   Widget _buildBudgetTab(bool isDark) {
     return StreamBuilder<List<BudgetModel>>(
-      stream: _budgetRepo.getBudgetsStream(month: _selectedMonth, year: _selectedYear),
+      stream: _budgetRepo.getBudgetsStream(
+        month: _selectedMonth,
+        year: _selectedYear,
+      ),
       builder: (context, snapshot) {
         final budgets = snapshot.data ?? [];
 
@@ -370,7 +411,9 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
           totalLimit += b.limitAmount;
           totalSpent += b.currentSpent;
         }
-        final overallProgress = totalLimit > 0 ? (totalSpent / totalLimit).clamp(0.0, 1.0) : 0.0;
+        final overallProgress = totalLimit > 0
+            ? (totalSpent / totalLimit).clamp(0.0, 1.0)
+            : 0.0;
         final overallRemaining = totalLimit - totalSpent;
 
         return ListView(
@@ -390,11 +433,16 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                 ),
                 borderRadius: BorderRadius.circular(24),
                 border: isDark
-                    ? Border.all(color: context.colors.outline.withValues(alpha: 0.3), width: 1.2)
+                    ? Border.all(
+                        color: context.colors.outline.withValues(alpha: 0.3),
+                        width: 1.2,
+                      )
                     : null,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF438883).withValues(alpha: isDark ? 0.3 : 0.25),
+                    color: const Color(
+                      0xFF438883,
+                    ).withValues(alpha: isDark ? 0.3 : 0.25),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -408,10 +456,16 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.calendar_month_rounded, color: Colors.white.withValues(alpha: 0.75), size: 16),
+                          Icon(
+                            Icons.calendar_month_rounded,
+                            color: Colors.white.withValues(alpha: 0.75),
+                            size: 16,
+                          ),
                           const SizedBox(width: 6),
                           Text(
-                            isVi ? 'Tháng $_selectedMonth, $_selectedYear' : 'Month $_selectedMonth, $_selectedYear',
+                            isVi
+                                ? 'Tháng $_selectedMonth, $_selectedYear'
+                                : 'Month $_selectedMonth, $_selectedYear',
                             style: context.textTheme.labelMedium?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
@@ -420,13 +474,18 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                         ],
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          isVi ? '${(overallProgress * 100).toStringAsFixed(0)}% đã dùng' : '${(overallProgress * 100).toStringAsFixed(0)}% used',
+                          isVi
+                              ? '${(overallProgress * 100).toStringAsFixed(0)}% đã dùng'
+                              : '${(overallProgress * 100).toStringAsFixed(0)}% used',
                           style: context.textTheme.labelSmall?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
@@ -453,7 +512,11 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                       valueColor: AlwaysStoppedAnimation<Color>(
                         overallProgress >= 1.0
                             ? AppColors.expenseCoral
-                            : (overallProgress >= 0.8 ? AppColors.warningAmber : (isDark ? AppColors.primaryTealVibrant : AppColors.incomeGreen)),
+                            : (overallProgress >= 0.8
+                                  ? AppColors.warningAmber
+                                  : (isDark
+                                        ? AppColors.primaryTealVibrant
+                                        : AppColors.incomeGreen)),
                       ),
                     ),
                   ),
@@ -462,18 +525,22 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        isVi ? 'Đã chi: ${CurrencyUtils.formatCurrency(totalSpent)}' : 'Spent: ${CurrencyUtils.formatCurrency(totalSpent)}',
+                        isVi
+                            ? 'Đã chi: ${CurrencyUtils.formatCurrency(totalSpent)}'
+                            : 'Spent: ${CurrencyUtils.formatCurrency(totalSpent)}',
                         style: context.textTheme.bodySmall?.copyWith(
                           color: Colors.white.withValues(alpha: 0.85),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       Text(
-                        isVi 
+                        isVi
                             ? 'Còn lại: ${CurrencyUtils.formatCurrency(overallRemaining >= 0 ? overallRemaining : 0)}'
                             : 'Remaining: ${CurrencyUtils.formatCurrency(overallRemaining >= 0 ? overallRemaining : 0)}',
                         style: context.textTheme.labelLarge?.copyWith(
-                          color: overallRemaining < 0 ? AppColors.expenseRoseLight : Colors.white,
+                          color: overallRemaining < 0
+                              ? AppColors.expenseRoseLight
+                              : Colors.white,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -496,7 +563,9 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                   ),
                 ),
                 Text(
-                  isVi ? '${budgets.length} danh mục' : '${budgets.length} categories',
+                  isVi
+                      ? '${budgets.length} danh mục'
+                      : '${budgets.length} categories',
                   style: context.textTheme.bodySmall?.copyWith(
                     color: context.colors.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
@@ -534,13 +603,19 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isOver
-            ? (isDark ? AppColors.expenseBgDark.withValues(alpha: 0.35) : context.expenseBg)
+            ? (isDark
+                  ? AppColors.expenseBgDark.withValues(alpha: 0.35)
+                  : context.expenseBg)
             : (isDark ? context.colors.surface : context.cardBg),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isOver
-              ? (isDark ? AppColors.expenseRoseLight.withValues(alpha: 0.6) : context.expense.withValues(alpha: 0.6))
-              : (isDark ? context.colors.outline.withValues(alpha: 0.25) : context.borderColor),
+              ? (isDark
+                    ? AppColors.expenseRoseLight.withValues(alpha: 0.6)
+                    : context.expense.withValues(alpha: 0.6))
+              : (isDark
+                    ? context.colors.outline.withValues(alpha: 0.25)
+                    : context.borderColor),
           width: isOver ? 1.5 : 1.2,
         ),
         boxShadow: AppShadows.card(isDark),
@@ -578,14 +653,21 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: isDark ? 0.25 : 0.12),
+                            color: statusColor.withValues(
+                              alpha: isDark ? 0.25 : 0.12,
+                            ),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            isOver 
-                                ? (LanguageScope.of(context).isVietnamese ? 'VƯỢT ${(progress * 100).toStringAsFixed(0)}%' : 'OVER ${(progress * 100).toStringAsFixed(0)}%')
+                            isOver
+                                ? (LanguageScope.of(context).isVietnamese
+                                      ? 'VƯỢT ${(progress * 100).toStringAsFixed(0)}%'
+                                      : 'OVER ${(progress * 100).toStringAsFixed(0)}%')
                                 : '${(progress * 100).toStringAsFixed(0)}%',
                             style: context.textTheme.labelSmall?.copyWith(
                               fontSize: 10.5,
@@ -598,14 +680,22 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      LanguageScope.of(context).isVietnamese ? 'Hạn mức: ${CurrencyUtils.formatCurrency(budget.limitAmount)}' : 'Limit: ${CurrencyUtils.formatCurrency(budget.limitAmount)}',
-                      style: context.textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceVariant),
+                      LanguageScope.of(context).isVietnamese
+                          ? 'Hạn mức: ${CurrencyUtils.formatCurrency(budget.limitAmount)}'
+                          : 'Limit: ${CurrencyUtils.formatCurrency(budget.limitAmount)}',
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
               ),
               PopupMenuButton<String>(
-                icon: Icon(Icons.more_vert_rounded, size: 20, color: context.colors.onSurfaceVariant),
+                icon: Icon(
+                  Icons.more_vert_rounded,
+                  size: 20,
+                  color: context.colors.onSurfaceVariant,
+                ),
                 onSelected: (val) {
                   if (val == 'edit') {
                     showDialog(
@@ -613,13 +703,37 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                       builder: (_) => AddBudgetDialog(existingBudget: budget),
                     );
                   } else if (val == 'delete') {
-                    _budgetRepo.deleteBudget(budget.id, month: budget.month, year: budget.year);
+                    _budgetRepo.deleteBudget(
+                      budget.id,
+                      month: budget.month,
+                      year: budget.year,
+                    );
                     TopToast.show(context, 'Đã xóa ngân sách');
                   }
                 },
                 itemBuilder: (_) => [
-                  PopupMenuItem(value: 'edit', child: Text(LanguageScope.of(context).isVietnamese ? 'Chỉnh sửa' : 'Edit', style: context.textTheme.bodyMedium?.copyWith(color: context.colors.onSurface))),
-                  PopupMenuItem(value: 'delete', child: Text(LanguageScope.of(context).isVietnamese ? 'Xóa' : 'Delete', style: context.textTheme.bodyMedium?.copyWith(color: isDark ? AppColors.expenseRoseLight : context.expense))),
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Text(
+                      LanguageScope.of(context).isVietnamese
+                          ? 'Chỉnh sửa'
+                          : 'Edit',
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        color: context.colors.onSurface,
+                      ),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Text(
+                      LanguageScope.of(context).isVietnamese ? 'Xóa' : 'Delete',
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        color: isDark
+                            ? AppColors.expenseRoseLight
+                            : context.expense,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -633,7 +747,9 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
             child: LinearProgressIndicator(
               value: progress.clamp(0.0, 1.0),
               minHeight: 8,
-              backgroundColor: isDark ? AppColors.borderDark : context.borderColor,
+              backgroundColor: isDark
+                  ? AppColors.borderDark
+                  : context.borderColor,
               valueColor: AlwaysStoppedAnimation<Color>(statusColor),
             ),
           ),
@@ -644,16 +760,26 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                LanguageScope.of(context).isVietnamese ? 'Đã tiêu: ${CurrencyUtils.formatCurrency(budget.currentSpent)}' : 'Spent: ${CurrencyUtils.formatCurrency(budget.currentSpent)}',
-                style: context.textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceVariant),
+                LanguageScope.of(context).isVietnamese
+                    ? 'Đã tiêu: ${CurrencyUtils.formatCurrency(budget.currentSpent)}'
+                    : 'Spent: ${CurrencyUtils.formatCurrency(budget.currentSpent)}',
+                style: context.textTheme.bodySmall?.copyWith(
+                  color: context.colors.onSurfaceVariant,
+                ),
               ),
               Text(
                 isOver
-                    ? (LanguageScope.of(context).isVietnamese ? 'Vượt ${CurrencyUtils.formatCurrency(budget.currentSpent - budget.limitAmount)}' : 'Over ${CurrencyUtils.formatCurrency(budget.currentSpent - budget.limitAmount)}')
-                    : (LanguageScope.of(context).isVietnamese ? 'Còn ${CurrencyUtils.formatCurrency(budget.remainingAmount)}' : 'Remaining ${CurrencyUtils.formatCurrency(budget.remainingAmount)}'),
+                    ? (LanguageScope.of(context).isVietnamese
+                          ? 'Vượt ${CurrencyUtils.formatCurrency(budget.currentSpent - budget.limitAmount)}'
+                          : 'Over ${CurrencyUtils.formatCurrency(budget.currentSpent - budget.limitAmount)}')
+                    : (LanguageScope.of(context).isVietnamese
+                          ? 'Còn ${CurrencyUtils.formatCurrency(budget.remainingAmount)}'
+                          : 'Remaining ${CurrencyUtils.formatCurrency(budget.remainingAmount)}'),
                 style: context.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: isOver ? (isDark ? AppColors.expenseRoseLight : context.expense) : statusColor,
+                  color: isOver
+                      ? (isDark ? AppColors.expenseRoseLight : context.expense)
+                      : statusColor,
                 ),
               ),
             ],
@@ -670,16 +796,24 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
         color: isDark ? context.colors.surface : context.cardBg,
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: isDark ? context.colors.outline.withValues(alpha: 0.25) : context.borderColor,
+          color: isDark
+              ? context.colors.outline.withValues(alpha: 0.25)
+              : context.borderColor,
           width: 1.2,
         ),
       ),
       child: Column(
         children: [
-          Icon(Icons.pie_chart_outline_rounded, size: 56, color: context.colors.onSurfaceVariant.withValues(alpha: 0.4)),
+          Icon(
+            Icons.pie_chart_outline_rounded,
+            size: 56,
+            color: context.colors.onSurfaceVariant.withValues(alpha: 0.4),
+          ),
           const SizedBox(height: 12),
           Text(
-            LanguageScope.of(context).isVietnamese ? 'Chưa có ngân sách nào trong tháng' : 'No budgets set for this month',
+            LanguageScope.of(context).isVietnamese
+                ? 'Chưa có ngân sách nào trong tháng'
+                : 'No budgets set for this month',
             style: context.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w800,
               color: context.colors.onSurface,
@@ -691,7 +825,10 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                 ? 'Hãy đặt hạn mức cho các khoản ăn uống, mua sắm để chi tiêu kỷ luật và tối ưu dòng tiền hơn.'
                 : 'Set spending limits for dining, shopping, etc., to stay disciplined and optimize cash flow.',
             textAlign: TextAlign.center,
-            style: context.textTheme.bodyMedium?.copyWith(color: context.colors.onSurfaceVariant, height: 1.4),
+            style: context.textTheme.bodyMedium?.copyWith(
+              color: context.colors.onSurfaceVariant,
+              height: 1.4,
+            ),
           ),
         ],
       ),
@@ -712,10 +849,18 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.savings_outlined, size: 64, color: context.colors.onSurfaceVariant.withValues(alpha: 0.4)),
+                  Icon(
+                    Icons.savings_outlined,
+                    size: 64,
+                    color: context.colors.onSurfaceVariant.withValues(
+                      alpha: 0.4,
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   Text(
-                    LanguageScope.of(context).isVietnamese ? 'Chưa có mục tiêu tài chính nào' : 'No financial goals yet',
+                    LanguageScope.of(context).isVietnamese
+                        ? 'Chưa có mục tiêu tài chính nào'
+                        : 'No financial goals yet',
                     style: context.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: context.colors.onSurface,
@@ -727,7 +872,10 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                         ? 'Đặt mục tiêu như mua xe máy, đi du lịch hoặc quỹ khẩn cấp để có thêm động lực tiết kiệm mỗi ngày!'
                         : 'Set goals like buying a bike, travel, or an emergency fund to motivate daily savings!',
                     textAlign: TextAlign.center,
-                    style: context.textTheme.bodyMedium?.copyWith(color: context.colors.onSurfaceVariant, height: 1.4),
+                    style: context.textTheme.bodyMedium?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),
@@ -751,8 +899,8 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
     final progress = goal.progress;
     final isCompleted = goal.isCompleted;
     final baseGoalColor = goal.color;
-    final goalColor = isDark && baseGoalColor == AppColors.primaryTeal 
-        ? AppColors.primaryTealVibrant 
+    final goalColor = isDark && baseGoalColor == AppColors.primaryTeal
+        ? AppColors.primaryTealVibrant
         : baseGoalColor;
     final daysLeft = goal.daysRemaining;
 
@@ -764,8 +912,12 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: isCompleted
-              ? (isDark ? AppColors.incomeEmeraldLight.withValues(alpha: 0.5) : context.income.withValues(alpha: 0.5))
-              : (isDark ? context.colors.outline.withValues(alpha: 0.25) : goalColor.withValues(alpha: 0.35)),
+              ? (isDark
+                    ? AppColors.incomeEmeraldLight.withValues(alpha: 0.5)
+                    : context.income.withValues(alpha: 0.5))
+              : (isDark
+                    ? context.colors.outline.withValues(alpha: 0.25)
+                    : goalColor.withValues(alpha: 0.35)),
           width: 1.2,
         ),
         boxShadow: AppShadows.card(isDark),
@@ -803,19 +955,29 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
-                            color: (isCompleted ? context.income : goalColor).withValues(alpha: isDark ? 0.25 : 0.12),
+                            color: (isCompleted ? context.income : goalColor)
+                                .withValues(alpha: isDark ? 0.25 : 0.12),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            isCompleted 
-                                ? (LanguageScope.of(context).isVietnamese ? 'HOÀN THÀNH 🎉' : 'COMPLETED 🎉')
+                            isCompleted
+                                ? (LanguageScope.of(context).isVietnamese
+                                      ? 'HOÀN THÀNH 🎉'
+                                      : 'COMPLETED 🎉')
                                 : '${(progress * 100).toStringAsFixed(0)}%',
                             style: context.textTheme.labelSmall?.copyWith(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w800,
-                              color: isCompleted ? (isDark ? AppColors.incomeEmeraldLight : context.income) : goalColor,
+                              color: isCompleted
+                                  ? (isDark
+                                        ? AppColors.incomeEmeraldLight
+                                        : context.income)
+                                  : goalColor,
                             ),
                           ),
                         ),
@@ -826,13 +988,19 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                       LanguageScope.of(context).isVietnamese
                           ? 'Hạn chót: ${DateFormat('dd/MM/yyyy').format(goal.deadline)} • ${daysLeft > 0 ? "$daysLeft ngày nữa" : "Đã đến hạn"}'
                           : 'Deadline: ${DateFormat('dd/MM/yyyy').format(goal.deadline)} • ${daysLeft > 0 ? "$daysLeft days left" : "Due today"}',
-                      style: context.textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceVariant),
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
               ),
               PopupMenuButton<String>(
-                icon: Icon(Icons.more_vert_rounded, size: 20, color: context.colors.onSurfaceVariant),
+                icon: Icon(
+                  Icons.more_vert_rounded,
+                  size: 20,
+                  color: context.colors.onSurfaceVariant,
+                ),
                 onSelected: (val) {
                   if (val == 'edit') {
                     showDialog(
@@ -845,8 +1013,28 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
                   }
                 },
                 itemBuilder: (_) => [
-                  PopupMenuItem(value: 'edit', child: Text(LanguageScope.of(context).isVietnamese ? 'Chỉnh sửa' : 'Edit', style: context.textTheme.bodyMedium?.copyWith(color: context.colors.onSurface))),
-                  PopupMenuItem(value: 'delete', child: Text(LanguageScope.of(context).isVietnamese ? 'Xóa' : 'Delete', style: context.textTheme.bodyMedium?.copyWith(color: isDark ? AppColors.expenseRoseLight : context.expense))),
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Text(
+                      LanguageScope.of(context).isVietnamese
+                          ? 'Chỉnh sửa'
+                          : 'Edit',
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        color: context.colors.onSurface,
+                      ),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Text(
+                      LanguageScope.of(context).isVietnamese ? 'Xóa' : 'Delete',
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        color: isDark
+                            ? AppColors.expenseRoseLight
+                            : context.expense,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -860,11 +1048,20 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
             children: [
               Text(
                 CurrencyUtils.formatCurrency(goal.currentAmount),
-                style: context.textTheme.titleLarge?.copyWith(fontSize: 18, fontWeight: FontWeight.w800, color: goalColor),
+                style: context.textTheme.titleLarge?.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: goalColor,
+                ),
               ),
               Text(
-                LanguageScope.of(context).isVietnamese ? 'Mục tiêu: ${CurrencyUtils.formatCurrency(goal.targetAmount)}' : 'Target: ${CurrencyUtils.formatCurrency(goal.targetAmount)}',
-                style: context.textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceVariant, fontWeight: FontWeight.w600),
+                LanguageScope.of(context).isVietnamese
+                    ? 'Mục tiêu: ${CurrencyUtils.formatCurrency(goal.targetAmount)}'
+                    : 'Target: ${CurrencyUtils.formatCurrency(goal.targetAmount)}',
+                style: context.textTheme.bodySmall?.copyWith(
+                  color: context.colors.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -876,8 +1073,14 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 9,
-              backgroundColor: isDark ? AppColors.borderDark : context.borderColor,
-              valueColor: AlwaysStoppedAnimation<Color>(isCompleted ? (isDark ? AppColors.incomeEmeraldLight : context.income) : goalColor),
+              backgroundColor: isDark
+                  ? AppColors.borderDark
+                  : context.borderColor,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isCompleted
+                    ? (isDark ? AppColors.incomeEmeraldLight : context.income)
+                    : goalColor,
+              ),
             ),
           ),
 
@@ -887,25 +1090,39 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen> with Single
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceElevatedDark : context.inputBgColor,
+              color: isDark
+                  ? AppColors.surfaceElevatedDark
+                  : context.inputBgColor,
               borderRadius: BorderRadius.circular(12),
-              border: isDark ? Border.all(color: context.colors.outline.withValues(alpha: 0.2)) : null,
+              border: isDark
+                  ? Border.all(
+                      color: context.colors.outline.withValues(alpha: 0.2),
+                    )
+                  : null,
             ),
             child: Row(
               children: [
                 Icon(
-                  isCompleted ? Icons.check_circle : Icons.tips_and_updates_outlined,
+                  isCompleted
+                      ? Icons.check_circle
+                      : Icons.tips_and_updates_outlined,
                   size: 16,
-                  color: isCompleted ? (isDark ? AppColors.incomeEmeraldLight : context.income) : (isDark ? AppColors.warningAmberLight : context.warning),
+                  color: isCompleted
+                      ? (isDark ? AppColors.incomeEmeraldLight : context.income)
+                      : (isDark
+                            ? AppColors.warningAmberLight
+                            : context.warning),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     isCompleted
-                        ? (LanguageScope.of(context).isVietnamese ? '🎉 Chúc mừng bạn đã hoàn thành mục tiêu này!' : '🎉 Congratulations on achieving this goal!')
+                        ? (LanguageScope.of(context).isVietnamese
+                              ? '🎉 Chúc mừng bạn đã hoàn thành mục tiêu này!'
+                              : '🎉 Congratulations on achieving this goal!')
                         : (LanguageScope.of(context).isVietnamese
-                            ? 'Cần tích lũy ~${CurrencyUtils.formatCurrency(goal.recommendedDailySavings)}/ngày để kịp hạn'
-                            : 'Save ~${CurrencyUtils.formatCurrency(goal.recommendedDailySavings)}/day to meet your goal'),
+                              ? 'Cần tích lũy ~${CurrencyUtils.formatCurrency(goal.recommendedDailySavings)}/ngày để kịp hạn'
+                              : 'Save ~${CurrencyUtils.formatCurrency(goal.recommendedDailySavings)}/day to meet your goal'),
                     style: context.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w500,
                       color: context.colors.onSurfaceVariant,

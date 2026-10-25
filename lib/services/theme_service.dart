@@ -72,7 +72,10 @@ class ThemeService extends ChangeNotifier {
       try {
         final user = FirebaseAuth.instance.currentUser;
         if (user == null) return;
-        final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
         if (doc.exists) {
           final settings = doc.data()?['settings'];
           if (settings != null) {
@@ -94,7 +97,10 @@ class ThemeService extends ChangeNotifier {
             final remoteScale = settings['textScaleFactor'];
             if (remoteScale != null) {
               final parsed = double.tryParse(remoteScale.toString());
-              if (parsed != null && parsed >= 0.7 && parsed <= 1.6 && parsed != _textScaleFactor) {
+              if (parsed != null &&
+                  parsed >= 0.7 &&
+                  parsed <= 1.6 &&
+                  parsed != _textScaleFactor) {
                 _textScaleFactor = parsed;
                 changed = true;
               }
@@ -124,16 +130,14 @@ class ThemeService extends ChangeNotifier {
     } else if (mode == ThemeMode.dark) {
       value = 'dark';
     }
-    
+
     try {
       await _storage.write(key: 'themeMode', value: value);
-      
+
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-          'settings': {
-            'themeMode': value,
-          }
+          'settings': {'themeMode': value},
         }, SetOptions(merge: true));
       }
     } catch (e) {
@@ -155,9 +159,7 @@ class ThemeService extends ChangeNotifier {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-          'settings': {
-            'textScaleFactor': factor,
-          }
+          'settings': {'textScaleFactor': factor},
         }, SetOptions(merge: true));
       }
     } catch (e) {
@@ -167,9 +169,14 @@ class ThemeService extends ChangeNotifier {
 
   // BIẾN MÀU HỆ THỐNG ĐỒNG NHẤT
   static Color primary(BuildContext context) => Theme.of(context).primaryColor;
-  static Color surface(BuildContext context) => Theme.of(context).colorScheme.surface;
-  static Color onSurface(BuildContext context) => Theme.of(context).colorScheme.onSurface;
-  static Color accent(BuildContext context) => Theme.of(context).brightness == Brightness.dark ? const Color(0xFF00E5FF) : const Color(0xFF438883);
+  static Color surface(BuildContext context) =>
+      Theme.of(context).colorScheme.surface;
+  static Color onSurface(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurface;
+  static Color accent(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFF00E5FF)
+      : const Color(0xFF438883);
 
   // Cấu trúc theme Sáng (Light Theme)
   ThemeData get lightTheme => AppTheme.lightTheme;
@@ -177,4 +184,3 @@ class ThemeService extends ChangeNotifier {
   // Cấu trúc theme Tối (Dark Theme)
   ThemeData get darkTheme => AppTheme.darkTheme;
 }
-

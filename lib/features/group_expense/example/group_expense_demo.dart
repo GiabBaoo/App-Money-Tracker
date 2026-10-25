@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../presentation/screens/group_list_screen.dart';
 
 /// Demo app for Group Expense Management Feature
-/// 
+///
 /// This demonstrates the complete flow:
 /// 1. Create Group
 /// 2. Add Expense
 /// 3. View Debts
 /// 4. Settlement
-/// 
+///
 /// To run this demo:
 /// ```dart
 /// void main() async {
@@ -49,18 +49,11 @@ class GroupExpenseDemoHome extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.group,
-                size: 100,
-                color: Colors.teal,
-              ),
+              const Icon(Icons.group, size: 100, color: Colors.teal),
               const SizedBox(height: 24),
               const Text(
                 'Quản Lý Chi Tiêu Nhóm',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               const Text(
@@ -108,10 +101,7 @@ class GroupExpenseDemoHome extends StatelessWidget {
                     vertical: 16,
                   ),
                 ),
-                child: const Text(
-                  'Bắt Đầu',
-                  style: TextStyle(fontSize: 18),
-                ),
+                child: const Text('Bắt Đầu', style: TextStyle(fontSize: 18)),
               ),
             ],
           ),
@@ -128,10 +118,7 @@ class GroupExpenseDemoHome extends StatelessWidget {
     return Card(
       child: ListTile(
         leading: Icon(icon, size: 32, color: Colors.teal),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(description),
       ),
     );
@@ -139,7 +126,7 @@ class GroupExpenseDemoHome extends StatelessWidget {
 }
 
 /// Example usage in existing app:
-/// 
+///
 /// ```dart
 /// // In your main navigation or home screen
 /// ListTile(

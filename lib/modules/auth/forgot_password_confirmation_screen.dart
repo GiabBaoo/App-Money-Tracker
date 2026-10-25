@@ -14,24 +14,32 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = context.isDark;
-    
+
     return Scaffold(
-      backgroundColor: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
+      backgroundColor: isDark
+          ? AppColors.primaryTealDark
+          : AppColors.primaryTeal,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Row(children: [
-                IconButton(
-                  icon: Icon(Icons.arrow_back_ios, color: context.colors.onPrimary, size: 20),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                const Spacer(),
-                AppLogo.wordmark(height: 32, color: context.colors.onPrimary),
-                const Spacer(flex: 2),
-              ]),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_ios,
+                      color: context.colors.onPrimary,
+                      size: 20,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const Spacer(),
+                  AppLogo.wordmark(height: 32, color: context.colors.onPrimary),
+                  const Spacer(flex: 2),
+                ],
+              ),
             ),
             const SizedBox(height: 20),
             Expanded(
@@ -39,11 +47,16 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: context.colors.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                   boxShadow: AppShadows.modal(isDark),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 40,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -52,10 +65,16 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: context.colors.primary.withValues(alpha: isDark ? 0.2 : 0.1),
+                          color: context.colors.primary.withValues(
+                            alpha: isDark ? 0.2 : 0.1,
+                          ),
                           borderRadius: BorderRadius.circular(18),
                         ),
-                        child: Icon(Icons.mail_outline, color: context.colors.primary, size: 40),
+                        child: Icon(
+                          Icons.mail_outline,
+                          color: context.colors.primary,
+                          size: 40,
+                        ),
                       ),
                       const SizedBox(height: 24),
 
@@ -87,17 +106,43 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
                             ? 'Vui lòng kiểm tra hộp thư và nhấp vào link để đặt lại mật khẩu.'
                             : 'Please check your inbox and click the link to reset your password.',
                         style: context.textTheme.bodySmall?.copyWith(
-                          color: context.colors.onSurfaceVariant.withValues(alpha: 0.8),
+                          color: context.colors.onSurfaceVariant.withValues(
+                            alpha: 0.8,
+                          ),
                         ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 40),
 
                       // Steps
-                      _buildStep(context, 1, isVi ? 'Kiểm tra hộp thư (hoặc thư rác) của bạn' : 'Check your inbox (or spam folder)'),
-                      _buildStep(context, 2, isVi ? 'Tìm email từ "no-reply@accounts.google.com"' : 'Look for an email from "no-reply@accounts.google.com"'),
-                      _buildStep(context, 3, isVi ? 'Nhấp vào link "Đặt lại mật khẩu" trong email' : 'Click the "Reset password" link in the email'),
-                      _buildStep(context, 4, isVi ? 'Tạo mật khẩu mới và lưu thay đổi' : 'Create a new password and save changes'),
+                      _buildStep(
+                        context,
+                        1,
+                        isVi
+                            ? 'Kiểm tra hộp thư (hoặc thư rác) của bạn'
+                            : 'Check your inbox (or spam folder)',
+                      ),
+                      _buildStep(
+                        context,
+                        2,
+                        isVi
+                            ? 'Tìm email từ "no-reply@accounts.google.com"'
+                            : 'Look for an email from "no-reply@accounts.google.com"',
+                      ),
+                      _buildStep(
+                        context,
+                        3,
+                        isVi
+                            ? 'Nhấp vào link "Đặt lại mật khẩu" trong email'
+                            : 'Click the "Reset password" link in the email',
+                      ),
+                      _buildStep(
+                        context,
+                        4,
+                        isVi
+                            ? 'Tạo mật khẩu mới và lưu thay đổi'
+                            : 'Create a new password and save changes',
+                      ),
                       const SizedBox(height: 40),
 
                       // Instruction box
@@ -106,12 +151,19 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: context.warningBg,
                           borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: context.warning.withValues(alpha: 0.3), width: 1),
+                          border: Border.all(
+                            color: context.warning.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.info_outline, color: context.warning, size: 20),
+                            Icon(
+                              Icons.info_outline,
+                              color: context.warning,
+                              size: 20,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
@@ -142,11 +194,18 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(colors: [AppColors.primaryTealLight, AppColors.primaryTeal]),
+                            gradient: const LinearGradient(
+                              colors: [
+                                AppColors.primaryTealLight,
+                                AppColors.primaryTeal,
+                              ],
+                            ),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: context.colors.primary.withValues(alpha: 0.3),
+                                color: context.colors.primary.withValues(
+                                  alpha: 0.3,
+                                ),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -171,15 +230,23 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(isVi ? 'Vui lòng liên hệ support@mono.com' : 'Please contact support@mono.com'),
+                                content: Text(
+                                  isVi
+                                      ? 'Vui lòng liên hệ support@mono.com'
+                                      : 'Please contact support@mono.com',
+                                ),
                                 backgroundColor: context.colors.primary,
                                 behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
                               ),
                             );
                           },
                           child: Text(
-                            isVi ? 'Có vấn đề? Liên hệ hỗ trợ' : 'Have issues? Contact support',
+                            isVi
+                                ? 'Có vấn đề? Liên hệ hỗ trợ'
+                                : 'Have issues? Contact support',
                             style: context.textTheme.bodySmall?.copyWith(
                               color: context.colors.primary,
                               fontWeight: FontWeight.w600,
@@ -209,14 +276,18 @@ class ForgotPasswordConfirmationScreen extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: isDark ? context.colors.primaryContainer : context.colors.primary,
+              color: isDark
+                  ? context.colors.primaryContainer
+                  : context.colors.primary,
               borderRadius: BorderRadius.circular(50),
             ),
             child: Center(
               child: Text(
                 '$number',
                 style: context.textTheme.labelMedium?.copyWith(
-                  color: isDark ? context.colors.onPrimaryContainer : context.colors.onPrimary,
+                  color: isDark
+                      ? context.colors.onPrimaryContainer
+                      : context.colors.onPrimary,
                   fontWeight: FontWeight.bold,
                 ),
               ),

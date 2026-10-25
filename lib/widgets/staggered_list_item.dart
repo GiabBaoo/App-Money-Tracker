@@ -18,7 +18,8 @@ class StaggeredListItem extends StatefulWidget {
   State<StaggeredListItem> createState() => _StaggeredListItemState();
 }
 
-class _StaggeredListItemState extends State<StaggeredListItem> with SingleTickerProviderStateMixin {
+class _StaggeredListItemState extends State<StaggeredListItem>
+    with SingleTickerProviderStateMixin {
   AnimationController? _controller;
   Animation<double>? _fadeAnimation;
   Animation<Offset>? _slideAnimation;
@@ -35,9 +36,13 @@ class _StaggeredListItemState extends State<StaggeredListItem> with SingleTicker
         CurvedAnimation(parent: _controller!, curve: Curves.easeOutQuad),
       );
 
-      _slideAnimation = Tween<Offset>(begin: const Offset(0.0, 0.06), end: Offset.zero).animate(
-        CurvedAnimation(parent: _controller!, curve: Curves.easeOutCubic),
-      );
+      _slideAnimation =
+          Tween<Offset>(
+            begin: const Offset(0.0, 0.06),
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(parent: _controller!, curve: Curves.easeOutCubic),
+          );
 
       final delayMs = (widget.index * 25).clamp(0, 100);
       if (delayMs == 0) {
@@ -67,10 +72,7 @@ class _StaggeredListItemState extends State<StaggeredListItem> with SingleTicker
     return RepaintBoundary(
       child: FadeTransition(
         opacity: _fadeAnimation!,
-        child: SlideTransition(
-          position: _slideAnimation!,
-          child: widget.child,
-        ),
+        child: SlideTransition(position: _slideAnimation!, child: widget.child),
       ),
     );
   }

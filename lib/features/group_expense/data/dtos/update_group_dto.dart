@@ -5,12 +5,15 @@ class UpdateGroupDto {
   final int? iconCode;
   final List<String>? memberIds;
 
+  final String? groupType;
+
   UpdateGroupDto({
     this.name,
     this.description,
     this.iconUrl,
     this.iconCode,
     this.memberIds,
+    this.groupType,
   });
 
   Map<String, dynamic> toJson() {
@@ -20,6 +23,7 @@ class UpdateGroupDto {
     if (iconUrl != null) data['iconUrl'] = iconUrl;
     if (iconCode != null) data['iconCode'] = iconCode;
     if (memberIds != null) data['memberIds'] = memberIds;
+    if (groupType != null) data['groupType'] = groupType;
     return data;
   }
 }

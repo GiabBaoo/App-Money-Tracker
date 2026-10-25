@@ -105,7 +105,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: context.brandColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.auto_awesome_rounded, color: context.brandColor),
+                child: Icon(
+                  Icons.auto_awesome_rounded,
+                  color: context.brandColor,
+                ),
               ),
               title: Text(
                 isVi ? 'Chọn ảnh mẫu có sẵn (Preset)' : 'Choose Preset Avatar',
@@ -115,8 +118,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               subtitle: Text(
-                isVi ? 'Bộ sưu tập avatar phong cách gradient' : 'Stylish gradient icons',
-                style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 12),
+                isVi
+                    ? 'Bộ sưu tập avatar phong cách gradient'
+                    : 'Stylish gradient icons',
+                style: TextStyle(
+                  color: context.colors.onSurfaceVariant,
+                  fontSize: 12,
+                ),
               ),
               onTap: () {
                 Navigator.pop(sheetCtx);
@@ -155,7 +163,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: Colors.orange.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.photo_library_rounded, color: Colors.orange),
+                child: const Icon(
+                  Icons.photo_library_rounded,
+                  color: Colors.orange,
+                ),
               ),
               title: Text(
                 isVi ? 'Chọn từ thư viện ảnh' : 'Choose from gallery',
@@ -240,33 +251,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _pickAndUploadAvatar(ImageSource source) async {
     try {
-      final XFile? picked = await BiometricService.instance.runWithPickerSuspended(() async {
-        return await _picker.pickImage(
-          source: source,
-          maxWidth: 1920,
-          maxHeight: 1920,
-          imageQuality: 92,
-        );
-      });
+      final XFile? picked = await BiometricService.instance
+          .runWithPickerSuspended(() async {
+            return await _picker.pickImage(
+              source: source,
+              maxWidth: 1920,
+              maxHeight: 1920,
+              imageQuality: 92,
+            );
+          });
       if (picked == null) return;
 
       if (!mounted) return;
       final croppedFile = await Navigator.push<File?>(
         context,
-        PageTransitions.slideUp<File?>(AvatarCropScreen(imageFile: File(picked.path))),
+        PageTransitions.slideUp<File?>(
+          AvatarCropScreen(imageFile: File(picked.path)),
+        ),
       );
       if (croppedFile == null) return;
 
       setState(() => _isUploadingAvatar = true);
 
       // 1. Phản hồi tức thì trên giao diện (Zero-latency) bằng file đã căn chỉnh
-      await UserRepository().updateAvatar(croppedFile.path, localPath: croppedFile.path);
+      await UserRepository().updateAvatar(
+        croppedFile.path,
+        localPath: croppedFile.path,
+      );
 
       final isVi = LanguageService.instance.isVietnamese;
       if (mounted) {
         TopToast.show(
           context,
-          isVi ? 'Cập nhật ảnh đại diện thành công!' : 'Profile picture updated successfully!',
+          isVi
+              ? 'Cập nhật ảnh đại diện thành công!'
+              : 'Profile picture updated successfully!',
         );
       }
 
@@ -351,7 +370,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       AnimatedScaleButton(
                         onTap: () {
                           HapticFeedback.selectionClick();
-                          Navigator.push(context, PageTransitions.slideRight(const MessageCenterScreen()));
+                          Navigator.push(
+                            context,
+                            PageTransitions.slideRight(
+                              const MessageCenterScreen(),
+                            ),
+                          );
                         },
                         child: Container(
                           padding: const EdgeInsets.all(9),
@@ -359,7 +383,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(Icons.mail_outline_rounded, color: Colors.white, size: 20),
+                          child: const Icon(
+                            Icons.mail_outline_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -367,7 +395,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       AnimatedScaleButton(
                         onTap: () {
                           HapticFeedback.selectionClick();
-                          Navigator.push(context, PageTransitions.slideRight(const AccountInfoScreen()));
+                          Navigator.push(
+                            context,
+                            PageTransitions.slideRight(
+                              const AccountInfoScreen(),
+                            ),
+                          );
                         },
                         child: Container(
                           padding: const EdgeInsets.all(9),
@@ -375,7 +408,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(Icons.edit_note_rounded, color: Colors.white, size: 20),
+                          child: const Icon(
+                            Icons.edit_note_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ],
@@ -394,15 +431,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 try {
                   authUser = FirebaseAuth.instance.currentUser;
                 } catch (_) {}
-                final fallbackName = authUser?.displayName ??
-                    (authUser?.email?.split('@').first ?? (isVi ? 'Người dùng' : 'User'));
-                final displayName = (user?.name != null && user!.name.trim().isNotEmpty)
+                final fallbackName =
+                    authUser?.displayName ??
+                    (authUser?.email?.split('@').first ??
+                        (isVi ? 'Người dùng' : 'User'));
+                final displayName =
+                    (user?.name != null && user!.name.trim().isNotEmpty)
                     ? user.name
                     : fallbackName;
-                final displayEmail = (user?.email != null && user!.email.trim().isNotEmpty)
+                final displayEmail =
+                    (user?.email != null && user!.email.trim().isNotEmpty)
                     ? user.email
                     : (authUser?.email ?? '');
-                final displayAvatarUrl = (user?.avatarUrl != null && user!.avatarUrl.trim().isNotEmpty)
+                final displayAvatarUrl =
+                    (user?.avatarUrl != null &&
+                        user!.avatarUrl.trim().isNotEmpty)
                     ? user.avatarUrl
                     : authUser?.photoURL;
                 final avatarLocalPath = user?.avatarLocalPath;
@@ -412,13 +455,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: AnimatedScaleButton(
                     onTap: () {
                       HapticFeedback.selectionClick();
-                      Navigator.push(context, PageTransitions.slideRight(const AccountInfoScreen()));
+                      Navigator.push(
+                        context,
+                        PageTransitions.slideRight(const AccountInfoScreen()),
+                      );
                     },
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF163230) : Colors.white.withValues(alpha: 0.15),
+                        color: isDark
+                            ? const Color(0xFF163230)
+                            : Colors.white.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(22),
                         border: Border.all(
                           color: Colors.white.withValues(alpha: 0.25),
@@ -444,7 +492,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 avatarUrl: displayAvatarUrl,
                                 avatarLocalPath: avatarLocalPath,
                                 showBorder: true,
-                                borderColor: Colors.white.withValues(alpha: 0.6),
+                                borderColor: Colors.white.withValues(
+                                  alpha: 0.6,
+                                ),
                                 borderWidth: 2.5,
                                 onTap: () {
                                   HapticFeedback.selectionClick();
@@ -479,10 +529,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     decoration: BoxDecoration(
                                       color: context.brandColor,
                                       shape: BoxShape.circle,
-                                      border: Border.all(color: Colors.white, width: 2),
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2,
+                                      ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.25),
+                                          color: Colors.black.withValues(
+                                            alpha: 0.25,
+                                          ),
                                           blurRadius: 4,
                                           offset: const Offset(0, 2),
                                         ),
@@ -518,7 +573,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  displayEmail.isNotEmpty ? displayEmail : (isVi ? 'Chưa liên kết email' : 'No email linked'),
+                                  displayEmail.isNotEmpty
+                                      ? displayEmail
+                                      : (isVi
+                                            ? 'Chưa liên kết email'
+                                            : 'No email linked'),
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w500,
@@ -531,18 +590,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 Row(
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 9,
+                                        vertical: 3,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.2),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.2,
+                                        ),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Icon(Icons.verified_user_rounded, color: Color(0xFF68AEA9), size: 12),
+                                          const Icon(
+                                            Icons.verified_user_rounded,
+                                            color: Color(0xFF68AEA9),
+                                            size: 12,
+                                          ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            isVi ? 'Tài khoản Mono' : 'Mono Member',
+                                            isVi
+                                                ? 'Tài khoản Mono'
+                                                : 'Mono Member',
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 10.5,
@@ -554,13 +624,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ),
                                     const SizedBox(width: 6),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.15),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.15,
+                                        ),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
-                                        user?.currency.isNotEmpty == true ? user!.currency : 'VND',
+                                        user?.currency.isNotEmpty == true
+                                            ? user!.currency
+                                            : 'VND',
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 10.5,
@@ -600,18 +677,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: bgColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                   child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                    physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
+                    ),
                     padding: const EdgeInsets.fromLTRB(20, 22, 20, 100),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // ─── NHÓM 1: TÀI KHOẢN & BẢO MẬT ───
-                        _buildSectionHeader(isVi ? 'TÀI KHOẢN & BẢO MẬT' : 'ACCOUNT & SECURITY', isDark),
+                        _buildSectionHeader(
+                          isVi ? 'TÀI KHOẢN & BẢO MẬT' : 'ACCOUNT & SECURITY',
+                          isDark,
+                        ),
                         Container(
                           decoration: BoxDecoration(
                             color: cardBgColor,
@@ -619,7 +705,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             border: Border.all(color: borderColor),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                                color: Colors.black.withValues(
+                                  alpha: isDark ? 0.2 : 0.03,
+                                ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -631,18 +719,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 context: context,
                                 icon: Icons.shield_outlined,
                                 title: context.tr('login_and_security'),
-                                subtitle: isVi ? 'Vân tay sinh trắc học, đổi mật khẩu' : 'Biometrics, change password',
+                                subtitle: isVi
+                                    ? 'Vân tay sinh trắc học, đổi mật khẩu'
+                                    : 'Biometrics, change password',
                                 badgeText: isVi ? 'Bảo vệ' : 'Secure',
                                 badgeColor: context.brandColor,
-                                onTap: () => Navigator.push(context, PageTransitions.slideRight(const SecurityScreen())),
+                                onTap: () => Navigator.push(
+                                  context,
+                                  PageTransitions.slideRight(
+                                    const SecurityScreen(),
+                                  ),
+                                ),
                                 showDivider: true,
                               ),
                               _buildMenuItem(
                                 context: context,
                                 icon: Icons.cloud_sync_outlined,
                                 title: context.tr('data_and_privacy'),
-                                subtitle: isVi ? 'Đồng bộ đám mây, sao lưu dữ liệu' : 'Cloud sync, data backup',
-                                onTap: () => Navigator.push(context, PageTransitions.slideRight(const PrivacyScreen())),
+                                subtitle: isVi
+                                    ? 'Đồng bộ đám mây, sao lưu dữ liệu'
+                                    : 'Cloud sync, data backup',
+                                onTap: () => Navigator.push(
+                                  context,
+                                  PageTransitions.slideRight(
+                                    const PrivacyScreen(),
+                                  ),
+                                ),
                                 showDivider: false,
                               ),
                             ],
@@ -652,7 +754,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 20),
 
                         // ─── NHÓM 2: TRẢI NGHIỆM ───
-                        _buildSectionHeader(isVi ? 'TRẢI NGHIỆM' : 'PREFERENCES', isDark),
+                        _buildSectionHeader(
+                          isVi ? 'TRẢI NGHIỆM' : 'PREFERENCES',
+                          isDark,
+                        ),
                         Container(
                           decoration: BoxDecoration(
                             color: cardBgColor,
@@ -660,7 +765,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             border: Border.all(color: borderColor),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                                color: Colors.black.withValues(
+                                  alpha: isDark ? 0.2 : 0.03,
+                                ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -672,36 +779,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 context: context,
                                 icon: Icons.palette_outlined,
                                 title: context.tr('appearance_dark_mode'),
-                                subtitle: isVi ? 'Chế độ sáng, tối hoặc theo hệ thống' : 'Light, dark, system theme',
-                                onTap: () => Navigator.push(context, PageTransitions.slideRight(const AppearanceScreen())),
+                                subtitle: isVi
+                                    ? 'Chế độ sáng, tối hoặc theo hệ thống'
+                                    : 'Light, dark, system theme',
+                                onTap: () => Navigator.push(
+                                  context,
+                                  PageTransitions.slideRight(
+                                    const AppearanceScreen(),
+                                  ),
+                                ),
                                 showDivider: true,
                               ),
                               _buildMenuItem(
                                 context: context,
                                 icon: Icons.language_rounded,
                                 title: context.tr('language_setting'),
-                                subtitle: isVi ? 'Chọn ngôn ngữ hiển thị' : 'Choose app display language',
+                                subtitle: isVi
+                                    ? 'Chọn ngôn ngữ hiển thị'
+                                    : 'Choose app display language',
                                 badgeText: isVi ? 'Tiếng Việt' : 'English',
                                 badgeColor: const Color(0xFF0077B6),
-                                onTap: () => Navigator.push(context, PageTransitions.slideRight(const LanguageScreen())),
+                                onTap: () => Navigator.push(
+                                  context,
+                                  PageTransitions.slideRight(
+                                    const LanguageScreen(),
+                                  ),
+                                ),
                                 showDivider: true,
                               ),
                               _buildMenuItem(
                                 context: context,
                                 icon: Icons.notifications_none_rounded,
                                 title: context.tr('notification_title'),
-                                subtitle: isVi ? 'Nhắc nhở ghi chép 20h hằng ngày' : 'Daily reminder at 8 PM',
-                                onTap: () => Navigator.push(context, PageTransitions.slideRight(const NotificationSettingsScreen())),
+                                subtitle: isVi
+                                    ? 'Nhắc nhở ghi chép 20h hằng ngày'
+                                    : 'Daily reminder at 8 PM',
+                                onTap: () => Navigator.push(
+                                  context,
+                                  PageTransitions.slideRight(
+                                    const NotificationSettingsScreen(),
+                                  ),
+                                ),
                                 showDivider: true,
                               ),
                               _buildMenuItem(
                                 context: context,
                                 icon: Icons.widgets_outlined,
-                                title: isVi ? 'Tiện ích Màn hình chính' : 'Home Screen Widgets',
-                                subtitle: isVi ? 'Xem trước demo & ghim Widget ra màn hình' : 'Preview demos & pin widgets',
+                                title: isVi
+                                    ? 'Tiện ích Màn hình chính'
+                                    : 'Home Screen Widgets',
+                                subtitle: isVi
+                                    ? 'Xem trước demo & ghim Widget ra màn hình'
+                                    : 'Preview demos & pin widgets',
                                 badgeText: isVi ? 'Mới' : 'New',
                                 badgeColor: context.brandColor,
-                                onTap: () => Navigator.push(context, PageTransitions.slideRight(const WidgetShowcaseScreen())),
+                                onTap: () => Navigator.push(
+                                  context,
+                                  PageTransitions.slideRight(
+                                    const WidgetShowcaseScreen(),
+                                  ),
+                                ),
                                 showDivider: false,
                               ),
                             ],
@@ -711,7 +848,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 20),
 
                         // ─── NHÓM 3: HỆ THỐNG & HỖ TRỢ ───
-                        _buildSectionHeader(isVi ? 'HỆ THỐNG & HỖ TRỢ' : 'SYSTEM & SUPPORT', isDark),
+                        _buildSectionHeader(
+                          isVi ? 'HỆ THỐNG & HỖ TRỢ' : 'SYSTEM & SUPPORT',
+                          isDark,
+                        ),
                         Container(
                           decoration: BoxDecoration(
                             color: cardBgColor,
@@ -719,7 +859,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             border: Border.all(color: borderColor),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                                color: Colors.black.withValues(
+                                  alpha: isDark ? 0.2 : 0.03,
+                                ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -731,18 +873,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 context: context,
                                 icon: Icons.mail_outline_rounded,
                                 title: context.tr('message_center'),
-                                subtitle: isVi ? 'Hộp thư tin tức và thông báo' : 'Notifications and messages',
-                                onTap: () => Navigator.push(context, PageTransitions.slideRight(const MessageCenterScreen())),
+                                subtitle: isVi
+                                    ? 'Hộp thư tin tức và thông báo'
+                                    : 'Notifications and messages',
+                                onTap: () => Navigator.push(
+                                  context,
+                                  PageTransitions.slideRight(
+                                    const MessageCenterScreen(),
+                                  ),
+                                ),
                                 showDivider: true,
                               ),
                               _buildMenuItem(
                                 context: context,
                                 icon: Icons.info_outline_rounded,
-                                title: isVi ? 'Về ứng dụng Mono' : 'About Mono App',
-                                subtitle: isVi ? 'Thông tin phiên bản, điều khoản' : 'Version info, policy terms',
+                                title: isVi
+                                    ? 'Về ứng dụng Mono'
+                                    : 'About Mono App',
+                                subtitle: isVi
+                                    ? 'Thông tin phiên bản, điều khoản'
+                                    : 'Version info, policy terms',
                                 badgeText: 'v${AppConstants.appVersion}',
                                 badgeColor: context.brandColor,
-                                onTap: () => Navigator.push(context, PageTransitions.slideRight(const AboutAppScreen())),
+                                onTap: () => Navigator.push(
+                                  context,
+                                  PageTransitions.slideRight(
+                                    const AboutAppScreen(),
+                                  ),
+                                ),
                                 showDivider: false,
                               ),
                             ],
@@ -759,7 +917,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             border: Border.all(color: borderColor),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                                color: Colors.black.withValues(
+                                  alpha: isDark ? 0.2 : 0.03,
+                                ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -769,14 +929,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onTap: () => _handleLogout(context),
                             borderRadius: BorderRadius.circular(18),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
                               child: Row(
                                 children: [
                                   Container(
                                     width: 40,
                                     height: 40,
                                     decoration: BoxDecoration(
-                                      color: context.expense.withValues(alpha: 0.12),
+                                      color: context.expense.withValues(
+                                        alpha: 0.12,
+                                      ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(
@@ -863,11 +1028,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: context.brandColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    icon,
-                    color: context.brandColor,
-                    size: 22,
-                  ),
+                  child: Icon(icon, color: context.brandColor, size: 22),
                 ),
                 const SizedBox(width: 14),
 
@@ -904,9 +1065,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // Optional Badge Pill
                 if (badgeText != null) ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 3.5,
+                    ),
                     decoration: BoxDecoration(
-                      color: badgeGradient == null ? (badgeColor ?? context.brandColor).withValues(alpha: 0.12) : null,
+                      color: badgeGradient == null
+                          ? (badgeColor ?? context.brandColor).withValues(
+                              alpha: 0.12,
+                            )
+                          : null,
                       gradient: badgeGradient != null
                           ? LinearGradient(colors: badgeGradient)
                           : null,
@@ -917,7 +1085,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: badgeGradient != null ? Colors.white : (badgeColor ?? context.brandColor),
+                        color: badgeGradient != null
+                            ? Colors.white
+                            : (badgeColor ?? context.brandColor),
                       ),
                     ),
                   ),

@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:money_tracker_app/widgets/animated_scale_button.dart';
 
 void main() {
-  testWidgets('AnimatedScaleButton renders child and handles taps', (WidgetTester tester) async {
+  testWidgets('AnimatedScaleButton renders child and handles taps', (
+    WidgetTester tester,
+  ) async {
     bool tapped = false;
 
     await tester.pumpWidget(
@@ -27,4 +29,3 @@ void main() {
     expect(tapped, isTrue);
   });
 }
-

@@ -12,12 +12,10 @@ import 'email_service.dart';
 import 'firestore_service.dart';
 import 'connectivity_service.dart';
 import '../utils/device_utils.dart';
-import '../data/repositories/transaction_repository.dart';
-import '../data/repositories/wallet_repository.dart';
 import '../data/repositories/user_repository.dart';
-import '../data/repositories/notification_repository.dart';
-import '../data/repositories/message_repository.dart';
 import 'app_widget_service.dart';
+import 'sync_service.dart';
+import '../core/session/session_manager.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -42,7 +40,8 @@ class AuthService {
   /// Phiên offline chỉ đúng khi thực sự MẤT KẾT NỐI MẠNG hoặc đăng nhập offline không có Firebase Auth
   bool get isOfflineSession {
     try {
-      if (ConnectivityService().isOnline && _authNullable?.currentUser != null) {
+      if (ConnectivityService().isOnline &&
+          _authNullable?.currentUser != null) {
         return false;
       }
       if (!ConnectivityService().isOnline) {
@@ -55,11 +54,20 @@ class AuthService {
   }
 
   String? get offlineUid => _offlineUid;
-  String? get currentUid {
-    try {
-      return _authNullable?.currentUser?.uid ?? _offlineUid;
-    } catch (_) {
-      return _offlineUid;
+  String? get currentUid =>
+      SessionManager.instance.uidOrNull ??
+      (_authNullable?.currentUser?.uid ?? _offlineUid);
+
+  Future<void> prepareAccountSwitch(String targetUid) async {
+    final currentSessionUid = SessionManager.instance.uidOrNull;
+    if (currentSessionUid != null && currentSessionUid != targetUid) {
+      SessionManager.instance.beginSwitch();
+      SyncService().stopRealtimeListeners();
+      await SyncService().quiesce();
+    }
+    final authUser = _authNullable?.currentUser;
+    if (authUser != null && authUser.uid != targetUid) {
+      await _auth.signOut();
     }
   }
 
@@ -67,14 +75,16 @@ class AuthService {
   void setOnlineUid(String uid) {
     _offlineUid = uid;
     _isOfflineSession = false;
-    _configureRepositories(uid);
+    SessionManager.instance.activate(uid);
+    SyncService().startRealtimeListeners();
   }
 
   /// Thiết lập người dùng ngoại tuyến (Offline)
   void setOfflineUid(String uid) {
     _offlineUid = uid;
     _isOfflineSession = true;
-    _configureRepositories(uid);
+    SessionManager.instance.activate(uid);
+    SyncService().stopRealtimeListeners();
   }
 
   /// Lấy UID offline đã lưu gần nhất
@@ -97,56 +107,46 @@ class AuthService {
       setOfflineUid(savedUid);
       // Nếu có mạng, cố gắng silent re-authenticate để khôi phục quyền Firebase ngầm
       if (ConnectivityService().isOnline) {
-        silentReauthenticateIfNeeded();
+        unawaited(silentReauthenticateIfNeeded().catchError((_) => false));
       }
       return savedUid;
     }
     return null;
   }
 
-  /// Thực hiện xác thực ngầm với Firebase Auth nếu currentUser đang null
-  /// (ví dụ: mở app từ phiên offline, mở lại app, hoặc đăng nhập bằng vân tay)
+  /// Thực hiện xác thực ngầm với Firebase Auth nếu đúng với phiên hiện tại (I3)
   Future<bool> silentReauthenticateIfNeeded() async {
-    if (_auth.currentUser != null) {
+    final expected = SessionManager.instance.uidOrNull;
+    if (expected == null) return false;
+    final current = _auth.currentUser;
+    if (current != null) return current.uid == expected;
+    if (!ConnectivityService().isOnline) return false;
+
+    final email = await _secureStorage.read(key: 'last_offline_email');
+    if (email == null) return false;
+    final mappedUid = await _secureStorage.read(key: 'offline_auth_uid_$email');
+    if (mappedUid != expected) {
+      return false; // credential không thuộc phiên hiện tại
+    }
+
+    final pass =
+        await _secureStorage.read(key: 'last_auth_password') ??
+        await _secureStorage.read(key: 'saved_login_password');
+    if (pass == null) return false;
+    try {
+      final cred = await _auth.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: pass,
+      );
+      if (cred.user?.uid != expected) {
+        await _auth.signOut(); // KHÔNG adopt tài khoản khác
+        return false;
+      }
       _isOfflineSession = false;
       return true;
-    }
-
-    if (!ConnectivityService().isOnline) {
+    } catch (_) {
       return false;
     }
-
-    try {
-      final email = await _secureStorage.read(key: 'last_offline_email');
-      final pass = await _secureStorage.read(key: 'last_auth_password');
-      final rememberPass = await _secureStorage.read(key: 'saved_login_password');
-      final password = pass ?? rememberPass;
-
-      if (email != null && email.isNotEmpty && password != null && password.isNotEmpty) {
-        debugPrint('AuthService: Running silent background re-authentication for $email...');
-        final cred = await _auth.signInWithEmailAndPassword(
-          email: email.trim(),
-          password: password,
-        );
-        if (cred.user != null) {
-          final uid = cred.user!.uid;
-          setOnlineUid(uid);
-          debugPrint('AuthService: Silent re-authentication succeeded for uid $uid');
-          return true;
-        }
-      }
-    } catch (e) {
-      debugPrint('AuthService: Silent re-authentication error: $e');
-    }
-    return false;
-  }
-
-  void _configureRepositories(String uid) {
-    TransactionRepository().setUid(uid);
-    WalletRepository().setUid(uid);
-    UserRepository().setUid(uid);
-    NotificationRepository().setUid(uid);
-    MessageRepository().setUid(uid);
   }
 
   static String _hashPassword(String email, String password) {
@@ -164,10 +164,22 @@ class AuthService {
     try {
       final hash = _hashPassword(email, password);
       final normalizedEmail = email.trim().toLowerCase();
-      await _secureStorage.write(key: 'offline_auth_hash_$normalizedEmail', value: hash);
-      await _secureStorage.write(key: 'offline_auth_uid_$normalizedEmail', value: uid);
-      await _secureStorage.write(key: 'offline_auth_pass_$normalizedEmail', value: password);
-      await _secureStorage.write(key: 'last_offline_email', value: normalizedEmail);
+      await _secureStorage.write(
+        key: 'offline_auth_hash_$normalizedEmail',
+        value: hash,
+      );
+      await _secureStorage.write(
+        key: 'offline_auth_uid_$normalizedEmail',
+        value: uid,
+      );
+      await _secureStorage.write(
+        key: 'offline_auth_pass_$normalizedEmail',
+        value: password,
+      );
+      await _secureStorage.write(
+        key: 'last_offline_email',
+        value: normalizedEmail,
+      );
       await _secureStorage.write(key: 'last_offline_uid', value: uid);
       await _secureStorage.write(key: 'last_auth_password', value: password);
     } catch (e) {
@@ -181,35 +193,62 @@ class AuthService {
   }) async {
     try {
       final normalizedEmail = email.trim().toLowerCase();
-      final savedHash = await _secureStorage.read(key: 'offline_auth_hash_$normalizedEmail');
-      final savedUid = await _secureStorage.read(key: 'offline_auth_uid_$normalizedEmail');
-      final savedPass = await _secureStorage.read(key: 'offline_auth_pass_$normalizedEmail');
+      final savedHash = await _secureStorage.read(
+        key: 'offline_auth_hash_$normalizedEmail',
+      );
+      final savedUid = await _secureStorage.read(
+        key: 'offline_auth_uid_$normalizedEmail',
+      );
+      final savedPass = await _secureStorage.read(
+        key: 'offline_auth_pass_$normalizedEmail',
+      );
 
       final inputHash = _hashPassword(email, password);
 
       if (savedHash != null && savedUid != null) {
-        if (inputHash == savedHash || (savedPass != null && savedPass == password)) {
+        if (inputHash == savedHash ||
+            (savedPass != null && savedPass == password)) {
+          await prepareAccountSwitch(savedUid);
           setOfflineUid(savedUid);
           return (success: true, message: 'Đăng nhập ngoại tuyến thành công!');
         } else {
-          return (success: false, message: 'Mật khẩu ngoại tuyến không chính xác!');
+          return (
+            success: false,
+            message: 'Mật khẩu ngoại tuyến không chính xác!',
+          );
         }
       }
 
       // ─── CƠ CHẾ DỰ PHÒNG TỪ SQLITE KHI BẢO MẬT HỆ THỐNG RESET KEY ───
       try {
         final db = await DatabaseHelper().database;
-        final results = await db.query('users', where: 'LOWER(email) = ?', whereArgs: [normalizedEmail]);
+        final results = await db.query(
+          'users',
+          where: 'LOWER(email) = ?',
+          whereArgs: [normalizedEmail],
+        );
         if (results.isNotEmpty) {
           final userMap = results.first;
           final uid = userMap['uid'] as String?;
           if (uid != null) {
-            final lastPass = await _secureStorage.read(key: 'last_auth_password');
-            final savedLoginPass = await _secureStorage.read(key: 'saved_login_password');
+            final lastPass = await _secureStorage.read(
+              key: 'last_auth_password',
+            );
+            final savedLoginPass = await _secureStorage.read(
+              key: 'saved_login_password',
+            );
             if (lastPass == password || savedLoginPass == password) {
-              await _saveOfflineCredentials(email: email, password: password, uid: uid);
+              await _saveOfflineCredentials(
+                email: email,
+                password: password,
+                uid: uid,
+              );
+              await prepareAccountSwitch(uid);
               setOfflineUid(uid);
-              return (success: true, message: 'Đăng nhập ngoại tuyến thành công!');
+              return (
+                success: true,
+                message: 'Đăng nhập ngoại tuyến thành công!',
+              );
             }
           }
         }
@@ -217,7 +256,8 @@ class AuthService {
 
       return (
         success: false,
-        message: 'Không có kết nối mạng! Vui lòng kết nối Internet lần đầu để lưu dữ liệu ngoại tuyến.',
+        message:
+            'Không có kết nối mạng! Vui lòng kết nối Internet lần đầu để lưu dữ liệu ngoại tuyến.',
       );
     } catch (e) {
       return (success: false, message: 'Lỗi xác thực ngoại tuyến: $e');
@@ -249,7 +289,7 @@ class AuthService {
       if (user == null) {
         return (success: false, message: 'Khong tim thay nguoi dung!');
       }
-      
+
       await user.sendEmailVerification();
       return (success: true, message: 'Email xac nhan da duoc gui!');
     } on FirebaseAuthException catch (e) {
@@ -260,24 +300,41 @@ class AuthService {
   }
 
   // ==================== RELOAD USER VA KIEM TRA EMAIL VERIFIED ====================
-  Future<({bool success, String message, bool emailVerified})> reloadAndCheckEmailVerification() async {
+  Future<({bool success, String message, bool emailVerified})>
+  reloadAndCheckEmailVerification() async {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        return (success: false, message: 'Khong tim thay nguoi dung!', emailVerified: false);
+        return (
+          success: false,
+          message: 'Khong tim thay nguoi dung!',
+          emailVerified: false,
+        );
       }
-      
+
       await user.reload();
       final updatedUser = _auth.currentUser;
-      
+
       if (updatedUser == null) {
-        return (success: false, message: 'Co loi xay ra!', emailVerified: false);
+        return (
+          success: false,
+          message: 'Co loi xay ra!',
+          emailVerified: false,
+        );
       }
-      
+
       if (updatedUser.emailVerified) {
-        return (success: true, message: 'Email da duoc xac nhan!', emailVerified: true);
+        return (
+          success: true,
+          message: 'Email da duoc xac nhan!',
+          emailVerified: true,
+        );
       } else {
-        return (success: false, message: 'Email chua duoc xac nhan. Vui long kiem tra hop thu.', emailVerified: false);
+        return (
+          success: false,
+          message: 'Email chua duoc xac nhan. Vui long kiem tra hop thu.',
+          emailVerified: false,
+        );
       }
     } catch (e) {
       return (success: false, message: 'Loi: $e', emailVerified: false);
@@ -293,12 +350,15 @@ class AuthService {
       final expiry = DateTime.now().add(const Duration(minutes: 5));
 
       // Luu OTP vao Firestore
-      await _firestore.collection('otp_codes').doc(email.trim().toLowerCase()).set({
-        'code': code,
-        'email': email.trim().toLowerCase(),
-        'expiry': Timestamp.fromDate(expiry),
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      await _firestore
+          .collection('otp_codes')
+          .doc(email.trim().toLowerCase())
+          .set({
+            'code': code,
+            'email': email.trim().toLowerCase(),
+            'expiry': Timestamp.fromDate(expiry),
+            'createdAt': FieldValue.serverTimestamp(),
+          });
 
       // Gui email that qua SMTP
       final emailResult = await EmailService.sendOTPEmail(
@@ -328,7 +388,10 @@ class AuthService {
           .get();
 
       if (!doc.exists) {
-        return (success: false, message: 'Khong tim thay ma OTP! Vui long gui lai.');
+        return (
+          success: false,
+          message: 'Khong tim thay ma OTP! Vui long gui lai.',
+        );
       }
 
       final data = doc.data()!;
@@ -337,7 +400,10 @@ class AuthService {
 
       if (DateTime.now().isAfter(expiry)) {
         await doc.reference.delete();
-        return (success: false, message: 'Ma OTP da het han! Vui long gui lai.');
+        return (
+          success: false,
+          message: 'Ma OTP da het han! Vui long gui lai.',
+        );
       }
 
       if (storedCode != otpCode) {
@@ -396,6 +462,8 @@ class AuthService {
       // ─── LƯU THÔNG TIN XÁC THỰC OFFLINE NGAY KHI ĐĂNG KÝ ───
       if (credential.user != null) {
         final uid = credential.user!.uid;
+        await prepareAccountSwitch(uid);
+        setOnlineUid(uid);
         await _saveOfflineCredentials(
           email: email,
           password: password,
@@ -432,15 +500,24 @@ class AuthService {
     // ─── BƯỚC 1: XÁC THỰC CỤC BỘ TỨC THÌ (FAST-PASS AUTH < 30ms) ───
     // Nếu người dùng đã từng đăng nhập tài khoản này trên thiết bị, kiểm tra hash an toàn ngay lập tức
     try {
-      final savedHash = await _secureStorage.read(key: 'offline_auth_hash_$normalizedEmail');
-      final savedUid = await _secureStorage.read(key: 'offline_auth_uid_$normalizedEmail');
-      final savedPass = await _secureStorage.read(key: 'offline_auth_pass_$normalizedEmail');
+      final savedHash = await _secureStorage.read(
+        key: 'offline_auth_hash_$normalizedEmail',
+      );
+      final savedUid = await _secureStorage.read(
+        key: 'offline_auth_uid_$normalizedEmail',
+      );
+      final savedPass = await _secureStorage.read(
+        key: 'offline_auth_pass_$normalizedEmail',
+      );
       final inputHash = _hashPassword(email, password);
 
-      final bool isLocalPasswordMatch = savedUid != null &&
-          (inputHash == savedHash || (savedPass != null && savedPass == password));
+      final bool isLocalPasswordMatch =
+          savedUid != null &&
+          (inputHash == savedHash ||
+              (savedPass != null && savedPass == password));
 
       if (isLocalPasswordMatch) {
+        await prepareAccountSwitch(savedUid);
         final bool isConnOnline = ConnectivityService().isOnline;
         if (isConnOnline) {
           setOnlineUid(savedUid);
@@ -449,18 +526,25 @@ class AuthService {
         }
 
         // Cập nhật lại mật khẩu xác thực mới nhất
-        await _secureStorage.write(key: 'last_offline_email', value: normalizedEmail);
+        await _secureStorage.write(
+          key: 'last_offline_email',
+          value: normalizedEmail,
+        );
         await _secureStorage.write(key: 'last_offline_uid', value: savedUid);
         await _secureStorage.write(key: 'last_auth_password', value: password);
 
         // Kích hoạt đồng bộ ngầm và xác thực Firebase Auth ở chế độ nền (KHÔNG CHẶN MÀN HÌNH)
         if (isConnOnline) {
-          unawaited(_runBackgroundAuthSync(normalizedEmail, password, savedUid));
+          unawaited(
+            _runBackgroundAuthSync(normalizedEmail, password, savedUid),
+          );
         }
 
         return (
           success: true,
-          message: isConnOnline ? 'Đăng nhập thành công!' : 'Đăng nhập ngoại tuyến thành công!',
+          message: isConnOnline
+              ? 'Đăng nhập thành công!'
+              : 'Đăng nhập ngoại tuyến thành công!',
         );
       }
     } catch (e) {
@@ -477,16 +561,14 @@ class AuthService {
     // Nếu có mạng: Gọi trực tiếp Firebase Auth (đối với thiết bị mới hoặc người dùng vừa đổi pass từ máy khác)
     try {
       // Đặt timeout 5 giây để không bị đơ app khi WiFi/4G không có internet thực
-      await _auth.signInWithEmailAndPassword(
-        email: email.trim(),
-        password: password,
-      ).timeout(const Duration(seconds: 5));
+      await _auth
+          .signInWithEmailAndPassword(email: email.trim(), password: password)
+          .timeout(const Duration(seconds: 5));
 
       final uid = _auth.currentUser?.uid;
       if (uid != null) {
-        _isOfflineSession = false;
-        _offlineUid = uid;
-        _configureRepositories(uid);
+        await prepareAccountSwitch(uid);
+        setOnlineUid(uid);
 
         // Lưu thông tin xác thực an toàn vào FlutterSecureStorage
         await _saveOfflineCredentials(
@@ -530,20 +612,27 @@ class AuthService {
   }
 
   /// Đồng bộ hồ sơ người dùng, thiết bị và xác thực Firebase Auth trong chế độ nền
-  Future<void> _runBackgroundAuthSync(String email, String password, String uid) async {
+  Future<void> _runBackgroundAuthSync(
+    String email,
+    String password,
+    String uid,
+  ) async {
     try {
       if (_auth.currentUser == null) {
-        await _auth.signInWithEmailAndPassword(
-          email: email.trim(),
-          password: password,
-        ).timeout(const Duration(seconds: 5));
+        await _auth
+            .signInWithEmailAndPassword(email: email.trim(), password: password)
+            .timeout(const Duration(seconds: 5));
       }
 
       final activeUid = _auth.currentUser?.uid ?? uid;
 
       // 1. Đồng bộ hồ sơ từ Firestore về SQLite
       try {
-        final userDoc = await _firestore.collection('users').doc(activeUid).get().timeout(const Duration(seconds: 4));
+        final userDoc = await _firestore
+            .collection('users')
+            .doc(activeUid)
+            .get()
+            .timeout(const Duration(seconds: 4));
         if (userDoc.exists) {
           final user = UserModel.fromFirestore(userDoc);
           await UserRepository().saveUser(user);
@@ -555,10 +644,10 @@ class AuthService {
         await _firestore
             .collection('biometric_prefs')
             .doc(activeUid)
-            .set(
-              {'lastPasswordLoginAt': FieldValue.serverTimestamp()},
-              SetOptions(merge: true),
-            ).timeout(const Duration(seconds: 3));
+            .set({
+              'lastPasswordLoginAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true))
+            .timeout(const Duration(seconds: 3));
       } catch (_) {}
 
       // 3. Đăng ký phiên thiết bị hoạt động
@@ -577,9 +666,15 @@ class AuthService {
 
   // ==================== DANG XUAT ====================
   Future<void> logout() async {
+    final session = SessionManager.instance;
+    session.beginSwitch(); // 1. Chặn ghi mới, vô hiệu epoch cũ
+    SyncService().stopRealtimeListeners(); // 2. Ngừng nhận snapshot
+    await SyncService().quiesce(
+      timeout: const Duration(seconds: 5),
+    ); // 3. Chờ/abort upload đang chạy
+
     final user = _auth.currentUser;
     if (user != null) {
-      // XÓA THIẾT BỊ HIỆN TẠI KHỎI LIST HOẠT ĐỘNG KHI ĐĂNG XUẤT
       try {
         final sessionId = await DeviceUtils.getSessionId(user.uid);
         await FirestoreService().removeDeviceSession(sessionId);
@@ -588,8 +683,12 @@ class AuthService {
     _isOfflineSession = false;
     _offlineUid = null;
     await _secureStorage.delete(key: 'last_auth_password');
+    await _secureStorage.delete(key: 'last_offline_uid');
     unawaited(AppWidgetService.instance.clearOnLogout());
     await _auth.signOut();
+
+    session.end(); // 6. Repos nhận event: xóa cache, phát rỗng
+    // Tuyệt đối không xóa SQLite dữ liệu hoặc sync_queue (I5)
   }
 
   // ==================== DOI MAT KHAU ====================
@@ -601,10 +700,13 @@ class AuthService {
       final user = _auth.currentUser;
       if (user == null) return (success: false, message: 'Chua dang nhap!');
 
-      final credential = EmailAuthProvider.credential(email: user.email!, password: currentPassword);
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
       await user.reauthenticateWithCredential(credential);
       await user.updatePassword(newPassword);
-      
+
       // CẬP NHẬT THỜI GIAN ĐỔI MK TRÊN FIRESTORE
       await _firestore.collection('users').doc(user.uid).update({
         'lastPasswordUpdate': FieldValue.serverTimestamp(),
@@ -631,7 +733,9 @@ class AuthService {
   }
 
   // ==================== SEND PASSWORD RESET EMAIL (QUEN MAT KHAU) ====================
-  Future<({bool success, String message})> sendPasswordResetEmail({required String email}) async {
+  Future<({bool success, String message})> sendPasswordResetEmail({
+    required String email,
+  }) async {
     try {
       // Kiem tra email co hop le khong
       if (email.isEmpty) {
@@ -643,8 +747,12 @@ class AuthService {
 
       // Gui email dat lai mat khau
       await _auth.sendPasswordResetEmail(email: email.trim());
-      
-      return (success: true, message: 'Email dat lai mat khau da duoc gui den $email. Vui long kiem tra hop thu va click vao link.');
+
+      return (
+        success: true,
+        message:
+            'Email dat lai mat khau da duoc gui den $email. Vui long kiem tra hop thu va click vao link.',
+      );
     } on FirebaseAuthException catch (e) {
       return (success: false, message: _getAuthErrorMessage(e.code));
     } catch (e) {
@@ -670,7 +778,7 @@ class AuthService {
 
       // Gui email reset password
       await _auth.sendPasswordResetEmail(email: email.trim());
-      
+
       // Luu mat khau moi tam thoi (user se click link trong email de hoan thanh)
       await _firestore.collection('password_resets').doc(email.trim()).set({
         'email': email.trim(),
@@ -706,7 +814,10 @@ class AuthService {
       return (success: true, message: 'Cập nhật mật khẩu thành công!');
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {
-        return (success: false, message: 'Vui lòng xác thực lại mật khẩu hiện tại trước khi đổi.');
+        return (
+          success: false,
+          message: 'Vui lòng xác thực lại mật khẩu hiện tại trước khi đổi.',
+        );
       }
       return (success: false, message: _getAuthErrorMessage(e.code));
     } catch (e) {
@@ -722,7 +833,10 @@ class AuthService {
       final user = _auth.currentUser;
       if (user == null) return (success: false, message: 'Chua dang nhap!');
 
-      final credential = EmailAuthProvider.credential(email: user.email!, password: password);
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: password,
+      );
       await user.reauthenticateWithCredential(credential);
       return (success: true, message: 'Xac thuc thanh cong!');
     } on FirebaseAuthException catch (e) {
@@ -746,10 +860,20 @@ class AuthService {
       final rawEmail = user.email?.trim();
       final lowerEmail = rawEmail?.toLowerCase();
 
-      final credential = EmailAuthProvider.credential(email: user.email!, password: password);
+      final uid = user.uid;
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: password,
+      );
       await user.reauthenticateWithCredential(credential);
-      await _deleteUserData(user.uid, rawEmail: rawEmail, lowerEmail: lowerEmail);
+      await _deleteUserData(uid, rawEmail: rawEmail, lowerEmail: lowerEmail);
       await user.delete();
+
+      try {
+        await DatabaseHelper().clearUserData(uid);
+      } catch (_) {}
+      SessionManager.instance.end();
+
       return (success: true, message: 'Xoa tai khoan thanh cong!');
     } on FirebaseAuthException catch (e) {
       return (success: false, message: _getAuthErrorMessage(e.code));
@@ -764,7 +888,9 @@ class AuthService {
     String? lowerEmail,
   }) async {
     // Firestore batch tối đa 500 thao tác/1 batch, nên cần chia nhỏ để tránh lỗi.
-    Future<void> deleteInChunks(Iterable<QueryDocumentSnapshot<Map<String, dynamic>>> docs) async {
+    Future<void> deleteInChunks(
+      Iterable<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+    ) async {
       const chunkSize = 450;
       final docList = docs.toList();
       for (int i = 0; i < docList.length; i += chunkSize) {
@@ -777,16 +903,28 @@ class AuthService {
       }
     }
 
-    final transactions = await _firestore.collection('transactions').where('uid', isEqualTo: uid).get();
+    final transactions = await _firestore
+        .collection('transactions')
+        .where('uid', isEqualTo: uid)
+        .get();
     await deleteInChunks(transactions.docs);
 
-    final notifications = await _firestore.collection('notifications').where('uid', isEqualTo: uid).get();
+    final notifications = await _firestore
+        .collection('notifications')
+        .where('uid', isEqualTo: uid)
+        .get();
     await deleteInChunks(notifications.docs);
 
-    final messages = await _firestore.collection('messages').where('uid', isEqualTo: uid).get();
+    final messages = await _firestore
+        .collection('messages')
+        .where('uid', isEqualTo: uid)
+        .get();
     await deleteInChunks(messages.docs);
 
-    final deviceSessions = await _firestore.collection('device_sessions').where('uid', isEqualTo: uid).get();
+    final deviceSessions = await _firestore
+        .collection('device_sessions')
+        .where('uid', isEqualTo: uid)
+        .get();
     await deleteInChunks(deviceSessions.docs);
 
     // Xóa hồ sơ user
@@ -812,13 +950,18 @@ class AuthService {
       final doc = await _firestore.collection('users').doc(user.uid).get();
       if (!doc.exists) return null;
       return UserModel.fromFirestore(doc);
-    } catch (e) { return null; }
+    } catch (e) {
+      return null;
+    }
   }
 
   Stream<UserModel?> getUserProfileStream() {
     final user = _auth.currentUser;
     if (user != null && ConnectivityService().isOnline) {
-      return _firestore.collection('users').doc(user.uid).snapshots()
+      return _firestore
+          .collection('users')
+          .doc(user.uid)
+          .snapshots()
           .map((doc) => doc.exists ? UserModel.fromFirestore(doc) : null);
     }
     // Fallback sang SQLite offline stream
@@ -828,16 +971,26 @@ class AuthService {
   // ==================== MA LOI TIENG VIET ====================
   String _getAuthErrorMessage(String code) {
     switch (code) {
-      case 'email-already-in-use': return 'Email nay da duoc su dung!';
-      case 'invalid-email': return 'Email khong hop le!';
-      case 'weak-password': return 'Mat khau qua yeu!';
-      case 'user-not-found': return 'Khong tim thay tai khoan!';
-      case 'wrong-password': return 'Mat khau khong dung!';
-      case 'invalid-credential': return 'Email hoac mat khau khong dung!';
-      case 'user-disabled': return 'Tai khoan da bi khoa!';
-      case 'too-many-requests': return 'Qua nhieu lan thu! Doi mot lat.';
-      case 'network-request-failed': return 'Loi mang! Kiem tra Internet.';
-      default: return 'Loi ($code)';
+      case 'email-already-in-use':
+        return 'Email nay da duoc su dung!';
+      case 'invalid-email':
+        return 'Email khong hop le!';
+      case 'weak-password':
+        return 'Mat khau qua yeu!';
+      case 'user-not-found':
+        return 'Khong tim thay tai khoan!';
+      case 'wrong-password':
+        return 'Mat khau khong dung!';
+      case 'invalid-credential':
+        return 'Email hoac mat khau khong dung!';
+      case 'user-disabled':
+        return 'Tai khoan da bi khoa!';
+      case 'too-many-requests':
+        return 'Qua nhieu lan thu! Doi mot lat.';
+      case 'network-request-failed':
+        return 'Loi mang! Kiem tra Internet.';
+      default:
+        return 'Loi ($code)';
     }
   }
 }

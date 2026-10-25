@@ -64,20 +64,21 @@ class DeviceContactsService {
       final granted = await FlutterContacts.requestPermission(readonly: true);
       if (!granted) return [];
 
-      final list = await FlutterContacts.getContacts(
-        withProperties: true,
-      );
+      final list = await FlutterContacts.getContacts(withProperties: true);
 
       final results = <DeviceContactItem>[];
       final seenPhones = <String>{};
       final query = searchQuery?.toLowerCase().trim() ?? '';
 
       for (var c in list) {
-        final name = c.displayName.trim().isNotEmpty ? c.displayName.trim() : 'Chưa đặt tên';
+        final name = c.displayName.trim().isNotEmpty
+            ? c.displayName.trim()
+            : 'Chưa đặt tên';
         for (var p in c.phones) {
           final raw = p.number.trim();
           final normalized = normalizePhoneNumber(raw);
-          if (normalized.length < 8) continue; // Bỏ số quá ngắn hoặc không hợp lệ
+          if (normalized.length < 8)
+            continue; // Bỏ số quá ngắn hoặc không hợp lệ
 
           if (seenPhones.contains(normalized)) continue;
           seenPhones.add(normalized);
@@ -86,16 +87,16 @@ class DeviceContactsService {
               name.toLowerCase().contains(query) ||
               normalized.contains(query) ||
               raw.contains(query)) {
-            results.add(DeviceContactItem(
-              name: name,
-              phone: normalized,
-              rawPhone: raw,
-            ));
+            results.add(
+              DeviceContactItem(name: name, phone: normalized, rawPhone: raw),
+            );
           }
         }
       }
 
-      results.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      results.sort(
+        (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+      );
       return results;
     } catch (e) {
       debugPrint('DeviceContactsService getAllContacts error: $e');
@@ -109,9 +110,7 @@ class DeviceContactsService {
       final granted = await FlutterContacts.requestPermission(readonly: true);
       if (!granted) return null;
 
-      final list = await FlutterContacts.getContacts(
-        withProperties: true,
-      );
+      final list = await FlutterContacts.getContacts(withProperties: true);
 
       final preview = <String>[];
       for (var i = 0; i < list.length && i < _previewLimit; i++) {
@@ -131,4 +130,3 @@ class DeviceContactsService {
     }
   }
 }
-

@@ -53,7 +53,8 @@ class _BankSmsTransactionCardState extends State<BankSmsTransactionCard> {
             (w) =>
                 w.name.toLowerCase().contains(bankLower) ||
                 w.bankName.toLowerCase().contains(bankLower) ||
-                (w.accountNumber.isNotEmpty && res.rawMessage.contains(w.accountNumber)),
+                (w.accountNumber.isNotEmpty &&
+                    res.rawMessage.contains(w.accountNumber)),
           );
         } catch (_) {}
       }
@@ -76,8 +77,11 @@ class _BankSmsTransactionCardState extends State<BankSmsTransactionCard> {
         categoryIconCode: CategoryUtils.getCategoryIcon(res.category).codePoint,
         amount: res.amount,
         date: res.transactionDate ?? now,
-        time: '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
-        description: res.description.isNotEmpty ? res.description : 'Giao dịch qua ${res.bankName}',
+        time:
+            '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
+        description: res.description.isNotEmpty
+            ? res.description
+            : 'Giao dịch qua ${res.bankName}',
         walletId: walletId,
         source: 'bank_sms',
         syncStatus: 'pending',
@@ -92,10 +96,14 @@ class _BankSmsTransactionCardState extends State<BankSmsTransactionCard> {
       });
 
       if (mounted) {
-        final walletNotice = targetWallet != null ? ' (Ví: ${targetWallet.name})' : '';
+        final walletNotice = targetWallet != null
+            ? ' (Ví: ${targetWallet.name})'
+            : '';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ Đã lưu ${res.type == 'income' ? 'khoản thu' : 'khoản chi'} ${CurrencyUtils.formatCurrency(res.amount)}$walletNotice vào sổ!'),
+            content: Text(
+              '✅ Đã lưu ${res.type == 'income' ? 'khoản thu' : 'khoản chi'} ${CurrencyUtils.formatCurrency(res.amount)}$walletNotice vào sổ!',
+            ),
             backgroundColor: context.colors.primary,
             duration: const Duration(seconds: 2),
           ),
@@ -106,7 +114,10 @@ class _BankSmsTransactionCardState extends State<BankSmsTransactionCard> {
       setState(() => _isSaving = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi khi lưu: $e'), backgroundColor: context.expense),
+          SnackBar(
+            content: Text('Lỗi khi lưu: $e'),
+            backgroundColor: context.expense,
+          ),
         );
       }
     }
@@ -126,7 +137,10 @@ class _BankSmsTransactionCardState extends State<BankSmsTransactionCard> {
       decoration: BoxDecoration(
         color: isDark ? context.colors.surface : context.cardBg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: primaryColor.withValues(alpha: isDark ? 0.45 : 0.25), width: 1.5),
+        border: Border.all(
+          color: primaryColor.withValues(alpha: isDark ? 0.45 : 0.25),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
@@ -143,15 +157,24 @@ class _BankSmsTransactionCardState extends State<BankSmsTransactionCard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: context.colors.primary.withValues(alpha: isDark ? 0.22 : 0.1),
+                  color: context.colors.primary.withValues(
+                    alpha: isDark ? 0.22 : 0.1,
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.account_balance_rounded, size: 14, color: context.colors.primary),
+                    Icon(
+                      Icons.account_balance_rounded,
+                      size: 14,
+                      color: context.colors.primary,
+                    ),
                     const SizedBox(width: 5),
                     Text(
                       res.bankName,
@@ -204,17 +227,25 @@ class _BankSmsTransactionCardState extends State<BankSmsTransactionCard> {
 
           Row(
             children: [
-              Icon(CategoryUtils.getCategoryIcon(res.category), size: 16, color: context.colors.onSurfaceVariant),
+              Icon(
+                CategoryUtils.getCategoryIcon(res.category),
+                size: 16,
+                color: context.colors.onSurfaceVariant,
+              ),
               const SizedBox(width: 6),
               Text(
                 'Danh mục: ${res.category}',
-                style: context.textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceVariant),
+                style: context.textTheme.bodySmall?.copyWith(
+                  color: context.colors.onSurfaceVariant,
+                ),
               ),
               if (res.newBalance != null) ...[
                 const Spacer(),
                 Text(
                   'Số dư: ${CurrencyUtils.formatCurrency(res.newBalance!)}',
-                  style: context.textTheme.labelSmall?.copyWith(color: context.colors.onSurfaceVariant),
+                  style: context.textTheme.labelSmall?.copyWith(
+                    color: context.colors.onSurfaceVariant,
+                  ),
                 ),
               ],
             ],
@@ -229,20 +260,44 @@ class _BankSmsTransactionCardState extends State<BankSmsTransactionCard> {
               onPressed: _isSaved ? null : _saveTransaction,
               style: ElevatedButton.styleFrom(
                 backgroundColor: _isSaved
-                    ? (isDark ? context.colors.surfaceContainerHighest : context.colors.surfaceContainerHigh)
+                    ? (isDark
+                          ? context.colors.surfaceContainerHighest
+                          : context.colors.surfaceContainerHigh)
                     : (isDark ? AppColors.primaryTeal : context.colors.primary),
-                foregroundColor: _isSaved ? context.colors.onSurfaceVariant : Colors.white,
+                foregroundColor: _isSaved
+                    ? context.colors.onSurfaceVariant
+                    : Colors.white,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               icon: _isSaving
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Icon(_isSaved ? Icons.check_circle_rounded : Icons.save_rounded, size: 18),
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Icon(
+                      _isSaved
+                          ? Icons.check_circle_rounded
+                          : Icons.save_rounded,
+                      size: 18,
+                    ),
               label: Text(
-                _isSaved ? (isVi ? 'Đã ghi vào sổ' : 'Saved to ledger') : (_isSaving ? (isVi ? 'Đang lưu...' : 'Saving...') : (isVi ? 'Lưu vào sổ giao dịch' : 'Save to ledger')),
+                _isSaved
+                    ? (isVi ? 'Đã ghi vào sổ' : 'Saved to ledger')
+                    : (_isSaving
+                          ? (isVi ? 'Đang lưu...' : 'Saving...')
+                          : (isVi ? 'Lưu vào sổ giao dịch' : 'Save to ledger')),
                 style: context.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: _isSaved ? context.colors.onSurfaceVariant : Colors.white,
+                  color: _isSaved
+                      ? context.colors.onSurfaceVariant
+                      : Colors.white,
                 ),
               ),
             ),
@@ -264,7 +319,11 @@ class GroupSplitBillCard extends StatelessWidget {
     final isVi = LanguageScope.of(context).isVietnamese;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(isVi ? '📋 Đã sao chép nội dung chia tiền! Bạn có thể dán gửi vào Zalo/Messenger.' : '📋 Split bill copied to clipboard! You can paste into chat.'),
+        content: Text(
+          isVi
+              ? '📋 Đã sao chép nội dung chia tiền! Bạn có thể dán gửi vào Zalo/Messenger.'
+              : '📋 Split bill copied to clipboard! You can paste into chat.',
+        ),
         backgroundColor: context.colors.primary,
         duration: const Duration(seconds: 2),
       ),
@@ -281,7 +340,10 @@ class GroupSplitBillCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? context.colors.surface : context.cardBg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: context.info.withValues(alpha: isDark ? 0.45 : 0.25), width: 1.5),
+        border: Border.all(
+          color: context.info.withValues(alpha: isDark ? 0.45 : 0.25),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
@@ -302,7 +364,11 @@ class GroupSplitBillCard extends StatelessWidget {
                   color: context.info.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.people_alt_rounded, color: context.info, size: 20),
+                child: Icon(
+                  Icons.people_alt_rounded,
+                  color: context.info,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -318,7 +384,9 @@ class GroupSplitBillCard extends StatelessWidget {
                     ),
                     Text(
                       '${isVi ? "Người trả" : "Payer"}: ${splitResult.payerName}',
-                      style: context.textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceVariant),
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -332,28 +400,44 @@ class GroupSplitBillCard extends StatelessWidget {
               ),
             ],
           ),
-          Divider(height: 24, thickness: 1, color: context.colors.outlineVariant.withValues(alpha: 0.4)),
+          Divider(
+            height: 24,
+            thickness: 1,
+            color: context.colors.outlineVariant.withValues(alpha: 0.4),
+          ),
 
           // Highlight per person
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceElevatedDark : context.inputBgColor,
+              color: isDark
+                  ? AppColors.surfaceElevatedDark
+                  : context.inputBgColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDark ? context.colors.outline.withValues(alpha: 0.25) : context.colors.outlineVariant.withValues(alpha: 0.3),
+                color: isDark
+                    ? context.colors.outline.withValues(alpha: 0.25)
+                    : context.colors.outlineVariant.withValues(alpha: 0.3),
               ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  isVi ? 'Mỗi người (${splitResult.memberCount} người):' : 'Per person (${splitResult.memberCount} people):',
-                  style: context.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500, color: context.colors.onSurfaceVariant),
+                  isVi
+                      ? 'Mỗi người (${splitResult.memberCount} người):'
+                      : 'Per person (${splitResult.memberCount} people):',
+                  style: context.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: context.colors.onSurfaceVariant,
+                  ),
                 ),
                 Text(
                   CurrencyUtils.formatCurrency(splitResult.perPersonAmount),
-                  style: context.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800, color: context.colors.onSurface),
+                  style: context.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: context.colors.onSurface,
+                  ),
                 ),
               ],
             ),
@@ -368,20 +452,36 @@ class GroupSplitBillCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 12,
-                    backgroundColor: m.isPayer ? context.income : context.colors.outlineVariant,
+                    backgroundColor: m.isPayer
+                        ? context.income
+                        : context.colors.outlineVariant,
                     child: Text(
                       m.name.isNotEmpty ? m.name[0].toUpperCase() : '?',
-                      style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(m.name, style: context.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: context.colors.onSurface)),
-                  const Spacer(),
                   Text(
-                    m.isPayer ? (isVi ? 'Đã thanh toán' : 'Paid') : CurrencyUtils.formatCurrency(m.amount),
+                    m.name,
                     style: context.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: m.isPayer ? context.income : context.colors.onSurfaceVariant,
+                      color: context.colors.onSurface,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    m.isPayer
+                        ? (isVi ? 'Đã thanh toán' : 'Paid')
+                        : CurrencyUtils.formatCurrency(m.amount),
+                    style: context.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: m.isPayer
+                          ? context.income
+                          : context.colors.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -400,12 +500,19 @@ class GroupSplitBillCard extends StatelessWidget {
                 backgroundColor: context.info,
                 foregroundColor: context.colors.onPrimary,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               icon: const Icon(Icons.copy_rounded, size: 18),
               label: Text(
-                isVi ? 'Sao chép tin nhắn gửi nhóm (Zalo/Mess)' : 'Copy message to share with group',
-                style: context.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: context.colors.onPrimary),
+                isVi
+                    ? 'Sao chép tin nhắn gửi nhóm (Zalo/Mess)'
+                    : 'Copy message to share with group',
+                style: context.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: context.colors.onPrimary,
+                ),
               ),
             ),
           ),
@@ -448,7 +555,10 @@ class SafeDailySpendCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? context.colors.surface : context.cardBg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: cardColor.withValues(alpha: isDark ? 0.45 : 0.25), width: 1.5),
+        border: Border.all(
+          color: cardColor.withValues(alpha: isDark ? 0.45 : 0.25),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
@@ -473,7 +583,9 @@ class SafeDailySpendCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  isVi ? 'Hạn mức an toàn mỗi ngày' : 'Safe Daily Spending Limit',
+                  isVi
+                      ? 'Hạn mức an toàn mỗi ngày'
+                      : 'Safe Daily Spending Limit',
                   style: context.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: context.colors.onSurface,
@@ -487,7 +599,9 @@ class SafeDailySpendCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  isVi ? 'Còn ${result.daysRemaining} ngày' : '${result.daysRemaining} days left',
+                  isVi
+                      ? 'Còn ${result.daysRemaining} ngày'
+                      : '${result.daysRemaining} days left',
                   style: context.textTheme.labelSmall?.copyWith(
                     color: cardColor,
                     fontWeight: FontWeight.bold,
@@ -508,8 +622,12 @@ class SafeDailySpendCard extends StatelessWidget {
             ),
           ),
           Text(
-            isVi ? 'Số tiền bạn có thể tiêu hôm nay để không lo thâm hụt ví' : 'Safe amount you can spend today without overspending',
-            style: context.textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceVariant),
+            isVi
+                ? 'Số tiền bạn có thể tiêu hôm nay để không lo thâm hụt ví'
+                : 'Safe amount you can spend today without overspending',
+            style: context.textTheme.bodySmall?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 12),
 
@@ -517,18 +635,37 @@ class SafeDailySpendCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceElevatedDark : context.inputBgColor,
+              color: isDark
+                  ? AppColors.surfaceElevatedDark
+                  : context.inputBgColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDark ? context.colors.outline.withValues(alpha: 0.25) : context.colors.outlineVariant.withValues(alpha: 0.3),
+                color: isDark
+                    ? context.colors.outline.withValues(alpha: 0.25)
+                    : context.colors.outlineVariant.withValues(alpha: 0.3),
               ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatItem(context, isVi ? 'Đã tiêu hôm nay' : 'Spent today', CurrencyUtils.formatCurrency(result.todaySpent), isDark),
-                _buildStatItem(context, isVi ? 'Đã tiêu tháng này' : 'Spent this month', CurrencyUtils.formatCurrency(result.totalSpentThisMonth), isDark),
-                _buildStatItem(context, isVi ? 'Ngân sách còn' : 'Budget left', CurrencyUtils.formatCurrency(result.remainingBudget), isDark),
+                _buildStatItem(
+                  context,
+                  isVi ? 'Đã tiêu hôm nay' : 'Spent today',
+                  CurrencyUtils.formatCurrency(result.todaySpent),
+                  isDark,
+                ),
+                _buildStatItem(
+                  context,
+                  isVi ? 'Đã tiêu tháng này' : 'Spent this month',
+                  CurrencyUtils.formatCurrency(result.totalSpentThisMonth),
+                  isDark,
+                ),
+                _buildStatItem(
+                  context,
+                  isVi ? 'Ngân sách còn' : 'Budget left',
+                  CurrencyUtils.formatCurrency(result.remainingBudget),
+                  isDark,
+                ),
               ],
             ),
           ),
@@ -547,12 +684,28 @@ class SafeDailySpendCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(BuildContext context, String label, String value, bool isDark) {
+  Widget _buildStatItem(
+    BuildContext context,
+    String label,
+    String value,
+    bool isDark,
+  ) {
     return Column(
       children: [
-        Text(label, style: context.textTheme.labelSmall?.copyWith(color: context.colors.onSurfaceVariant)),
+        Text(
+          label,
+          style: context.textTheme.labelSmall?.copyWith(
+            color: context.colors.onSurfaceVariant,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(value, style: context.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold, color: context.colors.onSurface)),
+        Text(
+          value,
+          style: context.textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: context.colors.onSurface,
+          ),
+        ),
       ],
     );
   }
@@ -576,7 +729,10 @@ class LatteFactorCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? context.colors.surface : context.cardBg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: cardColor.withValues(alpha: isDark ? 0.45 : 0.25), width: 1.5),
+        border: Border.all(
+          color: cardColor.withValues(alpha: isDark ? 0.45 : 0.25),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
@@ -604,15 +760,21 @@ class LatteFactorCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isVi ? 'Phân tích "Thủng ví" (Latte Factor)' : 'Latte Factor Analysis',
+                      isVi
+                          ? 'Phân tích "Thủng ví" (Latte Factor)'
+                          : 'Latte Factor Analysis',
                       style: context.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: context.colors.onSurface,
                       ),
                     ),
                     Text(
-                      isVi ? 'Các khoản tiêu vặt < 70k tưởng nhỏ mà không nhỏ' : 'Small expenses that secretly add up',
-                      style: context.textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceVariant),
+                      isVi
+                          ? 'Các khoản tiêu vặt < 70k tưởng nhỏ mà không nhỏ'
+                          : 'Small expenses that secretly add up',
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -628,8 +790,12 @@ class LatteFactorCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isVi ? 'Tổng tiêu vặt tháng này:' : 'Total small expenses this month:',
-                    style: context.textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceVariant),
+                    isVi
+                        ? 'Tổng tiêu vặt tháng này:'
+                        : 'Total small expenses this month:',
+                    style: context.textTheme.bodySmall?.copyWith(
+                      color: context.colors.onSurfaceVariant,
+                    ),
                   ),
                   Text(
                     CurrencyUtils.formatCurrency(result.totalSmallExpenses),
@@ -642,14 +808,19 @@ class LatteFactorCard extends StatelessWidget {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: cardColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: cardColor.withValues(alpha: 0.3)),
                 ),
                 child: Text(
-                  isVi ? '${result.transactionCount} lần quẹt ví' : '${result.transactionCount} transactions',
+                  isVi
+                      ? '${result.transactionCount} lần quẹt ví'
+                      : '${result.transactionCount} transactions',
                   style: context.textTheme.labelSmall?.copyWith(
                     color: cardColor,
                     fontWeight: FontWeight.bold,
@@ -666,7 +837,9 @@ class LatteFactorCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: isDark ? AppColors.surfaceElevatedDark : context.warningBg,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: cardColor.withValues(alpha: isDark ? 0.45 : 0.3)),
+              border: Border.all(
+                color: cardColor.withValues(alpha: isDark ? 0.45 : 0.3),
+              ),
             ),
             child: Row(
               children: [
@@ -677,11 +850,17 @@ class LatteFactorCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isVi ? 'Nếu tiết kiệm khoản này 1 năm:' : 'If saved for 1 year:',
-                        style: context.textTheme.labelSmall?.copyWith(color: cardColor),
+                        isVi
+                            ? 'Nếu tiết kiệm khoản này 1 năm:'
+                            : 'If saved for 1 year:',
+                        style: context.textTheme.labelSmall?.copyWith(
+                          color: cardColor,
+                        ),
                       ),
                       Text(
-                        CurrencyUtils.formatCurrency(result.projectedYearlySavings),
+                        CurrencyUtils.formatCurrency(
+                          result.projectedYearlySavings,
+                        ),
                         style: context.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: cardColor,
@@ -743,7 +922,9 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('🎯 Đã thêm mục tiêu "${widget.roadmap.goal.title}" vào Sổ Tiết Kiệm của bạn!'),
+            content: Text(
+              '🎯 Đã thêm mục tiêu "${widget.roadmap.goal.title}" vào Sổ Tiết Kiệm của bạn!',
+            ),
             backgroundColor: context.colors.primary,
             duration: const Duration(seconds: 2),
           ),
@@ -753,7 +934,10 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
       setState(() => _isSaving = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi khi lưu mục tiêu: $e'), backgroundColor: context.expense),
+          SnackBar(
+            content: Text('Lỗi khi lưu mục tiêu: $e'),
+            backgroundColor: context.expense,
+          ),
         );
       }
     }
@@ -777,7 +961,9 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
         ),
         boxShadow: [
           BoxShadow(
-            color: context.colors.primary.withValues(alpha: isDark ? 0.12 : 0.08),
+            color: context.colors.primary.withValues(
+              alpha: isDark ? 0.12 : 0.08,
+            ),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -792,10 +978,16 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: context.colors.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+                  color: context.colors.primary.withValues(
+                    alpha: isDark ? 0.18 : 0.12,
+                  ),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.flag_rounded, color: context.colors.primary, size: 20),
+                child: Icon(
+                  Icons.flag_rounded,
+                  color: context.colors.primary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -811,7 +1003,9 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
                     ),
                     Text(
                       'Thời hạn: ${rm.monthsNeeded} tháng',
-                      style: context.textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceVariant),
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -833,7 +1027,9 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
             decoration: BoxDecoration(
               color: isDark ? AppColors.surfaceElevatedDark : context.incomeBg,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: context.income.withValues(alpha: isDark ? 0.35 : 0.2)),
+              border: Border.all(
+                color: context.income.withValues(alpha: isDark ? 0.35 : 0.2),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -842,7 +1038,9 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
                   children: [
                     Text(
                       'Mỗi tháng cần',
-                      style: context.textTheme.labelSmall?.copyWith(color: context.income),
+                      style: context.textTheme.labelSmall?.copyWith(
+                        color: context.income,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -854,12 +1052,18 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
                     ),
                   ],
                 ),
-                Container(height: 28, width: 1, color: context.income.withValues(alpha: 0.2)),
+                Container(
+                  height: 28,
+                  width: 1,
+                  color: context.income.withValues(alpha: 0.2),
+                ),
                 Column(
                   children: [
                     Text(
                       'Tương đương mỗi ngày',
-                      style: context.textTheme.labelSmall?.copyWith(color: context.income),
+                      style: context.textTheme.labelSmall?.copyWith(
+                        color: context.income,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -885,27 +1089,31 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
             ),
           ),
           const SizedBox(height: 4),
-          ...rm.cutbackSuggestions.map((s) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '• ',
-                  style: TextStyle(
-                    color: context.colors.primary,
-                    fontWeight: FontWeight.bold,
+          ...rm.cutbackSuggestions.map(
+            (s) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '• ',
+                    style: TextStyle(
+                      color: context.colors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: Text(
-                    s,
-                    style: context.textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceVariant),
+                  Expanded(
+                    child: Text(
+                      s,
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          )),
+          ),
           const SizedBox(height: 14),
 
           // Save goal button
@@ -916,20 +1124,35 @@ class _SavingsRoadmapCardState extends State<SavingsRoadmapCard> {
               onPressed: _isSaved ? null : _saveGoal,
               style: ElevatedButton.styleFrom(
                 backgroundColor: _isSaved
-                    ? (isDark ? context.colors.surfaceContainerHighest : context.colors.surfaceContainerHigh)
+                    ? (isDark
+                          ? context.colors.surfaceContainerHighest
+                          : context.colors.surfaceContainerHigh)
                     : (isDark ? AppColors.primaryTeal : context.colors.primary),
                 foregroundColor: _isSaved
                     ? context.colors.onSurfaceVariant
                     : Colors.white,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              icon: Icon(_isSaved ? Icons.check_circle_rounded : Icons.star_rounded, size: 18),
+              icon: Icon(
+                _isSaved ? Icons.check_circle_rounded : Icons.star_rounded,
+                size: 18,
+              ),
               label: Text(
-                _isSaved ? (isVi ? 'Đã thêm vào Sổ Tiết Kiệm' : 'Added to Savings') : (_isSaving ? (isVi ? 'Đang thêm...' : 'Adding...') : (isVi ? 'Lưu mục tiêu này vào sổ tiết kiệm' : 'Save goal to savings')),
+                _isSaved
+                    ? (isVi ? 'Đã thêm vào Sổ Tiết Kiệm' : 'Added to Savings')
+                    : (_isSaving
+                          ? (isVi ? 'Đang thêm...' : 'Adding...')
+                          : (isVi
+                                ? 'Lưu mục tiêu này vào sổ tiết kiệm'
+                                : 'Save goal to savings')),
                 style: context.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: _isSaved ? context.colors.onSurfaceVariant : Colors.white,
+                  color: _isSaved
+                      ? context.colors.onSurfaceVariant
+                      : Colors.white,
                 ),
               ),
             ),
@@ -959,14 +1182,18 @@ class SpendingTrendCard extends StatelessWidget {
 
     final trendIcon = isIncrease
         ? Icons.trending_up_rounded
-        : (isDecrease ? Icons.trending_down_rounded : Icons.trending_flat_rounded);
+        : (isDecrease
+              ? Icons.trending_down_rounded
+              : Icons.trending_flat_rounded);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? context.colors.surface : context.cardBg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: trendColor.withValues(alpha: isDark ? 0.45 : 0.3)),
+        border: Border.all(
+          color: trendColor.withValues(alpha: isDark ? 0.45 : 0.3),
+        ),
         boxShadow: [
           BoxShadow(
             color: trendColor.withValues(alpha: isDark ? 0.12 : 0.08),
@@ -1004,8 +1231,8 @@ class SpendingTrendCard extends StatelessWidget {
                       isIncrease
                           ? 'Tăng ${tr.percentChange.toStringAsFixed(1)}% so với kỳ trước'
                           : (isDecrease
-                              ? 'Giảm ${tr.percentChange.abs().toStringAsFixed(1)}% so với kỳ trước'
-                              : 'Chi tiêu duy trì ổn định'),
+                                ? 'Giảm ${tr.percentChange.abs().toStringAsFixed(1)}% so với kỳ trước'
+                                : 'Chi tiêu duy trì ổn định'),
                       style: context.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: trendColor,
@@ -1022,10 +1249,14 @@ class SpendingTrendCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceElevatedDark : context.inputBgColor,
+              color: isDark
+                  ? AppColors.surfaceElevatedDark
+                  : context.inputBgColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDark ? context.colors.outline.withValues(alpha: 0.25) : context.colors.outlineVariant.withValues(alpha: 0.3),
+                color: isDark
+                    ? context.colors.outline.withValues(alpha: 0.25)
+                    : context.colors.outlineVariant.withValues(alpha: 0.3),
               ),
             ),
             child: Row(
@@ -1033,7 +1264,12 @@ class SpendingTrendCard extends StatelessWidget {
               children: [
                 Column(
                   children: [
-                    Text('Kỳ này', style: context.textTheme.labelSmall?.copyWith(color: context.colors.onSurfaceVariant)),
+                    Text(
+                      'Kỳ này',
+                      style: context.textTheme.labelSmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       CurrencyUtils.formatCurrency(tr.currentExpense),
@@ -1044,10 +1280,19 @@ class SpendingTrendCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                Container(height: 26, width: 1, color: context.colors.outlineVariant.withValues(alpha: 0.4)),
+                Container(
+                  height: 26,
+                  width: 1,
+                  color: context.colors.outlineVariant.withValues(alpha: 0.4),
+                ),
                 Column(
                   children: [
-                    Text('Kỳ trước', style: context.textTheme.labelSmall?.copyWith(color: context.colors.onSurfaceVariant)),
+                    Text(
+                      'Kỳ trước',
+                      style: context.textTheme.labelSmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       CurrencyUtils.formatCurrency(tr.previousExpense),
@@ -1067,26 +1312,37 @@ class SpendingTrendCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               '⚠️ Biến động đáng chú ý:',
-              style: context.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold, color: context.warning),
+              style: context.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: context.warning,
+              ),
             ),
             const SizedBox(height: 4),
-            ...tr.anomalies.map((a) => Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('• ', style: TextStyle(color: context.warning, fontWeight: FontWeight.bold)),
-                      Expanded(
-                        child: Text(
-                          a,
-                          style: context.textTheme.bodySmall?.copyWith(
-                            color: context.colors.onSurfaceVariant,
-                          ),
+            ...tr.anomalies.map(
+              (a) => Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '• ',
+                      style: TextStyle(
+                        color: context.warning,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        a,
+                        style: context.textTheme.bodySmall?.copyWith(
+                          color: context.colors.onSurfaceVariant,
                         ),
                       ),
-                    ],
-                  ),
-                )),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ],
       ),
@@ -1110,7 +1366,9 @@ class FinancialHealthScoreCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? context.colors.surface : context.cardBg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: result.statusColor.withValues(alpha: isDark ? 0.45 : 0.3)),
+        border: Border.all(
+          color: result.statusColor.withValues(alpha: isDark ? 0.45 : 0.3),
+        ),
         boxShadow: [
           BoxShadow(
             color: result.statusColor.withValues(alpha: isDark ? 0.12 : 0.08),
@@ -1157,7 +1415,10 @@ class FinancialHealthScoreCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: result.statusColor.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(8),
@@ -1174,7 +1435,9 @@ class FinancialHealthScoreCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      isVi ? 'Thang điểm 100 theo chuẩn quản lý tài chính' : '100-point scale based on personal finance standards',
+                      isVi
+                          ? 'Thang điểm 100 theo chuẩn quản lý tài chính'
+                          : '100-point scale based on personal finance standards',
                       style: context.textTheme.labelSmall?.copyWith(
                         color: context.colors.onSurfaceVariant,
                       ),
@@ -1218,11 +1481,17 @@ class FinancialHealthScoreCard extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: ratio,
                       minHeight: 5,
-                      backgroundColor: isDark ? AppColors.borderDark : context.colors.outlineVariant.withValues(alpha: 0.3),
+                      backgroundColor: isDark
+                          ? AppColors.borderDark
+                          : context.colors.outlineVariant.withValues(
+                              alpha: 0.3,
+                            ),
                       valueColor: AlwaysStoppedAnimation<Color>(
                         ratio >= 0.8
                             ? context.income
-                            : (ratio >= 0.5 ? context.warning : context.expense),
+                            : (ratio >= 0.5
+                                  ? context.warning
+                                  : context.expense),
                       ),
                     ),
                   ),
@@ -1242,24 +1511,37 @@ class FinancialHealthScoreCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               '💡 Lời khuyên hành động từ Mono:',
-              style: context.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold, color: context.colors.primary),
+              style: context.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: context.colors.primary,
+              ),
             ),
             const SizedBox(height: 4),
-            ...result.recommendations.map((r) => Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('• ', style: TextStyle(color: context.colors.primary, fontWeight: FontWeight.bold)),
-                      Expanded(
-                        child: Text(
-                          r,
-                          style: context.textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceVariant),
+            ...result.recommendations.map(
+              (r) => Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '• ',
+                      style: TextStyle(
+                        color: context.colors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        r,
+                        style: context.textTheme.bodySmall?.copyWith(
+                          color: context.colors.onSurfaceVariant,
                         ),
                       ),
-                    ],
-                  ),
-                )),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ],
       ),
@@ -1283,7 +1565,9 @@ class RecurringTransactionsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? context.colors.surface : context.cardBg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: context.info.withValues(alpha: isDark ? 0.45 : 0.3)),
+        border: Border.all(
+          color: context.info.withValues(alpha: isDark ? 0.45 : 0.3),
+        ),
         boxShadow: [
           BoxShadow(
             color: context.info.withValues(alpha: isDark ? 0.12 : 0.08),
@@ -1303,7 +1587,11 @@ class RecurringTransactionsCard extends StatelessWidget {
                   color: context.info.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.cached_rounded, color: context.info, size: 20),
+                child: Icon(
+                  Icons.cached_rounded,
+                  color: context.info,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -1311,14 +1599,18 @@ class RecurringTransactionsCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isVi ? 'Chi phí cố định định kỳ' : 'Recurring Fixed Expenses',
+                      isVi
+                          ? 'Chi phí cố định định kỳ'
+                          : 'Recurring Fixed Expenses',
                       style: context.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: context.colors.onSurface,
                       ),
                     ),
                     Text(
-                      isVi ? 'Ước tính: ${CurrencyUtils.formatCurrency(result.totalMonthlyFixedCost)}/tháng' : 'Est: ${CurrencyUtils.formatCurrency(result.totalMonthlyFixedCost)}/mo',
+                      isVi
+                          ? 'Ước tính: ${CurrencyUtils.formatCurrency(result.totalMonthlyFixedCost)}/tháng'
+                          : 'Est: ${CurrencyUtils.formatCurrency(result.totalMonthlyFixedCost)}/mo',
                       style: context.textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: context.info,
@@ -1335,20 +1627,31 @@ class RecurringTransactionsCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
-                isVi ? 'Chưa phát hiện khoản chi lặp lại định kỳ nào trong 90 ngày qua.' : 'No recurring fixed expenses detected in the last 90 days.',
-                style: context.textTheme.bodySmall?.copyWith(color: context.colors.onSurfaceVariant),
+                isVi
+                    ? 'Chưa phát hiện khoản chi lặp lại định kỳ nào trong 90 ngày qua.'
+                    : 'No recurring fixed expenses detected in the last 90 days.',
+                style: context.textTheme.bodySmall?.copyWith(
+                  color: context.colors.onSurfaceVariant,
+                ),
               ),
             )
           else
             ...result.items.map((item) {
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.surfaceElevatedDark : context.inputBgColor,
+                  color: isDark
+                      ? AppColors.surfaceElevatedDark
+                      : context.inputBgColor,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: isDark ? context.colors.outline.withValues(alpha: 0.25) : context.colors.outlineVariant.withValues(alpha: 0.4),
+                    color: isDark
+                        ? context.colors.outline.withValues(alpha: 0.25)
+                        : context.colors.outlineVariant.withValues(alpha: 0.4),
                   ),
                 ),
                 child: Row(
@@ -1445,7 +1748,11 @@ class PersonalSpendingQueryCard extends StatelessWidget {
                   color: primaryColor.withValues(alpha: isDark ? 0.22 : 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.insights_rounded, color: primaryColor, size: 20),
+                child: Icon(
+                  Icons.insights_rounded,
+                  color: primaryColor,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -1478,7 +1785,9 @@ class PersonalSpendingQueryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceElevatedDark : primaryColor.withValues(alpha: 0.08),
+                color: isDark
+                    ? AppColors.surfaceElevatedDark
+                    : primaryColor.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: primaryColor.withValues(alpha: isDark ? 0.35 : 0.25),
@@ -1539,7 +1848,9 @@ class PersonalSpendingQueryCard extends StatelessWidget {
           ],
 
           // Thanh phân bổ danh mục (Category Breakdown Bars)
-          if (result.categoryBreakdown != null && result.categoryBreakdown!.isNotEmpty && result.totalAmount > 0) ...[
+          if (result.categoryBreakdown != null &&
+              result.categoryBreakdown!.isNotEmpty &&
+              result.totalAmount > 0) ...[
             const SizedBox(height: 14),
             Text(
               'Cơ cấu danh mục chi tiêu:',
@@ -1564,13 +1875,17 @@ class PersonalSpendingQueryCard extends StatelessWidget {
                             Icon(
                               CategoryUtils.getCategoryIcon(entry.key),
                               size: 14,
-                              color: isTop ? primaryColor : context.colors.onSurfaceVariant,
+                              color: isTop
+                                  ? primaryColor
+                                  : context.colors.onSurfaceVariant,
                             ),
                             const SizedBox(width: 6),
                             Text(
                               entry.key,
                               style: context.textTheme.bodySmall?.copyWith(
-                                fontWeight: isTop ? FontWeight.bold : FontWeight.w500,
+                                fontWeight: isTop
+                                    ? FontWeight.bold
+                                    : FontWeight.w500,
                                 color: context.colors.onSurface,
                               ),
                             ),
@@ -1580,7 +1895,9 @@ class PersonalSpendingQueryCard extends StatelessWidget {
                           '${CurrencyUtils.formatCurrency(entry.value)} (${pct.toStringAsFixed(0)}%)',
                           style: context.textTheme.labelSmall?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: isTop ? primaryColor : context.colors.onSurfaceVariant,
+                            color: isTop
+                                ? primaryColor
+                                : context.colors.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -1591,7 +1908,9 @@ class PersonalSpendingQueryCard extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: (pct / 100).clamp(0.0, 1.0),
                         minHeight: 5,
-                        backgroundColor: isDark ? AppColors.borderDark : context.colors.surfaceContainerHighest,
+                        backgroundColor: isDark
+                            ? AppColors.borderDark
+                            : context.colors.surfaceContainerHighest,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           isTop ? primaryColor : context.info,
                         ),
@@ -1609,15 +1928,25 @@ class PersonalSpendingQueryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceElevatedDark : context.colors.surfaceContainerHighest.withValues(alpha: 0.5),
+                color: isDark
+                    ? AppColors.surfaceElevatedDark
+                    : context.colors.surfaceContainerHighest.withValues(
+                        alpha: 0.5,
+                      ),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: isDark ? context.colors.outline.withValues(alpha: 0.25) : context.colors.outlineVariant,
+                  color: isDark
+                      ? context.colors.outline.withValues(alpha: 0.25)
+                      : context.colors.outlineVariant,
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.push_pin_rounded, size: 15, color: context.warning),
+                  Icon(
+                    Icons.push_pin_rounded,
+                    size: 15,
+                    color: context.warning,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -1683,7 +2012,9 @@ class _TransferConfirmCardState extends State<TransferConfirmCard> {
         toWalletId: widget.toWallet.id,
         amount: widget.amount,
         fee: widget.fee,
-        note: widget.note.isNotEmpty ? widget.note : 'Chuyển tiền qua Trợ lý Mono',
+        note: widget.note.isNotEmpty
+            ? widget.note
+            : 'Chuyển tiền qua Trợ lý Mono',
       );
 
       if (mounted) {
@@ -1706,7 +2037,9 @@ class _TransferConfirmCardState extends State<TransferConfirmCard> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('⚠️ Không thể hoàn tất chuyển tiền. Vui lòng kiểm tra lại số dư!'),
+              content: const Text(
+                '⚠️ Không thể hoàn tất chuyển tiền. Vui lòng kiểm tra lại số dư!',
+              ),
               backgroundColor: context.expense,
             ),
           );
@@ -1764,7 +2097,9 @@ class _TransferConfirmCardState extends State<TransferConfirmCard> {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  _isSuccess ? Icons.check_circle_rounded : Icons.swap_horiz_rounded,
+                  _isSuccess
+                      ? Icons.check_circle_rounded
+                      : Icons.swap_horiz_rounded,
                   color: _isSuccess ? context.income : context.colors.primary,
                   size: 22,
                 ),
@@ -1772,10 +2107,18 @@ class _TransferConfirmCardState extends State<TransferConfirmCard> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  _isSuccess ? (isVi ? 'Chuyển tiền thành công' : 'Transfer Successful') : (isVi ? 'Xác nhận chuyển tiền giữa các ví' : 'Confirm Wallet Transfer'),
+                  _isSuccess
+                      ? (isVi
+                            ? 'Chuyển tiền thành công'
+                            : 'Transfer Successful')
+                      : (isVi
+                            ? 'Xác nhận chuyển tiền giữa các ví'
+                            : 'Confirm Wallet Transfer'),
                   style: context.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: _isSuccess ? context.income : context.colors.onSurface,
+                    color: _isSuccess
+                        ? context.income
+                        : context.colors.onSurface,
                   ),
                 ),
               ),
@@ -1785,10 +2128,16 @@ class _TransferConfirmCardState extends State<TransferConfirmCard> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceElevatedDark : context.colors.surfaceContainerHighest.withValues(alpha: 0.5),
+              color: isDark
+                  ? AppColors.surfaceElevatedDark
+                  : context.colors.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: isDark ? context.colors.outline.withValues(alpha: 0.25) : context.colors.outlineVariant,
+                color: isDark
+                    ? context.colors.outline.withValues(alpha: 0.25)
+                    : context.colors.outlineVariant,
               ),
             ),
             child: Row(
@@ -1806,7 +2155,9 @@ class _TransferConfirmCardState extends State<TransferConfirmCard> {
                       const SizedBox(height: 4),
                       Text(
                         widget.fromWallet.name,
-                        style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                        style: context.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
@@ -1824,7 +2175,11 @@ class _TransferConfirmCardState extends State<TransferConfirmCard> {
                     color: context.colors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.arrow_forward_rounded, color: context.colors.primary, size: 18),
+                  child: Icon(
+                    Icons.arrow_forward_rounded,
+                    color: context.colors.primary,
+                    size: 18,
+                  ),
                 ),
                 Expanded(
                   child: Column(
@@ -1839,7 +2194,9 @@ class _TransferConfirmCardState extends State<TransferConfirmCard> {
                       const SizedBox(height: 4),
                       Text(
                         widget.toWallet.name,
-                        style: context.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                        style: context.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
@@ -1908,21 +2265,36 @@ class _TransferConfirmCardState extends State<TransferConfirmCard> {
             width: double.infinity,
             height: 44,
             child: ElevatedButton(
-              onPressed: _isSuccess || _isProcessing ? null : _handleConfirmTransfer,
+              onPressed: _isSuccess || _isProcessing
+                  ? null
+                  : _handleConfirmTransfer,
               style: ElevatedButton.styleFrom(
-                backgroundColor: _isSuccess ? context.income : (isDark ? AppColors.primaryTeal : context.colors.primary),
+                backgroundColor: _isSuccess
+                    ? context.income
+                    : (isDark ? AppColors.primaryTeal : context.colors.primary),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 elevation: 0,
               ),
               child: _isProcessing
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
                     )
                   : Text(
-                      _isSuccess ? (isVi ? '✓ Đã hoàn tất chuyển tiền' : '✓ Transfer Completed') : (isVi ? 'Xác nhận chuyển tiền ngay' : 'Confirm Transfer Now'),
+                      _isSuccess
+                          ? (isVi
+                                ? '✓ Đã hoàn tất chuyển tiền'
+                                : '✓ Transfer Completed')
+                          : (isVi
+                                ? 'Xác nhận chuyển tiền ngay'
+                                : 'Confirm Transfer Now'),
                       style: context.textTheme.labelLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -1935,5 +2307,3 @@ class _TransferConfirmCardState extends State<TransferConfirmCard> {
     );
   }
 }
-
-

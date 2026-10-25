@@ -23,24 +23,42 @@ void main() {
 
     test('parse voice and scan deep links', () {
       final voiceUri = Uri.parse('moneytracker://voice');
-      expect(WidgetDeepLinkParser.parse(voiceUri).type, WidgetActionType.voiceAssistant);
+      expect(
+        WidgetDeepLinkParser.parse(voiceUri).type,
+        WidgetActionType.voiceAssistant,
+      );
 
       final scanUri = Uri.parse('moneytracker://scan');
-      expect(WidgetDeepLinkParser.parse(scanUri).type, WidgetActionType.scanReceipt);
+      expect(
+        WidgetDeepLinkParser.parse(scanUri).type,
+        WidgetActionType.scanReceipt,
+      );
 
       final scanReceiptUri = Uri.parse('moneytracker://scan_receipt');
-      expect(WidgetDeepLinkParser.parse(scanReceiptUri).type, WidgetActionType.scanReceipt);
+      expect(
+        WidgetDeepLinkParser.parse(scanReceiptUri).type,
+        WidgetActionType.scanReceipt,
+      );
 
       final reportUri = Uri.parse('moneytracker://report');
-      expect(WidgetDeepLinkParser.parse(reportUri).type, WidgetActionType.openReport);
+      expect(
+        WidgetDeepLinkParser.parse(reportUri).type,
+        WidgetActionType.openReport,
+      );
 
       final statUri = Uri.parse('moneytracker://statistics');
-      expect(WidgetDeepLinkParser.parse(statUri).type, WidgetActionType.openReport);
+      expect(
+        WidgetDeepLinkParser.parse(statUri).type,
+        WidgetActionType.openReport,
+      );
     });
 
     test('parse budget, goal, wallet and transactions deep links', () {
       final budgetUri = Uri.parse('moneytracker://budget');
-      expect(WidgetDeepLinkParser.parse(budgetUri).type, WidgetActionType.openBudget);
+      expect(
+        WidgetDeepLinkParser.parse(budgetUri).type,
+        WidgetActionType.openBudget,
+      );
 
       final goalUri = Uri.parse('moneytracker://goal?id=g123');
       final goalAction = WidgetDeepLinkParser.parse(goalUri);
@@ -53,15 +71,24 @@ void main() {
       expect(walletAction.targetId, 'w456');
 
       final txsUri = Uri.parse('moneytracker://transactions');
-      expect(WidgetDeepLinkParser.parse(txsUri).type, WidgetActionType.openTransactions);
+      expect(
+        WidgetDeepLinkParser.parse(txsUri).type,
+        WidgetActionType.openTransactions,
+      );
     });
 
     test('fallback to openApp for unknown or invalid schemes', () {
       final invalidScheme = Uri.parse('https://example.com');
-      expect(WidgetDeepLinkParser.parse(invalidScheme).type, WidgetActionType.openApp);
+      expect(
+        WidgetDeepLinkParser.parse(invalidScheme).type,
+        WidgetActionType.openApp,
+      );
 
       final unknownHost = Uri.parse('moneytracker://unknown_route');
-      expect(WidgetDeepLinkParser.parse(unknownHost).type, WidgetActionType.openApp);
+      expect(
+        WidgetDeepLinkParser.parse(unknownHost).type,
+        WidgetActionType.openApp,
+      );
     });
   });
 
@@ -80,8 +107,24 @@ void main() {
       final refDate = DateTime(2026, 10, 5, 14, 0);
 
       final List<WalletModel> wallets = [
-        WalletModel(id: 'w1', uid: 'u1', name: 'Tiền mặt', type: 'cash', balance: 500000, iconCode: 0xe532, colorValue: 0xFF438883),
-        WalletModel(id: 'w2', uid: 'u1', name: 'MoMo', type: 'e_wallet', balance: 1500000, iconCode: 0xe532, colorValue: 0xFF438883),
+        WalletModel(
+          id: 'w1',
+          uid: 'u1',
+          name: 'Tiền mặt',
+          type: 'cash',
+          balance: 500000,
+          iconCode: 0xe532,
+          colorValue: 0xFF438883,
+        ),
+        WalletModel(
+          id: 'w2',
+          uid: 'u1',
+          name: 'MoMo',
+          type: 'e_wallet',
+          balance: 1500000,
+          iconCode: 0xe532,
+          colorValue: 0xFF438883,
+        ),
       ];
 
       final List<TransactionModel> transactions = [
@@ -121,14 +164,53 @@ void main() {
       ];
 
       final List<BudgetModel> budgets = [
-        BudgetModel(id: 'b1', uid: 'u1', category: 'Ăn uống', limitAmount: 1000000, currentSpent: 850000, month: 10, year: 2026),
-        BudgetModel(id: 'b2', uid: 'u1', category: 'Đi lại', limitAmount: 500000, currentSpent: 600000, month: 10, year: 2026),
-        BudgetModel(id: 'b3', uid: 'u1', category: 'Giải trí', limitAmount: 2000000, currentSpent: 400000, month: 10, year: 2026),
-        BudgetModel(id: 'b4', uid: 'u1', category: 'Học tập', limitAmount: 1000000, currentSpent: 100000, month: 10, year: 2026),
+        BudgetModel(
+          id: 'b1',
+          uid: 'u1',
+          category: 'Ăn uống',
+          limitAmount: 1000000,
+          currentSpent: 850000,
+          month: 10,
+          year: 2026,
+        ),
+        BudgetModel(
+          id: 'b2',
+          uid: 'u1',
+          category: 'Đi lại',
+          limitAmount: 500000,
+          currentSpent: 600000,
+          month: 10,
+          year: 2026,
+        ),
+        BudgetModel(
+          id: 'b3',
+          uid: 'u1',
+          category: 'Giải trí',
+          limitAmount: 2000000,
+          currentSpent: 400000,
+          month: 10,
+          year: 2026,
+        ),
+        BudgetModel(
+          id: 'b4',
+          uid: 'u1',
+          category: 'Học tập',
+          limitAmount: 1000000,
+          currentSpent: 100000,
+          month: 10,
+          year: 2026,
+        ),
       ];
 
       final List<GoalModel> goals = [
-        GoalModel(id: 'g1', uid: 'u1', title: 'Mua Laptop', targetAmount: 20000000, currentAmount: 10000000, deadline: DateTime(2026, 12, 31)),
+        GoalModel(
+          id: 'g1',
+          uid: 'u1',
+          title: 'Mua Laptop',
+          targetAmount: 20000000,
+          currentAmount: 10000000,
+          deadline: DateTime(2026, 12, 31),
+        ),
       ];
 
       final snapshot = WidgetSnapshotBuilder.build(

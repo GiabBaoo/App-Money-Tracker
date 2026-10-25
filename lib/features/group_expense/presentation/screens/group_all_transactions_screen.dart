@@ -11,10 +11,9 @@ import '../../data/models/fund_transaction_model.dart';
 
 // Helper function để format tiền
 String _formatMoney(double amount) {
-  return amount.toStringAsFixed(0).replaceAllMapped(
-    RegExp(r'\B(?=(\d{3})+(?!\d))'),
-    (match) => '.',
-  );
+  return amount
+      .toStringAsFixed(0)
+      .replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.');
 }
 
 class GroupAllTransactionsScreen extends ConsumerStatefulWidget {
@@ -28,10 +27,12 @@ class GroupAllTransactionsScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<GroupAllTransactionsScreen> createState() => _GroupAllTransactionsScreenState();
+  ConsumerState<GroupAllTransactionsScreen> createState() =>
+      _GroupAllTransactionsScreenState();
 }
 
-class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransactionsScreen> {
+class _GroupAllTransactionsScreenState
+    extends ConsumerState<GroupAllTransactionsScreen> {
   DateTime _selectedDate = DateTime.now();
 
   void _showMonthPicker() {
@@ -53,7 +54,9 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
 
   @override
   Widget build(BuildContext context) {
-    final fundTransactionsAsync = ref.watch(groupFundTransactionsProvider(widget.groupId));
+    final fundTransactionsAsync = ref.watch(
+      groupFundTransactionsProvider(widget.groupId),
+    );
     final isDark = context.isDarkMode;
     final primaryColor = context.colors.primary;
 
@@ -137,7 +140,10 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                       _showMonthPicker();
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: cardBgColor,
                         borderRadius: BorderRadius.circular(18),
@@ -169,7 +175,11 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                             ),
                           ),
                           const SizedBox(width: 2),
-                          Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: textSecondary),
+                          Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 16,
+                            color: textSecondary,
+                          ),
                         ],
                       ),
                     ),
@@ -183,10 +193,13 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
               child: fundTransactionsAsync.when(
                 data: (transactions) {
                   // Filter by month & year
-                  final filteredTransactions = transactions.where((tx) =>
-                    tx.createdAt.month == _selectedDate.month &&
-                    tx.createdAt.year == _selectedDate.year
-                  ).toList();
+                  final filteredTransactions = transactions
+                      .where(
+                        (tx) =>
+                            tx.createdAt.month == _selectedDate.month &&
+                            tx.createdAt.year == _selectedDate.year,
+                      )
+                      .toList();
 
                   // Compute monthly totals
                   double monthInflow = 0;
@@ -200,7 +213,8 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                   }
 
                   // Group transactions by date
-                  final Map<DateTime, List<FundTransactionModel>> groupedTransactions = {};
+                  final Map<DateTime, List<FundTransactionModel>>
+                  groupedTransactions = {};
                   for (final transaction in filteredTransactions) {
                     final dateKey = DateTime(
                       transaction.createdAt.year,
@@ -238,17 +252,25 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                                     ]
                                   : [
                                       primaryColor,
-                                      Color.lerp(primaryColor, Colors.black, 0.12) ?? primaryColor,
+                                      Color.lerp(
+                                            primaryColor,
+                                            Colors.black,
+                                            0.12,
+                                          ) ??
+                                          primaryColor,
                                     ],
                             ),
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(
-                              color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.15),
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.08)
+                                  : Colors.white.withValues(alpha: 0.15),
                               width: 1,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: (isDark ? Colors.black : primaryColor).withValues(alpha: 0.22),
+                                color: (isDark ? Colors.black : primaryColor)
+                                    .withValues(alpha: 0.22),
                                 blurRadius: 16,
                                 offset: const Offset(0, 6),
                               ),
@@ -258,7 +280,8 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     isVi
@@ -267,7 +290,9 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
-                                      color: Colors.white.withValues(alpha: 0.8),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.8,
+                                      ),
                                       letterSpacing: 0.8,
                                     ),
                                   ),
@@ -287,13 +312,18 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                                   // Inflow
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          isVi ? 'Tổng góp quỹ' : 'Total Contributed',
+                                          isVi
+                                              ? 'Tổng góp quỹ'
+                                              : 'Total Contributed',
                                           style: TextStyle(
                                             fontSize: 11,
-                                            color: Colors.white.withValues(alpha: 0.75),
+                                            color: Colors.white.withValues(
+                                              alpha: 0.75,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(height: 3),
@@ -318,13 +348,18 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                                   // Outflow
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          isVi ? 'Tổng chi/rút quỹ' : 'Total Withdrawn',
+                                          isVi
+                                              ? 'Tổng chi/rút quỹ'
+                                              : 'Total Withdrawn',
                                           style: TextStyle(
                                             fontSize: 11,
-                                            color: Colors.white.withValues(alpha: 0.75),
+                                            color: Colors.white.withValues(
+                                              alpha: 0.75,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(height: 3),
@@ -352,7 +387,10 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                         if (filteredTransactions.isEmpty)
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 40,
+                            ),
                             decoration: BoxDecoration(
                               color: cardBgColor,
                               borderRadius: BorderRadius.circular(18),
@@ -384,28 +422,44 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                           ...sortedDates.map((date) {
                             final dayTransactions = groupedTransactions[date]!;
                             final now = DateTime.now();
-                            final todayKey = DateTime(now.year, now.month, now.day);
-                            final yesterdayKey = todayKey.subtract(const Duration(days: 1));
+                            final todayKey = DateTime(
+                              now.year,
+                              now.month,
+                              now.day,
+                            );
+                            final yesterdayKey = todayKey.subtract(
+                              const Duration(days: 1),
+                            );
 
-                            String dateHeader = '${date.day}/${date.month}/${date.year}';
+                            String dateHeader =
+                                '${date.day}/${date.month}/${date.year}';
                             if (date == todayKey) {
-                              dateHeader = '${isVi ? 'Hôm nay' : 'Today'} • $dateHeader';
+                              dateHeader =
+                                  '${isVi ? 'Hôm nay' : 'Today'} • $dateHeader';
                             } else if (date == yesterdayKey) {
-                              dateHeader = '${isVi ? 'Hôm qua' : 'Yesterday'} • $dateHeader';
+                              dateHeader =
+                                  '${isVi ? 'Hôm qua' : 'Yesterday'} • $dateHeader';
                             }
 
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
                                   child: Row(
                                     children: [
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: context.inputBgColor,
-                                          borderRadius: BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                         ),
                                         child: Text(
                                           dateHeader,
@@ -420,33 +474,51 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                                   ),
                                 ),
                                 ...dayTransactions.map((transaction) {
-                                  final isContribute = transaction.type == TransactionType.contribute;
-                                  final color = isContribute ? context.income : context.expense;
+                                  final isContribute =
+                                      transaction.type ==
+                                      TransactionType.contribute;
+                                  final color = isContribute
+                                      ? context.income
+                                      : context.expense;
 
                                   return Container(
                                     margin: const EdgeInsets.only(bottom: 10),
                                     decoration: BoxDecoration(
                                       color: cardBgColor,
                                       borderRadius: BorderRadius.circular(18),
-                                      border: Border.all(color: borderColor, width: 1),
+                                      border: Border.all(
+                                        color: borderColor,
+                                        width: 1,
+                                      ),
                                     ),
                                     child: Material(
                                       color: Colors.transparent,
                                       child: InkWell(
-                                        onTap: () => _showTransactionDetail(context, transaction, isDark),
+                                        onTap: () => _showTransactionDetail(
+                                          context,
+                                          transaction,
+                                          isDark,
+                                        ),
                                         borderRadius: BorderRadius.circular(18),
                                         child: Padding(
                                           padding: const EdgeInsets.all(15),
                                           child: Row(
                                             children: [
                                               Container(
-                                                padding: const EdgeInsets.all(10),
+                                                padding: const EdgeInsets.all(
+                                                  10,
+                                                ),
                                                 decoration: BoxDecoration(
-                                                  color: color.withValues(alpha: 0.12),
+                                                  color: color.withValues(
+                                                    alpha: 0.12,
+                                                  ),
                                                   shape: BoxShape.circle,
                                                 ),
                                                 child: Icon(
-                                                  isContribute ? Icons.add_rounded : Icons.arrow_outward_rounded,
+                                                  isContribute
+                                                      ? Icons.add_rounded
+                                                      : Icons
+                                                            .arrow_outward_rounded,
                                                   color: color,
                                                   size: 18,
                                                 ),
@@ -454,34 +526,48 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                                               const SizedBox(width: 14),
                                               Expanded(
                                                 child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
                                                   children: [
                                                     Text(
-                                                      isContribute ? (isVi ? 'Góp quỹ' : 'Contribution') : (isVi ? 'Rút quỹ' : 'Withdrawal'),
+                                                      isContribute
+                                                          ? (isVi
+                                                                ? 'Góp quỹ'
+                                                                : 'Contribution')
+                                                          : (isVi
+                                                                ? 'Rút quỹ'
+                                                                : 'Withdrawal'),
                                                       style: TextStyle(
                                                         fontSize: 15,
-                                                        fontWeight: FontWeight.w700,
+                                                        fontWeight:
+                                                            FontWeight.w700,
                                                         color: textPrimary,
                                                       ),
                                                     ),
                                                     const SizedBox(height: 2),
                                                     Text(
                                                       transaction.userName,
-                                                      style: TextStyle(fontSize: 12, color: textSecondary),
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: textSecondary,
+                                                      ),
                                                       maxLines: 1,
-                                                      overflow: TextOverflow.ellipsis,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
                                                   ],
                                                 ),
                                               ),
                                               Column(
-                                                crossAxisAlignment: CrossAxisAlignment.end,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.end,
                                                 children: [
                                                   Text(
                                                     '${isContribute ? '+' : '-'}${_formatMoney(transaction.amount)}đ',
                                                     style: TextStyle(
                                                       fontSize: 15,
-                                                      fontWeight: FontWeight.w800,
+                                                      fontWeight:
+                                                          FontWeight.w800,
                                                       color: color,
                                                       letterSpacing: -0.2,
                                                     ),
@@ -489,7 +575,10 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                                                   const SizedBox(height: 2),
                                                   Text(
                                                     '${transaction.createdAt.hour}:${transaction.createdAt.minute.toString().padLeft(2, '0')}',
-                                                    style: TextStyle(fontSize: 11, color: textSecondary),
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      color: textSecondary,
+                                                    ),
                                                   ),
                                                 ],
                                               ),
@@ -507,8 +596,11 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
                     ),
                   );
                 },
-                loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
-                error: (error, _) => Center(child: Text('${isVi ? 'Lỗi' : 'Error'}: $error')),
+                loading: () => const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+                error: (error, _) =>
+                    Center(child: Text('${isVi ? 'Lỗi' : 'Error'}: $error')),
               ),
             ),
           ],
@@ -517,22 +609,38 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
     );
   }
 
-  void _showTransactionDetail(BuildContext context, FundTransactionModel transaction, bool isDark) {
+  void _showTransactionDetail(
+    BuildContext context,
+    FundTransactionModel transaction,
+    bool isDark,
+  ) {
     final isContribute = transaction.type == TransactionType.contribute;
     final color = isContribute ? context.income : context.expense;
 
     MonoDialog.show(
       context,
-      title: isContribute ? (isVi ? 'Chi tiết góp quỹ' : 'Contribution Details') : (isVi ? 'Chi tiết rút quỹ' : 'Withdrawal Details'),
-      icon: isContribute ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+      title: isContribute
+          ? (isVi ? 'Chi tiết góp quỹ' : 'Contribution Details')
+          : (isVi ? 'Chi tiết rút quỹ' : 'Withdrawal Details'),
+      icon: isContribute
+          ? Icons.arrow_downward_rounded
+          : Icons.arrow_upward_rounded,
       iconColor: color,
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildDetailRow(context, isVi ? 'Người thực hiện:' : 'By:', transaction.userName),
+          _buildDetailRow(
+            context,
+            isVi ? 'Người thực hiện:' : 'By:',
+            transaction.userName,
+          ),
           const SizedBox(height: 12),
-          _buildDetailRow(context, isVi ? 'Số tiền:' : 'Amount:', '${_formatMoney(transaction.amount)}đ'),
+          _buildDetailRow(
+            context,
+            isVi ? 'Số tiền:' : 'Amount:',
+            '${_formatMoney(transaction.amount)}đ',
+          ),
           const SizedBox(height: 12),
           _buildDetailRow(
             context,
@@ -541,7 +649,11 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
           ),
           if (transaction.notes != null && transaction.notes!.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _buildDetailRow(context, isVi ? 'Ghi chú:' : 'Notes:', transaction.notes!),
+            _buildDetailRow(
+              context,
+              isVi ? 'Ghi chú:' : 'Notes:',
+              transaction.notes!,
+            ),
           ],
         ],
       ),
@@ -553,7 +665,9 @@ class _GroupAllTransactionsScreenState extends ConsumerState<GroupAllTransaction
             foregroundColor: context.colors.onSurface,
             elevation: 0,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
           ),
           child: Text(isVi ? 'Đóng' : 'Close'),
         ),
@@ -627,10 +741,7 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
       decoration: BoxDecoration(
         color: sheetBg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border.all(
-          color: context.borderColor,
-          width: 1,
-        ),
+        border: Border.all(color: context.borderColor, width: 1),
       ),
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
       child: SafeArea(
@@ -662,7 +773,11 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                 children: [
                   IconButton(
                     onPressed: () => setState(() => _selectedYear--),
-                    icon: Icon(Icons.arrow_back_ios_rounded, size: 18, color: textP),
+                    icon: Icon(
+                      Icons.arrow_back_ios_rounded,
+                      size: 18,
+                      color: textP,
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -677,7 +792,11 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                   ),
                   IconButton(
                     onPressed: () => setState(() => _selectedYear++),
-                    icon: Icon(Icons.arrow_forward_ios_rounded, size: 18, color: textP),
+                    icon: Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 18,
+                      color: textP,
+                    ),
                   ),
                 ],
               ),
@@ -697,13 +816,17 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                   final month = index + 1;
                   final isSelected = month == _selectedMonth;
                   final now = DateTime.now();
-                  final isFuture = (_selectedYear > now.year) || (_selectedYear == now.year && month > now.month);
+                  final isFuture =
+                      (_selectedYear > now.year) ||
+                      (_selectedYear == now.year && month > now.month);
 
                   return GestureDetector(
                     onTap: isFuture
                         ? null
                         : () {
-                            widget.onDateSelected(DateTime(_selectedYear, month));
+                            widget.onDateSelected(
+                              DateTime(_selectedYear, month),
+                            );
                             Navigator.pop(context);
                           },
                     child: Container(
@@ -711,21 +834,25 @@ class _MonthPickerSheetState extends State<_MonthPickerSheet> {
                         color: isSelected
                             ? primaryColor
                             : isFuture
-                                ? (widget.isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.shade100)
-                                : context.inputBgColor,
+                            ? (widget.isDark
+                                  ? Colors.white.withValues(alpha: 0.02)
+                                  : Colors.grey.shade100)
+                            : context.inputBgColor,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       alignment: Alignment.center,
                       child: Text(
                         isVi ? 'Tháng $month' : 'Month $month',
                         style: TextStyle(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.w500,
                           fontSize: 13,
                           color: isSelected
                               ? Colors.white
                               : isFuture
-                                  ? textS.withValues(alpha: 0.4)
-                                  : textP,
+                              ? textS.withValues(alpha: 0.4)
+                              : textP,
                         ),
                       ),
                     ),

@@ -120,7 +120,8 @@ class FrequentAmountService {
       if (tx.type != targetType) return false;
       if (tx.amount <= 0) return false;
       if (normalizedCategory != null && normalizedCategory.isNotEmpty) {
-        if (tx.category.trim().toLowerCase() != normalizedCategory) return false;
+        if (tx.category.trim().toLowerCase() != normalizedCategory)
+          return false;
       }
       return tx.date.isAfter(cutoffDate);
     }).toList();
@@ -130,7 +131,8 @@ class FrequentAmountService {
         if (tx.type != targetType) return false;
         if (tx.amount <= 0) return false;
         if (normalizedCategory != null && normalizedCategory.isNotEmpty) {
-          if (tx.category.trim().toLowerCase() != normalizedCategory) return false;
+          if (tx.category.trim().toLowerCase() != normalizedCategory)
+            return false;
         }
         return true;
       }).toList();

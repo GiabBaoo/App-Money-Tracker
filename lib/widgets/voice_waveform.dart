@@ -17,7 +17,8 @@ class VoiceWaveform extends StatefulWidget {
   State<VoiceWaveform> createState() => _VoiceWaveformState();
 }
 
-class _VoiceWaveformState extends State<VoiceWaveform> with SingleTickerProviderStateMixin {
+class _VoiceWaveformState extends State<VoiceWaveform>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
@@ -89,9 +90,13 @@ class SmoothWaveformPainter extends CustomPainter {
         final double phase1 = (animationValue * 2 * pi) + (i * 0.28);
         final double phase2 = (animationValue * 3 * pi) - (i * 0.35);
         final double dynamicWave = (sin(phase1) * 0.6 + cos(phase2) * 0.4);
-        
-        final double levelBoost = (soundLevel.clamp(0.0, 10.0) * 5.0) + (soundLevel > 0 ? 12.0 : 4.0);
-        height = (8.0 + (envelope * levelBoost * (1.2 + dynamicWave))).clamp(6.0, size.height * 0.95);
+
+        final double levelBoost =
+            (soundLevel.clamp(0.0, 10.0) * 5.0) + (soundLevel > 0 ? 12.0 : 4.0);
+        height = (8.0 + (envelope * levelBoost * (1.2 + dynamicWave))).clamp(
+          6.0,
+          size.height * 0.95,
+        );
         alpha = 0.6 + (envelope * 0.4);
       } else {
         height = 6.0 + (envelope * 4.0);
@@ -101,7 +106,10 @@ class SmoothWaveformPainter extends CustomPainter {
       final double top = centerY - (height / 2);
 
       final rect = Rect.fromLTWH(x, top, barWidth, height);
-      final rrect = RRect.fromRectAndRadius(rect, Radius.circular(barWidth / 2));
+      final rrect = RRect.fromRectAndRadius(
+        rect,
+        Radius.circular(barWidth / 2),
+      );
 
       // Gradient fill from Teal to Mint Emerald
       final paint = Paint()
@@ -110,8 +118,12 @@ class SmoothWaveformPainter extends CustomPainter {
           end: Alignment.bottomCenter,
           colors: [
             const Color(0xFF5EEAD4).withValues(alpha: alpha), // Mint
-            AppColors.primaryTealVibrant.withValues(alpha: alpha * 0.9), // Vibrant Teal
-            AppColors.incomeEmeraldDark.withValues(alpha: alpha * 0.8), // Dark Emerald
+            AppColors.primaryTealVibrant.withValues(
+              alpha: alpha * 0.9,
+            ), // Vibrant Teal
+            AppColors.incomeEmeraldDark.withValues(
+              alpha: alpha * 0.8,
+            ), // Dark Emerald
           ],
         ).createShader(rect)
         ..style = PaintingStyle.fill;

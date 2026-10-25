@@ -18,10 +18,7 @@ class WidgetNavigationAction {
   final WidgetActionType type;
   final String? targetId;
 
-  const WidgetNavigationAction({
-    required this.type,
-    this.targetId,
-  });
+  const WidgetNavigationAction({required this.type, this.targetId});
 
   @override
   bool operator ==(Object other) =>
@@ -35,7 +32,8 @@ class WidgetNavigationAction {
   int get hashCode => type.hashCode ^ targetId.hashCode;
 
   @override
-  String toString() => 'WidgetNavigationAction(type: $type, targetId: $targetId)';
+  String toString() =>
+      'WidgetNavigationAction(type: $type, targetId: $targetId)';
 }
 
 /// Bộ phân tích cú pháp Deep Link từ Android App Widget
@@ -70,7 +68,9 @@ class WidgetDeepLinkParser {
 
     // 3. Trợ lý giọng nói: moneytracker://voice
     if (host == 'voice') {
-      return const WidgetNavigationAction(type: WidgetActionType.voiceAssistant);
+      return const WidgetNavigationAction(
+        type: WidgetActionType.voiceAssistant,
+      );
     }
 
     // 4. Quét hoá đơn OCR: moneytracker://scan hoặc moneytracker://scan_receipt
@@ -101,7 +101,9 @@ class WidgetDeepLinkParser {
 
     // 8. Danh sách tất cả giao dịch: moneytracker://transactions
     if (host == 'transactions') {
-      return const WidgetNavigationAction(type: WidgetActionType.openTransactions);
+      return const WidgetNavigationAction(
+        type: WidgetActionType.openTransactions,
+      );
     }
 
     // 9. Màn hình Báo cáo thống kê: moneytracker://report hoặc moneytracker://statistics

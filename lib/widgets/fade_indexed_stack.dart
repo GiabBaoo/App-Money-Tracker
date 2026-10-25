@@ -28,10 +28,7 @@ class _FadeIndexedStackState extends State<FadeIndexedStack>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
+    _controller = AnimationController(vsync: this, duration: widget.duration);
     _fadeAnimation = CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutCubic,
@@ -39,10 +36,7 @@ class _FadeIndexedStackState extends State<FadeIndexedStack>
     _slideAnimation = Tween<Offset>(
       begin: Offset.zero,
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _controller.value = 1.0;
   }
 
@@ -51,20 +45,16 @@ class _FadeIndexedStackState extends State<FadeIndexedStack>
     super.didUpdateWidget(oldWidget);
     if (widget.index != oldWidget.index) {
       final bool movingRight = widget.index > oldWidget.index;
-      _slideAnimation = Tween<Offset>(
-        begin: Offset(movingRight ? 0.045 : -0.045, 0.0),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutCubic,
-      ));
-      _fadeAnimation = Tween<double>(
-        begin: 0.35,
-        end: 1.0,
-      ).animate(CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutCubic,
-      ));
+      _slideAnimation =
+          Tween<Offset>(
+            begin: Offset(movingRight ? 0.045 : -0.045, 0.0),
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+          );
+      _fadeAnimation = Tween<double>(begin: 0.35, end: 1.0).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+      );
       _controller.forward(from: 0.0);
     }
   }
@@ -82,10 +72,7 @@ class _FadeIndexedStackState extends State<FadeIndexedStack>
         opacity: _fadeAnimation,
         child: SlideTransition(
           position: _slideAnimation,
-          child: IndexedStack(
-            index: widget.index,
-            children: widget.children,
-          ),
+          child: IndexedStack(index: widget.index, children: widget.children),
         ),
       ),
     );

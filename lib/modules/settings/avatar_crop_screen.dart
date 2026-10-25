@@ -76,13 +76,25 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
     final isVi = LanguageScope.of(context).isVietnamese;
 
     try {
-      final boundary = _cropAreaKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary == null) throw Exception(isVi ? 'Vùng ảnh chưa sẵn sàng để cắt' : 'Image area is not ready for cropping');
+      final boundary =
+          _cropAreaKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
+      if (boundary == null)
+        throw Exception(
+          isVi
+              ? 'Vùng ảnh chưa sẵn sàng để cắt'
+              : 'Image area is not ready for cropping',
+        );
 
       // Chụp ở tỷ lệ pixelRatio 2.0 để ảnh đạt độ nét cao ~ 560x560px
       final ui.Image image = await boundary.toImage(pixelRatio: 2.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) throw Exception(isVi ? 'Không thể chuyển đổi dữ liệu ảnh' : 'Cannot convert image data');
+      if (byteData == null)
+        throw Exception(
+          isVi
+              ? 'Không thể chuyển đổi dữ liệu ảnh'
+              : 'Cannot convert image data',
+        );
 
       final buffer = byteData.buffer.asUint8List();
       final tempDir = await getApplicationDocumentsDirectory();
@@ -101,7 +113,10 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
-        MonoToast.error(context, isVi ? 'Lỗi cắt ảnh: $e' : 'Crop image error: $e');
+        MonoToast.error(
+          context,
+          isVi ? 'Lỗi cắt ảnh: $e' : 'Crop image error: $e',
+        );
       }
     }
   }
@@ -115,12 +130,20 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
         backgroundColor: const Color(0xFF0D1413),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 26),
+          icon: const Icon(
+            Icons.close_rounded,
+            color: Colors.white70,
+            size: 26,
+          ),
           onPressed: _isProcessing ? null : () => Navigator.pop(context),
         ),
         title: Text(
           isVi ? 'Căn chỉnh ảnh đại diện' : 'Crop Avatar',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 17,
+          ),
         ),
         centerTitle: true,
         actions: [
@@ -131,15 +154,26 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                     child: SizedBox(
                       width: 22,
                       height: 22,
-                      child: CircularProgressIndicator(color: context.brandColor, strokeWidth: 2.5),
+                      child: CircularProgressIndicator(
+                        color: context.brandColor,
+                        strokeWidth: 2.5,
+                      ),
                     ),
                   )
                 : TextButton.icon(
                     onPressed: _handleApplyCrop,
-                    icon: Icon(Icons.check_rounded, color: context.brandColor, size: 20),
+                    icon: Icon(
+                      Icons.check_rounded,
+                      color: context.brandColor,
+                      size: 20,
+                    ),
                     label: Text(
                       isVi ? 'Áp dụng' : 'Apply',
-                      style: TextStyle(color: context.brandColor, fontWeight: FontWeight.bold, fontSize: 15),
+                      style: TextStyle(
+                        color: context.brandColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
                     ),
                   ),
           ),
@@ -159,11 +193,20 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.pinch_rounded, color: context.brandColor, size: 16),
+                  Icon(
+                    Icons.pinch_rounded,
+                    color: context.brandColor,
+                    size: 16,
+                  ),
                   const SizedBox(width: 8),
                   Text(
-                    isVi ? 'Dùng 2 ngón tay thu phóng hoặc kéo để căn mặt' : 'Pinch or drag to reposition face',
-                    style: const TextStyle(color: Colors.white70, fontSize: 12.5),
+                    isVi
+                        ? 'Dùng 2 ngón tay thu phóng hoặc kéo để căn mặt'
+                        : 'Pinch or drag to reposition face',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12.5,
+                    ),
                   ),
                 ],
               ),
@@ -185,15 +228,21 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                           child: Container(
                             color: Colors.black,
                             child: InteractiveViewer(
-                              transformationController: _transformationController,
+                              transformationController:
+                                  _transformationController,
                               minScale: 1.0,
                               maxScale: 5.0,
-                              boundaryMargin: const EdgeInsets.all(double.infinity),
+                              boundaryMargin: const EdgeInsets.all(
+                                double.infinity,
+                              ),
                               clipBehavior: Clip.none,
                               onInteractionUpdate: (_) {
-                                final scale = _transformationController.value.getMaxScaleOnAxis();
+                                final scale = _transformationController.value
+                                    .getMaxScaleOnAxis();
                                 if ((scale - _currentScale).abs() > 0.05) {
-                                  setState(() => _currentScale = scale.clamp(1.0, 5.0));
+                                  setState(
+                                    () => _currentScale = scale.clamp(1.0, 5.0),
+                                  );
                                 }
                               },
                               child: SizedBox(
@@ -264,17 +313,27 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                   // Slider thu phóng
                   Row(
                     children: [
-                      const Icon(Icons.remove_rounded, color: Colors.white60, size: 20),
+                      const Icon(
+                        Icons.remove_rounded,
+                        color: Colors.white60,
+                        size: 20,
+                      ),
                       Expanded(
                         child: SliderTheme(
                           data: SliderTheme.of(context).copyWith(
                             trackHeight: 4,
-                            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 9),
-                            overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
+                            thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 9,
+                            ),
+                            overlayShape: const RoundSliderOverlayShape(
+                              overlayRadius: 18,
+                            ),
                             activeTrackColor: context.brandColor,
                             inactiveTrackColor: Colors.white12,
                             thumbColor: context.brandColor,
-                            overlayColor: context.brandColor.withValues(alpha: 0.2),
+                            overlayColor: context.brandColor.withValues(
+                              alpha: 0.2,
+                            ),
                           ),
                           child: Slider(
                             value: _currentScale.clamp(1.0, 5.0),
@@ -284,11 +343,19 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
                           ),
                         ),
                       ),
-                      const Icon(Icons.add_rounded, color: Colors.white60, size: 20),
+                      const Icon(
+                        Icons.add_rounded,
+                        color: Colors.white60,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         '${_currentScale.toStringAsFixed(1)}x',
-                        style: TextStyle(color: context.brandColor, fontWeight: FontWeight.bold, fontSize: 13),
+                        style: TextStyle(
+                          color: context.brandColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -341,7 +408,11 @@ class _AvatarCropScreenState extends State<AvatarCropScreen> {
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),

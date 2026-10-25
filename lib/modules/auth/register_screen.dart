@@ -64,9 +64,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       lastDate: DateTime.now(),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: Theme.of(context).colorScheme.copyWith(
-            primary: context.colors.primary,
-          ),
+          colorScheme: Theme.of(
+            context,
+          ).colorScheme.copyWith(primary: context.colors.primary),
         ),
         child: child!,
       ),
@@ -79,15 +79,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // ==================== VALIDATION FUNCTIONS ====================
   String? _validatePassword(String password, bool isVi) {
-    if (password.isEmpty) return isVi ? 'Vui lòng nhập mật khẩu!' : 'Please enter password!';
-    if (password.length < 8) return isVi ? 'Mật khẩu phải có tối thiểu 8 ký tự!' : 'Password must be at least 8 characters!';
+    if (password.isEmpty) {
+      return isVi ? 'Vui lòng nhập mật khẩu!' : 'Please enter password!';
+    }
+    if (password.length < 8) {
+      return isVi
+          ? 'Mật khẩu phải có tối thiểu 8 ký tự!'
+          : 'Password must be at least 8 characters!';
+    }
     if (!RegExp(r'[a-z]').hasMatch(password) ||
         !RegExp(r'[A-Z]').hasMatch(password)) {
       return isVi
           ? 'Mật khẩu phải có chữ cái (vừa chữ hoa vừa chữ thường)!'
           : 'Password must have uppercase and lowercase letters!';
     }
-    if (!RegExp(r'[0-9]').hasMatch(password)) return isVi ? 'Mật khẩu phải có chữ số!' : 'Password must have digits!';
+    if (!RegExp(r'[0-9]').hasMatch(password)) {
+      return isVi ? 'Mật khẩu phải có chữ số!' : 'Password must have digits!';
+    }
     if (!RegExp(
       r"""[!@#$%^&*()_+\-=\[\]{};:'",./<>?\\|`~]""",
     ).hasMatch(password)) {
@@ -99,10 +107,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   String? _validatePhone(String phone, bool isVi) {
-    if (phone.isEmpty) return isVi ? 'Vui lòng nhập số điện thoại!' : 'Please enter phone number!';
-    if (phone.length != 10) return isVi ? 'Số điện thoại phải có đúng 10 chữ số!' : 'Phone number must have exactly 10 digits!';
+    if (phone.isEmpty) {
+      return isVi
+          ? 'Vui lòng nhập số điện thoại!'
+          : 'Please enter phone number!';
+    }
+    if (phone.length != 10) {
+      return isVi
+          ? 'Số điện thoại phải có đúng 10 chữ số!'
+          : 'Phone number must have exactly 10 digits!';
+    }
     if (!RegExp(r'^[0-9]+$').hasMatch(phone)) {
-      return isVi ? 'Số điện thoại chỉ chứa chữ số!' : 'Phone number can only contain digits!';
+      return isVi
+          ? 'Số điện thoại chỉ chứa chữ số!'
+          : 'Phone number can only contain digits!';
     }
 
     if (!RegExp(r'^(03|05|07|08|09)[0-9]{8}$').hasMatch(phone)) {
@@ -114,7 +132,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   String? _validateDateOfBirth(DateTime? date, bool isVi) {
-    if (date == null) return isVi ? 'Vui lòng chọn ngày sinh!' : 'Please select date of birth!';
+    if (date == null) {
+      return isVi ? 'Vui lòng chọn ngày sinh!' : 'Please select date of birth!';
+    }
     final now = DateTime.now();
     final minAge = DateTime(now.year - 6, now.month, now.day);
     if (date.isAfter(minAge)) {
@@ -142,7 +162,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _onNameChanged(String value) {
     final isVi = LanguageScope.of(context).isVietnamese;
     setState(() {
-      _nameError = value.trim().isEmpty ? (isVi ? 'Vui lòng nhập tên!' : 'Please enter your name!') : null;
+      _nameError = value.trim().isEmpty
+          ? (isVi ? 'Vui lòng nhập tên!' : 'Please enter your name!')
+          : null;
     });
   }
 
@@ -170,9 +192,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final isVi = LanguageScope.of(context).isVietnamese;
     setState(() {
       if (value.isEmpty) {
-        _confirmPasswordError = isVi ? 'Vui lòng nhập lại mật khẩu!' : 'Please re-enter password!';
+        _confirmPasswordError = isVi
+            ? 'Vui lòng nhập lại mật khẩu!'
+            : 'Please re-enter password!';
       } else if (value != _passwordController.text) {
-        _confirmPasswordError = isVi ? 'Mật khẩu nhập lại không khớp!' : 'Passwords do not match!';
+        _confirmPasswordError = isVi
+            ? 'Mật khẩu nhập lại không khớp!'
+            : 'Passwords do not match!';
       } else {
         _confirmPasswordError = null;
       }
@@ -196,17 +222,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     // Validate Name
     if (name.isEmpty) {
-      _showSnackBar(isVi ? 'Vui lòng nhập tên!' : 'Please enter your name!', isError: true);
+      _showSnackBar(
+        isVi ? 'Vui lòng nhập tên!' : 'Please enter your name!',
+        isError: true,
+      );
       return;
     }
 
     // Validate Email
     if (email.isEmpty) {
-      _showSnackBar(isVi ? 'Vui lòng nhập email!' : 'Please enter your email!', isError: true);
+      _showSnackBar(
+        isVi ? 'Vui lòng nhập email!' : 'Please enter your email!',
+        isError: true,
+      );
       return;
     }
     if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(email)) {
-      _showSnackBar(isVi ? 'Email không hợp lệ!' : 'Invalid email address!', isError: true);
+      _showSnackBar(
+        isVi ? 'Email không hợp lệ!' : 'Invalid email address!',
+        isError: true,
+      );
       return;
     }
 
@@ -226,7 +261,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     // Validate Confirm Password
     if (password != confirmPassword) {
-      _showSnackBar(isVi ? 'Mật khẩu nhập lại không khớp!' : 'Passwords do not match!', isError: true);
+      _showSnackBar(
+        isVi ? 'Mật khẩu nhập lại không khớp!' : 'Passwords do not match!',
+        isError: true,
+      );
       return;
     }
 
@@ -274,9 +312,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = context.isDark;
-    
+
     return Scaffold(
-      backgroundColor: isDark ? AppColors.primaryTealDark : AppColors.primaryTeal,
+      backgroundColor: isDark
+          ? AppColors.primaryTealDark
+          : AppColors.primaryTeal,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -296,7 +336,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: context.colors.onPrimary.withValues(alpha: 0.15),
-                        border: Border.all(color: context.colors.onPrimary.withValues(alpha: 0.24), width: 1),
+                        border: Border.all(
+                          color: context.colors.onPrimary.withValues(
+                            alpha: 0.24,
+                          ),
+                          width: 1,
+                        ),
                       ),
                       child: Icon(
                         Icons.arrow_back_ios_new_rounded,
@@ -306,10 +351,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   const Spacer(),
-                  AppLogo.wordmark(
-                    height: 32,
-                    color: context.colors.onPrimary,
-                  ),
+                  AppLogo.wordmark(height: 32, color: context.colors.onPrimary),
                   const Spacer(flex: 2),
                 ],
               ),
@@ -320,7 +362,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: context.colors.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                   boxShadow: AppShadows.modal(isDark),
                 ),
                 child: SingleChildScrollView(
@@ -349,10 +393,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       const SizedBox(height: 30),
-                      _buildLabel(isVi ? 'Tên người dùng' : 'Full Name', error: _nameError),
+                      _buildLabel(
+                        isVi ? 'Tên người dùng' : 'Full Name',
+                        error: _nameError,
+                      ),
                       _buildTextField(
                         controller: _nameController,
-                        hintText: isVi ? 'Nhập tên người dùng' : 'Enter your name',
+                        hintText: isVi
+                            ? 'Nhập tên người dùng'
+                            : 'Enter your name',
                         onChanged: _onNameChanged,
                         errorText: _nameError,
                       ),
@@ -364,10 +413,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         onChanged: _onEmailChanged,
                         errorText: _emailError,
                       ),
-                      _buildLabel(isVi ? 'Số điện thoại' : 'Phone Number', error: _phoneError),
+                      _buildLabel(
+                        isVi ? 'Số điện thoại' : 'Phone Number',
+                        error: _phoneError,
+                      ),
                       _buildTextField(
                         controller: _phoneController,
-                        hintText: isVi ? 'Nhập số điện thoại' : 'Enter your phone number',
+                        hintText: isVi
+                            ? 'Nhập số điện thoại'
+                            : 'Enter your phone number',
                         keyboardType: TextInputType.phone,
                         onChanged: _onPhoneChanged,
                         errorText: _phoneError,
@@ -386,9 +440,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 _buildLabel(isVi ? 'Giới tính' : 'Gender'),
                                 Row(
                                   children: [
-                                    _buildGenderOption('Nam', isVi ? 'Nam' : 'Male'),
+                                    _buildGenderOption(
+                                      'Nam',
+                                      isVi ? 'Nam' : 'Male',
+                                    ),
                                     const SizedBox(width: 8),
-                                    _buildGenderOption('Nữ', isVi ? 'Nữ' : 'Female'),
+                                    _buildGenderOption(
+                                      'Nữ',
+                                      isVi ? 'Nữ' : 'Female',
+                                    ),
                                   ],
                                 ),
                               ],
@@ -399,7 +459,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildLabel(isVi ? 'Ngày sinh' : 'Date of Birth', error: _dateError),
+                                _buildLabel(
+                                  isVi ? 'Ngày sinh' : 'Date of Birth',
+                                  error: _dateError,
+                                ),
                                 InkWell(
                                   onTap: _pickDate,
                                   child: Container(
@@ -424,12 +487,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           _selectedDate == null
                                               ? 'DD/MM/YYYY'
                                               : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
-                                          style: context.textTheme.bodyMedium?.copyWith(
-                                            color: _selectedDate == null
-                                                ? context.colors.onSurfaceVariant.withValues(alpha: 0.7)
-                                                : context.colors.onSurface,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                          style: context.textTheme.bodyMedium
+                                              ?.copyWith(
+                                                color: _selectedDate == null
+                                                    ? context
+                                                          .colors
+                                                          .onSurfaceVariant
+                                                          .withValues(
+                                                            alpha: 0.7,
+                                                          )
+                                                    : context.colors.onSurface,
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                         ),
                                         Icon(
                                           Icons.calendar_today_rounded,
@@ -448,10 +517,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     ),
                                     child: Text(
                                       _dateError!,
-                                      style: context.textTheme.bodySmall?.copyWith(
-                                        color: context.colors.error,
-                                        fontSize: 12,
-                                      ),
+                                      style: context.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: context.colors.error,
+                                            fontSize: 12,
+                                          ),
                                     ),
                                   ),
                               ],
@@ -460,7 +530,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      _buildLabel(isVi ? 'Mật khẩu' : 'Password', error: _passwordError),
+                      _buildLabel(
+                        isVi ? 'Mật khẩu' : 'Password',
+                        error: _passwordError,
+                      ),
                       _buildTextField(
                         controller: _passwordController,
                         hintText: isVi ? 'Nhập mật khẩu' : 'Enter password',
@@ -491,19 +564,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: Column(
                           children: [
                             _buildPasswordRule(
-                              isVi ? 'Tối thiểu 8 ký tự' : 'At least 8 characters',
+                              isVi
+                                  ? 'Tối thiểu 8 ký tự'
+                                  : 'At least 8 characters',
                               _hasMinLength,
                             ),
                             _buildPasswordRule(
-                              isVi ? 'Bao gồm chữ cái và chữ số' : 'Includes letters and numbers',
+                              isVi
+                                  ? 'Bao gồm chữ cái và chữ số'
+                                  : 'Includes letters and numbers',
                               _hasLetter && _hasNumber,
                             ),
                             _buildPasswordRule(
-                              isVi ? 'Bao gồm ký tự đặc biệt (!@#\$%^&*)' : 'Includes special characters (!@#\$%^&*)',
+                              isVi
+                                  ? 'Bao gồm ký tự đặc biệt (!@#\$%^&*)'
+                                  : 'Includes special characters (!@#\$%^&*)',
                               _hasSpecialChar,
                             ),
                             _buildPasswordRule(
-                              isVi ? 'Bao gồm chữ cái in hoa' : 'Includes uppercase letter',
+                              isVi
+                                  ? 'Bao gồm chữ cái in hoa'
+                                  : 'Includes uppercase letter',
                               _hasUpperCase,
                             ),
                           ],
@@ -516,7 +597,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       _buildTextField(
                         controller: _confirmPasswordController,
-                        hintText: isVi ? 'Nhập lại mật khẩu' : 'Re-enter password',
+                        hintText: isVi
+                            ? 'Nhập lại mật khẩu'
+                            : 'Re-enter password',
                         isObscure: _obscureConfirmPassword,
                         onChanged: _onConfirmPasswordChanged,
                         errorText: _confirmPasswordError,
@@ -548,7 +631,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: _isLoading
-                                  ? [context.colors.surfaceContainerHighest, context.colors.surfaceContainerHighest]
+                                  ? [
+                                      context.colors.surfaceContainerHighest,
+                                      context.colors.surfaceContainerHighest,
+                                    ]
                                   : [
                                       AppColors.primaryTealLight,
                                       AppColors.primaryTeal,
@@ -557,7 +643,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: context.colors.primary.withValues(alpha: 0.3),
+                                color: context.colors.primary.withValues(
+                                  alpha: 0.3,
+                                ),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),
@@ -575,10 +663,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   )
                                 : Text(
                                     isVi ? 'Đăng ký' : 'Sign Up',
-                                    style: context.textTheme.titleMedium?.copyWith(
-                                      color: context.colors.onPrimary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    style: context.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: context.colors.onPrimary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                   ),
                           ),
                         ),
@@ -601,7 +690,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Text(
         t,
         style: context.textTheme.labelMedium?.copyWith(
-          color: error != null ? context.colors.error : context.colors.onSurfaceVariant,
+          color: error != null
+              ? context.colors.error
+              : context.colors.onSurfaceVariant,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -708,7 +799,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (s) ...[
-                  Icon(Icons.check_circle_rounded, color: context.colors.primary, size: 16),
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: context.colors.primary,
+                    size: 16,
+                  ),
                   const SizedBox(width: 6),
                 ],
                 Text(
@@ -735,15 +830,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Row(
         children: [
           Icon(
-            isValid ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-            color: isValid ? context.income : context.colors.onSurfaceVariant.withValues(alpha: 0.6),
+            isValid
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked_rounded,
+            color: isValid
+                ? context.income
+                : context.colors.onSurfaceVariant.withValues(alpha: 0.6),
             size: 16,
           ),
           const SizedBox(width: 8),
           Text(
             text,
             style: context.textTheme.bodySmall?.copyWith(
-              color: isValid ? context.income : context.colors.onSurfaceVariant.withValues(alpha: 0.8),
+              color: isValid
+                  ? context.income
+                  : context.colors.onSurfaceVariant.withValues(alpha: 0.8),
               fontSize: 13,
               fontWeight: isValid ? FontWeight.w600 : FontWeight.w500,
             ),

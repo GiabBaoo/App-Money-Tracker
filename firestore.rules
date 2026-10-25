@@ -2,104 +2,309 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
-    function isAuthenticated() {
-      return request.auth != null;
-    }
+    // ════════ HELPERS CHUNG ════════
+    function signedIn()    { return request.auth != null; }
+    function uid()         { return request.auth.uid; }
+    function incoming()    { return request.resource.data; }
+    function existing()    { return resource.data; }
+    function changedKeys() { return request.resource.data.diff(resource.data).affectedKeys(); }
 
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
+    // ════════ DỮ LIỆU CÁ NHÂN (uid-scoped) ════════
+    function ownsExisting()  { return signedIn() && existing().uid == uid(); }
+    function createsOwn()    { return signedIn() && incoming().uid is string && incoming().uid == uid(); }
+    function updatesOwn()    { return ownsExisting() && incoming().uid == existing().uid; } // uid bất biến
+    function deletesOwn()    { return signedIn() && (resource == null || existing().uid == uid()); }
 
-    function isDocOwner() {
-      return isAuthenticated() && (
-        (resource != null && resource.data.uid == request.auth.uid) ||
-        (request.resource != null && request.resource.data.uid == request.auth.uid)
-      );
+    match /transactions/{docId} {
+      allow read:   if ownsExisting();
+      allow create: if createsOwn();
+      allow update: if updatesOwn();
+      allow delete: if deletesOwn();
     }
-
-    // 1. Hồ sơ người dùng
-    match /users/{userId} {
-      allow read, write: if isOwner(userId);
+    match /wallets/{docId} {
+      allow read:   if ownsExisting();
+      allow create: if createsOwn();
+      allow update: if updatesOwn();
+      allow delete: if deletesOwn();
     }
-
-    // 2. Giao dịch thu/chi cá nhân
-    match /transactions/{transactionId} {
-      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    match /budgets/{docId} {
+      allow read:   if ownsExisting();
+      allow create: if createsOwn();
+      allow update: if updatesOwn();
+      allow delete: if deletesOwn();
     }
-
-    // 3. Ví tiền
-    match /wallets/{walletId} {
-      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    match /goals/{docId} {
+      allow read:   if ownsExisting();
+      allow create: if createsOwn();
+      allow update: if updatesOwn();
+      allow delete: if deletesOwn();
     }
-
-    // 4. Ngân sách
-    match /budgets/{budgetId} {
-      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    match /messages/{docId} {
+      allow read:   if ownsExisting();
+      allow create: if createsOwn();
+      allow update: if updatesOwn();
+      allow delete: if deletesOwn();
     }
-
-    // 5. Mục tiêu tiết kiệm
-    match /goals/{goalId} {
-      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    match /device_sessions/{docId} {
+      allow read:   if ownsExisting();
+      allow create: if createsOwn();
+      allow update: if updatesOwn();
+      allow delete: if deletesOwn();
     }
-
-    // 6. Thông báo
-    match /notifications/{notificationId} {
-      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
-    }
-
-    // 7. Phiên thiết bị hoạt động
-    match /device_sessions/{sessionId} {
-      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
-    }
-
-    // 8. Tùy chọn sinh trắc học
     match /biometric_prefs/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if signedIn() && uid() == userId;
     }
 
-    // 9. Tin nhắn phản hồi / Hỗ trợ
-    match /messages/{messageId} {
-      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.uid == request.auth.uid;
+    // ════════ HỒ SƠ NGƯỜI DÙNG — chặn tự nâng role/accountType ════════
+    function keepsValue(field, defaultVal) {
+      return request.resource.data.get(field, defaultVal) == resource.data.get(field, defaultVal);
+    }
+    match /users/{userId} {
+      allow read:   if signedIn() && uid() == userId;
+      allow create: if signedIn() && uid() == userId
+                    && incoming().get('uid', userId) == userId
+                    && incoming().get('role', 'user') == 'user'
+                    && incoming().get('accountType', 'FREE') == 'FREE';
+      allow update: if signedIn() && uid() == userId
+                    && incoming().get('uid', userId) == userId
+                    && keepsValue('role', 'user')
+                    && keepsValue('accountType', 'FREE');
+      allow delete: if signedIn() && uid() == userId;
+      // Nâng role/accountType: chỉ qua Admin SDK / Cloud Functions.
     }
 
-    // 10. Chi tiêu nhóm (Group Expenses)
-    match /group_expenses/{groupId} {
-      allow read: if isAuthenticated() && (
-        resource.data.ownerId == request.auth.uid ||
-        request.auth.uid in resource.data.memberIds
-      );
-      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isAuthenticated() && (
-        resource.data.ownerId == request.auth.uid ||
-        request.auth.uid in resource.data.memberIds
-      );
-      allow delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+    // Hồ sơ công khai tối thiểu cho tính năng nhóm (tên/avatar thành viên) — cần bổ sung client.
+    match /public_profiles/{userId} {
+      allow read:   if signedIn();
+      allow create, update: if signedIn() && uid() == userId
+                    && incoming().keys().hasOnly(['name', 'username', 'avatarUrl', 'updatedAt']);
+      allow delete: if signedIn() && uid() == userId;
+    }
+    // Tra cứu theo SĐT khi mời: chỉ get đúng 1 doc, cấm list (chống dò hàng loạt).
+    match /phone_index/{phoneE164} {
+      allow get:    if signedIn();
+      allow list:   if false;
+      allow create: if signedIn() && incoming().uid == uid() && incoming().keys().hasOnly(['uid']);
+      allow update: if false;
+      allow delete: if signedIn() && existing().uid == uid();
+    }
 
-      // Sub-collections trong nhóm (transactions, settlements,...)
-      match /{subCollection}/{docId} {
-        allow read, write: if isAuthenticated() && (
-          get(/databases/$(database)/documents/group_expenses/$(groupId)).data.ownerId == request.auth.uid ||
-          request.auth.uid in get(/databases/$(database)/documents/group_expenses/$(groupId)).data.memberIds
-        );
+    // ════════ HELPERS NHÓM ════════
+    function groupPath(groupId)  { return /databases/$(database)/documents/groups/$(groupId); }
+    function groupExists(groupId){ return groupId is string && exists(groupPath(groupId)); }
+    function groupOf(groupId)    { return get(groupPath(groupId)).data; }
+    function isMemberOf(groupId) {
+      return signedIn() && groupExists(groupId)
+        && uid() in groupOf(groupId).memberIds
+        && groupOf(groupId).get('isDeleted', false) != true;
+    }
+    function isAdminOfGroup(groupId) {
+      return signedIn() && groupExists(groupId) && groupOf(groupId).adminId == uid();
+    }
+    function allInGroup(groupId, ids) {
+      return ids is list && ids.toSet().difference(groupOf(groupId).memberIds.toSet()).size() == 0;
+    }
+    function invitePath(groupId, inviteeUid) {
+      return /databases/$(database)/documents/group_invites/$(groupId + '_' + inviteeUid);
+    }
+
+    // ════════ NHÓM ════════
+    match /groups/{groupId} {
+      function g()        { return resource.data; }
+      function ng()       { return request.resource.data; }
+      function added()    { return ng().memberIds.toSet().difference(g().memberIds.toSet()); }
+      function removed()  { return g().memberIds.toSet().difference(ng().memberIds.toSet()); }
+      function isAdminHere()  { return signedIn() && g().adminId == uid(); }
+      function isMemberHere() { return signedIn() && uid() in g().memberIds; }
+
+      // (a) Admin sửa metadata / xóa thành viên — KHÔNG thêm, KHÔNG đổi adminId
+      function adminEditsGroup() {
+        return isAdminHere()
+          && changedKeys().hasOnly(['name', 'description', 'iconUrl', 'iconCode', 'groupType',
+                                    'memberIds', 'updatedAt', 'isDeleted', 'deletedAt'])
+          && added().size() == 0
+          && ng().adminId in ng().memberIds;
       }
+      // (b) Admin chuyển quyền cho thành viên sẵn có
+      function adminTransfersOwnership() {
+        return isAdminHere()
+          && changedKeys().hasOnly(['adminId', 'updatedAt'])
+          && ng().adminId != g().adminId
+          && ng().adminId in g().memberIds;
+      }
+      // (c) Thành viên (không phải admin) tự rời — chỉ xóa đúng mình
+      function memberLeaves() {
+        return isMemberHere() && !isAdminHere()
+          && changedKeys().hasOnly(['memberIds', 'updatedAt'])
+          && added().size() == 0
+          && removed() == [uid()].toSet();
+      }
+      // (d) Người được mời tự gia nhập — chỉ thêm đúng mình, lời mời bị tiêu thụ nguyên tử
+      function inviteeJoins() {
+        let inv = invitePath(groupId, uid());
+        return !isMemberHere()
+          && g().get('isDeleted', false) != true
+          && changedKeys().hasOnly(['memberIds', 'updatedAt'])
+          && removed().size() == 0
+          && added() == [uid()].toSet()
+          && exists(inv)
+          && get(inv).data.status == 'pending'
+          && get(inv).data.expiresAt > request.time
+          && getAfter(inv).data.status == 'accepted';
+      }
+
+      allow read: if isMemberHere() || isAdminHere();
+      allow create: if signedIn()
+        && ng().get('id', groupId) == groupId
+        && ng().adminId == uid()
+        && ng().memberIds == [uid()]                       // thành viên khác vào qua lời mời
+        && ng().get('isDeleted', false) == false
+        && !ng().keys().hasAny(['ownerId', 'role', 'roles', 'memberRoles']);
+      allow update: if signedIn()
+        && ng().memberIds is list
+        && !changedKeys().hasAny(['id', 'createdAt', 'ownerId', 'role', 'roles', 'memberRoles'])
+        && (adminEditsGroup() || adminTransfersOwnership() || memberLeaves() || inviteeJoins());
+      allow delete: if false;                              // chỉ soft-delete (isDeleted)
     }
 
-    // Mặc định chặn toàn bộ các collection không xác định khác
+    // ════════ LỜI MỜI (doc id = "{groupId}_{inviteeUid}") ════════
+    match /group_invites/{inviteId} {
+      allow read: if signedIn()
+        && (existing().inviteeUid == uid() || isAdminOfGroup(existing().groupId));
+
+      allow create: if signedIn()
+        && inviteId == incoming().groupId + '_' + incoming().inviteeUid
+        && incoming().keys().hasOnly(['groupId', 'groupName', 'inviteeUid', 'invitedBy',
+                                      'status', 'createdAt', 'expiresAt'])
+        && incoming().invitedBy == uid()
+        && isAdminOfGroup(incoming().groupId)
+        && incoming().inviteeUid is string
+        && incoming().inviteeUid != uid()
+        && !(incoming().inviteeUid in groupOf(incoming().groupId).memberIds)
+        && incoming().status == 'pending'
+        && incoming().expiresAt is timestamp
+        && incoming().expiresAt > request.time
+        && incoming().expiresAt <= request.time + duration.value(7, 'd');
+
+      allow update: if signedIn() && (
+        // Người được mời chấp nhận/từ chối (chấp nhận PHẢI đi cùng batch update groups)
+        ( existing().inviteeUid == uid()
+          && existing().status == 'pending'
+          && changedKeys().hasOnly(['status', 'respondedAt'])
+          && incoming().status in ['accepted', 'rejected'] )
+        ||
+        // Admin mời lại (reset về pending với hạn mới)
+        ( isAdminOfGroup(existing().groupId)
+          && changedKeys().hasOnly(['status', 'expiresAt', 'createdAt', 'groupName', 'invitedBy'])
+          && incoming().invitedBy == uid()
+          && incoming().status == 'pending'
+          && incoming().expiresAt > request.time
+          && incoming().expiresAt <= request.time + duration.value(7, 'd') )
+      );
+
+      allow delete: if signedIn()
+        && (existing().inviteeUid == uid() || isAdminOfGroup(existing().groupId));
+    }
+
+    // ════════ CHI TIÊU NHÓM ════════
+    match /expenses/{expenseId} {
+      allow read: if isMemberOf(existing().groupId);
+      allow create: if isMemberOf(incoming().groupId)
+        && incoming().createdBy == uid()
+        && incoming().payerId in groupOf(incoming().groupId).memberIds
+        && allInGroup(incoming().groupId, incoming().participantIds)
+        && incoming().amount is number && incoming().amount > 0;
+      allow update: if isMemberOf(existing().groupId)
+        && (existing().createdBy == uid() || isAdminOfGroup(existing().groupId))
+        && !changedKeys().hasAny(['id', 'groupId', 'createdBy', 'createdAt'])
+        && incoming().payerId in groupOf(existing().groupId).memberIds
+        && allInGroup(existing().groupId, incoming().participantIds)
+        && incoming().amount is number && incoming().amount > 0;
+      allow delete: if isMemberOf(existing().groupId)
+        && (existing().createdBy == uid() || isAdminOfGroup(existing().groupId));
+    }
+
+    // ════════ CÔNG NỢ ════════
+    match /debts/{debtId} {
+      allow read: if isMemberOf(existing().groupId)
+        || (signedIn() && (existing().debtorId == uid() || existing().creditorId == uid()));
+      allow create: if isMemberOf(incoming().groupId)
+        && incoming().debtorId in groupOf(incoming().groupId).memberIds
+        && incoming().creditorId in groupOf(incoming().groupId).memberIds
+        && incoming().debtorId != incoming().creditorId
+        && incoming().amount is number && incoming().amount >= 0;
+      allow update: if isMemberOf(existing().groupId)
+        && changedKeys().hasOnly(['amount', 'status', 'updatedAt'])
+        && incoming().amount is number && incoming().amount >= 0
+        && incoming().status in ['active', 'settled', 'partiallySettled'];
+      allow delete: if isMemberOf(existing().groupId);
+      // P1: chuyển tính công nợ sang Cloud Functions, khi đó client chỉ được read.
+    }
+
+    // ════════ QUYẾT TOÁN ════════
+    match /settlements/{settlementId} {
+      allow read: if isMemberOf(existing().groupId)
+        || (signedIn() && (existing().payerId == uid() || existing().payeeId == uid()));
+      allow create: if isMemberOf(incoming().groupId)
+        && incoming().payerId == uid()
+        && incoming().payeeId in groupOf(incoming().groupId).memberIds
+        && incoming().payeeId != uid()
+        && incoming().status == 'pendingConfirmation'
+        && incoming().amount is number && incoming().amount > 0;
+      allow update: if isMemberOf(existing().groupId)
+        && existing().status == 'pendingConfirmation'
+        && !changedKeys().hasAny(['id', 'groupId', 'payerId', 'payeeId', 'amount', 'createdAt'])
+        && (
+          ( existing().payeeId == uid()
+            && changedKeys().hasOnly(['status', 'confirmedAt', 'notes'])
+            && incoming().status in ['confirmed', 'rejected'] )
+          ||
+          ( existing().payerId == uid()
+            && changedKeys().hasOnly(['proofPhotoUrl', 'notes']) )
+        );
+      allow delete: if signedIn()
+        && existing().status == 'pendingConfirmation'
+        && (existing().payerId == uid() || isAdminOfGroup(existing().groupId));
+    }
+
+    // ════════ GIAO DỊCH QUỸ ════════
+    match /fund_transactions/{txId} {
+      allow read: if isMemberOf(existing().groupId);
+      allow create: if isMemberOf(incoming().groupId)
+        && incoming().userId == uid()
+        && incoming().amount is number && incoming().amount > 0;
+      allow update: if false;
+      allow delete: if isMemberOf(existing().groupId)
+        && (existing().userId == uid() || isAdminOfGroup(existing().groupId));
+    }
+
+    // ════════ THÔNG BÁO — ghi chéo có kiểm soát cho luồng nhóm ════════
+    function groupInviteNotification() {
+      let d = request.resource.data;
+      return d.type == 'group_invite'
+        && d.senderUid == uid() && d.uid is string && d.uid != uid()
+        && isAdminOfGroup(d.groupId)
+        && exists(invitePath(d.groupId, d.uid));
+    }
+    function groupResponseNotification() {
+      let d = request.resource.data;
+      return d.type == 'group_response'
+        && d.senderUid == uid()
+        && groupExists(d.groupId)
+        && groupOf(d.groupId).adminId == d.uid
+        && exists(invitePath(d.groupId, uid()));
+    }
+    match /notifications/{notificationId} {
+      allow read: if ownsExisting();
+      allow create: if signedIn() && (
+        incoming().uid == uid() || groupInviteNotification() || groupResponseNotification()
+      );
+      allow update: if ownsExisting()
+        && !changedKeys().hasAny(['uid', 'senderUid', 'type', 'groupId']);
+      allow delete: if deletesOwn();
+    }
+
+    // ════════ MẶC ĐỊNH: CHẶN ════════
     match /{document=**} {
       allow read, write: if false;
     }

@@ -17,16 +17,36 @@ class AppRadius {
   static const double pillRadius = 999.0;
 
   // ─── BORDERRADIUS OBJECTS ───
-  static const BorderRadius badge = BorderRadius.all(Radius.circular(badgeRadius));
-  static const BorderRadius chip = BorderRadius.all(Radius.circular(chipRadius));
-  static const BorderRadius button = BorderRadius.all(Radius.circular(buttonRadius));
-  static const BorderRadius input = BorderRadius.all(Radius.circular(inputRadius));
-  static const BorderRadius iconContainer = BorderRadius.all(Radius.circular(iconContainerRadius));
-  static const BorderRadius card = BorderRadius.all(Radius.circular(cardRadius));
-  static const BorderRadius cardLarge = BorderRadius.all(Radius.circular(cardLargeRadius));
-  static const BorderRadius dialog = BorderRadius.all(Radius.circular(dialogRadius));
-  static const BorderRadius bottomSheet = BorderRadius.vertical(top: Radius.circular(bottomSheetRadius));
-  static const BorderRadius pill = BorderRadius.all(Radius.circular(pillRadius));
+  static const BorderRadius badge = BorderRadius.all(
+    Radius.circular(badgeRadius),
+  );
+  static const BorderRadius chip = BorderRadius.all(
+    Radius.circular(chipRadius),
+  );
+  static const BorderRadius button = BorderRadius.all(
+    Radius.circular(buttonRadius),
+  );
+  static const BorderRadius input = BorderRadius.all(
+    Radius.circular(inputRadius),
+  );
+  static const BorderRadius iconContainer = BorderRadius.all(
+    Radius.circular(iconContainerRadius),
+  );
+  static const BorderRadius card = BorderRadius.all(
+    Radius.circular(cardRadius),
+  );
+  static const BorderRadius cardLarge = BorderRadius.all(
+    Radius.circular(cardLargeRadius),
+  );
+  static const BorderRadius dialog = BorderRadius.all(
+    Radius.circular(dialogRadius),
+  );
+  static const BorderRadius bottomSheet = BorderRadius.vertical(
+    top: Radius.circular(bottomSheetRadius),
+  );
+  static const BorderRadius pill = BorderRadius.all(
+    Radius.circular(pillRadius),
+  );
 }
 
 /// AppShadows - Đổ bóng đa lớp mềm mại (Soft Shadows) phong cách Fintech cao cấp
@@ -45,16 +65,8 @@ class AppShadows {
       ];
     }
     return const [
-      BoxShadow(
-        color: Color(0x0A0F172A),
-        blurRadius: 12,
-        offset: Offset(0, 4),
-      ),
-      BoxShadow(
-        color: Color(0x050F172A),
-        blurRadius: 2,
-        offset: Offset(0, 1),
-      ),
+      BoxShadow(color: Color(0x0A0F172A), blurRadius: 12, offset: Offset(0, 4)),
+      BoxShadow(color: Color(0x050F172A), blurRadius: 2, offset: Offset(0, 1)),
     ];
   }
 
@@ -70,16 +82,8 @@ class AppShadows {
       ];
     }
     return const [
-      BoxShadow(
-        color: Color(0x140F172A),
-        blurRadius: 18,
-        offset: Offset(0, 6),
-      ),
-      BoxShadow(
-        color: Color(0x080F172A),
-        blurRadius: 4,
-        offset: Offset(0, 2),
-      ),
+      BoxShadow(color: Color(0x140F172A), blurRadius: 18, offset: Offset(0, 6)),
+      BoxShadow(color: Color(0x080F172A), blurRadius: 4, offset: Offset(0, 2)),
     ];
   }
 
@@ -104,7 +108,11 @@ class AppShadows {
   }
 
   // ─── VẦNG SÁNG NHẸ (AMBIENT GLOW) ───
-  static List<BoxShadow> glow(Color color, {double alpha = 0.25, double blur = 14}) {
+  static List<BoxShadow> glow(
+    Color color, {
+    double alpha = 0.25,
+    double blur = 14,
+  }) {
     return [
       BoxShadow(
         color: color.withValues(alpha: alpha),
@@ -126,11 +134,13 @@ class AppDecorations {
     Color? customBg,
     Color? customBorder,
   }) {
-    final bg = customBg ??
+    final bg =
+        customBg ??
         (isDark
             ? const Color(0xFF182234).withValues(alpha: 0.85)
             : Colors.white.withValues(alpha: 0.90));
-    final border = customBorder ??
+    final border =
+        customBorder ??
         (isDark
             ? const Color(0xFF334155).withValues(alpha: 0.6)
             : const Color(0xFFE2E8F0));

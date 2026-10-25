@@ -40,7 +40,8 @@ class GroupBillSplitResult {
 
 /// Dịch vụ tính toán và chia tiền hóa đơn nhóm thông minh
 class GroupBillSplitService {
-  static final GroupBillSplitService _instance = GroupBillSplitService._internal();
+  static final GroupBillSplitService _instance =
+      GroupBillSplitService._internal();
   factory GroupBillSplitService() => _instance;
   GroupBillSplitService._internal();
 
@@ -107,27 +108,39 @@ class GroupBillSplitService {
         name: name,
         amount: roundedPerPerson,
         isPayer: isPayer,
-        note: isPayer ? 'Đã thanh toán trước' : 'Cần gửi lại ${CurrencyUtils.formatCurrency(roundedPerPerson)}',
+        note: isPayer
+            ? 'Đã thanh toán trước'
+            : 'Cần gửi lại ${CurrencyUtils.formatCurrency(roundedPerPerson)}',
       );
     }).toList();
 
     // Soạn tin nhắn chia sẻ mẫu cực kỳ lịch sự, văn minh gửi qua Zalo/Mess
     final summaryBuffer = StringBuffer();
     summaryBuffer.writeln('🧾 **CHI TIẾT CHIA TIỀN: $title**');
-    summaryBuffer.writeln('• Tổng hóa đơn: **${CurrencyUtils.formatCurrency(totalAmount)}**');
+    summaryBuffer.writeln(
+      '• Tổng hóa đơn: **${CurrencyUtils.formatCurrency(totalAmount)}**',
+    );
     summaryBuffer.writeln('• Người thanh toán trước: **$effectivePayer**');
     summaryBuffer.writeln('• Số người: **$count người**');
-    summaryBuffer.writeln('• Mỗi người: **${CurrencyUtils.formatCurrency(roundedPerPerson)}**');
+    summaryBuffer.writeln(
+      '• Mỗi người: **${CurrencyUtils.formatCurrency(roundedPerPerson)}**',
+    );
     summaryBuffer.writeln('─────────────────');
     summaryBuffer.writeln('Danh sách cần gửi:');
     for (final m in members) {
       if (m.isPayer) {
-        summaryBuffer.writeln('• ${m.name}: Đã trả toàn bộ (${CurrencyUtils.formatCurrency(totalAmount)})');
+        summaryBuffer.writeln(
+          '• ${m.name}: Đã trả toàn bộ (${CurrencyUtils.formatCurrency(totalAmount)})',
+        );
       } else {
-        summaryBuffer.writeln('• ${m.name}: ${CurrencyUtils.formatCurrency(m.amount)}');
+        summaryBuffer.writeln(
+          '• ${m.name}: ${CurrencyUtils.formatCurrency(m.amount)}',
+        );
       }
     }
-    summaryBuffer.writeln('\n💡 *Bạn có thể sao chép nội dung này gửi vào nhóm Zalo/Messenger nhé!*');
+    summaryBuffer.writeln(
+      '\n💡 *Bạn có thể sao chép nội dung này gửi vào nhóm Zalo/Messenger nhé!*',
+    );
 
     return GroupBillSplitResult(
       title: title,
@@ -143,17 +156,26 @@ class GroupBillSplitService {
 
   double _extractAmount(String text) {
     // 600k, 600.000, 1tr2, 1.5 triệu, 500k
-    final trMatch = RegExp(r'(\d+(?:[.,]\d+)?)\s*(?:tr|triệu|trieu)\s*(\d+)?', caseSensitive: false).firstMatch(text);
+    final trMatch = RegExp(
+      r'(\d+(?:[.,]\d+)?)\s*(?:tr|triệu|trieu)\s*(\d+)?',
+      caseSensitive: false,
+    ).firstMatch(text);
     if (trMatch != null) {
-      final mainPart = double.tryParse(trMatch.group(1)!.replaceAll(',', '.')) ?? 0;
-      final subPart = trMatch.group(2) != null ? (double.tryParse(trMatch.group(2)!) ?? 0) : 0;
+      final mainPart =
+          double.tryParse(trMatch.group(1)!.replaceAll(',', '.')) ?? 0;
+      final subPart = trMatch.group(2) != null
+          ? (double.tryParse(trMatch.group(2)!) ?? 0)
+          : 0;
       if (subPart > 0) {
         return mainPart * 1000000 + subPart * 100000;
       }
       return mainPart * 1000000;
     }
 
-    final kMatch = RegExp(r'(\d+(?:[.,]\d+)?)\s*(?:k|nghìn|ngàn|nghin)', caseSensitive: false).firstMatch(text);
+    final kMatch = RegExp(
+      r'(\d+(?:[.,]\d+)?)\s*(?:k|nghìn|ngàn|nghin)',
+      caseSensitive: false,
+    ).firstMatch(text);
     if (kMatch != null) {
       final val = double.tryParse(kMatch.group(1)!.replaceAll(',', '.')) ?? 0;
       return val * 1000;
@@ -171,13 +193,23 @@ class GroupBillSplitService {
   String _extractTitle(String text) {
     final lower = text.toLowerCase();
     if (lower.contains('ăn lẩu') || lower.contains('lẩu')) return 'Ăn lẩu';
-    if (lower.contains('tiền ăn') || lower.contains('ăn uống') || lower.contains('ăn trưa') || lower.contains('ăn tối')) {
+    if (lower.contains('tiền ăn') ||
+        lower.contains('ăn uống') ||
+        lower.contains('ăn trưa') ||
+        lower.contains('ăn tối')) {
       return 'Bữa ăn chung';
     }
-    if (lower.contains('cafe') || lower.contains('cà phê') || lower.contains('trà sữa')) return 'Đi cafe';
+    if (lower.contains('cafe') ||
+        lower.contains('cà phê') ||
+        lower.contains('trà sữa'))
+      return 'Đi cafe';
     if (lower.contains('karaoke') || lower.contains('hát')) return 'Karaoke';
-    if (lower.contains('du lịch') || lower.contains('đi chơi')) return 'Chuyến đi chơi';
-    if (lower.contains('tiền phòng') || lower.contains('tiền nhà') || lower.contains('tiền điện')) return 'Hóa đơn sinh hoạt';
+    if (lower.contains('du lịch') || lower.contains('đi chơi'))
+      return 'Chuyến đi chơi';
+    if (lower.contains('tiền phòng') ||
+        lower.contains('tiền nhà') ||
+        lower.contains('tiền điện'))
+      return 'Hóa đơn sinh hoạt';
     return 'Hóa đơn nhóm';
   }
 
@@ -185,34 +217,55 @@ class GroupBillSplitService {
     final members = <String>[];
 
     // 1. Kiểm tra định dạng có dấu hai chấm: "cho 4 người: An, Bình, Cường, Dũng"
-    final colonMatch = RegExp(r':\s*([^.]+)', caseSensitive: false).firstMatch(text);
+    final colonMatch = RegExp(
+      r':\s*([^.]+)',
+      caseSensitive: false,
+    ).firstMatch(text);
     if (colonMatch != null) {
-      final rawNames = colonMatch.group(1)!.split(RegExp(r'[,;\n]|(?:\s+và\s+)'));
+      final rawNames = colonMatch
+          .group(1)!
+          .split(RegExp(r'[,;\n]|(?:\s+và\s+)'));
       for (final n in rawNames) {
         final clean = n.trim();
         if (clean.isNotEmpty && clean.length <= 20) {
-          members.add(clean.toLowerCase() == 'tôi' || clean.toLowerCase() == 'mình' ? 'Bạn' : clean);
+          members.add(
+            clean.toLowerCase() == 'tôi' || clean.toLowerCase() == 'mình'
+                ? 'Bạn'
+                : clean,
+          );
         }
       }
       if (members.isNotEmpty) return members;
     }
 
     // 2. Kiểm tra "gồm tôi, Mai, Nam"
-    final gomMatch = RegExp(r'gồm\s+([^.]+)', caseSensitive: false).firstMatch(text);
+    final gomMatch = RegExp(
+      r'gồm\s+([^.]+)',
+      caseSensitive: false,
+    ).firstMatch(text);
     if (gomMatch != null) {
       final raw = gomMatch.group(1)!;
       final parts = raw.split(RegExp(r'[,;\n]|(?:\s+và\s+)'));
       for (final p in parts) {
         final clean = p.trim();
-        if (clean.isNotEmpty && !clean.contains('người') && clean.length <= 20) {
-          members.add(clean.toLowerCase() == 'tôi' || clean.toLowerCase() == 'mình' ? 'Bạn' : clean);
+        if (clean.isNotEmpty &&
+            !clean.contains('người') &&
+            clean.length <= 20) {
+          members.add(
+            clean.toLowerCase() == 'tôi' || clean.toLowerCase() == 'mình'
+                ? 'Bạn'
+                : clean,
+          );
         }
       }
       if (members.length >= 2) return members;
     }
 
     // 3. Kiểm tra "cho N người" -> Tạo danh sách tự động
-    final countMatch = RegExp(r'(\d+)\s*người', caseSensitive: false).firstMatch(text);
+    final countMatch = RegExp(
+      r'(\d+)\s*người',
+      caseSensitive: false,
+    ).firstMatch(text);
     if (countMatch != null) {
       final count = int.tryParse(countMatch.group(1)!) ?? 3;
       members.add('Bạn');
@@ -227,7 +280,10 @@ class GroupBillSplitService {
 
   String _extractPayer(String text) {
     final lower = text.toLowerCase();
-    final payerMatch = RegExp(r'(?:do|người trả|bởi)\s+([a-zA-ZÀ-ỹ\s]+)', caseSensitive: false).firstMatch(lower);
+    final payerMatch = RegExp(
+      r'(?:do|người trả|bởi)\s+([a-zA-ZÀ-ỹ\s]+)',
+      caseSensitive: false,
+    ).firstMatch(lower);
     if (payerMatch != null) {
       final name = payerMatch.group(1)!.trim();
       if (name.isNotEmpty && name.length <= 20) {

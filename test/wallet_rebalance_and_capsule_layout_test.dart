@@ -10,7 +10,8 @@ void main() {
         uid: 'user_test',
         name: 'Tiền mặt',
         type: 'cash',
-        balance: -450000.0, // Giả lập số dư bị âm do các lần quét hóa đơn 2020 bị purge mất
+        balance:
+            -450000.0, // Giả lập số dư bị âm do các lần quét hóa đơn 2020 bị purge mất
         initialBalance: 500000.0, // Số dư ban đầu 500k
         iconCode: 0xe84f,
         colorValue: 0xFF438883,
@@ -53,7 +54,8 @@ void main() {
         }
       }
 
-      final expectedBalance = wallet.initialBalance + totalIncome - totalExpense;
+      final expectedBalance =
+          wallet.initialBalance + totalIncome - totalExpense;
 
       // Kỳ vọng: 500.000 (initial) + 200.000 (income) - 50000 (expense) = 650.000đ
       expect(expectedBalance, equals(650000.0));
@@ -67,59 +69,68 @@ void main() {
       expect(reconciledWallet.balance >= 0, isTrue);
     });
 
-    test('Trường hợp ví không có giao dịch nào thì số dư chuẩn bằng initialBalance', () {
-      final wallet = WalletModel(
-        id: 'wallet_momo_01',
-        uid: 'user_test',
-        name: 'MoMo',
-        type: 'e_wallet',
-        balance: -150000.0, // Bị trừ do hóa đơn năm 2020 rồi hóa đơn bị purge
-        initialBalance: 100000.0,
-        iconCode: 0xe84f,
-        colorValue: 0xFF06D6A0,
-      );
+    test(
+      'Trường hợp ví không có giao dịch nào thì số dư chuẩn bằng initialBalance',
+      () {
+        final wallet = WalletModel(
+          id: 'wallet_momo_01',
+          uid: 'user_test',
+          name: 'MoMo',
+          type: 'e_wallet',
+          balance: -150000.0, // Bị trừ do hóa đơn năm 2020 rồi hóa đơn bị purge
+          initialBalance: 100000.0,
+          iconCode: 0xe84f,
+          colorValue: 0xFF06D6A0,
+        );
 
-      final List<TransactionModel> transactions = [];
+        final List<TransactionModel> transactions = [];
 
-      double totalIncome = 0.0;
-      double totalExpense = 0.0;
-      for (final tx in transactions) {
-        if (tx.walletId == wallet.id) {
-          if (tx.type == 'income') totalIncome += tx.amount;
-          if (tx.type == 'expense') totalExpense += tx.amount;
+        double totalIncome = 0.0;
+        double totalExpense = 0.0;
+        for (final tx in transactions) {
+          if (tx.walletId == wallet.id) {
+            if (tx.type == 'income') totalIncome += tx.amount;
+            if (tx.type == 'expense') totalExpense += tx.amount;
+          }
         }
-      }
 
-      final expectedBalance = wallet.initialBalance + totalIncome - totalExpense;
-      expect(expectedBalance, equals(100000.0));
+        final expectedBalance =
+            wallet.initialBalance + totalIncome - totalExpense;
+        expect(expectedBalance, equals(100000.0));
 
-      final restoredWallet = wallet.copyWith(balance: expectedBalance);
-      expect(restoredWallet.balance, equals(100000.0));
-    });
+        final restoredWallet = wallet.copyWith(balance: expectedBalance);
+        expect(restoredWallet.balance, equals(100000.0));
+      },
+    );
   });
 
   group('2. Ergonomic Floating Capsule Layout Tests', () {
-    test('Tọa độ neo của Floating Capsule phải nổi trên Navigation Bar (Thumb Zone)', () {
-      const double bottomNavHeight = 64.0;
-      const double bottomNavPadding = 10.0;
-      const double deviceBottomInset = 28.0; // Giả lập Pixel 7a / iPhone cử chỉ vuốt
+    test(
+      'Tọa độ neo của Floating Capsule phải nổi trên Navigation Bar (Thumb Zone)',
+      () {
+        const double bottomNavHeight = 64.0;
+        const double bottomNavPadding = 10.0;
+        const double deviceBottomInset =
+            28.0; // Giả lập Pixel 7a / iPhone cử chỉ vuốt
 
-      // Thanh bottom navigation bar chiếm dụng từ 0 đến:
-      const double bottomNavTopEdge = deviceBottomInset + bottomNavHeight + bottomNavPadding;
-      expect(bottomNavTopEdge, equals(102.0));
+        // Thanh bottom navigation bar chiếm dụng từ 0 đến:
+        const double bottomNavTopEdge =
+            deviceBottomInset + bottomNavHeight + bottomNavPadding;
+        expect(bottomNavTopEdge, equals(102.0));
 
-      // Tọa độ Capsule mới: bottomInset + 84
-      const double capsuleBottom = deviceBottomInset + 84.0;
-      expect(capsuleBottom, equals(112.0));
+        // Tọa độ Capsule mới: bottomInset + 84
+        const double capsuleBottom = deviceBottomInset + 84.0;
+        expect(capsuleBottom, equals(112.0));
 
-      // Capsule nổi cách đỉnh của Bottom Navigation Bar 10px, hoàn toàn KHÔNG BỊ CHE!
-      expect(capsuleBottom > bottomNavTopEdge, isTrue);
-      expect(capsuleBottom - bottomNavTopEdge, equals(10.0));
+        // Capsule nổi cách đỉnh của Bottom Navigation Bar 10px, hoàn toàn KHÔNG BỊ CHE!
+        expect(capsuleBottom > bottomNavTopEdge, isTrue);
+        expect(capsuleBottom - bottomNavTopEdge, equals(10.0));
 
-      // Khoảng trống cuộn bên dưới: bottomInset + 160
-      const double scrollPaddingBottom = deviceBottomInset + 160.0;
-      expect(scrollPaddingBottom, equals(188.0));
-      expect(scrollPaddingBottom > capsuleBottom, isTrue);
-    });
+        // Khoảng trống cuộn bên dưới: bottomInset + 160
+        const double scrollPaddingBottom = deviceBottomInset + 160.0;
+        expect(scrollPaddingBottom, equals(188.0));
+        expect(scrollPaddingBottom > capsuleBottom, isTrue);
+      },
+    );
   });
 }

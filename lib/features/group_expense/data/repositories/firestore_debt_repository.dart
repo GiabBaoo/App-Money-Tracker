@@ -32,9 +32,11 @@ class FirestoreDebtRepository implements IDebtRepository {
         .where('groupId', isEqualTo: groupId)
         .where('status', isEqualTo: 'active')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => DebtModel.fromJson(doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => DebtModel.fromJson(doc.data()))
+              .toList(),
+        );
   }
 
   @override

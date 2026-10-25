@@ -20,7 +20,8 @@ class LocalQwenService {
   http.Client get _client => _customClient ??= http.Client();
 
   final List<Map<String, String>> _conversationHistory = [];
-  List<Map<String, String>> get conversationHistory => List.unmodifiable(_conversationHistory);
+  List<Map<String, String>> get conversationHistory =>
+      List.unmodifiable(_conversationHistory);
 
   void addToHistory(String role, String text) {
     _conversationHistory.add({'role': role, 'text': text});
@@ -34,7 +35,10 @@ class LocalQwenService {
   }
 
   /// Kiểm tra trạng thái kết nối tới Mô hình Local Qwen 2.5
-  Future<Map<String, dynamic>> testConnection({String? customEndpoint, String? customModel}) async {
+  Future<Map<String, dynamic>> testConnection({
+    String? customEndpoint,
+    String? customModel,
+  }) async {
     await _configService.init();
     final endpoint = customEndpoint?.trim().isNotEmpty == true
         ? customEndpoint!.trim()
@@ -46,19 +50,18 @@ class LocalQwenService {
     final stopwatch = Stopwatch()..start();
     try {
       final uri = Uri.parse('$endpoint/api/generate');
-      final response = await _client.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'model': model,
-          'prompt': 'ping',
-          'stream': false,
-          'options': {
-            'num_predict': 5,
-            'temperature': 0.1,
-          }
-        }),
-      ).timeout(const Duration(seconds: 4));
+      final response = await _client
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'model': model,
+              'prompt': 'ping',
+              'stream': false,
+              'options': {'num_predict': 5, 'temperature': 0.1},
+            }),
+          )
+          .timeout(const Duration(seconds: 4));
 
       stopwatch.stop();
 
@@ -67,14 +70,16 @@ class LocalQwenService {
           'success': true,
           'latencyMs': stopwatch.elapsedMilliseconds,
           'model': model,
-          'message': 'Đã kết nối thành công với Qwen 2.5 ($model)!\nThời gian phản hồi: ${stopwatch.elapsedMilliseconds}ms ⚡',
+          'message':
+              'Đã kết nối thành công với Qwen 2.5 ($model)!\nThời gian phản hồi: ${stopwatch.elapsedMilliseconds}ms ⚡',
         };
       } else {
         return {
           'success': false,
           'latencyMs': stopwatch.elapsedMilliseconds,
           'model': model,
-          'message': 'Máy chủ phản hồi mã lỗi HTTP ${response.statusCode}. Vui lòng kiểm tra lại endpoint.',
+          'message':
+              'Máy chủ phản hồi mã lỗi HTTP ${response.statusCode}. Vui lòng kiểm tra lại endpoint.',
         };
       }
     } catch (e) {
@@ -83,7 +88,8 @@ class LocalQwenService {
         'success': false,
         'latencyMs': stopwatch.elapsedMilliseconds,
         'model': model,
-        'message': 'Không thể kết nối tới $endpoint. Trợ lý Mono sẽ kích hoạt Chế độ Tự động Ngoại tuyến (Offline Rule Engine) với 0ms độ trễ.',
+        'message':
+            'Không thể kết nối tới $endpoint. Trợ lý Mono sẽ kích hoạt Chế độ Tự động Ngoại tuyến (Offline Rule Engine) với 0ms độ trễ.',
       };
     }
   }
@@ -103,9 +109,11 @@ class LocalQwenService {
     try {
       final now = DateTime.now();
       final localIsoTime = now.toIso8601String().substring(0, 19);
-      final financialContext = await AiFinancialContextService().buildFinancialContextPrompt();
+      final financialContext = await AiFinancialContextService()
+          .buildFinancialContextPrompt();
 
-      final systemPrompt = '''
+      final systemPrompt =
+          '''
 Bạn là Trợ lý Mono - Trí tuệ Nhân tạo Quản lý Chi tiêu Cá nhân thông minh, thân thiện, bảo mật hoạt động ngay trên thiết bị.
 THỜI GIAN THỰC TẾ HỆ THỐNG: $localIsoTime (Năm ${now.year}, Tháng ${now.month}, Ngày ${now.day}, Giờ ${now.hour}:${now.minute.toString().padLeft(2, '0')}).
 
@@ -159,7 +167,9 @@ BẮT BUỘC TRẢ VỀ DUY NHẤT 1 ĐỐI TƯỢNG JSON HỢP LỆ VỚI CẤU
 
       // Thêm ngữ cảnh lịch sử trò chuyện đa vòng (Sliding Window 8-10 turns)
       final hist = conversationHistory ?? _conversationHistory;
-      final recentTurns = hist.length > 8 ? hist.sublist(hist.length - 8) : hist;
+      final recentTurns = hist.length > 8
+          ? hist.sublist(hist.length - 8)
+          : hist;
       for (final m in recentTurns) {
         final r = m['role'] == 'user' ? 'user' : 'assistant';
         messages.add({'role': r, 'content': m['text'] ?? ''});
@@ -168,24 +178,23 @@ BẮT BUỘC TRẢ VỀ DUY NHẤT 1 ĐỐI TƯỢNG JSON HỢP LỆ VỚI CẤU
       messages.add({'role': 'user', 'content': trimmed});
 
       final chatUri = Uri.parse('$endpoint/api/chat');
-      final res = await _client.post(
-        chatUri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'model': model,
-          'messages': messages,
-          'stream': false,
-          'format': 'json',
-          'options': {
-            'temperature': 0.2,
-            'top_p': 0.8,
-            'num_predict': 512,
-          },
-        }),
-      ).timeout(const Duration(milliseconds: 1800));
+      final res = await _client
+          .post(
+            chatUri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'model': model,
+              'messages': messages,
+              'stream': false,
+              'format': 'json',
+              'options': {'temperature': 0.2, 'top_p': 0.8, 'num_predict': 512},
+            }),
+          )
+          .timeout(const Duration(milliseconds: 1800));
 
       if (res.statusCode == 200) {
-        final jsonRes = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+        final jsonRes =
+            jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
         final messageContent = jsonRes['message']?['content'] as String? ?? '';
 
         if (messageContent.isNotEmpty) {
@@ -215,14 +224,20 @@ BẮT BUỘC TRẢ VỀ DUY NHẤT 1 ĐỐI TƯỢNG JSON HỢP LỆ VỚI CẤU
     }
 
     // 1. Thử gửi tới Local Qwen Endpoint nếu có thể kết nối
-    final qwenRes = await queryLocalQwen(trimmed, conversationHistory: conversationHistory);
+    final qwenRes = await queryLocalQwen(
+      trimmed,
+      conversationHistory: conversationHistory,
+    );
     if (qwenRes != null && qwenRes.isSuccess) {
       return qwenRes;
     }
 
     // 2. Chế độ Ngoại tuyến tức thì (Offline Instant Engine - 0ms):
     // Sử dụng bộ parser tiếng Việt chuyên sâu đã được kiểm chứng tuyệt đối
-    return GeminiAiService().handleLocalOfflineFallback(trimmed, pendingTransaction: pendingTransaction);
+    return GeminiAiService().handleLocalOfflineFallback(
+      trimmed,
+      pendingTransaction: pendingTransaction,
+    );
   }
 
   /// Trích xuất và chuẩn hóa JSON từ output của Qwen 2.5
@@ -238,7 +253,8 @@ BẮT BUỘC TRẢ VỀ DUY NHẤT 1 ĐỐI TƯỢNG JSON HỢP LỆ VỚI CẤU
 
       final data = jsonDecode(jsonStr) as Map<String, dynamic>;
       final aiReply = (data['aiReply'] as String? ?? '').trim();
-      final actionTypeStr = data['actionType'] as String? ?? 'recordTransaction';
+      final actionTypeStr =
+          data['actionType'] as String? ?? 'recordTransaction';
       final themeMode = data['themeMode'] as String?;
       final language = data['language'] as String?;
       final reportPeriod = data['reportPeriod'] as String?;
@@ -251,15 +267,19 @@ BẮT BUỘC TRẢ VỀ DUY NHẤT 1 ĐỐI TƯỢNG JSON HỢP LỆ VỚI CẤU
         final fee = (tMap['fee'] as num?)?.toDouble() ?? 0.0;
         transferData = TransferMoneyData(
           amount: amount,
-          sourceWalletName: (tMap['source_wallet'] ?? tMap['from_wallet'] ?? '').toString(),
-          targetWalletName: (tMap['target_wallet'] ?? tMap['to_wallet'] ?? '').toString(),
+          sourceWalletName: (tMap['source_wallet'] ?? tMap['from_wallet'] ?? '')
+              .toString(),
+          targetWalletName: (tMap['target_wallet'] ?? tMap['to_wallet'] ?? '')
+              .toString(),
           fee: fee,
           note: (tMap['note'] ?? '').toString(),
         );
       }
 
       AiActionType actionType = AiActionType.recordTransaction;
-      if (actionTypeStr == 'transferMoney' || data['intent'] == 'TRANSFER_MONEY' || transferData != null) {
+      if (actionTypeStr == 'transferMoney' ||
+          data['intent'] == 'TRANSFER_MONEY' ||
+          transferData != null) {
         actionType = AiActionType.transferMoney;
       } else if (actionTypeStr == 'changeTheme') {
         actionType = AiActionType.changeTheme;
@@ -298,25 +318,35 @@ BẮT BUỘC TRẢ VỀ DUY NHẤT 1 ĐỐI TƯỢNG JSON HỢP LỆ VỚI CẤU
           // Áp dụng bảo vệ thời gian nếu thiếu giờ
           if (finalDt.hour == 0 && finalDt.minute == 0) {
             final now = DateTime.now();
-            finalDt = DateTime(finalDt.year, finalDt.month, finalDt.day, now.hour, now.minute);
+            finalDt = DateTime(
+              finalDt.year,
+              finalDt.month,
+              finalDt.day,
+              now.hour,
+              now.minute,
+            );
           }
 
           final iconCode = CategoryUtils.getCategoryIcon(category).codePoint;
 
-          txList.add(AiTransactionItem(
-            type: type == 'income' ? 'income' : 'expense',
-            category: category,
-            categoryIconCode: iconCode,
-            amount: amount,
-            description: description,
-            date: finalDt,
-            walletName: walletName,
-          ));
+          txList.add(
+            AiTransactionItem(
+              type: type == 'income' ? 'income' : 'expense',
+              category: category,
+              categoryIconCode: iconCode,
+              amount: amount,
+              description: description,
+              date: finalDt,
+              walletName: walletName,
+            ),
+          );
         }
       }
 
       return AiParsedResult(
-        aiReply: aiReply.isNotEmpty ? aiReply : 'Trợ lý Mono đã ghi nhận giao dịch của bạn! ✨',
+        aiReply: aiReply.isNotEmpty
+            ? aiReply
+            : 'Trợ lý Mono đã ghi nhận giao dịch của bạn! ✨',
         transactions: txList,
         actionType: actionType,
         themeMode: themeMode,

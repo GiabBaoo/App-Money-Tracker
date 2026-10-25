@@ -24,7 +24,11 @@ class LanguageScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                    icon: const Icon(
+                      Icons.arrow_back_ios,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                   Text(
@@ -45,26 +49,42 @@ class LanguageScreen extends ConsumerWidget {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(top: 30, bottom: 40, left: 24, right: 24),
+                  padding: const EdgeInsets.only(
+                    top: 30,
+                    bottom: 40,
+                    left: 24,
+                    right: 24,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionTitle(context, context.tr('choose_language')),
+                      _buildSectionTitle(
+                        context,
+                        context.tr('choose_language'),
+                      ),
                       _buildInfoBox(
                         context,
-                        LanguageService.supportedLanguages.asMap().entries.map((e) {
+                        LanguageService.supportedLanguages.asMap().entries.map((
+                          e,
+                        ) {
                           final lang = e.value;
-                          final isSelected = languageService.currentLanguage == lang['code'];
+                          final isSelected =
+                              languageService.currentLanguage == lang['code'];
                           return _buildLanguageOption(
                             context,
                             title: lang['name']!,
                             flag: lang['flag']!,
                             isSelected: isSelected,
-                            onTap: () => languageService.setLanguage(lang['code']!),
-                            showDivider: e.key != LanguageService.supportedLanguages.length - 1,
+                            onTap: () =>
+                                languageService.setLanguage(lang['code']!),
+                            showDivider:
+                                e.key !=
+                                LanguageService.supportedLanguages.length - 1,
                           );
                         }).toList(),
                       ),
@@ -138,17 +158,27 @@ class LanguageScreen extends ConsumerWidget {
                     title,
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                      color: isSelected ? primaryColor : context.colors.onSurface,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.w600,
+                      color: isSelected
+                          ? primaryColor
+                          : context.colors.onSurface,
                     ),
                   ),
                 ),
                 if (isSelected)
-                  Icon(Icons.check_circle_rounded, color: primaryColor, size: 24)
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: primaryColor,
+                    size: 24,
+                  )
                 else
                   Icon(
                     Icons.radio_button_unchecked_rounded,
-                    color: context.colors.onSurfaceVariant.withValues(alpha: 0.4),
+                    color: context.colors.onSurfaceVariant.withValues(
+                      alpha: 0.4,
+                    ),
                     size: 22,
                   ),
               ],

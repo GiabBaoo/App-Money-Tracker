@@ -15,7 +15,9 @@ class CategoryStyle {
 
   @override
   bool operator ==(Object other) =>
-      other is CategoryStyle && other.iconCode == iconCode && other.colorValue == colorValue;
+      other is CategoryStyle &&
+      other.iconCode == iconCode &&
+      other.colorValue == colorValue;
 
   @override
   int get hashCode => Object.hash(iconCode, colorValue);
@@ -48,7 +50,8 @@ class CategoryStyleService extends ChangeNotifier {
   void _onUser(UserModel? user) => _rebuild(user?.customCategories ?? const []);
 
   /// Cho phép cập nhật ngay lập tức sau khi lưu (không đợi stream).
-  void applyCustomCategories(List<dynamic> customCategories) => _rebuild(customCategories);
+  void applyCustomCategories(List<dynamic> customCategories) =>
+      _rebuild(customCategories);
 
   void _rebuild(List<dynamic> customCategories, {bool notify = true}) {
     final next = <String, CategoryStyle>{};

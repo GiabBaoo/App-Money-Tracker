@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../local/database_helper.dart';
+import '../local/owned_table_ops.dart';
+import '../local/sync_queue_writer.dart';
+import '../../core/errors/business_exception.dart';
+import '../../core/safety/destructive_ops_guard.dart';
 import '../../models/transaction_model.dart';
-import '../../services/auth_service.dart';
 import '../../services/sync_service.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/ai_financial_context_service.dart';
@@ -15,10 +18,19 @@ import '../../services/ai_financial_context_service.dart';
 /// Mọi thay đổi đều được ghi vào sync_queue để đồng bộ lên Firestore sau.
 /// SINGLETON: Đảm bảo chỉ có 1 instance duy nhất để tất cả StreamBuilder
 /// trên UI đều lắng nghe cùng một stream, tránh lỗi "Bad State".
-class TransactionRepository {
-  static final TransactionRepository _instance = TransactionRepository._internal();
+class TransactionRepository with OwnedTableOps {
+  static final TransactionRepository _instance =
+      TransactionRepository._internal();
   factory TransactionRepository() => _instance;
+
   TransactionRepository._internal() {
+    session.changes.listen((_) {
+      _cachedTransactions = [];
+      _notifyTransactionsChanged();
+      if (session.uidOrNull != null) {
+        getAllTransactions();
+      }
+    });
     _loadAndEmitTransactions();
   }
 
@@ -26,256 +38,175 @@ class TransactionRepository {
   final _uuid = const Uuid();
 
   final _changeStream = StreamController<void>.broadcast();
-  final _transactionsController = StreamController<List<TransactionModel>>.broadcast();
-  final _balanceController = StreamController<({double balance, double totalIncome, double totalExpense})>.broadcast();
+  final _transactionsController =
+      StreamController<List<TransactionModel>>.broadcast();
+  final _balanceController =
+      StreamController<
+        ({double balance, double totalIncome, double totalExpense})
+      >.broadcast();
 
   List<TransactionModel> _cachedTransactions = [];
-  List<TransactionModel> get latestTransactions => List.unmodifiable(_cachedTransactions);
+  List<TransactionModel> get latestTransactions =>
+      List.unmodifiable(_cachedTransactions);
 
-  String? _explicitUid;
-  String? get _currentUid => _explicitUid ?? AuthService().currentUid;
-  String? get currentUid => _currentUid;
+  String? get currentUid => session.uidOrNull;
 
+  @Deprecated('UID lấy từ SessionManager; không còn tác dụng')
   void setUid(String uid) {
-    if (_explicitUid != uid) {
-      _explicitUid = uid;
-      _cachedTransactions = [];
-      _notifyTransactionsChanged();
-      getAllTransactions();
-    }
+    assert(
+      uid == session.uidOrNull,
+      'setUid($uid) lệch phiên ${session.uidOrNull}',
+    );
   }
 
   // ════════ TRANSACTIONS CRUD ════════
 
   /// Thêm giao dịch mới vào SQLite + enqueue sync
   Future<String> addTransaction(TransactionModel transaction) async {
+    final uid = session.requireUid();
     final db = await _dbHelper.database;
     final id = transaction.id.isEmpty ? _uuid.v4() : transaction.id;
-    final uid = transaction.uid.isNotEmpty ? transaction.uid : (_currentUid ?? '');
     final now = DateTime.now();
 
-    final tx = TransactionModel(
+    final tx = transaction.copyWith(
       id: id,
-      uid: uid,
-      type: transaction.type,
-      category: transaction.category,
-      categoryIconCode: transaction.categoryIconCode,
-      amount: transaction.amount,
-      date: transaction.date,
-      time: transaction.time,
-      description: transaction.description,
-      hasPhoto: transaction.hasPhoto,
-      photoUrl: transaction.photoUrl,
-      photoStoragePath: transaction.photoStoragePath,
-      photoLocalPath: transaction.photoLocalPath,
-      createdAt: transaction.createdAt,
       updatedAt: now,
-      groupId: transaction.groupId,
-      groupIconCode: transaction.groupIconCode,
-      source: transaction.source,
-      walletId: transaction.walletId,
       syncStatus: 'pending',
-      location: transaction.location,
-      latitude: transaction.latitude,
-      longitude: transaction.longitude,
     );
+    final row = stampOwner(tx.toSqlite(), uid);
 
-    await db.insert('transactions', tx.toSqlite());
+    await db.transaction((txn) async {
+      await txn.insert('transactions', row);
+      await SyncQueueWriter.enqueue(
+        txn,
+        ownerUid: uid,
+        table: 'transactions',
+        recordId: id,
+        action: 'INSERT',
+        data: row,
+      );
+    });
 
-    // Thêm vào sync queue
-    await _enqueueSyncAction('transactions', id, 'INSERT', tx.toSqlite());
-
-    // Phát sự kiện thay đổi
     _notifyTransactionsChanged();
+
+    if (ConnectivityService().isOnline) {
+      unawaited(SyncService().syncAll());
+    }
 
     return id;
   }
 
   /// Insert giao dịch bên trong một Transaction đã có (để dùng với atomic service)
-  Future<String> addTransactionInTxn(DatabaseExecutor txn, TransactionModel transaction) async {
+  Future<String> addTransactionInTxn(
+    DatabaseExecutor txn,
+    TransactionModel transaction,
+  ) async {
+    final uid = session.requireUid();
     final id = transaction.id.isEmpty ? _uuid.v4() : transaction.id;
-    final uid = transaction.uid.isNotEmpty ? transaction.uid : (_currentUid ?? '');
     final now = DateTime.now();
 
-    final tx = TransactionModel(
+    final tx = transaction.copyWith(
       id: id,
-      uid: uid,
-      type: transaction.type,
-      category: transaction.category,
-      categoryIconCode: transaction.categoryIconCode,
-      amount: transaction.amount,
-      date: transaction.date,
-      time: transaction.time,
-      description: transaction.description,
-      hasPhoto: transaction.hasPhoto,
-      photoUrl: transaction.photoUrl,
-      photoStoragePath: transaction.photoStoragePath,
-      photoLocalPath: transaction.photoLocalPath,
-      createdAt: transaction.createdAt,
       updatedAt: now,
-      groupId: transaction.groupId,
-      groupIconCode: transaction.groupIconCode,
-      source: transaction.source,
-      walletId: transaction.walletId,
       syncStatus: 'pending',
-      location: transaction.location,
-      latitude: transaction.latitude,
-      longitude: transaction.longitude,
     );
+    final row = stampOwner(tx.toSqlite(), uid);
 
-    await txn.insert('transactions', tx.toSqlite());
-
-    await txn.insert('sync_queue', {
-      'tableName': 'transactions',
-      'recordId': id,
-      'action': 'INSERT',
-      'data': json.encode(tx.toSqlite()),
-      'createdAt': DateTime.now().millisecondsSinceEpoch,
-      'retryCount': 0,
-    });
+    await txn.insert('transactions', row);
+    await SyncQueueWriter.enqueue(
+      txn,
+      ownerUid: uid,
+      table: 'transactions',
+      recordId: id,
+      action: 'INSERT',
+      data: row,
+    );
 
     return id;
   }
 
   /// Cập nhật giao dịch
   Future<void> updateTransaction(TransactionModel transaction) async {
+    final uid = session.requireUid();
     final db = await _dbHelper.database;
     final now = DateTime.now();
 
-    final updated = transaction.copyWith(
-      updatedAt: now,
-      syncStatus: 'pending',
-    );
+    final updated = transaction.copyWith(updatedAt: now, syncStatus: 'pending');
+    final row = stampOwner(updated.toSqlite(), uid);
 
-    await db.update(
-      'transactions',
-      updated.toSqlite(),
-      where: 'id = ?',
-      whereArgs: [transaction.id],
-    );
-
-    await _enqueueSyncAction('transactions', transaction.id, 'UPDATE', updated.toSqlite());
+    await db.transaction((txn) async {
+      await updateOwned(txn, 'transactions', transaction.id, row, uid);
+      await SyncQueueWriter.enqueue(
+        txn,
+        ownerUid: uid,
+        table: 'transactions',
+        recordId: transaction.id,
+        action: 'UPDATE',
+        data: row,
+      );
+    });
 
     _notifyTransactionsChanged();
+
+    if (ConnectivityService().isOnline) {
+      unawaited(SyncService().syncAll());
+    }
   }
 
-  /// Xóa giao dịch
+  /// Xóa giao dịch (áp dụng Soft Delete / Tombstone)
   Future<void> deleteTransaction(String transactionId) async {
+    final uid = session.requireUid();
     final db = await _dbHelper.database;
 
-    await db.delete('transactions', where: 'id = ?', whereArgs: [transactionId]);
-
-    await _enqueueSyncAction('transactions', transactionId, 'DELETE', null);
+    await db.transaction((txn) async {
+      await softDeleteOwned(txn, 'transactions', transactionId, uid);
+      await SyncQueueWriter.enqueue(
+        txn,
+        ownerUid: uid,
+        table: 'transactions',
+        recordId: transactionId,
+        action: 'SOFT_DELETE',
+      );
+    });
 
     _notifyTransactionsChanged();
+
+    if (ConnectivityService().isOnline) {
+      unawaited(SyncService().syncAll());
+    }
   }
 
   /// Tự động kiểm tra và dọn dẹp các giao dịch cũ - ĐÃ VÔ HIỆU HÓA để bảo toàn hóa đơn và số dư người dùng
+  @Deprecated('Đã vô hiệu hóa để bảo toàn hóa đơn và số dư')
   Future<void> checkAndPurgeOldTransactions() async {
-    // Đã vô hiệu hóa: Không tự động xóa giao dịch cũ nhằm đảm bảo tính toàn vẹn của lịch sử và số dư ví.
     return;
   }
 
-  /// Xóa sạch toàn bộ lịch sử thu/chi trước 01/09/2026 trên cả SQLite và Cloud Firestore
+  /// Xóa sạch toàn bộ lịch sử thu/chi trước 01/09/2026 trên cả SQLite và Cloud Firestore - ĐÃ KHÓA Ở P0
+  @Deprecated('Đã bị khóa ở P0 — xem PLAN_P0_SECURITY.md §4')
   Future<int> purgeHistoryBeforeSeptember2026({String? targetUid}) async {
+    DestructiveOpsGuard.ensureEnabled('purgeHistoryBeforeSeptember2026');
     final cutoff = DateTime(2026, 9, 1);
     return deleteTransactionsBefore(cutoff, targetUid: targetUid);
   }
 
-  /// Xóa toàn bộ giao dịch trước một mốc thời gian (bao gồm cả SQLite, sync_queue và Firestore)
-  Future<int> deleteTransactionsBefore(DateTime cutoffDate, {String? targetUid}) async {
-    final db = await _dbHelper.database;
-    final cutoffMs = cutoffDate.millisecondsSinceEpoch;
-    final uid = targetUid ?? _currentUid;
-
-    final whereClause = uid != null ? 'uid = ? AND date < ?' : 'date < ?';
-    final whereArgs = uid != null ? [uid, cutoffMs] : [cutoffMs];
-
-    final rows = await db.query(
-      'transactions',
-      columns: ['id'],
-      where: whereClause,
-      whereArgs: whereArgs,
-    );
-
-    final txIds = rows.map((r) => r['id'] as String).toSet();
-    debugPrint('TransactionRepository: Bắt đầu xóa ${txIds.length} giao dịch SQLite trước ngày $cutoffDate (uid=$uid)');
-
-    // 1. Xóa trực tiếp trên Cloud Firestore nếu có mạng và có UID
-    final isOnline = ConnectivityService().isOnline;
-    final firestore = FirebaseFirestore.instance;
-    int firestoreDeleteCount = 0;
-    final deletedOnFirestore = <String>{};
-
-    if (isOnline && uid != null) {
-      try {
-        final snap = await firestore
-            .collection('transactions')
-            .where('uid', isEqualTo: uid)
-            .get();
-
-        final batch = firestore.batch();
-        for (final doc in snap.docs) {
-          final data = doc.data();
-          DateTime? docDate;
-          if (data['date'] is Timestamp) {
-            docDate = (data['date'] as Timestamp).toDate();
-          } else if (data['date'] is int) {
-            docDate = DateTime.fromMillisecondsSinceEpoch(data['date'] as int);
-          }
-
-          if (docDate != null && docDate.isBefore(cutoffDate)) {
-            batch.delete(doc.reference);
-            deletedOnFirestore.add(doc.id);
-            txIds.add(doc.id);
-            firestoreDeleteCount++;
-          }
-        }
-
-        if (firestoreDeleteCount > 0) {
-          await batch.commit();
-          debugPrint('TransactionRepository: Đã xóa batch $firestoreDeleteCount docs trên Firestore thành công');
-        }
-      } catch (e) {
-        debugPrint('TransactionRepository: Lỗi batch delete Firestore: $e');
-        deletedOnFirestore.clear();
-      }
-    }
-
-    // 2. Dọn dẹp các bản ghi pending cũ trong sync_queue
-    for (final id in txIds) {
-      await db.delete(
-        'sync_queue',
-        where: 'tableName = ? AND recordId = ?',
-        whereArgs: ['transactions', id],
+  /// Xóa toàn bộ giao dịch trước một mốc thời gian - ĐÃ KHÓA Ở P0
+  @Deprecated('Bị khóa ở P0 — xem PLAN_P0_SECURITY.md §4')
+  Future<int> deleteTransactionsBefore(
+    DateTime cutoffDate, {
+    String? targetUid,
+    String? ownerUid,
+  }) async {
+    DestructiveOpsGuard.ensureEnabled('deleteTransactionsBefore');
+    final uid = session.requireUid();
+    final effectiveOwner = ownerUid ?? targetUid ?? uid;
+    if (effectiveOwner != uid) {
+      throw const BusinessException(
+        BusinessErrorCode.ownershipViolation,
+        'ownerUid ≠ phiên',
       );
     }
-
-    // 3. Xóa các giao dịch trong SQLite
-    final count = await db.delete(
-      'transactions',
-      where: whereClause,
-      whereArgs: whereArgs,
-    );
-
-    // 4. Nếu có txIds nào chưa xóa trên Firestore (ví dụ offline hoặc batch lỗi), enqueue DELETE
-    final remainingIdsToSync = txIds.difference(deletedOnFirestore);
-    for (final id in remainingIdsToSync) {
-      await db.insert('sync_queue', {
-        'tableName': 'transactions',
-        'recordId': id,
-        'action': 'DELETE',
-        'data': null,
-        'createdAt': DateTime.now().millisecondsSinceEpoch,
-        'retryCount': 0,
-      });
-    }
-
-    // 5. Phát sự kiện cập nhật số dư & danh sách giao dịch
-    _notifyTransactionsChanged();
-
-    debugPrint('TransactionRepository: Đã hoàn tất xóa $count SQLite + $firestoreDeleteCount Firestore trước ngày $cutoffDate');
-    return count;
+    throw UnimplementedError('Triển khai lại ở P1 cùng cơ chế tính lại số dư');
   }
 
   /// Cập nhật ảnh cho giao dịch
@@ -285,6 +216,7 @@ class TransactionRepository {
     String? photoStoragePath,
     String? photoLocalPath,
   }) async {
+    final uid = session.requireUid();
     final db = await _dbHelper.database;
     final updates = <String, dynamic>{
       'hasPhoto': 1,
@@ -292,14 +224,28 @@ class TransactionRepository {
       'syncStatus': 'pending',
     };
     if (photoUrl != null) updates['photoUrl'] = photoUrl;
-    if (photoStoragePath != null) updates['photoStoragePath'] = photoStoragePath;
+    if (photoStoragePath != null) {
+      updates['photoStoragePath'] = photoStoragePath;
+    }
     if (photoLocalPath != null) updates['photoLocalPath'] = photoLocalPath;
 
-    await db.update('transactions', updates, where: 'id = ?', whereArgs: [transactionId]);
-
-    await _enqueueSyncAction('transactions', transactionId, 'UPDATE', updates);
+    await db.transaction((txn) async {
+      await updateOwned(txn, 'transactions', transactionId, updates, uid);
+      await SyncQueueWriter.enqueue(
+        txn,
+        ownerUid: uid,
+        table: 'transactions',
+        recordId: transactionId,
+        action: 'UPDATE',
+        data: updates,
+      );
+    });
 
     _notifyTransactionsChanged();
+
+    if (ConnectivityService().isOnline) {
+      unawaited(SyncService().syncAll());
+    }
   }
 
   /// Đổi tên danh mục cho toàn bộ giao dịch cũ (dùng khi user đổi tên danh mục tự tạo).
@@ -309,8 +255,8 @@ class TransactionRepository {
     required String newName,
     required String type, // 'income' | 'expense'
   }) async {
-    final uid = _currentUid;
-    if (uid == null || uid.isEmpty || oldName == newName) return 0;
+    final uid = session.requireUid();
+    if (oldName == newName) return 0;
     final db = await _dbHelper.database;
 
     final rows = await db.query(
@@ -323,25 +269,19 @@ class TransactionRepository {
     final now = DateTime.now();
     await db.transaction((txn) async {
       for (final row in rows) {
-        final updated = TransactionModel.fromSqlite(row).copyWith(
-          category: newName,
-          updatedAt: now,
-          syncStatus: 'pending',
+        final updated = TransactionModel.fromSqlite(
+          row,
+        ).copyWith(category: newName, updatedAt: now, syncStatus: 'pending');
+        final values = updated.toSqlite();
+        await updateOwned(txn, 'transactions', updated.id, values, uid);
+        await SyncQueueWriter.enqueue(
+          txn,
+          ownerUid: uid,
+          table: 'transactions',
+          recordId: updated.id,
+          action: 'UPDATE',
+          data: values,
         );
-        await txn.update(
-          'transactions',
-          updated.toSqlite(),
-          where: 'id = ?',
-          whereArgs: [updated.id],
-        );
-        await txn.insert('sync_queue', {
-          'tableName': 'transactions',
-          'recordId': updated.id,
-          'action': 'UPDATE',
-          'data': json.encode(updated.toSqlite()),
-          'createdAt': now.millisecondsSinceEpoch,
-          'retryCount': 0,
-        });
       }
     });
 
@@ -366,7 +306,8 @@ class TransactionRepository {
   }
 
   /// Stream tổng số dư, tổng thu, tổng chi
-  Stream<({double balance, double totalIncome, double totalExpense})> getBalanceStream() async* {
+  Stream<({double balance, double totalIncome, double totalExpense})>
+  getBalanceStream() async* {
     yield await _calculateBalance();
     await for (final _ in _changeStream.stream) {
       yield await _calculateBalance();
@@ -382,23 +323,20 @@ class TransactionRepository {
 
   /// Tải danh sách giao dịch một lần (không stream)
   Future<List<TransactionModel>> getAllTransactions({int? limit}) async {
-    final uid = _currentUid;
+    final uid = session.uidOrNull;
+    if (uid == null) return const []; // fail-closed READ
     try {
       final db = await _dbHelper.database;
-      final results = (uid != null && uid.isNotEmpty)
-          ? await db.query(
-              'transactions',
-              where: 'uid = ?',
-              whereArgs: [uid],
-              orderBy: 'date DESC',
-              limit: limit,
-            )
-          : await db.query(
-              'transactions',
-              orderBy: 'date DESC',
-              limit: limit,
-            );
-      final list = results.map((row) => TransactionModel.fromSqlite(row)).toList();
+      final results = await db.query(
+        'transactions',
+        where: 'uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+        whereArgs: [uid],
+        orderBy: 'date DESC',
+        limit: limit,
+      );
+      final list = results
+          .map((row) => TransactionModel.fromSqlite(row))
+          .toList();
       _cachedTransactions = list;
       return list;
     } catch (e) {
@@ -409,16 +347,14 @@ class TransactionRepository {
 
   /// Lấy 1 giao dịch theo ID
   Future<TransactionModel?> getTransactionById(String id) async {
-    if (id.isEmpty) return null;
+    final uid = session.uidOrNull;
+    if (id.isEmpty || uid == null) return null;
     final db = await _dbHelper.database;
-    final results = await db.query(
-      'transactions',
-      where: 'id = ?',
-      whereArgs: [id],
-      limit: 1,
-    );
-    if (results.isEmpty) return null;
-    return TransactionModel.fromSqlite(results.first);
+    final row = await findOwned(db, 'transactions', id, uid);
+    if (row == null) return null;
+    final tx = TransactionModel.fromSqlite(row);
+    if (tx.isDeleted) return null;
+    return tx;
   }
 
   /// Lấy giao dịch theo khoảng thời gian (dùng cho export báo cáo)
@@ -427,18 +363,36 @@ class TransactionRepository {
     required DateTime endDate,
     String? type,
   }) async {
-    if (_currentUid == null) return [];
+    final uid = session.uidOrNull;
+    if (uid == null) return const [];
     final db = await _dbHelper.database;
 
     final rangeStart = DateTime(startDate.year, startDate.month, startDate.day);
-    final rangeEnd = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59, 999);
+    final rangeEnd = DateTime(
+      endDate.year,
+      endDate.month,
+      endDate.day,
+      23,
+      59,
+      59,
+      999,
+    );
 
     final whereClause = type != null
-        ? 'uid = ? AND date >= ? AND date <= ? AND type = ?'
-        : 'uid = ? AND date >= ? AND date <= ?';
+        ? 'uid = ? AND (isDeleted IS NULL OR isDeleted = 0) AND date >= ? AND date <= ? AND type = ?'
+        : 'uid = ? AND (isDeleted IS NULL OR isDeleted = 0) AND date >= ? AND date <= ?';
     final whereArgs = type != null
-        ? [_currentUid, rangeStart.millisecondsSinceEpoch, rangeEnd.millisecondsSinceEpoch, type]
-        : [_currentUid, rangeStart.millisecondsSinceEpoch, rangeEnd.millisecondsSinceEpoch];
+        ? [
+            uid,
+            rangeStart.millisecondsSinceEpoch,
+            rangeEnd.millisecondsSinceEpoch,
+            type,
+          ]
+        : [
+            uid,
+            rangeStart.millisecondsSinceEpoch,
+            rangeEnd.millisecondsSinceEpoch,
+          ];
 
     final results = await db.query(
       'transactions',
@@ -451,41 +405,125 @@ class TransactionRepository {
 
   // ════════ BULK OPERATIONS (dùng cho Sync) ════════
 
-  /// Upsert nhiều giao dịch từ Firestore (dùng khi sync download)
+  /// Upsert nhiều giao dịch từ Firestore (áp dụng Local Dirty Shield và Soft Delete)
   Future<void> upsertFromFirestore(List<TransactionModel> transactions) async {
+    final currentUid = session.uidOrNull;
+    if (currentUid == null || transactions.isEmpty) return;
     final db = await _dbHelper.database;
-    final batch = db.batch();
 
-    for (final tx in transactions) {
-      batch.insert(
-        'transactions',
-        tx.copyWith(syncStatus: 'synced').toSqlite(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    }
+    await db.transaction((txn) async {
+      for (final tx in transactions) {
+        if (tx.uid != currentUid) continue;
 
-    await batch.commit(noResult: true);
+        // 1. Kiểm tra Local Dirty Shield: nếu bản ghi đang chờ upload thì bỏ qua
+        final queuePending = await txn.query(
+          'sync_queue',
+          columns: ['id'],
+          where:
+              'tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
+          whereArgs: [
+            'transactions',
+            tx.id,
+            currentUid,
+            currentUid,
+            'pending',
+            'processing',
+          ],
+          limit: 1,
+        );
+        if (queuePending.isNotEmpty) continue;
+
+        final existing = await txn.query(
+          'transactions',
+          where: 'id = ? AND uid = ?',
+          whereArgs: [tx.id, currentUid],
+          limit: 1,
+        );
+
+        if (existing.isEmpty) {
+          if (!tx.isDeleted) {
+            await txn.insert(
+              'transactions',
+              tx.copyWith(syncStatus: 'synced').toSqlite(),
+            );
+          }
+        } else {
+          final local = TransactionModel.fromSqlite(existing.first);
+          if (local.syncStatus == 'pending') continue; // Dirty Shield
+
+          final isRemoteNewer = tx.updatedAt.isAfter(local.updatedAt);
+          final isSameTime = tx.updatedAt.isAtSameMomentAs(local.updatedAt);
+          final winsTieBreak =
+              isSameTime && _resolveTieBreaker(local.toSqlite(), tx.toSqlite());
+
+          if (isRemoteNewer || winsTieBreak) {
+            if (tx.isDeleted) {
+              await txn.update(
+                'transactions',
+                {
+                  'isDeleted': 1,
+                  'deletedAt':
+                      tx.deletedAt?.millisecondsSinceEpoch ??
+                      DateTime.now().millisecondsSinceEpoch,
+                  'syncStatus': 'synced',
+                },
+                where: 'id = ? AND uid = ?',
+                whereArgs: [tx.id, currentUid],
+              );
+            } else {
+              await txn.update(
+                'transactions',
+                tx.copyWith(syncStatus: 'synced').toSqlite(),
+                where: 'id = ? AND uid = ?',
+                whereArgs: [tx.id, currentUid],
+              );
+            }
+          }
+        }
+      }
+    });
+
     _notifyTransactionsChanged();
   }
 
+  /// Deterministic Tie-Breaker theo SHA256 khi hai thiết bị có updatedAt giống hệt nhau
+  static bool _resolveTieBreaker(
+    Map<String, dynamic> local,
+    Map<String, dynamic> remote,
+  ) {
+    final localStr = json.encode(local);
+    final remoteStr = json.encode(remote);
+    final localHash = sha256.convert(utf8.encode(localStr)).toString();
+    final remoteHash = sha256.convert(utf8.encode(remoteStr)).toString();
+    return remoteHash.compareTo(localHash) >= 0;
+  }
+
+  /// Upsert an toàn tuân thủ interface ISyncableRepository
+  Future<void> upsertFromFirestoreSafe(List<TransactionModel> transactions) =>
+      upsertFromFirestore(transactions);
+
   /// Đánh dấu đã sync thành công
   Future<void> markAsSynced(String transactionId) async {
+    final uid = session.uidOrNull;
+    if (uid == null) return;
     final db = await _dbHelper.database;
     await db.update(
       'transactions',
       {'syncStatus': 'synced'},
-      where: 'id = ?',
-      whereArgs: [transactionId],
+      where: 'id = ? AND uid = ?',
+      whereArgs: [transactionId, uid],
     );
   }
 
   /// Lấy danh sách giao dịch chưa sync (pending)
   Future<List<TransactionModel>> getPendingTransactions() async {
+    final uid = session.uidOrNull;
+    if (uid == null) return const [];
     final db = await _dbHelper.database;
     final results = await db.query(
       'transactions',
-      where: 'syncStatus = ?',
-      whereArgs: ['pending'],
+      where: 'uid = ? AND syncStatus = ?',
+      whereArgs: [uid, 'pending'],
     );
     return results.map((row) => TransactionModel.fromSqlite(row)).toList();
   }
@@ -515,15 +553,18 @@ class TransactionRepository {
     }
   }
 
-  Future<({double balance, double totalIncome, double totalExpense})> _calculateBalance() async {
-    final uid = _currentUid;
+  Future<({double balance, double totalIncome, double totalExpense})>
+  _calculateBalance() async {
+    final uid = session.uidOrNull;
+    if (uid == null) {
+      return (balance: 0.0, totalIncome: 0.0, totalExpense: 0.0);
+    }
     final db = await _dbHelper.database;
 
-    final whereClause = (uid != null && uid.isNotEmpty)
-        ? "uid = ? AND type = ? AND category NOT IN ('Chuyển tiền', 'Nhận chuyển tiền', 'Chuyển ví') AND (groupId IS NULL OR groupId NOT LIKE 'transfer_%')"
-        : "type = ? AND category NOT IN ('Chuyển tiền', 'Nhận chuyển tiền', 'Chuyển ví') AND (groupId IS NULL OR groupId NOT LIKE 'transfer_%')";
-    final incomeArgs = (uid != null && uid.isNotEmpty) ? [uid, 'income'] : ['income'];
-    final expenseArgs = (uid != null && uid.isNotEmpty) ? [uid, 'expense'] : ['expense'];
+    const whereClause =
+        "uid = ? AND (isDeleted IS NULL OR isDeleted = 0) AND type = ? AND (transferId IS NULL OR transferId = '') AND (groupId IS NULL OR groupId NOT LIKE 'transfer_%') AND category NOT IN ('Chuyển tiền', 'Nhận chuyển tiền', 'Chuyển ví') AND (goalId IS NULL OR goalId = '')";
+    final incomeArgs = [uid, 'income'];
+    final expenseArgs = [uid, 'expense'];
 
     final incomeResult = await db.rawQuery(
       "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE $whereClause",
@@ -534,8 +575,10 @@ class TransactionRepository {
       expenseArgs,
     );
 
-    final totalIncome = (incomeResult.first['total'] as num?)?.toDouble() ?? 0.0;
-    final totalExpense = (expenseResult.first['total'] as num?)?.toDouble() ?? 0.0;
+    final totalIncome =
+        (incomeResult.first['total'] as num?)?.toDouble() ?? 0.0;
+    final totalExpense =
+        (expenseResult.first['total'] as num?)?.toDouble() ?? 0.0;
 
     return (
       balance: totalIncome - totalExpense,
@@ -553,23 +596,6 @@ class TransactionRepository {
       _changeStream.add(null);
     }
     AiFinancialContextService().invalidateCache();
-  }
-
-  Future<void> _enqueueSyncAction(String table, String recordId, String action, Map<String, dynamic>? data) async {
-    final db = await _dbHelper.database;
-    await db.insert('sync_queue', {
-      'tableName': table,
-      'recordId': recordId,
-      'action': action,
-      'data': data != null ? json.encode(data) : null,
-      'createdAt': DateTime.now().millisecondsSinceEpoch,
-      'retryCount': 0,
-    });
-
-    // Tự động đẩy lên Firebase nếu thiết bị đang có mạng
-    if (ConnectivityService().isOnline) {
-      unawaited(SyncService().syncAll());
-    }
   }
 
   void dispose() {
