@@ -55,7 +55,7 @@ service cloud.firestore {
       allow read, write: if signedIn() && uid() == userId;
     }
 
-    // ════════ HỒ SƠ NGƯỜI DÙNG — chặn tự nâng role/accountType ════════
+    // ════════ HỒ SƠ NGƯỜI DÙNG — khóa bất biến & bảo vệ subcollections ════════
     function keepsValue(field, defaultVal) {
       return request.resource.data.get(field, defaultVal) == resource.data.get(field, defaultVal);
     }
@@ -68,12 +68,18 @@ service cloud.firestore {
       allow update: if signedIn() && uid() == userId
                     && incoming().get('uid', userId) == userId
                     && keepsValue('role', 'user')
-                    && keepsValue('accountType', 'FREE');
+                    && keepsValue('accountType', 'FREE')
+                    && (!('createdAt' in incoming()) || incoming().createdAt == existing().createdAt)
+                    && (!('email' in incoming()) || incoming().email == existing().email);
       allow delete: if signedIn() && uid() == userId;
-      // Nâng role/accountType: chỉ qua Admin SDK / Cloud Functions.
+
+      // Subcollections của users (tokens, settings, device_tokens...)
+      match /{subcollection=**} {
+        allow read, write: if signedIn() && uid() == userId;
+      }
     }
 
-    // Hồ sơ công khai tối thiểu cho tính năng nhóm (tên/avatar thành viên) — cần bổ sung client.
+    // Hồ sơ công khai tối thiểu cho tính năng nhóm (tên/avatar thành viên)
     match /public_profiles/{userId} {
       allow read:   if signedIn();
       allow create, update: if signedIn() && uid() == userId
@@ -99,7 +105,10 @@ service cloud.firestore {
         && groupOf(groupId).get('isDeleted', false) != true;
     }
     function isAdminOfGroup(groupId) {
-      return signedIn() && groupExists(groupId) && groupOf(groupId).adminId == uid();
+      return signedIn() && groupExists(groupId) && (
+        groupOf(groupId).get('adminId', '') == uid() ||
+        groupOf(groupId).get('ownerId', '') == uid()
+      );
     }
     function allInGroup(groupId, ids) {
       return ids is list && ids.toSet().difference(groupOf(groupId).memberIds.toSet()).size() == 0;
@@ -114,23 +123,27 @@ service cloud.firestore {
       function ng()       { return request.resource.data; }
       function added()    { return ng().memberIds.toSet().difference(g().memberIds.toSet()); }
       function removed()  { return g().memberIds.toSet().difference(ng().memberIds.toSet()); }
-      function isAdminHere()  { return signedIn() && g().adminId == uid(); }
+      function isAdminHere()  {
+        return signedIn() && (
+          g().get('adminId', '') == uid() ||
+          g().get('ownerId', '') == uid()
+        );
+      }
       function isMemberHere() { return signedIn() && uid() in g().memberIds; }
 
       // (a) Admin sửa metadata / xóa thành viên — KHÔNG thêm, KHÔNG đổi adminId
       function adminEditsGroup() {
         return isAdminHere()
           && changedKeys().hasOnly(['name', 'description', 'iconUrl', 'iconCode', 'groupType',
-                                    'memberIds', 'updatedAt', 'isDeleted', 'deletedAt'])
+                                    'currency', 'memberIds', 'updatedAt', 'isDeleted', 'deletedAt'])
           && added().size() == 0
-          && ng().adminId in ng().memberIds;
+          && (ng().get('adminId', '') in ng().memberIds || ng().get('ownerId', '') in ng().memberIds);
       }
       // (b) Admin chuyển quyền cho thành viên sẵn có
       function adminTransfersOwnership() {
         return isAdminHere()
-          && changedKeys().hasOnly(['adminId', 'updatedAt'])
-          && ng().adminId != g().adminId
-          && ng().adminId in g().memberIds;
+          && (changedKeys().hasOnly(['adminId', 'updatedAt']) || changedKeys().hasOnly(['adminId', 'ownerId', 'updatedAt']))
+          && (ng().get('adminId', '') in g().memberIds);
       }
       // (c) Thành viên (không phải admin) tự rời — chỉ xóa đúng mình
       function memberLeaves() {
@@ -156,15 +169,24 @@ service cloud.firestore {
       allow read: if isMemberHere() || isAdminHere();
       allow create: if signedIn()
         && ng().get('id', groupId) == groupId
-        && ng().adminId == uid()
+        && (ng().get('adminId', '') == uid() || ng().get('ownerId', '') == uid())
         && ng().memberIds == [uid()]                       // thành viên khác vào qua lời mời
         && ng().get('isDeleted', false) == false
-        && !ng().keys().hasAny(['ownerId', 'role', 'roles', 'memberRoles']);
+        && !ng().keys().hasAny(['role', 'roles', 'memberRoles']);
       allow update: if signedIn()
         && ng().memberIds is list
-        && !changedKeys().hasAny(['id', 'createdAt', 'ownerId', 'role', 'roles', 'memberRoles'])
+        && ng().get('id', groupId) == g().get('id', groupId)
+        && (!('createdAt' in ng()) || ng().createdAt == g().createdAt)
+        && (!('ownerId' in ng()) || ng().ownerId == g().ownerId)
+        && !changedKeys().hasAny(['id', 'createdAt', 'role', 'roles', 'memberRoles'])
         && (adminEditsGroup() || adminTransfersOwnership() || memberLeaves() || inviteeJoins());
       allow delete: if false;                              // chỉ soft-delete (isDeleted)
+
+      // Phân quyền cho Subcollections của nhóm (members, expenses, settlements, funds...)
+      match /{subcollection=**} {
+        allow read: if isMemberHere() || isAdminHere();
+        allow write: if isMemberHere() || isAdminHere();
+      }
     }
 
     // ════════ LỜI MỜI (doc id = "{groupId}_{inviteeUid}") ════════
@@ -206,7 +228,7 @@ service cloud.firestore {
         && (existing().inviteeUid == uid() || isAdminOfGroup(existing().groupId));
     }
 
-    // ════════ CHI TIÊU NHÓM ════════
+    // ════════ CHI TIÊU NHÓM (Hỗ trợ cả /expenses và alias /group_expenses) ════════
     match /expenses/{expenseId} {
       allow read: if isMemberOf(existing().groupId);
       allow create: if isMemberOf(incoming().groupId)
@@ -224,7 +246,24 @@ service cloud.firestore {
         && (existing().createdBy == uid() || isAdminOfGroup(existing().groupId));
     }
 
-    // ════════ CÔNG NỢ ════════
+    match /group_expenses/{expenseId} {
+      allow read: if isMemberOf(existing().groupId);
+      allow create: if isMemberOf(incoming().groupId)
+        && incoming().createdBy == uid()
+        && incoming().payerId in groupOf(incoming().groupId).memberIds
+        && allInGroup(incoming().groupId, incoming().participantIds)
+        && incoming().amount is number && incoming().amount > 0;
+      allow update: if isMemberOf(existing().groupId)
+        && (existing().createdBy == uid() || isAdminOfGroup(existing().groupId))
+        && !changedKeys().hasAny(['id', 'groupId', 'createdBy', 'createdAt'])
+        && incoming().payerId in groupOf(existing().groupId).memberIds
+        && allInGroup(existing().groupId, incoming().participantIds)
+        && incoming().amount is number && incoming().amount > 0;
+      allow delete: if isMemberOf(existing().groupId)
+        && (existing().createdBy == uid() || isAdminOfGroup(existing().groupId));
+    }
+
+    // ════════ CÔNG NỢ (Debtor không được tự ý sửa hoặc xóa nợ) ════════
     match /debts/{debtId} {
       allow read: if isMemberOf(existing().groupId)
         || (signedIn() && (existing().debtorId == uid() || existing().creditorId == uid()));
@@ -233,15 +272,21 @@ service cloud.firestore {
         && incoming().creditorId in groupOf(incoming().groupId).memberIds
         && incoming().debtorId != incoming().creditorId
         && incoming().amount is number && incoming().amount >= 0;
+      // CHỈ CHỦ NỢ (creditorId) HOẶC ADMIN MỚI ĐƯỢC CẬP NHẬT TRẠNG THÁI / SỐ TIỀN
       allow update: if isMemberOf(existing().groupId)
+        && (existing().creditorId == uid() || isAdminOfGroup(existing().groupId))
         && changedKeys().hasOnly(['amount', 'status', 'updatedAt'])
+        && incoming().debtorId == existing().debtorId
+        && incoming().creditorId == existing().creditorId
+        && incoming().groupId == existing().groupId
         && incoming().amount is number && incoming().amount >= 0
         && incoming().status in ['active', 'settled', 'partiallySettled'];
-      allow delete: if isMemberOf(existing().groupId);
-      // P1: chuyển tính công nợ sang Cloud Functions, khi đó client chỉ được read.
+      // CHỈ CHỦ NỢ HOẶC ADMIN MỚI ĐƯỢC XÓA NỢ
+      allow delete: if isMemberOf(existing().groupId)
+        && (existing().creditorId == uid() || isAdminOfGroup(existing().groupId));
     }
 
-    // ════════ QUYẾT TOÁN ════════
+    // ════════ QUYẾT TOÁN (Hỗ trợ cả /settlements và alias /group_settlements) ════════
     match /settlements/{settlementId} {
       allow read: if isMemberOf(existing().groupId)
         || (signedIn() && (existing().payerId == uid() || existing().payeeId == uid()));
@@ -249,21 +294,46 @@ service cloud.firestore {
         && incoming().payerId == uid()
         && incoming().payeeId in groupOf(incoming().groupId).memberIds
         && incoming().payeeId != uid()
-        && incoming().status == 'pendingConfirmation'
+        && incoming().status in ['pendingConfirmation', 'pending_confirmation']
         && incoming().amount is number && incoming().amount > 0;
       allow update: if isMemberOf(existing().groupId)
-        && existing().status == 'pendingConfirmation'
+        && (existing().status in ['pendingConfirmation', 'pending_confirmation'])
         && !changedKeys().hasAny(['id', 'groupId', 'payerId', 'payeeId', 'amount', 'createdAt'])
         && (
           ( existing().payeeId == uid()
-            && changedKeys().hasOnly(['status', 'confirmedAt', 'notes'])
+            && changedKeys().hasOnly(['status', 'confirmedAt', 'notes', 'updatedAt'])
             && incoming().status in ['confirmed', 'rejected'] )
           ||
           ( existing().payerId == uid()
-            && changedKeys().hasOnly(['proofPhotoUrl', 'notes']) )
+            && changedKeys().hasOnly(['proofPhotoUrl', 'notes', 'updatedAt']) )
         );
       allow delete: if signedIn()
-        && existing().status == 'pendingConfirmation'
+        && (existing().status in ['pendingConfirmation', 'pending_confirmation'])
+        && (existing().payerId == uid() || isAdminOfGroup(existing().groupId));
+    }
+
+    match /group_settlements/{settlementId} {
+      allow read: if isMemberOf(existing().groupId)
+        || (signedIn() && (existing().payerId == uid() || existing().payeeId == uid()));
+      allow create: if isMemberOf(incoming().groupId)
+        && incoming().payerId == uid()
+        && incoming().payeeId in groupOf(incoming().groupId).memberIds
+        && incoming().payeeId != uid()
+        && incoming().status in ['pendingConfirmation', 'pending_confirmation']
+        && incoming().amount is number && incoming().amount > 0;
+      allow update: if isMemberOf(existing().groupId)
+        && (existing().status in ['pendingConfirmation', 'pending_confirmation'])
+        && !changedKeys().hasAny(['id', 'groupId', 'payerId', 'payeeId', 'amount', 'createdAt'])
+        && (
+          ( existing().payeeId == uid()
+            && changedKeys().hasOnly(['status', 'confirmedAt', 'notes', 'updatedAt'])
+            && incoming().status in ['confirmed', 'rejected'] )
+          ||
+          ( existing().payerId == uid()
+            && changedKeys().hasOnly(['proofPhotoUrl', 'notes', 'updatedAt']) )
+        );
+      allow delete: if signedIn()
+        && (existing().status in ['pendingConfirmation', 'pending_confirmation'])
         && (existing().payerId == uid() || isAdminOfGroup(existing().groupId));
     }
 
@@ -291,7 +361,7 @@ service cloud.firestore {
       return d.type == 'group_response'
         && d.senderUid == uid()
         && groupExists(d.groupId)
-        && groupOf(d.groupId).adminId == d.uid
+        && (groupOf(d.groupId).get('adminId', '') == d.uid || groupOf(d.groupId).get('ownerId', '') == d.uid)
         && exists(invitePath(d.groupId, uid()));
     }
     match /notifications/{notificationId} {

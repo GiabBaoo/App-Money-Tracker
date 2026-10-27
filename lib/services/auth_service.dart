@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,7 +7,6 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/user_model.dart';
 import '../data/local/database_helper.dart';
-import 'email_service.dart';
 import 'firestore_service.dart';
 import 'connectivity_service.dart';
 import '../utils/device_utils.dart';
@@ -173,15 +171,10 @@ class AuthService {
         value: uid,
       );
       await _secureStorage.write(
-        key: 'offline_auth_pass_$normalizedEmail',
-        value: password,
-      );
-      await _secureStorage.write(
         key: 'last_offline_email',
         value: normalizedEmail,
       );
       await _secureStorage.write(key: 'last_offline_uid', value: uid);
-      await _secureStorage.write(key: 'last_auth_password', value: password);
     } catch (e) {
       debugPrint('Error saving offline credentials: $e');
     }
@@ -199,15 +192,11 @@ class AuthService {
       final savedUid = await _secureStorage.read(
         key: 'offline_auth_uid_$normalizedEmail',
       );
-      final savedPass = await _secureStorage.read(
-        key: 'offline_auth_pass_$normalizedEmail',
-      );
 
       final inputHash = _hashPassword(email, password);
 
       if (savedHash != null && savedUid != null) {
-        if (inputHash == savedHash ||
-            (savedPass != null && savedPass == password)) {
+        if (inputHash == savedHash) {
           await prepareAccountSwitch(savedUid);
           setOfflineUid(savedUid);
           return (success: true, message: 'Đăng nhập ngoại tuyến thành công!');
@@ -341,80 +330,24 @@ class AuthService {
     }
   }
 
-  // ==================== TAO VA GUI MA OTP QUA EMAIL ====================
+  // ==================== TAO VA GUI MA OTP QUA EMAIL (DEPRECATED) ====================
+  @Deprecated('Sử dụng sendPasswordResetEmail của Firebase Auth Native')
   Future<({bool success, String message})> sendOTP({
     required String email,
   }) async {
-    try {
-      final code = (100000 + Random().nextInt(900000)).toString();
-      final expiry = DateTime.now().add(const Duration(minutes: 5));
-
-      // Luu OTP vao Firestore
-      await _firestore
-          .collection('otp_codes')
-          .doc(email.trim().toLowerCase())
-          .set({
-            'code': code,
-            'email': email.trim().toLowerCase(),
-            'expiry': Timestamp.fromDate(expiry),
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-
-      // Gui email that qua SMTP
-      final emailResult = await EmailService.sendOTPEmail(
-        toEmail: email.trim(),
-        otpCode: code,
-      );
-
-      if (emailResult.success) {
-        return (success: true, message: 'Ma OTP da duoc gui den $email');
-      } else {
-        return (success: false, message: emailResult.message);
-      }
-    } catch (e) {
-      return (success: false, message: 'Loi gui OTP: $e');
-    }
+    return await sendPasswordResetEmail(email: email);
   }
 
-  // ==================== XAC THUC OTP ====================
+  // ==================== XAC THUC OTP (DEPRECATED) ====================
+  @Deprecated('Sử dụng Firebase Auth Native để xác thực email hoặc link đổi mật khẩu')
   Future<({bool success, String message})> verifyOTP({
     required String email,
     required String otpCode,
   }) async {
-    try {
-      final doc = await _firestore
-          .collection('otp_codes')
-          .doc(email.trim().toLowerCase())
-          .get();
-
-      if (!doc.exists) {
-        return (
-          success: false,
-          message: 'Khong tim thay ma OTP! Vui long gui lai.',
-        );
-      }
-
-      final data = doc.data()!;
-      final storedCode = data['code'] as String;
-      final expiry = (data['expiry'] as Timestamp).toDate();
-
-      if (DateTime.now().isAfter(expiry)) {
-        await doc.reference.delete();
-        return (
-          success: false,
-          message: 'Ma OTP da het han! Vui long gui lai.',
-        );
-      }
-
-      if (storedCode != otpCode) {
-        return (success: false, message: 'Ma OTP khong dung!');
-      }
-
-      await doc.reference.delete();
-      return (success: true, message: 'Xac thuc thanh cong!');
-    } catch (e) {
-      return (success: false, message: 'Loi xac thuc: $e');
-    }
+    return (
+      success: true,
+      message: 'Vui lòng kiểm tra email để nhấn liên kết xác thực Firebase.',
+    );
   }
 
   // ==================== DANG KY ====================
@@ -506,15 +439,10 @@ class AuthService {
       final savedUid = await _secureStorage.read(
         key: 'offline_auth_uid_$normalizedEmail',
       );
-      final savedPass = await _secureStorage.read(
-        key: 'offline_auth_pass_$normalizedEmail',
-      );
       final inputHash = _hashPassword(email, password);
 
       final bool isLocalPasswordMatch =
-          savedUid != null &&
-          (inputHash == savedHash ||
-              (savedPass != null && savedPass == password));
+          savedUid != null && inputHash == savedHash;
 
       if (isLocalPasswordMatch) {
         await prepareAccountSwitch(savedUid);
@@ -525,13 +453,12 @@ class AuthService {
           setOfflineUid(savedUid);
         }
 
-        // Cập nhật lại mật khẩu xác thực mới nhất
+        // Cập nhật lại thông tin phiên offline mới nhất
         await _secureStorage.write(
           key: 'last_offline_email',
           value: normalizedEmail,
         );
         await _secureStorage.write(key: 'last_offline_uid', value: savedUid);
-        await _secureStorage.write(key: 'last_auth_password', value: password);
 
         // Kích hoạt đồng bộ ngầm và xác thực Firebase Auth ở chế độ nền (KHÔNG CHẶN MÀN HÌNH)
         if (isConnOnline) {
@@ -764,34 +691,25 @@ class AuthService {
   Future<({bool success, String message})> resetPasswordWithEmail({
     required String email,
     required String newPassword,
-    required String otpCode,
+    String? otpCode,
   }) async {
     try {
-      // Neu co OTP, xac thuc OTP truoc (cho luong cu)
-      if (otpCode.isNotEmpty) {
-        final verifyResult = await verifyOTP(email: email, otpCode: otpCode);
-        if (!verifyResult.success) {
-          return (success: false, message: verifyResult.message);
-        }
+      if (email.trim().isEmpty) {
+        return (success: false, message: 'Vui lòng nhập email!');
       }
-      // Neu khong co OTP, chi can gui email reset password (luong moi)
 
-      // Gui email reset password
+      // Gửi email đặt lại mật khẩu bảo mật qua Firebase Auth Native
       await _auth.sendPasswordResetEmail(email: email.trim());
 
-      // Luu mat khau moi tam thoi (user se click link trong email de hoan thanh)
-      await _firestore.collection('password_resets').doc(email.trim()).set({
-        'email': email.trim(),
-        'newPassword': newPassword,
-        'createdAt': DateTime.now(),
-        'expiresAt': DateTime.now().add(const Duration(hours: 1)),
-      });
-
-      return (success: true, message: 'Email dat lai mat khau da duoc gui!');
+      // Không lưu mật khẩu thô vào Firestore 'password_resets'
+      return (
+        success: true,
+        message: 'Email đặt lại mật khẩu đã được gửi đến $email. Vui lòng kiểm tra hộp thư.',
+      );
     } on FirebaseAuthException catch (e) {
       return (success: false, message: _getAuthErrorMessage(e.code));
     } catch (e) {
-      return (success: false, message: 'Loi: $e');
+      return (success: false, message: 'Lỗi: $e');
     }
   }
 

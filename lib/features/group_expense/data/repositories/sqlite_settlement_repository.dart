@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:uuid/uuid.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../../../data/local/database_helper.dart';
 import '../../../../data/local/sync_queue_writer.dart';
 import '../../domain/repositories/i_settlement_repository.dart';
@@ -106,6 +107,8 @@ class SqliteSettlementRepository implements ISettlementRepository {
 
   @override
   Future<void> updateStatus(String id, SettlementStatus status) async {
+    final settlement = await getById(id);
+    final activeUid = SessionManager.instance.uidOrNull ?? settlement.payeeId;
     final db = await _dbHelper.database;
     final now = DateTime.now();
 
@@ -139,7 +142,7 @@ class SqliteSettlementRepository implements ISettlementRepository {
 
       await SyncQueueWriter.enqueue(
         txn,
-        ownerUid: '',
+        ownerUid: activeUid,
         table: 'group_settlements',
         recordId: id,
         action: 'UPDATE',
@@ -152,6 +155,8 @@ class SqliteSettlementRepository implements ISettlementRepository {
 
   @override
   Future<void> delete(String id) async {
+    final settlement = await getById(id);
+    final activeUid = SessionManager.instance.uidOrNull ?? settlement.payerId;
     final db = await _dbHelper.database;
     final now = DateTime.now();
 
@@ -169,7 +174,7 @@ class SqliteSettlementRepository implements ISettlementRepository {
 
       await SyncQueueWriter.enqueue(
         txn,
-        ownerUid: '',
+        ownerUid: activeUid,
         table: 'group_settlements',
         recordId: id,
         action: 'DELETE',

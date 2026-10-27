@@ -21,11 +21,27 @@ class SyncQueueWriter {
         'ownerUid không hợp lệ: "$ownerUid"',
       );
     }
-    if (data != null && data.containsKey('uid') && data['uid'] != ownerUid) {
-      throw const BusinessException(
-        BusinessErrorCode.ownershipViolation,
-        'payload.uid ≠ ownerUid',
-      );
+    if (data != null) {
+      if (data.containsKey('uid') && data['uid'] != ownerUid) {
+        throw const BusinessException(
+          BusinessErrorCode.ownershipViolation,
+          'payload.uid ≠ ownerUid',
+        );
+      }
+      if (data.containsKey('createdBy') && data['createdBy'] != ownerUid) {
+        throw const BusinessException(
+          BusinessErrorCode.ownershipViolation,
+          'payload.createdBy ≠ ownerUid',
+        );
+      }
+      if (action == 'INSERT' &&
+          data.containsKey('ownerId') &&
+          data['ownerId'] != ownerUid) {
+        throw const BusinessException(
+          BusinessErrorCode.ownershipViolation,
+          'payload.ownerId ≠ ownerUid',
+        );
+      }
     }
     final now = DateTime.now().millisecondsSinceEpoch;
 

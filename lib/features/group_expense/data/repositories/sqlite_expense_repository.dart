@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:uuid/uuid.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../../../data/local/database_helper.dart';
 import '../../../../data/local/sync_queue_writer.dart';
 import '../../domain/repositories/i_expense_repository.dart';
@@ -285,6 +286,8 @@ class SqliteExpenseRepository implements IExpenseRepository {
       final expenseRow = rows.first;
       final linkedTxId = expenseRow['linkedTransactionId'] as String?;
       final amount = expenseRow['amount'] as int;
+      final createdBy = expenseRow['createdBy'] as String;
+      final activeUid = SessionManager.instance.uidOrNull ?? createdBy;
 
       // Soft delete group expense
       await txn.update(
@@ -329,7 +332,7 @@ class SqliteExpenseRepository implements IExpenseRepository {
 
       await SyncQueueWriter.enqueue(
         txn,
-        ownerUid: '',
+        ownerUid: activeUid,
         table: 'group_expenses',
         recordId: id,
         action: 'DELETE',

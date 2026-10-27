@@ -96,9 +96,6 @@ void main() async {
           appleProvider: AppleProvider.deviceCheck,
         );
       }
-      await FirebaseAuth.instance.setSettings(
-        appVerificationDisabledForTesting: true,
-      );
     } catch (e) {
       debugPrint('FirebaseAppCheck background error: $e');
     }

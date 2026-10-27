@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:flutter/foundation.dart';
@@ -45,7 +46,10 @@ class DatabaseHelper {
         }
       },
       onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
+      onUpgrade: (db, oldVersion, newVersion) async {
+        await _createPreMigrationBackup(path, oldVersion);
+        await _onUpgrade(db, oldVersion, newVersion);
+      },
       onOpen: (db) async {
         // Đảm bảo các index cốt lõi luôn tồn tại
         try {
@@ -1188,19 +1192,64 @@ class DatabaseHelper {
     return wipeAllForTests();
   }
 
+  /// Tạo bản sao lưu trước khi migration chạy
+  Future<void> _createPreMigrationBackup(String dbPath, int oldVersion) async {
+    try {
+      final dbFile = File(dbPath);
+      if (await dbFile.exists()) {
+        final backupPath =
+            '$dbPath.bak_v${oldVersion}_${DateTime.now().millisecondsSinceEpoch}';
+        await dbFile.copy(backupPath);
+        debugPrint(
+          'DatabaseHelper: Pre-migration backup created at $backupPath',
+        );
+      }
+    } catch (e) {
+      debugPrint('DatabaseHelper: Failed to create pre-migration backup: $e');
+    }
+  }
+
+  /// Sao lưu an toàn file database SQLite
+  Future<String?> backupDatabase({String? reason}) async {
+    if (kIsWeb) return null;
+    try {
+      final dbPath = await getDatabasesPath();
+      final path = join(dbPath, _dbName);
+      final dbFile = File(path);
+      if (await dbFile.exists()) {
+        final suffix = reason != null ? '_$reason' : '';
+        final backupPath =
+            '$path.bak${suffix}_${DateTime.now().millisecondsSinceEpoch}';
+        await dbFile.copy(backupPath);
+        debugPrint('DatabaseHelper: Safe backup created at $backupPath');
+        return backupPath;
+      }
+    } catch (e) {
+      debugPrint('DatabaseHelper: Backup error: $e');
+    }
+    return null;
+  }
+
   /// Xóa dữ liệu của 1 user cụ thể (chỉ dùng khi xóa tài khoản đã xác nhận qua Firebase).
   Future<void> clearUserData(String uid) async {
-    DestructiveOpsGuard.ensureEnabled('clearUserData');
     if (!SessionManager.isValidUid(uid)) {
       throw BusinessException(
         BusinessErrorCode.invalidUid,
         'clearUserData: UID không hợp lệ',
       );
     }
+
+    // Sao lưu dữ liệu an toàn trước khi xóa
+    final shortUid = uid.length > 8 ? uid.substring(0, 8) : uid;
+    await backupDatabase(reason: 'pre_clear_$shortUid');
+
     final db = await database;
     await db.transaction((txn) async {
       await txn.delete('expense_splits', where: 'userId = ?', whereArgs: [uid]);
       await txn.delete('group_members', where: 'userId = ?', whereArgs: [uid]);
+      await txn.delete('group_expenses', where: 'createdBy = ?', whereArgs: [uid]);
+      await txn.delete('group_settlements', where: 'payerId = ? OR payeeId = ?', whereArgs: [uid, uid]);
+      await txn.delete('groups', where: 'ownerId = ?', whereArgs: [uid]);
       await txn.delete('wallets', where: 'uid = ?', whereArgs: [uid]);
       await txn.delete('transactions', where: 'uid = ?', whereArgs: [uid]);
       await txn.delete('users', where: 'uid = ?', whereArgs: [uid]);

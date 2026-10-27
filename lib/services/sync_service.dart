@@ -667,15 +667,26 @@ class SyncService implements ISyncService {
           ? null
           : json.decode(raw) as Map<String, dynamic>;
 
-      if (data != null && data.containsKey('uid') && data['uid'] != ownerUid) {
-        await _markQueue(
-          db,
-          qid,
-          ownerUid,
-          status: 'quarantined',
-          error: 'uid_mismatch',
-        );
-        continue; // I7: KHÔNG sửa uid, cách ly dòng bất thường
+      if (data != null) {
+        final hasUidMismatch =
+            data.containsKey('uid') && data['uid'] != ownerUid;
+        final hasCreatedByMismatch =
+            data.containsKey('createdBy') && data['createdBy'] != ownerUid;
+        final hasOwnerIdMismatch =
+            action == 'INSERT' &&
+            data.containsKey('ownerId') &&
+            data['ownerId'] != ownerUid;
+
+        if (hasUidMismatch || hasCreatedByMismatch || hasOwnerIdMismatch) {
+          await _markQueue(
+            db,
+            qid,
+            ownerUid,
+            status: 'quarantined',
+            error: 'ownership_mismatch',
+          );
+          continue; // I7: KHÔNG sửa uid, cách ly dòng bất thường
+        }
       }
 
       try {
@@ -814,12 +825,31 @@ class SyncService implements ISyncService {
       case 'SOFT_DELETE':
       case 'DELETE':
         // Cập nhật soft delete lên Firestore để các thiết bị khác nhận diện được
-        await collection.doc(recordId).set({
+        final deletePayload = <String, dynamic>{
           'isDeleted': true,
           'deletedAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
-          'uid': ownerUid,
-        }, SetOptions(merge: true));
+        };
+
+        // Chỉ gán uid nếu bảng đó thực sự là bảng dữ liệu cá nhân (có trường uid)
+        const nonUidTables = {
+          'groups',
+          'group_expenses',
+          'group_settlements',
+          'expenses',
+          'settlements',
+          'group_members',
+          'debts',
+          'expense_splits',
+          'fund_transactions',
+        };
+        if (!nonUidTables.contains(table)) {
+          deletePayload['uid'] = ownerUid;
+        }
+
+        await collection
+            .doc(recordId)
+            .set(deletePayload, SetOptions(merge: true));
         break;
     }
   }

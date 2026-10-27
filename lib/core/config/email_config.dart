@@ -1,7 +1,8 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-/// Cấu hình SMTP đọc lúc runtime từ `.env` (không hardcode trong mã nguồn).
-/// Xem `.env.example` để biết các key cần khai báo.
+/// Cấu hình Email service.
+/// Lưu ý: Theo tiêu chuẩn Phase 1 Security, ứng dụng đã chuyển sang Firebase Auth Native SDK
+/// để gửi email xác thực và đặt lại mật khẩu, không còn lưu trữ SMTP credentials trên client.
 class EmailConfig {
   static const String defaultSenderName = 'Mono App';
 
@@ -10,8 +11,8 @@ class EmailConfig {
   final String senderName;
 
   const EmailConfig({
-    required this.senderEmail,
-    required this.appPassword,
+    this.senderEmail = '',
+    this.appPassword = '',
     this.senderName = defaultSenderName,
   });
 
@@ -21,7 +22,6 @@ class EmailConfig {
     final name = env['SMTP_SENDER_NAME']?.trim() ?? '';
     return EmailConfig(
       senderEmail: env['SMTP_SENDER_EMAIL']?.trim() ?? '',
-      // Google hiển thị App Password dạng "xxxx xxxx xxxx xxxx"
       appPassword: env['SMTP_APP_PASSWORD']?.replaceAll(' ', '') ?? '',
       senderName: name.isNotEmpty ? name : defaultSenderName,
     );

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:uuid/uuid.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../../../data/local/database_helper.dart';
 import '../../../../data/local/sync_queue_writer.dart';
 import '../../domain/repositories/i_group_repository.dart';
@@ -151,6 +152,8 @@ class SqliteGroupRepository implements IGroupRepository {
 
   @override
   Future<void> update(String id, UpdateGroupDto dto) async {
+    final group = await getById(id);
+    final activeUid = SessionManager.instance.uidOrNull ?? group.ownerId;
     final db = await _dbHelper.database;
     final now = DateTime.now();
     final data = <String, dynamic>{
@@ -166,7 +169,7 @@ class SqliteGroupRepository implements IGroupRepository {
       await txn.update('groups', data, where: 'id = ?', whereArgs: [id]);
       await SyncQueueWriter.enqueue(
         txn,
-        ownerUid: '',
+        ownerUid: activeUid,
         table: 'groups',
         recordId: id,
         action: 'UPDATE',
@@ -179,6 +182,8 @@ class SqliteGroupRepository implements IGroupRepository {
 
   @override
   Future<void> delete(String id) async {
+    final group = await getById(id);
+    final activeUid = SessionManager.instance.uidOrNull ?? group.ownerId;
     final db = await _dbHelper.database;
     final now = DateTime.now();
 
@@ -195,7 +200,7 @@ class SqliteGroupRepository implements IGroupRepository {
       );
       await SyncQueueWriter.enqueue(
         txn,
-        ownerUid: '',
+        ownerUid: activeUid,
         table: 'groups',
         recordId: id,
         action: 'DELETE',
