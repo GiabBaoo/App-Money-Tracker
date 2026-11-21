@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/logging/app_logger.dart';
 
 /// Global helper for convenience across all screens, dialogs and widgets
 bool get isVi => LanguageService.instance.isVietnamese;
@@ -30,7 +33,7 @@ class LanguageService extends ChangeNotifier {
 
   static LanguageService get instance => _instance;
 
-  final _storage = const FlutterSecureStorage();
+  final _secureStorage = const FlutterSecureStorage();
   String _currentLanguage = 'vi'; // Default to Vietnamese
 
   String get currentLanguage => _currentLanguage;
@@ -44,37 +47,57 @@ class LanguageService extends ChangeNotifier {
 
   Future<void> init() async {
     try {
-      // 1. Try remote Firestore preference first if logged in
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final doc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        if (doc.exists) {
-          final settings = doc.data()?['settings'];
-          if (settings != null && settings['language'] != null) {
-            final remoteLang = settings['language'].toString();
-            if (remoteLang == 'vi' || remoteLang == 'en') {
-              _currentLanguage = remoteLang;
-              await _storage.write(key: 'app_language', value: remoteLang);
-              notifyListeners();
-              return;
-            }
+      // 1. Đọc tức thì từ SharedPreferences (0ms, không chặn luồng khởi động app)
+      final prefs = await SharedPreferences.getInstance();
+      var localLang = prefs.getString('app_language');
+
+      // 2. Migration: nếu SharedPreferences chưa có, đọc thử từ SecureStorage cũ
+      if (localLang == null || (localLang != 'vi' && localLang != 'en')) {
+        try {
+          final oldSec = await _secureStorage.read(key: 'app_language');
+          if (oldSec == 'vi' || oldSec == 'en') {
+            localLang = oldSec;
+            await prefs.setString('app_language', oldSec!);
           }
+        } catch (e, st) {
+          AppLogger.warn('Lỗi đọc fallback SecureStorage app_language', tag: 'LanguageService', error: e, stackTrace: st);
         }
       }
 
-      final local = await _storage.read(key: 'app_language');
-      if (local != null && (local == 'vi' || local == 'en')) {
-        _currentLanguage = local;
+      if (localLang == 'vi' || localLang == 'en') {
+        _currentLanguage = localLang!;
       } else {
         _currentLanguage = 'vi';
       }
-    } catch (_) {
+    } catch (e, st) {
+      AppLogger.warn('Lỗi khởi tạo LanguageService, dùng mặc định vi', tag: 'LanguageService', error: e, stackTrace: st);
       _currentLanguage = 'vi';
     }
     notifyListeners();
+
+    // 3. Đồng bộ đám mây chạy ngầm không chặn (unawaited)
+    unawaited(_syncRemoteLanguagePreference());
+  }
+
+  Future<void> _syncRemoteLanguagePreference() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (!doc.exists) return;
+      final settings = doc.data()?['settings'];
+      if (settings != null && settings['language'] != null) {
+        final remoteLang = settings['language'].toString();
+        if ((remoteLang == 'vi' || remoteLang == 'en') && remoteLang != _currentLanguage) {
+          _currentLanguage = remoteLang;
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('app_language', remoteLang);
+          notifyListeners();
+        }
+      }
+    } catch (e, st) {
+      AppLogger.warn('Không thể đồng bộ ngôn ngữ từ Firestore lúc khởi động', tag: 'LanguageService', error: e, stackTrace: st);
+    }
   }
 
   /// Sets language with 0ms UI lag (instant memory update & notifyListeners)
@@ -91,15 +114,16 @@ class LanguageService extends ChangeNotifier {
 
   void _persistLanguage(String code) async {
     try {
-      await _storage.write(key: 'app_language', value: code);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('app_language', code);
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'settings': {'language': code},
         }, SetOptions(merge: true));
       }
-    } catch (e) {
-      debugPrint('LanguageService persist error: $e');
+    } catch (e, st) {
+      AppLogger.error('LanguageService persist error', tag: 'LanguageService', error: e, stackTrace: st);
     }
   }
 

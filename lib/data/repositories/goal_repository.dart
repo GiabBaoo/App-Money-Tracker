@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
@@ -9,6 +7,7 @@ import '../local/owned_table_ops.dart';
 import '../local/sync_queue_writer.dart';
 import '../../core/errors/business_exception.dart';
 import '../../models/goal_model.dart';
+import '../../core/logging/app_logger.dart';
 import '../../models/wallet_model.dart';
 import '../../models/transaction_model.dart';
 import '../../services/connectivity_service.dart';
@@ -46,13 +45,18 @@ class GoalRepository with OwnedTableOps {
     return _goalStreamController.stream;
   }
 
+  /// Phát thông báo thay đổi mục tiêu ra bên ngoài
+  void notifyChanged() => _notifyChanged();
+
   Future<void> _notifyChanged() async {
     try {
       final goals = await getAllGoals();
       if (!_goalStreamController.isClosed) {
         _goalStreamController.add(goals);
       }
-    } catch (_) {}
+    } catch (e, st) {
+      AppLogger.warn('Lỗi emit stream goal', tag: 'GoalRepository', error: e, stackTrace: st);
+    }
   }
 
   Future<List<GoalModel>> getAllGoals() async {
@@ -141,16 +145,22 @@ class GoalRepository with OwnedTableOps {
     await _notifyChanged();
   }
 
-  /// Nạp tiền tiết kiệm vào mục tiêu
+  /// Nạp tiền tiết kiệm vào mục tiêu (Bảo đảm đối ứng 1:1 với ví nguồn)
   Future<void> depositToGoal(
     String goalId,
     double amount, {
-    String? walletId,
+    required String walletId,
   }) async {
     if (amount <= 0) {
       throw const BusinessException(
         BusinessErrorCode.invalidAmount,
         'Số tiền nạp mục tiêu phải lớn hơn 0',
+      );
+    }
+    if (walletId.trim().isEmpty) {
+      throw const BusinessException(
+        BusinessErrorCode.invalidAmount,
+        'Phải chọn ví nguồn khi nạp tiền vào mục tiêu',
       );
     }
     final uid = session.requireUid();
@@ -168,7 +178,7 @@ class GoalRepository with OwnedTableOps {
       final goal = GoalModel.fromSqlite(goalRow);
 
       // Trừ số dư ví nếu chọn ví cụ thể và tạo bút toán sổ cái tương ứng
-      if (walletId != null && walletId.isNotEmpty) {
+      if (walletId.isNotEmpty) {
         final walletRow = await findOwned(txn, 'wallets', walletId, uid);
         if (walletRow == null) {
           throw const BusinessException(
@@ -255,7 +265,7 @@ class GoalRepository with OwnedTableOps {
     });
 
     await _notifyChanged();
-    if (walletId != null && walletId.isNotEmpty) {
+    if (walletId.isNotEmpty) {
       WalletRepository().notifyChanged();
       TransactionRepository().notifyTransactionsChanged();
     }
@@ -268,12 +278,18 @@ class GoalRepository with OwnedTableOps {
   Future<void> withdrawFromGoal(
     String goalId,
     double amount, {
-    String? walletId,
+    required String walletId,
   }) async {
     if (amount <= 0) {
       throw const BusinessException(
         BusinessErrorCode.invalidAmount,
         'Số tiền rút mục tiêu phải lớn hơn 0',
+      );
+    }
+    if (walletId.trim().isEmpty) {
+      throw const BusinessException(
+        BusinessErrorCode.invalidAmount,
+        'Phải chọn ví nhận khi rút tiền từ mục tiêu',
       );
     }
     final uid = session.requireUid();
@@ -319,7 +335,7 @@ class GoalRepository with OwnedTableOps {
       );
 
       // Cộng số dư ví nếu chọn ví cụ thể và tạo bút toán sổ cái tương ứng
-      if (walletId != null && walletId.isNotEmpty) {
+      if (walletId.isNotEmpty) {
         final walletRow = await findOwned(txn, 'wallets', walletId, uid);
         if (walletRow == null) {
           throw const BusinessException(
@@ -379,7 +395,7 @@ class GoalRepository with OwnedTableOps {
     });
 
     await _notifyChanged();
-    if (walletId != null && walletId.isNotEmpty) {
+    if (walletId.isNotEmpty) {
       WalletRepository().notifyChanged();
       TransactionRepository().notifyTransactionsChanged();
     }
@@ -434,20 +450,39 @@ class GoalRepository with OwnedTableOps {
           final local = GoalModel.fromSqlite(existing.first);
           if (local.syncStatus == 'pending') continue; // Dirty Shield
 
-          final isRemoteNewer = fg.updatedAt.isAfter(local.updatedAt);
-          final isSameTime = fg.updatedAt.isAtSameMomentAs(local.updatedAt);
-          final winsTieBreak =
-              isSameTime && _resolveTieBreaker(local.toSqlite(), fg.toSqlite());
+          // Monotonic Delete Rule
+          if (local.isDeleted && !fg.isDeleted) {
+            final localDeletedMs = local.deletedAt?.millisecondsSinceEpoch ??
+                local.updatedAt.millisecondsSinceEpoch;
+            if (!fg.updatedAt.isAfter(
+              DateTime.fromMillisecondsSinceEpoch(localDeletedMs),
+            )) {
+              continue; // Local Tombstone wins
+            }
+          }
 
-          if (isRemoteNewer || winsTieBreak) {
+          final shouldWin = ConflictResolver.shouldRemoteWin(
+            localUpdatedAt: local.updatedAt,
+            remoteUpdatedAt: fg.updatedAt,
+            localData: local.toSqlite(),
+            remoteData: fg.toSqlite(),
+          );
+
+          if (shouldWin) {
             if (fg.isDeleted) {
+              final remoteDeletedMs = fg.deletedAt?.millisecondsSinceEpoch ??
+                  fg.updatedAt.millisecondsSinceEpoch;
+              final effectiveUpdatedMs =
+                  fg.updatedAt.millisecondsSinceEpoch > remoteDeletedMs
+                      ? fg.updatedAt.millisecondsSinceEpoch
+                      : remoteDeletedMs;
+
               await txn.update(
                 'goals',
                 {
                   'isDeleted': 1,
-                  'deletedAt':
-                      fg.deletedAt?.millisecondsSinceEpoch ??
-                      DateTime.now().millisecondsSinceEpoch,
+                  'deletedAt': remoteDeletedMs,
+                  'updatedAt': effectiveUpdatedMs,
                   'syncStatus': 'synced',
                 },
                 where: 'id = ? AND uid = ?',
@@ -467,18 +502,6 @@ class GoalRepository with OwnedTableOps {
     });
 
     await _notifyChanged();
-  }
-
-  /// Deterministic Tie-Breaker theo SHA256 khi hai thiết bị có updatedAt giống hệt nhau
-  static bool _resolveTieBreaker(
-    Map<String, dynamic> local,
-    Map<String, dynamic> remote,
-  ) {
-    final localStr = json.encode(local);
-    final remoteStr = json.encode(remote);
-    final localHash = sha256.convert(utf8.encode(localStr)).toString();
-    final remoteHash = sha256.convert(utf8.encode(remoteStr)).toString();
-    return remoteHash.compareTo(localHash) >= 0;
   }
 
   /// Upsert an toàn tuân thủ ISyncableRepository

@@ -57,8 +57,8 @@ dependencies:
   record: ^6.2.1
   firebase_app_check: ^0.3.2+10
   flutter_contacts: ^1.1.9+2
-  hive: ^2.2.3
-  hive_flutter: ^1.1.0
+
+
   qr_flutter: ^4.1.0
   mobile_scanner: ^6.0.2
   cached_network_image: ^3.4.1
@@ -83,7 +83,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  hive_generator: ^2.0.1
+
   build_runner: ^2.4.13
   flutter_launcher_icons: ^0.14.3
 

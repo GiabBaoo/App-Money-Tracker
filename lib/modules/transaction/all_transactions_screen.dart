@@ -13,6 +13,7 @@ import '../../data/repositories/wallet_repository.dart';
 import '../../utils/page_transitions.dart';
 import '../calendar/calendar_tracking_screen.dart';
 import '../../services/language_service.dart';
+import '../../services/financial_calculation_service.dart';
 
 class AllTransactionsScreen extends StatefulWidget {
   const AllTransactionsScreen({super.key});
@@ -36,8 +37,8 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
     super.initState();
     final uid = AuthService().currentUid;
     if (uid != null) {
-      _txRepo.setUid(uid);
-      _walletRepo.setUid(uid);
+
+
     }
     _walletRepo.getWallets();
     _applyDatePreset('month_to_date');
@@ -561,16 +562,12 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       }
 
                       // Tính tổng dòng tiền cho phạm vi đang lọc
-                      double totalIncome = 0;
-                      double totalExpense = 0;
-                      for (final tx in transactions) {
-                        if (tx.isTransfer) continue;
-                        if (tx.isIncome) {
-                          totalIncome += tx.amount;
-                        } else {
-                          totalExpense += tx.amount;
-                        }
-                      }
+                      final periodMetrics =
+                          FinancialCalculationService.calculatePeriodMetrics(
+                            transactions,
+                          );
+                      final totalIncome = periodMetrics.totalIncome;
+                      final totalExpense = periodMetrics.totalExpense;
 
                       if (transactions.isEmpty) {
                         return Center(

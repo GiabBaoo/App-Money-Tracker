@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/logging/app_logger.dart';
 import '../core/theme/app_theme.dart';
 
 export '../core/theme/app_colors.dart';
@@ -12,7 +15,7 @@ class ThemeService extends ChangeNotifier {
   factory ThemeService() => _instance;
   ThemeService._internal();
 
-  final _storage = const FlutterSecureStorage();
+  final _secureStorage = const FlutterSecureStorage();
   ThemeMode _themeMode = ThemeMode.system;
   double _textScaleFactor = 1.0;
 
@@ -39,8 +42,39 @@ class ThemeService extends ChangeNotifier {
 
   Future<void> init() async {
     try {
-      // 1. Nạp tức thì từ local storage (0ms - không chặn khởi động app)
-      final value = await _storage.read(key: 'themeMode');
+      // 1. Nạp tức thì từ SharedPreferences (0ms - không chặn khởi động app)
+      final prefs = await SharedPreferences.getInstance();
+      var value = prefs.getString('themeMode');
+      var scaleVal = prefs.getDouble('textScaleFactor');
+
+      // 2. Migration từ FlutterSecureStorage nếu SharedPreferences chưa có dữ liệu
+      if (value == null) {
+        try {
+          final oldSec = await _secureStorage.read(key: 'themeMode');
+          if (oldSec != null) {
+            value = oldSec;
+            await prefs.setString('themeMode', oldSec);
+          }
+        } catch (e, st) {
+          AppLogger.warn('Lỗi đọc fallback SecureStorage themeMode', tag: 'ThemeService', error: e, stackTrace: st);
+        }
+      }
+
+      if (scaleVal == null) {
+        try {
+          final oldScaleStr = await _secureStorage.read(key: 'textScaleFactor');
+          if (oldScaleStr != null) {
+            final parsed = double.tryParse(oldScaleStr);
+            if (parsed != null) {
+              scaleVal = parsed;
+              await prefs.setDouble('textScaleFactor', parsed);
+            }
+          }
+        } catch (e, st) {
+          AppLogger.warn('Lỗi đọc fallback SecureStorage textScaleFactor', tag: 'ThemeService', error: e, stackTrace: st);
+        }
+      }
+
       if (value == 'light') {
         _themeMode = ThemeMode.light;
       } else if (value == 'dark') {
@@ -49,70 +83,73 @@ class ThemeService extends ChangeNotifier {
         _themeMode = ThemeMode.system;
       }
 
-      final scaleVal = await _storage.read(key: 'textScaleFactor');
-      if (scaleVal != null) {
-        final parsed = double.tryParse(scaleVal);
-        if (parsed != null && parsed >= 0.7 && parsed <= 1.6) {
-          _textScaleFactor = parsed;
-        }
+      if (scaleVal != null && scaleVal >= 0.7 && scaleVal <= 1.6) {
+        _textScaleFactor = scaleVal;
       }
+
       notifyListeners();
 
-      // 2. Chạy đồng bộ ngầm từ Firestore (không await để app mở tức thì)
-      _syncRemoteSettingsInBackground();
-    } catch (e) {
+      // 3. Chạy đồng bộ ngầm từ Firestore (không await để app mở tức thì)
+      unawaited(_syncRemoteSettingsInBackground());
+    } catch (e, st) {
+      AppLogger.warn('Lỗi khởi tạo ThemeService, sử dụng cấu hình mặc định', tag: 'ThemeService', error: e, stackTrace: st);
       _themeMode = ThemeMode.system;
       _textScaleFactor = 1.0;
       notifyListeners();
     }
   }
 
-  void _syncRemoteSettingsInBackground() {
-    Future.microtask(() async {
-      try {
-        final user = FirebaseAuth.instance.currentUser;
-        if (user == null) return;
-        final doc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        if (doc.exists) {
-          final settings = doc.data()?['settings'];
-          if (settings != null) {
-            bool changed = false;
-            final remoteMode = settings['themeMode'];
-            ThemeMode targetMode = _themeMode;
-            if (remoteMode == 'light') {
-              targetMode = ThemeMode.light;
-            } else if (remoteMode == 'dark') {
-              targetMode = ThemeMode.dark;
-            } else if (remoteMode == 'system') {
-              targetMode = ThemeMode.system;
-            }
-            if (targetMode != _themeMode) {
-              _themeMode = targetMode;
-              changed = true;
-            }
+  Future<void> _syncRemoteSettingsInBackground() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (!doc.exists) return;
 
-            final remoteScale = settings['textScaleFactor'];
-            if (remoteScale != null) {
-              final parsed = double.tryParse(remoteScale.toString());
-              if (parsed != null &&
-                  parsed >= 0.7 &&
-                  parsed <= 1.6 &&
-                  parsed != _textScaleFactor) {
-                _textScaleFactor = parsed;
-                changed = true;
-              }
-            }
+      final settings = doc.data()?['settings'];
+      if (settings != null) {
+        bool changed = false;
+        final remoteMode = settings['themeMode'];
+        ThemeMode targetMode = _themeMode;
+        if (remoteMode == 'light') {
+          targetMode = ThemeMode.light;
+        } else if (remoteMode == 'dark') {
+          targetMode = ThemeMode.dark;
+        } else if (remoteMode == 'system') {
+          targetMode = ThemeMode.system;
+        }
 
-            if (changed) {
-              notifyListeners();
-            }
+        if (targetMode != _themeMode) {
+          _themeMode = targetMode;
+          changed = true;
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('themeMode', remoteMode.toString());
+        }
+
+        final remoteScale = settings['textScaleFactor'];
+        if (remoteScale != null) {
+          final parsed = double.tryParse(remoteScale.toString());
+          if (parsed != null &&
+              parsed >= 0.7 &&
+              parsed <= 1.6 &&
+              parsed != _textScaleFactor) {
+            _textScaleFactor = parsed;
+            changed = true;
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setDouble('textScaleFactor', parsed);
           }
         }
-      } catch (_) {}
-    });
+
+        if (changed) {
+          notifyListeners();
+        }
+      }
+    } catch (e, st) {
+      AppLogger.warn('Không thể đồng bộ theme từ Firestore trong nền', tag: 'ThemeService', error: e, stackTrace: st);
+    }
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
@@ -132,7 +169,8 @@ class ThemeService extends ChangeNotifier {
     }
 
     try {
-      await _storage.write(key: 'themeMode', value: value);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('themeMode', value);
 
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
@@ -140,8 +178,8 @@ class ThemeService extends ChangeNotifier {
           'settings': {'themeMode': value},
         }, SetOptions(merge: true));
       }
-    } catch (e) {
-      debugPrint('ThemeService theme persist error: $e');
+    } catch (e, st) {
+      AppLogger.error('Lỗi lưu cài đặt themeMode', tag: 'ThemeService', error: e, stackTrace: st);
     }
   }
 
@@ -155,15 +193,17 @@ class ThemeService extends ChangeNotifier {
 
   void _persistTextScale(double factor) async {
     try {
-      await _storage.write(key: 'textScaleFactor', value: factor.toString());
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('textScaleFactor', factor);
+
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'settings': {'textScaleFactor': factor},
         }, SetOptions(merge: true));
       }
-    } catch (e) {
-      debugPrint('ThemeService scale persist error: $e');
+    } catch (e, st) {
+      AppLogger.error('Lỗi lưu cài đặt textScaleFactor', tag: 'ThemeService', error: e, stackTrace: st);
     }
   }
 
@@ -175,8 +215,8 @@ class ThemeService extends ChangeNotifier {
       Theme.of(context).colorScheme.onSurface;
   static Color accent(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-      ? const Color(0xFF00E5FF)
-      : const Color(0xFF438883);
+          ? const Color(0xFF00E5FF)
+          : const Color(0xFF438883);
 
   // Cấu trúc theme Sáng (Light Theme)
   ThemeData get lightTheme => AppTheme.lightTheme;

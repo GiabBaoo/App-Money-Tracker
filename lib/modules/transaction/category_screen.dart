@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme/app_theme.dart';
-import '../../services/firestore_service.dart';
+
 import '../../data/repositories/user_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../data/repositories/budget_repository.dart';
@@ -30,7 +30,7 @@ class CategoryScreen extends StatefulWidget {
 
 class _CategoryScreenState extends State<CategoryScreen> {
   bool get isVi => LanguageService.instance.isVietnamese;
-  final FirestoreService _firestoreService = FirestoreService();
+
   final UserRepository _userRepo = UserRepository();
   late bool _isIncomeTab;
   String _searchQuery = '';
@@ -807,6 +807,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
           'group': group,
           'desc': 'Danh mục tự tạo',
         });
+  
+
       }
     }
 
@@ -1022,6 +1024,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
           'group': group,
           'desc': 'Danh mục tự tạo',
         });
+  
+
       }
     }
 
@@ -1935,8 +1939,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
                           final isDup = currentCustom.asMap().entries.any((
                             entry,
                           ) {
-                            if (isEdit && entry.key == editCategoryIndex)
-                              return false;
+                            if (isEdit && entry.key == editCategoryIndex) {
+                              return false; }
                             final c = entry.value;
                             return c is Map &&
                                 c['isOverride'] != true &&
@@ -2037,11 +2041,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
     });
 
     await _userRepo.updateUserProfile({'customCategories': currentCustom});
-    try {
-      await _firestoreService.updateUserProfile({
-        'customCategories': currentCustom,
-      });
-    } catch (_) {}
+
+
+
+
+
     CategoryStyleService.instance.applyCustomCategories(currentCustom);
   }
 
@@ -2068,11 +2072,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
         'colorValue': colorValue,
       };
       await _userRepo.updateUserProfile({'customCategories': currentCustom});
-      try {
-        await _firestoreService.updateUserProfile({
-          'customCategories': currentCustom,
-        });
-      } catch (_) {}
+  
+  
+  
+
+  
       CategoryStyleService.instance.applyCustomCategories(currentCustom);
 
       // Cập nhật tên ở các giao dịch cũ & ngân sách cũ nếu user đổi tên
@@ -2119,11 +2123,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
     }
 
     await _userRepo.updateUserProfile({'customCategories': currentCustom});
-    try {
-      await _firestoreService.updateUserProfile({
-        'customCategories': currentCustom,
-      });
-    } catch (_) {}
+
+
+
+
+
     CategoryStyleService.instance.applyCustomCategories(currentCustom);
   }
 
@@ -2136,11 +2140,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
     );
 
     await _userRepo.updateUserProfile({'customCategories': currentCustom});
-    try {
-      await _firestoreService.updateUserProfile({
-        'customCategories': currentCustom,
-      });
-    } catch (_) {}
+
+
+
+
+
     CategoryStyleService.instance.applyCustomCategories(currentCustom);
   }
 
@@ -2151,11 +2155,11 @@ class _CategoryScreenState extends State<CategoryScreen> {
     if (index >= 0 && index < currentCustom.length) {
       currentCustom.removeAt(index);
       await _userRepo.updateUserProfile({'customCategories': currentCustom});
-      try {
-        await _firestoreService.updateUserProfile({
-          'customCategories': currentCustom,
-        });
-      } catch (_) {}
+  
+  
+  
+
+  
       CategoryStyleService.instance.applyCustomCategories(currentCustom);
     }
   }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/message_model.dart';
-import '../../services/firestore_service.dart';
+import '../../data/repositories/message_repository.dart';
 import '../../utils/page_transitions.dart';
 import '../../widgets/top_toast.dart';
 import '../../widgets/animated_scale_button.dart';
@@ -23,7 +23,7 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
   @override
   void initState() {
     super.initState();
-    _messagesStream = FirestoreService().getMessagesStream();
+    _messagesStream = MessageRepository().getMessagesStream();
   }
 
   String _formatRelativeTime(DateTime dt, bool isVi) {
@@ -283,7 +283,7 @@ class _MessageCenterScreenState extends State<MessageCenterScreen> {
                             ),
                           ),
                           onDismissed: (_) {
-                            FirestoreService().deleteMessage(msg.id);
+                            MessageRepository().deleteMessage(msg.id);
                             TopToast.show(
                               context,
                               isVi ? 'Đã xóa tin nhắn' : 'Message deleted',

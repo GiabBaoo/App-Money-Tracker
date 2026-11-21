@@ -31,4 +31,29 @@ class FinancePrecision {
   static bool isLessThan(double a, double b) {
     return (b - a) > epsilon;
   }
+
+  /// Phép cộng số tiền chuẩn xác theo đơn vị tiền tệ
+  static double add(double a, double b, {String currency = 'VND'}) {
+    return roundCurrency(a + b, currency: currency);
+  }
+
+  /// Phép trừ số tiền chuẩn xác theo đơn vị tiền tệ
+  static double subtract(double a, double b, {String currency = 'VND'}) {
+    return roundCurrency(a - b, currency: currency);
+  }
+
+  /// Phép nhân số tiền với hệ số chuẩn xác theo đơn vị tiền tệ
+  static double multiply(double a, double factor, {String currency = 'VND'}) {
+    return roundCurrency(a * factor, currency: currency);
+  }
+
+  /// Kiểm tra giá trị bằng 0 trong ngưỡng epsilon
+  static bool isZero(double value) {
+    return areEqual(value, 0.0);
+  }
+
+  /// Kiểm tra giá trị dương ngoài ngưỡng epsilon
+  static bool isPositive(double value) {
+    return isGreaterThan(value, 0.0);
+  }
 }

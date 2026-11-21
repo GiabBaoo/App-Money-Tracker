@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../core/session/session_manager.dart';
+import '../core/logging/app_logger.dart';
 import '../data/local/database_helper.dart';
 import '../data/repositories/transaction_repository.dart';
 import '../data/repositories/wallet_repository.dart';
@@ -22,6 +23,13 @@ import '../models/notification_model.dart';
 import '../models/message_model.dart';
 import '../models/budget_model.dart';
 import '../models/goal_model.dart';
+import '../features/group_expense/data/models/group_model.dart';
+import '../features/group_expense/data/models/expense_model.dart';
+import '../features/group_expense/data/models/settlement_model.dart';
+import '../features/group_expense/data/repositories/sqlite_group_repository.dart';
+import '../features/group_expense/data/repositories/sqlite_expense_repository.dart';
+import '../features/group_expense/data/repositories/sqlite_settlement_repository.dart';
+import 'ledger_reconciliation_service.dart';
 import 'connectivity_service.dart';
 import 'auth_service.dart';
 
@@ -111,7 +119,9 @@ class SyncQueueItem {
     if (rawData != null) {
       try {
         parsedData = json.decode(rawData) as Map<String, dynamic>;
-      } catch (_) {}
+      } catch (e, st) {
+        AppLogger.warn('Không thể decode JSON sync_queue data', tag: 'SyncService', error: e, stackTrace: st);
+      }
     }
     return SyncQueueItem(
       id: map['id'] as int?,
@@ -176,10 +186,14 @@ abstract class ISyncService {
     WalletRepository? walletRepo,
     BudgetRepository? budgetRepo,
     GoalRepository? goalRepo,
+    SqliteGroupRepository? groupRepo,
+    SqliteExpenseRepository? expenseRepo,
+    SqliteSettlementRepository? settlementRepo,
   });
 
   Future<bool> syncAll();
   Future<SyncExecutionReport> syncAllDetailed();
+  Future<SyncExecutionReport> forceFullResync();
   Future<bool> syncSingleTransaction(String txId);
   Future<int> getPendingSyncCount();
   Future<int> getDeadCount();
@@ -195,15 +209,22 @@ abstract class ISyncService {
 
 /// Service đồng bộ 2 chiều giữa SQLite (local) và Firestore (cloud).
 ///
-/// Chiến lược P1:
-/// - Khóa kép: In-Memory Mutex + Atomic Claim trong SQLite
-/// - Upload: Đọc sync_queue lọc theo ownerUid/uid → Exponential Backoff + Dead-Letter Queue
-/// - Download: Bulkhead Pattern (cô lập lỗi theo từng entity) + Local Dirty Shield
+/// Chiến lược P1 & Giai đoạn 3:
+/// - Khóa kép: In-Memory Mutex + Atomic Claim trong SQLite kèm Stale Lease Recovery
+/// - Upload: Đọc sync_queue theo 3-tier Priority + Exponential Backoff + Dead-Letter Queue
+/// - Download: Bulkhead Pattern + Local Dirty Shield + LWW + Tie-Breaker SHA-256
+/// - Reconcile: Đối soát số dư tự động từ sổ cái transactions
 /// - Xóa: Tombstone Soft Delete đồng bộ xuyên thiết bị
 class SyncService implements ISyncService {
   static final SyncService _instance = SyncService._internal();
   factory SyncService() => _instance;
-  SyncService._internal();
+  SyncService._internal() {
+    SessionManager.instance.changes.listen((_) {
+      _lastSyncTime = null;
+      _lastReport = null;
+      stopRealtimeListeners();
+    });
+  }
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final DatabaseHelper _dbHelper = DatabaseHelper();
@@ -217,6 +238,9 @@ class SyncService implements ISyncService {
   MessageRepository? _messageRepo;
   BudgetRepository? _budgetRepo;
   GoalRepository? _goalRepo;
+  SqliteGroupRepository? _groupRepo;
+  SqliteExpenseRepository? _expenseRepo;
+  SqliteSettlementRepository? _settlementRepo;
 
   StreamSubscription<bool>? _connectivitySubscription;
   final List<StreamSubscription> _firestoreSubscriptions = [];
@@ -261,7 +285,8 @@ class SyncService implements ISyncService {
         [ownerUid, ownerUid],
       );
       return (res.first['count'] as int?) ?? 0;
-    } catch (_) {
+    } catch (e, st) {
+      AppLogger.warn('Lỗi retryAllDeadLetters', tag: 'SyncService', error: e, stackTrace: st);
       return 0;
     }
   }
@@ -278,7 +303,8 @@ class SyncService implements ISyncService {
         [ownerUid, ownerUid],
       );
       return (res.first['count'] as int?) ?? 0;
-    } catch (_) {
+    } catch (e, st) {
+      AppLogger.warn('Lỗi retryAllDeadLetters', tag: 'SyncService', error: e, stackTrace: st);
       return 0;
     }
   }
@@ -332,7 +358,8 @@ class SyncService implements ISyncService {
         return true;
       }
       return false;
-    } catch (_) {
+    } catch (e, st) {
+      AppLogger.error('Lỗi retryDeadLetterItem', tag: 'SyncService', error: e, stackTrace: st);
       return false;
     }
   }
@@ -360,7 +387,8 @@ class SyncService implements ISyncService {
         unawaited(syncAll());
       }
       return count;
-    } catch (_) {
+    } catch (e, st) {
+      AppLogger.warn('Lỗi retryAllDeadLetters', tag: 'SyncService', error: e, stackTrace: st);
       return 0;
     }
   }
@@ -375,6 +403,9 @@ class SyncService implements ISyncService {
     WalletRepository? walletRepo,
     BudgetRepository? budgetRepo,
     GoalRepository? goalRepo,
+    SqliteGroupRepository? groupRepo,
+    SqliteExpenseRepository? expenseRepo,
+    SqliteSettlementRepository? settlementRepo,
   }) {
     _transactionRepo = transactionRepo;
     _userRepo = userRepo;
@@ -383,6 +414,9 @@ class SyncService implements ISyncService {
     _walletRepo = walletRepo ?? WalletRepository();
     _budgetRepo = budgetRepo ?? BudgetRepository();
     _goalRepo = goalRepo ?? GoalRepository();
+    _groupRepo = groupRepo ?? SqliteGroupRepository();
+    _expenseRepo = expenseRepo ?? SqliteExpenseRepository();
+    _settlementRepo = settlementRepo ?? SqliteSettlementRepository();
     _isInitialized = true;
 
     // Lắng nghe khi mạng khôi phục → tự động re-auth và sync toàn bộ nếu hợp lệ
@@ -402,6 +436,22 @@ class SyncService implements ISyncService {
         unawaited(syncAll());
       }
     });
+  }
+
+  /// Buộc tải lại toàn bộ dữ liệu từ cloud, bỏ qua mốc sync_metadata cũ
+  @override
+  Future<SyncExecutionReport> forceFullResync() async {
+    final session = SessionManager.instance;
+    final ownerUid = session.uidOrNull;
+    if (ownerUid != null) {
+      try {
+        final db = await _dbHelper.database;
+        await db.delete('sync_metadata', where: 'uid = ?', whereArgs: [ownerUid]);
+      } catch (e, st) {
+        AppLogger.warn('Không thể decode JSON sync_queue data', tag: 'SyncService', error: e, stackTrace: st);
+      }
+    }
+    return syncAllDetailed();
   }
 
   /// Đồng bộ ngay lập tức (alias của syncAll)
@@ -472,6 +522,9 @@ class SyncService implements ISyncService {
       _messageRepo ??= MessageRepository();
       _budgetRepo ??= BudgetRepository();
       _goalRepo ??= GoalRepository();
+      _groupRepo ??= SqliteGroupRepository();
+      _expenseRepo ??= SqliteExpenseRepository();
+      _settlementRepo ??= SqliteSettlementRepository();
       _isInitialized = true;
     }
 
@@ -617,6 +670,18 @@ class SyncService implements ISyncService {
     return min(expMs + jitter, maxMs);
   }
 
+  /// Khôi phục các item bị kẹt ở trạng thái 'processing' do app crash hoặc timeout trước đó
+  Future<void> _recoverStaleProcessingItems(Database db, String ownerUid) async {
+    const leaseTimeoutMs = 120000; // 2 phút lease timeout
+    final staleThreshold = DateTime.now().millisecondsSinceEpoch - leaseTimeoutMs;
+    try {
+      await db.rawUpdate(
+        "UPDATE sync_queue SET status = 'pending' WHERE (ownerUid = ? OR uid = ?) AND status = 'processing' AND updatedAt < ?",
+        [ownerUid, ownerUid, staleThreshold],
+      );
+    } catch (_) {}
+  }
+
   Future<int> _uploadPendingChanges() async {
     final session = SessionManager.instance;
     final authUser = FirebaseAuth.instance.currentUser;
@@ -633,14 +698,17 @@ class SyncService implements ISyncService {
     final db = await _dbHelper.database;
     final nowMs = DateTime.now().millisecondsSinceEpoch;
 
-    // Atomic Claim: đánh dấu các bản ghi sang 'processing' trong 1 transaction duy nhất
+    // 0. Khôi phục stale processing items trước khi claim
+    await _recoverStaleProcessingItems(db, ownerUid);
+
+    // Atomic Claim: đánh dấu các bản ghi sang 'processing' theo thứ tự ưu tiên (Priority 1 -> 2 -> 3)
     final queue = await db.transaction((txn) async {
       final rows = await txn.query(
         'sync_queue',
         where:
             "(ownerUid = ? OR uid = ?) AND status = 'pending' AND nextRetryAt <= ?",
         whereArgs: [ownerUid, ownerUid, nowMs],
-        orderBy: 'createdAt ASC, id ASC',
+        orderBy: 'priority ASC, createdAt ASC, id ASC',
         limit: 100,
       );
       if (rows.isNotEmpty) {
@@ -720,17 +788,35 @@ class SyncService implements ISyncService {
         count++;
       } on FirebaseException catch (e) {
         final retry = (item['retryCount'] as int? ?? 0) + 1;
-        final terminal = e.code == 'permission-denied' || retry >= _maxRetry;
-        final nextRetry = terminal ? 0 : nowMs + _calculateBackoff(retry);
-        await _markQueue(
-          db,
-          qid,
-          ownerUid,
-          status: terminal ? 'dead' : 'pending',
-          retry: retry,
-          nextRetryAt: nextRetry,
-          error: '${e.code}: ${e.message}',
-        );
+        final isAuthError = e.code == 'unauthenticated';
+        final terminal = e.code == 'permission-denied' ||
+            e.code == 'not-found' ||
+            e.code == 'invalid-argument' ||
+            retry >= _maxRetry;
+
+        if (isAuthError) {
+          unawaited(AuthService().silentReauthenticateIfNeeded());
+          await _markQueue(
+            db,
+            qid,
+            ownerUid,
+            status: 'pending',
+            retry: retry,
+            nextRetryAt: nowMs + 3000,
+            error: '${e.code}: ${e.message}',
+          );
+        } else {
+          final nextRetry = terminal ? 0 : nowMs + _calculateBackoff(retry);
+          await _markQueue(
+            db,
+            qid,
+            ownerUid,
+            status: terminal ? 'dead' : 'pending',
+            retry: retry,
+            nextRetryAt: nextRetry,
+            error: '${e.code}: ${e.message}',
+          );
+        }
       } catch (e) {
         final retry = (item['retryCount'] as int? ?? 0) + 1;
         final terminal = retry >= _maxRetry;
@@ -781,6 +867,17 @@ class SyncService implements ISyncService {
     );
   }
 
+  String _resolveCollectionName(String table) {
+    switch (table) {
+      case 'group_expenses':
+        return 'expenses';
+      case 'group_settlements':
+        return 'settlements';
+      default:
+        return table;
+    }
+  }
+
   Future<void> _uploadSingleItem(
     String table,
     String recordId,
@@ -788,7 +885,31 @@ class SyncService implements ISyncService {
     Map<String, dynamic>? data, {
     required String ownerUid,
   }) async {
-    final collection = _firestore.collection(table);
+    // 1. Đồng bộ thành viên nhóm trực tiếp vào document nhóm
+    if (table == 'group_members') {
+      final groupId = data?['groupId'] as String? ??
+          (recordId.contains('_') ? recordId.split('_').first : '');
+      final memberUid = data?['userId'] as String? ??
+          (recordId.contains('_') ? recordId.split('_').last : ownerUid);
+      if (groupId.isNotEmpty && memberUid.isNotEmpty) {
+        final groupDoc = _firestore.collection('groups').doc(groupId);
+        if (action == 'INSERT' || (action == 'UPDATE' && data?['status'] == 'active')) {
+          await groupDoc.set({
+            'memberIds': FieldValue.arrayUnion([memberUid]),
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+        } else if (action == 'DELETE' || action == 'SOFT_DELETE' || (action == 'UPDATE' && data?['status'] == 'left')) {
+          await groupDoc.set({
+            'memberIds': FieldValue.arrayRemove([memberUid]),
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+        }
+      }
+      return;
+    }
+
+    final collectionName = _resolveCollectionName(table);
+    final collection = _firestore.collection(collectionName);
 
     switch (action) {
       case 'INSERT':
@@ -827,8 +948,16 @@ class SyncService implements ISyncService {
         // Cập nhật soft delete lên Firestore để các thiết bị khác nhận diện được
         final deletePayload = <String, dynamic>{
           'isDeleted': true,
-          'deletedAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
+          'deletedAt': data?['deletedAt'] != null
+              ? (data!['deletedAt'] is int
+                  ? Timestamp.fromMillisecondsSinceEpoch(data['deletedAt'] as int)
+                  : FieldValue.serverTimestamp())
+              : FieldValue.serverTimestamp(),
+          'updatedAt': data?['updatedAt'] != null
+              ? (data!['updatedAt'] is int
+                  ? Timestamp.fromMillisecondsSinceEpoch(data['updatedAt'] as int)
+                  : FieldValue.serverTimestamp())
+              : FieldValue.serverTimestamp(),
         };
 
         // Chỉ gán uid nếu bảng đó thực sự là bảng dữ liệu cá nhân (có trường uid)
@@ -906,7 +1035,9 @@ class SyncService implements ISyncService {
       if (result.containsKey(field) && result[field] is String) {
         try {
           result[field] = json.decode(result[field] as String);
-        } catch (_) {}
+        } catch (e, st) {
+        AppLogger.warn('Không thể decode JSON sync_queue data', tag: 'SyncService', error: e, stackTrace: st);
+      }
       }
     }
 
@@ -1120,6 +1251,98 @@ class SyncService implements ISyncService {
         debugPrint('SyncService: Error downloading messages: $e');
       }
     }
+
+    // 8. Groups (Quỹ nhóm mà user là thành viên)
+    final userGroupIds = <String>[];
+    if (stillValid()) {
+      try {
+        final groupSnapshot = await _firestore
+            .collection('groups')
+            .where('memberIds', arrayContains: ownerUid)
+            .get()
+            .timeout(const Duration(seconds: 8));
+        if (stillValid() && groupSnapshot.docs.isNotEmpty) {
+          final groups = groupSnapshot.docs.map((doc) {
+            final d = Map<String, dynamic>.from(doc.data());
+            d['id'] = doc.id;
+            return GroupModel.fromJson(d);
+          }).toList();
+          await _groupRepo?.upsertFromFirestore(groups);
+          userGroupIds.addAll(groups.map((g) => g.id));
+          report?.downloadSuccess['groups'] = groups.length;
+          await _recordSyncTimestamp(db, 'groups', ownerUid, nowMs);
+          debugPrint('SyncService: Downloaded ${groups.length} groups');
+        } else {
+          report?.downloadSuccess['groups'] = 0;
+        }
+      } catch (e) {
+        report?.downloadErrors['groups'] = e.toString();
+        debugPrint('SyncService: Error downloading groups: $e');
+      }
+    }
+
+    // 9. Group Expenses & Settlements (Theo từng nhóm đã tham gia, chia chunk 10)
+    if (stillValid() && userGroupIds.isNotEmpty) {
+      try {
+        const chunkSize = 10;
+        for (var i = 0; i < userGroupIds.length; i += chunkSize) {
+          if (!stillValid()) break;
+          final chunk = userGroupIds.sublist(
+            i,
+            min(i + chunkSize, userGroupIds.length),
+          );
+
+          // Expenses
+          final expenseSnapshot = await _firestore
+              .collection('expenses')
+              .where('groupId', whereIn: chunk)
+              .get()
+              .timeout(const Duration(seconds: 8));
+          if (stillValid() && expenseSnapshot.docs.isNotEmpty) {
+            final expenses = expenseSnapshot.docs.map((doc) {
+              final d = Map<String, dynamic>.from(doc.data());
+              d['id'] = doc.id;
+              return ExpenseModel.fromJson(d);
+            }).toList();
+            await _expenseRepo?.upsertFromFirestore(expenses);
+            report?.downloadSuccess['group_expenses'] =
+                (report.downloadSuccess['group_expenses'] ?? 0) + expenses.length;
+          }
+
+          // Settlements
+          final settlementSnapshot = await _firestore
+              .collection('settlements')
+              .where('groupId', whereIn: chunk)
+              .get()
+              .timeout(const Duration(seconds: 8));
+          if (stillValid() && settlementSnapshot.docs.isNotEmpty) {
+            final settlements = settlementSnapshot.docs.map((doc) {
+              final d = Map<String, dynamic>.from(doc.data());
+              d['id'] = doc.id;
+              return SettlementModel.fromJson(d);
+            }).toList();
+            await _settlementRepo?.upsertFromFirestore(settlements);
+            report?.downloadSuccess['group_settlements'] =
+                (report.downloadSuccess['group_settlements'] ?? 0) + settlements.length;
+          }
+        }
+        await _recordSyncTimestamp(db, 'group_expenses', ownerUid, nowMs);
+        await _recordSyncTimestamp(db, 'group_settlements', ownerUid, nowMs);
+      } catch (e) {
+        report?.downloadErrors['group_expenses'] = e.toString();
+        debugPrint('SyncService: Error downloading group expenses/settlements: $e');
+      }
+    }
+
+    // 10. Ledger Reconciliation: Cuối chu kỳ download, đối soát toàn bộ số dư từ sổ cái
+    if (stillValid()) {
+      try {
+        await LedgerReconciliationService().reconcileAll(ownerUid);
+        debugPrint('SyncService: Ledger reconciliation completed for $ownerUid');
+      } catch (e) {
+        debugPrint('SyncService: Ledger reconciliation error: $e');
+      }
+    }
   }
 
   // ════════ REALTIME LISTENERS ════════
@@ -1177,6 +1400,30 @@ class SyncService implements ISyncService {
             },
             onError: (e) {
               debugPrint('SyncService: Realtime wallets error: $e');
+            },
+          ),
+    );
+
+    // Lắng nghe thay đổi groups
+    _firestoreSubscriptions.add(
+      _firestore
+          .collection('groups')
+          .where('memberIds', arrayContains: ownerUid)
+          .snapshots()
+          .listen(
+            (snapshot) {
+              if (!stillValid()) return;
+              if (snapshot.docChanges.isNotEmpty) {
+                final groups = snapshot.docs.map((doc) {
+                  final d = Map<String, dynamic>.from(doc.data());
+                  d['id'] = doc.id;
+                  return GroupModel.fromJson(d);
+                }).toList();
+                _groupRepo?.upsertFromFirestore(groups);
+              }
+            },
+            onError: (e) {
+              debugPrint('SyncService: Realtime groups error: $e');
             },
           ),
     );

@@ -15,7 +15,7 @@ class DatabaseHelper {
   DatabaseHelper._internal();
 
   static Database? _database;
-  static const int _dbVersion = 9;
+  static const int _dbVersion = 10;
   static const String _dbName = 'money_tracker.db';
 
   Future<Database> get database async {
@@ -184,11 +184,14 @@ class DatabaseHelper {
         description TEXT NOT NULL,
         isRead INTEGER DEFAULT 0,
         createdAt INTEGER NOT NULL,
+        updatedAt INTEGER,
         type TEXT,
         groupId TEXT,
         groupName TEXT,
         status TEXT,
-        syncStatus TEXT DEFAULT 'synced'
+        syncStatus TEXT DEFAULT 'synced',
+        isDeleted INTEGER NOT NULL DEFAULT 0,
+        deletedAt INTEGER
       )
     ''');
 
@@ -208,7 +211,10 @@ class DatabaseHelper {
         fullMessage TEXT NOT NULL,
         isUnread INTEGER DEFAULT 1,
         createdAt INTEGER NOT NULL,
-        syncStatus TEXT DEFAULT 'synced'
+        updatedAt INTEGER,
+        syncStatus TEXT DEFAULT 'synced',
+        isDeleted INTEGER NOT NULL DEFAULT 0,
+        deletedAt INTEGER
       )
     ''');
 
@@ -293,7 +299,9 @@ class DatabaseHelper {
         retryCount INTEGER NOT NULL DEFAULT 0,
         status TEXT NOT NULL DEFAULT 'pending',
         lastError TEXT,
-        nextRetryAt INTEGER NOT NULL DEFAULT 0
+        nextRetryAt INTEGER NOT NULL DEFAULT 0,
+        priority INTEGER NOT NULL DEFAULT 2,
+        idempotencyKey TEXT
       )
     ''');
 
@@ -311,6 +319,9 @@ class DatabaseHelper {
     );
     await db.execute(
       'CREATE INDEX idx_sync_queue_status_dead ON sync_queue(uid, status)',
+    );
+    await db.execute(
+      'CREATE INDEX idx_sync_queue_claim ON sync_queue(ownerUid, status, nextRetryAt, priority ASC, createdAt ASC, id ASC)',
     );
 
     // ─── Bảng SYNC_METADATA (Lưu mốc thời gian đồng bộ gia tăng theo từng Entity) ───
@@ -1147,6 +1158,78 @@ class DatabaseHelper {
         debugPrint(
           'SQLite: Migration v9 completed successfully with 100% precision preservation.',
         );
+      });
+    }
+
+    if (oldVersion < 10) {
+      debugPrint(
+        'SQLite: Upgrading database to v10 (Sync Queue Priority, Soft Delete Messages/Notifications)...',
+      );
+      await db.transaction((txn) async {
+        // 1. Nâng cấp sync_queue
+        final sqColsResult = await txn.rawQuery("PRAGMA table_info(sync_queue)");
+        final sqCols = sqColsResult.map((c) => c['name'] as String).toSet();
+
+        if (!sqCols.contains('priority')) {
+          await txn.execute(
+            'ALTER TABLE sync_queue ADD COLUMN priority INTEGER NOT NULL DEFAULT 2',
+          );
+        }
+        if (!sqCols.contains('idempotencyKey')) {
+          await txn.execute(
+            'ALTER TABLE sync_queue ADD COLUMN idempotencyKey TEXT',
+          );
+        }
+        await txn.execute(
+          'CREATE INDEX IF NOT EXISTS idx_sync_queue_claim ON sync_queue(ownerUid, status, nextRetryAt, priority ASC, createdAt ASC, id ASC)',
+        );
+
+        // Gán priority hồi quy cho các bản ghi có sẵn trong sync_queue
+        await txn.rawUpdate(
+          "UPDATE sync_queue SET priority = 1 WHERE tableName IN ('users', 'wallets', 'groups')",
+        );
+        await txn.rawUpdate(
+          "UPDATE sync_queue SET priority = 2 WHERE tableName IN ('group_members', 'budgets', 'goals')",
+        );
+        await txn.rawUpdate(
+          "UPDATE sync_queue SET priority = 3 WHERE tableName IN ('transactions', 'group_expenses', 'expense_splits', 'group_settlements', 'notifications', 'messages')",
+        );
+
+        // 2. Bổ sung soft-delete & updatedAt cho notifications
+        final notiColsResult = await txn.rawQuery("PRAGMA table_info(notifications)");
+        final notiCols = notiColsResult.map((c) => c['name'] as String).toSet();
+
+        if (!notiCols.contains('isDeleted')) {
+          await txn.execute(
+            'ALTER TABLE notifications ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0',
+          );
+        }
+        if (!notiCols.contains('deletedAt')) {
+          await txn.execute('ALTER TABLE notifications ADD COLUMN deletedAt INTEGER');
+        }
+        if (!notiCols.contains('updatedAt')) {
+          await txn.execute('ALTER TABLE notifications ADD COLUMN updatedAt INTEGER');
+          await txn.rawUpdate('UPDATE notifications SET updatedAt = createdAt WHERE updatedAt IS NULL');
+        }
+
+        // 3. Bổ sung soft-delete & updatedAt cho messages
+        final msgColsResult = await txn.rawQuery("PRAGMA table_info(messages)");
+        final msgCols = msgColsResult.map((c) => c['name'] as String).toSet();
+
+        if (!msgCols.contains('isDeleted')) {
+          await txn.execute(
+            'ALTER TABLE messages ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0',
+          );
+        }
+        if (!msgCols.contains('deletedAt')) {
+          await txn.execute('ALTER TABLE messages ADD COLUMN deletedAt INTEGER');
+        }
+        if (!msgCols.contains('updatedAt')) {
+          await txn.execute('ALTER TABLE messages ADD COLUMN updatedAt INTEGER');
+          await txn.rawUpdate('UPDATE messages SET updatedAt = createdAt WHERE updatedAt IS NULL');
+        }
+
+        debugPrint('SQLite: Migration v10 completed successfully.');
       });
     }
   }

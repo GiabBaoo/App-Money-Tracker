@@ -14,6 +14,7 @@ import '../data/repositories/user_repository.dart';
 import 'app_widget_service.dart';
 import 'sync_service.dart';
 import '../core/session/session_manager.dart';
+import '../core/logging/app_logger.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -241,7 +242,9 @@ class AuthService {
             }
           }
         }
-      } catch (_) {}
+      } catch (e, st) {
+        AppLogger.warn('Không thể đồng bộ UserModel Firestore', tag: 'AuthService', error: e, stackTrace: st);
+      }
 
       return (
         success: false,
@@ -412,7 +415,9 @@ class AuthService {
             dateOfBirth: dateOfBirth,
           );
           await UserRepository().saveUser(localUser);
-        } catch (_) {}
+        } catch (e, st) {
+        AppLogger.warn('Không thể đồng bộ UserModel Firestore', tag: 'AuthService', error: e, stackTrace: st);
+      }
       }
 
       return (success: true, message: 'Dang ky thanh cong!');
@@ -564,7 +569,9 @@ class AuthService {
           final user = UserModel.fromFirestore(userDoc);
           await UserRepository().saveUser(user);
         }
-      } catch (_) {}
+      } catch (e, st) {
+        AppLogger.warn('Không thể đồng bộ UserModel Firestore', tag: 'AuthService', error: e, stackTrace: st);
+      }
 
       // 2. Ghi lại thời điểm đăng nhập bằng mật khẩu
       try {
@@ -575,7 +582,9 @@ class AuthService {
               'lastPasswordLoginAt': FieldValue.serverTimestamp(),
             }, SetOptions(merge: true))
             .timeout(const Duration(seconds: 3));
-      } catch (_) {}
+      } catch (e, st) {
+        AppLogger.warn('Không thể đồng bộ UserModel Firestore', tag: 'AuthService', error: e, stackTrace: st);
+      }
 
       // 3. Đăng ký phiên thiết bị hoạt động
       try {
@@ -585,14 +594,35 @@ class AuthService {
           deviceType: deviceInfo['type']!,
           deviceId: deviceInfo['deviceId'],
         );
-      } catch (_) {}
+      } catch (e, st) {
+        AppLogger.warn('Không thể đồng bộ UserModel Firestore', tag: 'AuthService', error: e, stackTrace: st);
+      }
     } catch (e) {
       debugPrint('AuthService: _runBackgroundAuthSync error: $e');
     }
   }
 
+  /// Kiểm tra trạng thái hàng đợi và mạng trước khi đăng xuất hoặc hiển thị cảnh báo
+  Future<({int pendingCount, int deadCount, bool isOnline})> inspectPreLogoutSyncState() async {
+    final pending = await SyncService().getPendingSyncCount();
+    final dead = await SyncService().getDeadCount();
+    final online = ConnectivityService().isOnline;
+    return (pendingCount: pending, deadCount: dead, isOnline: online);
+  }
+
   // ==================== DANG XUAT ====================
   Future<void> logout() async {
+    // Phase 3: Cố gắng đẩy hàng đợi sync_queue còn tồn trước khi đăng xuất nếu có mạng
+    try {
+      final isOnline = ConnectivityService().isOnline;
+      final pending = await SyncService().getPendingSyncCount();
+      if (isOnline && pending > 0) {
+        debugPrint('AuthService: Pre-logout sync flush ($pending items)...');
+        await SyncService().syncAll().timeout(const Duration(seconds: 4));
+      }
+    } catch (e) {
+      debugPrint('AuthService: Pre-logout flush error: $e');
+    }
     final session = SessionManager.instance;
     session.beginSwitch(); // 1. Chặn ghi mới, vô hiệu epoch cũ
     SyncService().stopRealtimeListeners(); // 2. Ngừng nhận snapshot
@@ -605,7 +635,9 @@ class AuthService {
       try {
         final sessionId = await DeviceUtils.getSessionId(user.uid);
         await FirestoreService().removeDeviceSession(sessionId);
-      } catch (_) {}
+      } catch (e, st) {
+        AppLogger.warn('Không thể đồng bộ UserModel Firestore', tag: 'AuthService', error: e, stackTrace: st);
+      }
     }
     _isOfflineSession = false;
     _offlineUid = null;
@@ -789,7 +821,9 @@ class AuthService {
 
       try {
         await DatabaseHelper().clearUserData(uid);
-      } catch (_) {}
+      } catch (e, st) {
+        AppLogger.warn('Không thể đồng bộ UserModel Firestore', tag: 'AuthService', error: e, stackTrace: st);
+      }
       SessionManager.instance.end();
 
       return (success: true, message: 'Xoa tai khoan thanh cong!');
@@ -844,6 +878,24 @@ class AuthService {
         .where('uid', isEqualTo: uid)
         .get();
     await deleteInChunks(deviceSessions.docs);
+
+    final wallets = await _firestore
+        .collection('wallets')
+        .where('uid', isEqualTo: uid)
+        .get();
+    await deleteInChunks(wallets.docs);
+
+    final budgets = await _firestore
+        .collection('budgets')
+        .where('uid', isEqualTo: uid)
+        .get();
+    await deleteInChunks(budgets.docs);
+
+    final goals = await _firestore
+        .collection('goals')
+        .where('uid', isEqualTo: uid)
+        .get();
+    await deleteInChunks(goals.docs);
 
     // Xóa hồ sơ user
     await _firestore.collection('users').doc(uid).delete();

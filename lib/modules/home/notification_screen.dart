@@ -7,7 +7,6 @@ import '../../widgets/staggered_list_item.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../services/firestore_service.dart';
 import '../../services/smart_notification_service.dart';
-import '../../services/auth_service.dart';
 import '../../models/notification_model.dart';
 import '../../features/group_expense/presentation/screens/join_group_screen.dart';
 import '../../features/group_expense/presentation/screens/group_detail_screen.dart';
@@ -31,10 +30,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   void initState() {
     super.initState();
-    final uid = AuthService().currentUid;
-    if (uid != null) {
-      _notiRepo.setUid(uid);
-    }
     _autoInitAndMarkRead();
   }
 

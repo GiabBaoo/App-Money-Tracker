@@ -93,6 +93,15 @@ class TransactionModel {
       category == 'Nhận chuyển tiền' ||
       category == 'Chuyển ví';
 
+  /// Kiểm tra giao dịch có liên quan đến mục tiêu tài chính (Nạp/Rút tiết kiệm)
+  bool get isSavingsGoal =>
+      (goalId != null && goalId!.isNotEmpty) ||
+      category == 'Tiết kiệm' ||
+      category == 'Rút tiết kiệm';
+
+  /// Kiểm tra giao dịch có phải là dịch chuyển tài sản nội bộ (không tính vào Thu/Chi hoạt động)
+  bool get isAssetReallocation => isTransfer || isSavingsGoal;
+
   // ════════ FIRESTORE ════════
 
   // Chuyển từ Firestore sang Object

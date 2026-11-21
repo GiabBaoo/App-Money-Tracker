@@ -6,5 +6,6 @@ abstract class IExpenseRepository {
   Future<ExpenseModel> getById(String id);
   Future<List<ExpenseModel>> getByGroupId(String groupId);
   Stream<List<ExpenseModel>> watchByGroupId(String groupId);
+  Future<void> update(ExpenseModel expense);
   Future<void> delete(String id);
 }

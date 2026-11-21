@@ -9,6 +9,7 @@ import '../../data/repositories/transaction_repository.dart';
 import '../../data/repositories/wallet_repository.dart';
 import '../../widgets/top_toast.dart';
 import '../../widgets/mono_dialog.dart';
+import '../../widgets/mini_location_map.dart';
 import '../../models/transaction_model.dart';
 import '../../models/wallet_model.dart';
 import '../../utils/category_utils.dart';
@@ -496,6 +497,26 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                               : 'Location',
                           _transaction.location!,
                           valueColor: const Color(0xFFF59E0B),
+                        ),
+                      if (_transaction.latitude != null &&
+                          _transaction.longitude != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: MiniLocationMap(
+                            latitude: _transaction.latitude!,
+                            longitude: _transaction.longitude!,
+                            placeName: _transaction.location,
+                            height: 168,
+                            actionLabel: LanguageService.instance.isVietnamese
+                                ? 'Phóng to'
+                                : 'Expand',
+                            onTap: () => MiniLocationMap.showExpanded(
+                              context,
+                              latitude: _transaction.latitude!,
+                              longitude: _transaction.longitude!,
+                              placeName: _transaction.location,
+                            ),
+                          ),
                         ),
                       _buildDetailRow(
                         'Phân loại nguồn',

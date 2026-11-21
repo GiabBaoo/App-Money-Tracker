@@ -1,7 +1,6 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:uuid/uuid.dart';
+import '../core/logging/app_logger.dart';
 import '../core/session/session_manager.dart';
 import '../data/local/database_helper.dart';
 import '../data/local/sync_queue_writer.dart';
@@ -14,6 +13,7 @@ import 'connectivity_service.dart';
 import 'sync_service.dart';
 import 'app_widget_service.dart';
 import 'smart_notification_service.dart';
+import 'ledger_reconciliation_service.dart';
 
 /// Service đảm bảo mọi thao tác tạo, sửa, xóa giao dịch cùng với việc
 /// cộng/trừ số dư ví liên quan và ghi sync_queue ĐỀU NẰM TRONG 1 SQLite Transaction
@@ -42,7 +42,8 @@ class TransactionBalanceService {
       if (wallets.isNotEmpty) {
         try {
           targetWalletId = wallets.firstWhere((w) => w.isDefault).id;
-        } catch (_) {
+        } catch (e, st) {
+          AppLogger.warn('Không tìm thấy ví mặc định, chọn ví đầu tiên', tag: 'TransactionBalanceService', error: e, stackTrace: st);
           targetWalletId = wallets.first.id;
         }
       }
@@ -172,102 +173,11 @@ class TransactionBalanceService {
 
   /// ═══════════════════════════════════════════════
   /// 3. XÓA GIAO DỊCH + HOÀN LẠI SỐ DƯ VÍ (ATOMIC)
+  /// Ủy quyền trực tiếp tới TransactionRepository để đảm bảo
+  /// tính nhất quán tuyệt đối giữa Sổ cái, Ví tiền và Mục tiêu
   /// ═══════════════════════════════════════════════
   Future<void> deleteTransactionAtomic(TransactionModel tx) async {
-    final uid = SessionManager.instance.requireUid();
-    final db = await _dbHelper.database;
-
-    await db.transaction((txn) async {
-      // 1. Hoàn lại số dư ví nếu giao dịch có liên kết ví
-      if (tx.walletId.isNotEmpty) {
-        final revertDelta = (tx.type == 'income') ? -tx.amount : tx.amount;
-        await _adjustWalletInTxn(txn, tx.walletId, revertDelta, uid);
-      }
-
-      // 2. Xóa khỏi bảng transactions
-      await txn.delete(
-        'transactions',
-        where: 'id = ? AND uid = ?',
-        whereArgs: [tx.id, uid],
-      );
-
-      // 3. Thêm bản ghi sync_queue DELETE
-      await SyncQueueWriter.enqueue(
-        txn,
-        ownerUid: uid,
-        table: 'transactions',
-        recordId: tx.id,
-        action: 'DELETE',
-      );
-
-      // 4. Nếu là giao dịch chuyển tiền hai chiều, tìm và hoàn lại giao dịch đối ứng cùng lúc
-      if (tx.isTransfer) {
-        List<Map<String, dynamic>> pairedRows = [];
-        if (tx.groupId != null && tx.groupId!.startsWith('transfer_')) {
-          pairedRows = await txn.query(
-            'transactions',
-            where: 'uid = ? AND groupId = ? AND id != ?',
-            whereArgs: [uid, tx.groupId, tx.id],
-          );
-        } else {
-          // Fallback cho giao dịch chuyển tiền cũ chưa có groupId transfer_
-          final oppositeCategory = (tx.category == 'Chuyển tiền')
-              ? 'Nhận chuyển tiền'
-              : 'Chuyển tiền';
-          final oppositeType = (tx.type == 'expense') ? 'income' : 'expense';
-          pairedRows = await txn.query(
-            'transactions',
-            where:
-                'uid = ? AND category = ? AND type = ? AND date = ? AND time = ? AND id != ?',
-            whereArgs: [
-              uid,
-              oppositeCategory,
-              oppositeType,
-              tx.date.millisecondsSinceEpoch,
-              tx.time,
-              tx.id,
-            ],
-            limit: 1,
-          );
-        }
-
-        for (final row in pairedRows) {
-          final pairedTx = TransactionModel.fromSqlite(row);
-          if (pairedTx.walletId.isNotEmpty) {
-            final pairedRevertDelta = (pairedTx.type == 'income')
-                ? -pairedTx.amount
-                : pairedTx.amount;
-            await _adjustWalletInTxn(
-              txn,
-              pairedTx.walletId,
-              pairedRevertDelta,
-              uid,
-            );
-          }
-          await txn.delete(
-            'transactions',
-            where: 'id = ? AND uid = ?',
-            whereArgs: [pairedTx.id, uid],
-          );
-          await SyncQueueWriter.enqueue(
-            txn,
-            ownerUid: uid,
-            table: 'transactions',
-            recordId: pairedTx.id,
-            action: 'DELETE',
-          );
-        }
-      }
-    });
-
-    _txRepo.notifyTransactionsChanged();
-    _walletRepo.notifyChanged();
-
-    if (ConnectivityService().isOnline) {
-      unawaited(SyncService().syncAll());
-    }
-
-    // Tự động cập nhật số dư Android App Widget
+    await _txRepo.deleteTransaction(tx.id);
     unawaited(AppWidgetService.instance.updateWidgetBalance());
   }
 
@@ -292,7 +202,10 @@ class TransactionBalanceService {
 
     if (rows.isNotEmpty) {
       final currentWallet = WalletModel.fromSqlite(rows.first);
-      final newBalance = currentWallet.balance + amountDelta;
+      final newBalance = FinancePrecision.roundCurrency(
+        currentWallet.balance + amountDelta,
+        currency: currentWallet.currency,
+      );
       final now = DateTime.now();
 
       final updatedWallet = currentWallet.copyWith(
@@ -322,6 +235,7 @@ class TransactionBalanceService {
 
   /// ══════════════════════════════════════════════════════════════════
   /// 5. ĐỘNG CƠ ĐỐI SOÁT SỔ CÁI & TỰ CÂN BẰNG (RECONCILIATION ENGINE)
+  /// Ủy quyền tới LedgerReconciliationService chuẩn hóa Giai đoạn 4
   /// ══════════════════════════════════════════════════════════════════
   Future<ReconciliationReport> reconcileWalletBalances({
     String? targetUid,
@@ -352,7 +266,6 @@ class TransactionBalanceService {
 
     final rows = await db.rawQuery(sql, [uid]);
     final List<WalletDiscrepancy> discrepancies = [];
-    bool hasModified = false;
 
     for (final row in rows) {
       final walletId = row['walletId'] as String;
@@ -376,70 +289,9 @@ class TransactionBalanceService {
         calculatedBalance,
       );
 
-      ReconciliationStatus itemStatus = isBalanced
+      final itemStatus = isBalanced
           ? ReconciliationStatus.balanced
           : ReconciliationStatus.discrepant;
-
-      if (!isBalanced && mode != ReconciliationMode.auditOnly) {
-        await db.transaction((txn) async {
-          if (mode == ReconciliationMode.healByLedgerRebalance) {
-            final updateData = {
-              'balance': calculatedBalance,
-              'updatedAt': now.millisecondsSinceEpoch,
-              'syncStatus': 'pending',
-            };
-            await txn.update(
-              'wallets',
-              updateData,
-              where: 'id = ? AND uid = ?',
-              whereArgs: [walletId, uid],
-            );
-            await SyncQueueWriter.enqueue(
-              txn,
-              ownerUid: uid,
-              table: 'wallets',
-              recordId: walletId,
-              action: 'UPDATE',
-              data: updateData,
-            );
-            itemStatus = ReconciliationStatus.healed;
-            hasModified = true;
-          } else if (mode == ReconciliationMode.healByAdjustmentTransaction) {
-            final adjAmount = delta.abs();
-            final isAdjIncome = delta < 0;
-            final adjTx = TransactionModel(
-              id: const Uuid().v4(),
-              uid: uid,
-              type: isAdjIncome ? 'income' : 'expense',
-              category: 'Điều chỉnh số dư',
-              categoryIconCode: isAdjIncome
-                  ? Icons.account_balance_wallet_outlined.codePoint
-                  : Icons.price_change_outlined.codePoint,
-              amount: adjAmount,
-              date: now,
-              time:
-                  '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
-              description: 'Bút toán đối soát cân bằng sổ cái',
-              walletId: walletId,
-              source: 'personal',
-              syncStatus: 'pending',
-            );
-            final adjMap = adjTx.toSqlite();
-            adjMap['uid'] = uid;
-            await txn.insert('transactions', adjMap);
-            await SyncQueueWriter.enqueue(
-              txn,
-              ownerUid: uid,
-              table: 'transactions',
-              recordId: adjTx.id,
-              action: 'INSERT',
-              data: adjMap,
-            );
-            itemStatus = ReconciliationStatus.healed;
-            hasModified = true;
-          }
-        });
-      }
 
       discrepancies.add(
         WalletDiscrepancy(
@@ -456,7 +308,10 @@ class TransactionBalanceService {
       );
     }
 
-    if (hasModified) {
+    if (mode != ReconciliationMode.auditOnly) {
+      // Ủy quyền cân bằng sổ cái và mục tiêu tới LedgerReconciliationService
+      await LedgerReconciliationService().reconcileWallets(uid);
+      await LedgerReconciliationService().reconcileGoals(uid);
       _walletRepo.notifyChanged();
       _txRepo.notifyTransactionsChanged();
       if (ConnectivityService().isOnline) {

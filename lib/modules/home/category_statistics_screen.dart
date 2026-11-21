@@ -4,7 +4,8 @@ import 'package:fl_chart/fl_chart.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../models/transaction_model.dart';
-import '../../services/firestore_service.dart';
+import '../../data/repositories/transaction_repository.dart';
+import '../../services/financial_calculation_service.dart';
 import '../../utils/currency_format_utils.dart';
 import '../../utils/category_utils.dart';
 import '../../widgets/animated_scale_button.dart';
@@ -22,7 +23,7 @@ class CategoryStatisticsScreen extends StatefulWidget {
 }
 
 class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
-  final FirestoreService _firestoreService = FirestoreService();
+  final TransactionRepository _transactionRepo = TransactionRepository();
   late String _currentType;
   int touchedIndex = -1;
 
@@ -161,7 +162,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                   ],
                 ),
                 child: StreamBuilder<List<TransactionModel>>(
-                  stream: _firestoreService.getTransactionsStream(),
+                  stream: _transactionRepo.getTransactionsStream(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Center(
@@ -185,12 +186,14 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                     }
 
                     final now = DateTime.now();
+                    // Loại trừ các giao dịch chuyển tiền nội bộ & nạp rút mục tiêu (isAssetReallocation)
                     final filteredData = snapshot.data!
                         .where(
                           (tx) =>
                               tx.type == _currentType &&
                               tx.date.month == now.month &&
-                              tx.date.year == now.year,
+                              tx.date.year == now.year &&
+                              !FinancialCalculationService.isAssetReallocation(tx),
                         )
                         .toList();
 

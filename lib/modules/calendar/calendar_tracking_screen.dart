@@ -52,8 +52,8 @@ class _CalendarTrackingScreenState extends State<CalendarTrackingScreen> {
     super.initState();
     final uid = AuthService().currentUid;
     if (uid != null) {
-      _walletRepo.setUid(uid);
-      _txRepo.setUid(uid);
+
+
     }
     _walletRepo.getWallets();
 

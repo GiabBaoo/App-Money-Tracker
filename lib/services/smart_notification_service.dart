@@ -71,10 +71,6 @@ class SmartNotificationService {
     final uid = user?.uid ?? AuthService().offlineUid;
     if (uid == null) return 0;
 
-    _txRepo.setUid(uid);
-    _walletRepo.setUid(uid);
-    _notiRepo.setUid(uid);
-
     final prefs = await SharedPreferences.getInstance();
 
     // 1. Kiểm tra cấu hình thông báo mà người dùng đã bật/tắt
@@ -267,9 +263,6 @@ class SmartNotificationService {
     final dailyLimit = prefs.getDouble('daily_spending_limit') ?? 0.0;
     if (dailyLimit <= 0) return false;
 
-    _txRepo.setUid(uid);
-    _notiRepo.setUid(uid);
-
     final now = DateTime.now();
     final allTx = await _txRepo.getAllTransactions();
     final todayExpenses = allTx
@@ -349,9 +342,6 @@ class SmartNotificationService {
     final monthlyLimit = prefs.getDouble('monthly_spending_limit') ?? 0.0;
     if (monthlyLimit <= 0) return false;
 
-    _txRepo.setUid(uid);
-    _notiRepo.setUid(uid);
-
     final now = DateTime.now();
     final allTx = await _txRepo.getAllTransactions();
     final thisMonthExpenses = allTx
@@ -416,9 +406,6 @@ class SmartNotificationService {
     if (uid == null || amount <= 0) return false;
 
     try {
-      _txRepo.setUid(uid);
-      _notiRepo.setUid(uid);
-
       final now = DateTime.now();
       final allTx = await _txRepo.getAllTransactions();
       final thisMonthExpenses = allTx
@@ -606,7 +593,6 @@ class SmartNotificationService {
 
       final now = DateTime.now();
       final budgetRepo = BudgetRepository();
-      budgetRepo.setUid(uid);
       final budgets = await budgetRepo.getBudgetsWithSpent(
         month: now.month,
         year: now.year,

@@ -43,12 +43,13 @@ android {
     }
 }
 
-flutter {
-    configurations.all {
+configurations.all {
     resolutionStrategy {
         force("com.google.firebase:firebase-auth:22.3.1")
     }
 }
+
+flutter {
     source = "../.."
 }
 
@@ -56,4 +57,3 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 }
-

@@ -99,6 +99,7 @@ class FakeExpenseRepository implements IExpenseRepository {
   @override
   Stream<List<ExpenseModel>> watchByGroupId(String groupId) =>
       Stream.value(expenses.where((e) => e.groupId == groupId).toList());
+  @override
   Future<void> update(ExpenseModel expense) async {}
 }
 

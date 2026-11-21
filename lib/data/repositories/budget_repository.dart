@@ -3,11 +3,11 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:uuid/uuid.dart';
 import '../local/database_helper.dart';
 import '../local/owned_table_ops.dart';
 import '../local/sync_queue_writer.dart';
 import '../../models/budget_model.dart';
+import '../../core/logging/app_logger.dart';
 import 'transaction_repository.dart';
 
 class BudgetRepository with OwnedTableOps {
@@ -25,7 +25,6 @@ class BudgetRepository with OwnedTableOps {
   }
 
   final DatabaseHelper _dbHelper = DatabaseHelper();
-  final _uuid = const Uuid();
   final _budgetStreamController =
       StreamController<List<BudgetModel>>.broadcast();
 
@@ -44,13 +43,19 @@ class BudgetRepository with OwnedTableOps {
     return _budgetStreamController.stream;
   }
 
+  /// Phát thông báo thay đổi ngân sách ra bên ngoài
+  void notifyChanged({int? month, int? year}) =>
+      _notifyChanged(month: month, year: year);
+
   Future<void> _notifyChanged({int? month, int? year}) async {
     try {
       final budgets = await getBudgetsWithSpent(month: month, year: year);
       if (!_budgetStreamController.isClosed) {
         _budgetStreamController.add(budgets);
       }
-    } catch (_) {}
+    } catch (e, st) {
+      AppLogger.warn('Lỗi emit stream budget', tag: 'BudgetRepository', error: e, stackTrace: st);
+    }
   }
 
   Future<List<BudgetModel>> getBudgetsWithSpent({int? month, int? year}) async {
@@ -109,7 +114,12 @@ class BudgetRepository with OwnedTableOps {
   Future<String> addBudget(BudgetModel budget) async {
     final uid = session.requireUid();
     final db = await _dbHelper.database;
-    final id = budget.id.isEmpty ? _uuid.v4() : budget.id;
+    final normalizedCat = budget.category.trim().toLowerCase();
+    final catHash =
+        sha1.convert(utf8.encode(normalizedCat)).toString().substring(0, 10);
+    final deterministicId =
+        'bgt_${uid}_${budget.year}_${budget.month}_$catHash';
+    final id = budget.id.isEmpty ? deterministicId : budget.id;
 
     final newBudget = budget.copyWith(id: id, syncStatus: 'pending');
     final row = stampOwner(newBudget.toSqlite(), uid);
@@ -269,20 +279,39 @@ class BudgetRepository with OwnedTableOps {
           final local = BudgetModel.fromSqlite(existing.first);
           if (local.syncStatus == 'pending') continue; // Dirty Shield
 
-          final isRemoteNewer = fb.updatedAt.isAfter(local.updatedAt);
-          final isSameTime = fb.updatedAt.isAtSameMomentAs(local.updatedAt);
-          final winsTieBreak =
-              isSameTime && _resolveTieBreaker(local.toSqlite(), fb.toSqlite());
+          // Monotonic Delete Rule
+          if (local.isDeleted && !fb.isDeleted) {
+            final localDeletedMs = local.deletedAt?.millisecondsSinceEpoch ??
+                local.updatedAt.millisecondsSinceEpoch;
+            if (!fb.updatedAt.isAfter(
+              DateTime.fromMillisecondsSinceEpoch(localDeletedMs),
+            )) {
+              continue; // Local Tombstone wins
+            }
+          }
 
-          if (isRemoteNewer || winsTieBreak) {
+          final shouldWin = ConflictResolver.shouldRemoteWin(
+            localUpdatedAt: local.updatedAt,
+            remoteUpdatedAt: fb.updatedAt,
+            localData: local.toSqlite(),
+            remoteData: fb.toSqlite(),
+          );
+
+          if (shouldWin) {
             if (fb.isDeleted) {
+              final remoteDeletedMs = fb.deletedAt?.millisecondsSinceEpoch ??
+                  fb.updatedAt.millisecondsSinceEpoch;
+              final effectiveUpdatedMs =
+                  fb.updatedAt.millisecondsSinceEpoch > remoteDeletedMs
+                      ? fb.updatedAt.millisecondsSinceEpoch
+                      : remoteDeletedMs;
+
               await txn.update(
                 'budgets',
                 {
                   'isDeleted': 1,
-                  'deletedAt':
-                      fb.deletedAt?.millisecondsSinceEpoch ??
-                      DateTime.now().millisecondsSinceEpoch,
+                  'deletedAt': remoteDeletedMs,
+                  'updatedAt': effectiveUpdatedMs,
                   'syncStatus': 'synced',
                 },
                 where: 'id = ? AND uid = ?',
@@ -302,18 +331,6 @@ class BudgetRepository with OwnedTableOps {
     });
 
     await _notifyChanged();
-  }
-
-  /// Deterministic Tie-Breaker theo SHA256 khi hai thiết bị có updatedAt giống hệt nhau
-  static bool _resolveTieBreaker(
-    Map<String, dynamic> local,
-    Map<String, dynamic> remote,
-  ) {
-    final localStr = json.encode(local);
-    final remoteStr = json.encode(remote);
-    final localHash = sha256.convert(utf8.encode(localStr)).toString();
-    final remoteHash = sha256.convert(utf8.encode(remoteStr)).toString();
-    return remoteHash.compareTo(localHash) >= 0;
   }
 
   /// Upsert an toàn tuân thủ ISyncableRepository

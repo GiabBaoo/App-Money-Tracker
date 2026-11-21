@@ -86,7 +86,6 @@ class _VoiceInputBottomSheetState extends State<VoiceInputBottomSheet>
           FirebaseAuth.instance.currentUser?.uid ?? AuthService().offlineUid;
       if (uid != null) {
         final txRepo = TransactionRepository();
-        txRepo.setUid(uid);
         final allTx = await txRepo.getAllTransactions();
         final now = DateTime.now();
         final todayTx = allTx

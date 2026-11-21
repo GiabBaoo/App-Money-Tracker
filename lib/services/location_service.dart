@@ -3,27 +3,97 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'place_name_resolver.dart';
 
-class LocationResult {
-  final String placeName;
-  final double latitude;
-  final double longitude;
-
-  const LocationResult({
-    required this.placeName,
-    required this.latitude,
-    required this.longitude,
-  });
-
-  @override
-  String toString() =>
-      'LocationResult(placeName: $placeName, lat: $latitude, lon: $longitude)';
-}
+export 'place_name_resolver.dart' show LocationResult;
 
 /// Service quản lý lấy tọa độ GPS và phân giải tên địa danh
 class LocationService {
   LocationService._internal();
   static final LocationService instance = LocationService._internal();
   factory LocationService() => instance;
+
+  double? _cachedLat;
+  double? _cachedLon;
+  DateTime? _cachedAt;
+
+  /// Tìm vị trí (tên hiển thị + tọa độ) từ chuỗi địa chỉ người dùng nhập.
+  /// Nếu truyền [nearLatitude]/[nearLongitude] (hoặc đã có cache GPS),
+  /// kết quả sẽ ưu tiên các địa điểm gần nhất.
+  Future<List<LocationResult>> searchAddress(
+    String query, {
+    int limit = 6,
+    bool preferVietnam = true,
+    double? nearLatitude,
+    double? nearLongitude,
+  }) async {
+    return PlaceNameResolver.instance.searchAddress(
+      query,
+      limit: limit,
+      preferVietnam: preferVietnam,
+      nearLatitude: nearLatitude ?? _cachedLat,
+      nearLongitude: nearLongitude ?? _cachedLon,
+    );
+  }
+
+  /// Lấy nhanh tọa độ hiện tại (có cache 3 phút + fallback lastKnownPosition)
+  /// phục vụ sắp xếp địa điểm tìm kiếm gần nhất mà không làm chậm UI.
+  Future<({double latitude, double longitude})?> getCurrentCoordinates({
+    Duration timeout = const Duration(seconds: 3),
+    bool requestPermissionIfDenied = false,
+  }) async {
+    if (_cachedLat != null &&
+        _cachedLon != null &&
+        _cachedAt != null &&
+        DateTime.now().difference(_cachedAt!) < const Duration(minutes: 3)) {
+      return (latitude: _cachedLat!, longitude: _cachedLon!);
+    }
+
+    try {
+      final isServiceEnabled = await isLocationServiceEnabled();
+      if (!isServiceEnabled) return null;
+
+      LocationPermission permission = await checkPermission();
+      if (permission == LocationPermission.denied &&
+          requestPermissionIfDenied) {
+        permission = await requestPermission();
+      }
+      if (permission != LocationPermission.whileInUse &&
+          permission != LocationPermission.always) {
+        return null;
+      }
+
+      // Ưu tiên lastKnownPosition nếu còn mới (< 10 phút) để phản hồi tức thì
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null &&
+          DateTime.now().difference(lastKnown.timestamp) <
+              const Duration(minutes: 10)) {
+        _cachedLat = lastKnown.latitude;
+        _cachedLon = lastKnown.longitude;
+        _cachedAt = DateTime.now();
+        return (latitude: lastKnown.latitude, longitude: lastKnown.longitude);
+      }
+
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: LocationSettings(
+            accuracy: LocationAccuracy.medium,
+            timeLimit: timeout,
+          ),
+        );
+      } catch (_) {
+        position = lastKnown;
+      }
+
+      if (position == null) return null;
+      _cachedLat = position.latitude;
+      _cachedLon = position.longitude;
+      _cachedAt = DateTime.now();
+      return (latitude: position.latitude, longitude: position.longitude);
+    } catch (e) {
+      debugPrint('LocationService.getCurrentCoordinates error: $e');
+      return null;
+    }
+  }
 
   /// Kiểm tra dịch vụ định vị phần cứng (GPS) có đang bật không
   Future<bool> isLocationServiceEnabled() async {
@@ -119,6 +189,10 @@ class LocationService {
         debugPrint('LocationService: Could not determine position');
         return null;
       }
+
+      _cachedLat = position.latitude;
+      _cachedLon = position.longitude;
+      _cachedAt = DateTime.now();
 
       // 4. Phân giải tên địa danh bằng PlaceNameResolver
       String? resolvedName = await PlaceNameResolver.instance

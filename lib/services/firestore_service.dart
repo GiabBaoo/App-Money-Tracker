@@ -67,6 +67,7 @@ class FirestoreService {
         .map(
           (snapshot) => snapshot.docs
               .map((doc) => TransactionModel.fromFirestore(doc))
+              .where((tx) => !tx.isDeleted)
               .toList(),
         )
         .handleError((error) {
@@ -87,6 +88,7 @@ class FirestoreService {
 
     return snapshot.docs
         .map((doc) => TransactionModel.fromFirestore(doc))
+        .where((tx) => !tx.isDeleted)
         .toList();
   }
 
@@ -118,6 +120,7 @@ class FirestoreService {
 
     final txs = snapshot.docs
         .map((doc) => TransactionModel.fromFirestore(doc))
+        .where((tx) => !tx.isDeleted)
         .where((tx) {
           final txDate = DateTime(tx.date.year, tx.date.month, tx.date.day);
           return !txDate.isBefore(rangeStart) &&
@@ -137,7 +140,7 @@ class FirestoreService {
     return txs;
   }
 
-  // Xóa giao dịch
+  // Xóa giao dịch (Soft Delete Tombstone để đồng bộ xuyên thiết bị)
   Future<void> deleteTransaction(String transactionId) async {
     final docRef = _db.collection('transactions').doc(transactionId);
     final snapshot = await docRef.get();
@@ -149,14 +152,15 @@ class FirestoreService {
       try {
         await FirebaseStorage.instance.ref(storagePath).delete();
       } catch (e) {
-        // Xóa storage có thể fail vì rule/quyền hoặc ảnh đã bị xóa trước đó.
-        // Ta vẫn xóa document để app không bị kẹt.
-        // ignore: avoid_print
         debugPrint('Failed to delete storage object: $e');
       }
     }
 
-    await docRef.delete();
+    await docRef.set({
+      'isDeleted': true,
+      'deletedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   // Cập nhật giao dịch
@@ -191,7 +195,7 @@ class FirestoreService {
         .map(
           (snapshot) => snapshot.docs
               .map((doc) => TransactionModel.fromFirestore(doc))
-              .where((tx) => tx.hasPhoto)
+              .where((tx) => !tx.isDeleted && tx.hasPhoto)
               .toList(),
         );
   }
@@ -215,6 +219,7 @@ class FirestoreService {
 
           for (var doc in snapshot.docs) {
             final data = doc.data();
+            if (data['isDeleted'] == true || data['isDeleted'] == 1) continue;
             final amount = (data['amount'] ?? 0).toDouble();
             if (data['type'] == 'income') {
               totalIncome += amount;
@@ -250,6 +255,7 @@ class FirestoreService {
         .map((snapshot) {
           final list = snapshot.docs
               .map((doc) => NotificationModel.fromFirestore(doc))
+              .where((n) => !n.isDeleted)
               .toList();
           // Sắp xếp giảm dần theo thời gian (mới nhất lên đầu)
           list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -342,6 +348,15 @@ class FirestoreService {
     }
   }
 
+  // Xóa thông báo (Soft Delete Tombstone)
+  Future<void> deleteNotification(String notificationId) async {
+    await _db.collection('notifications').doc(notificationId).set({
+      'isDeleted': true,
+      'deletedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
   // ======================== USER PROFILE ========================
 
   // Cập nhật thông tin user
@@ -371,7 +386,11 @@ class FirestoreService {
   }
 
   Future<void> deleteMessage(String messageId) async {
-    await _db.collection('messages').doc(messageId).delete();
+    await _db.collection('messages').doc(messageId).set({
+      'isDeleted': true,
+      'deletedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Stream<List<MessageModel>> getMessagesStream() {
@@ -385,6 +404,7 @@ class FirestoreService {
         .map((snapshot) {
           final messages = snapshot.docs
               .map((doc) => MessageModel.fromFirestore(doc))
+              .where((m) => !m.isDeleted)
               .toList();
           messages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
           return messages;
@@ -515,6 +535,7 @@ class FirestoreService {
         .map((snapshot) {
           final list = snapshot.docs
               .map((doc) => WalletModel.fromFirestore(doc))
+              .where((w) => !w.isDeleted)
               .toList();
           list.sort((a, b) {
             if (a.isDefault) return -1;
@@ -538,6 +559,10 @@ class FirestoreService {
   }
 
   Future<void> deleteWallet(String walletId) async {
-    await _db.collection('wallets').doc(walletId).delete();
+    await _db.collection('wallets').doc(walletId).set({
+      'isDeleted': true,
+      'deletedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 }

@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/foundation.dart';
@@ -10,6 +8,9 @@ import '../local/sync_queue_writer.dart';
 import '../../core/errors/business_exception.dart';
 import '../../core/safety/destructive_ops_guard.dart';
 import '../../models/transaction_model.dart';
+import '../../models/wallet_model.dart';
+import '../../utils/finance_precision.dart';
+import 'wallet_repository.dart';
 import '../../services/sync_service.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/ai_financial_context_service.dart';
@@ -153,12 +154,135 @@ class TransactionRepository with OwnedTableOps {
     }
   }
 
-  /// Xóa giao dịch (áp dụng Soft Delete / Tombstone)
+  /// Xóa giao dịch (áp dụng Soft Delete / Tombstone và hoàn lại số dư ví nguyên tử)
   Future<void> deleteTransaction(String transactionId) async {
     final uid = session.requireUid();
     final db = await _dbHelper.database;
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
 
     await db.transaction((txn) async {
+      final rows = await txn.query(
+        'transactions',
+        where: 'id = ? AND uid = ?',
+        whereArgs: [transactionId, uid],
+        limit: 1,
+      );
+
+      if (rows.isNotEmpty) {
+        final tx = TransactionModel.fromSqlite(rows.first);
+
+        // 1. Hoàn lại số dư ví nếu giao dịch có gắn walletId
+        if (tx.walletId.isNotEmpty) {
+          final revertDelta = (tx.type == 'income') ? -tx.amount : tx.amount;
+          final walletRows = await txn.query(
+            'wallets',
+            where: 'id = ? AND uid = ?',
+            whereArgs: [tx.walletId, uid],
+            limit: 1,
+          );
+          if (walletRows.isNotEmpty) {
+            final w = WalletModel.fromSqlite(walletRows.first);
+            final newBal = FinancePrecision.roundCurrency(
+              w.balance + revertDelta,
+              currency: w.currency,
+            );
+            final updatedW = w.copyWith(
+              balance: newBal,
+              updatedAt: DateTime.now(),
+              syncStatus: 'pending',
+            );
+            final wRow = updatedW.toSqlite();
+            await txn.update(
+              'wallets',
+              wRow,
+              where: 'id = ? AND uid = ?',
+              whereArgs: [tx.walletId, uid],
+            );
+            await SyncQueueWriter.enqueue(
+              txn,
+              ownerUid: uid,
+              table: 'wallets',
+              recordId: tx.walletId,
+              action: 'UPDATE',
+              data: wRow,
+            );
+          }
+        }
+
+        // 2. Nếu là giao dịch chuyển tiền hai chiều, tìm và hoàn lại đầu đối ứng
+        if (tx.isTransfer) {
+          List<Map<String, dynamic>> pairedRows = [];
+          if (tx.transferId != null && tx.transferId!.isNotEmpty) {
+            pairedRows = await txn.query(
+              'transactions',
+              where:
+                  'uid = ? AND transferId = ? AND id != ? AND (isDeleted IS NULL OR isDeleted = 0)',
+              whereArgs: [uid, tx.transferId, tx.id],
+            );
+          }
+
+          for (final row in pairedRows) {
+            final pairedTx = TransactionModel.fromSqlite(row);
+            if (pairedTx.walletId.isNotEmpty) {
+              final pairedRevertDelta = (pairedTx.type == 'income')
+                  ? -pairedTx.amount
+                  : pairedTx.amount;
+              final pWalletRows = await txn.query(
+                'wallets',
+                where: 'id = ? AND uid = ?',
+                whereArgs: [pairedTx.walletId, uid],
+                limit: 1,
+              );
+              if (pWalletRows.isNotEmpty) {
+                final pw = WalletModel.fromSqlite(pWalletRows.first);
+                final pNewBal = FinancePrecision.roundCurrency(
+                  pw.balance + pairedRevertDelta,
+                  currency: pw.currency,
+                );
+                final pUpdatedW = pw.copyWith(
+                  balance: pNewBal,
+                  updatedAt: DateTime.now(),
+                  syncStatus: 'pending',
+                );
+                final pwRow = pUpdatedW.toSqlite();
+                await txn.update(
+                  'wallets',
+                  pwRow,
+                  where: 'id = ? AND uid = ?',
+                  whereArgs: [pairedTx.walletId, uid],
+                );
+                await SyncQueueWriter.enqueue(
+                  txn,
+                  ownerUid: uid,
+                  table: 'wallets',
+                  recordId: pairedTx.walletId,
+                  action: 'UPDATE',
+                  data: pwRow,
+                );
+              }
+            }
+            await txn.update(
+              'transactions',
+              {
+                'isDeleted': 1,
+                'deletedAt': nowMs,
+                'updatedAt': nowMs,
+                'syncStatus': 'pending',
+              },
+              where: 'id = ? AND uid = ?',
+              whereArgs: [pairedTx.id, uid],
+            );
+            await SyncQueueWriter.enqueue(
+              txn,
+              ownerUid: uid,
+              table: 'transactions',
+              recordId: pairedTx.id,
+              action: 'SOFT_DELETE',
+            );
+          }
+        }
+      }
+
       await softDeleteOwned(txn, 'transactions', transactionId, uid);
       await SyncQueueWriter.enqueue(
         txn,
@@ -170,6 +294,7 @@ class TransactionRepository with OwnedTableOps {
     });
 
     _notifyTransactionsChanged();
+    WalletRepository().notifyChanged();
 
     if (ConnectivityService().isOnline) {
       unawaited(SyncService().syncAll());
@@ -451,20 +576,39 @@ class TransactionRepository with OwnedTableOps {
           final local = TransactionModel.fromSqlite(existing.first);
           if (local.syncStatus == 'pending') continue; // Dirty Shield
 
-          final isRemoteNewer = tx.updatedAt.isAfter(local.updatedAt);
-          final isSameTime = tx.updatedAt.isAtSameMomentAs(local.updatedAt);
-          final winsTieBreak =
-              isSameTime && _resolveTieBreaker(local.toSqlite(), tx.toSqlite());
+          // Quy tắc Monotonic Delete: Nếu local đã xóa mềm, chỉ chấp nhận khôi phục nếu remote mới hơn thời điểm xóa
+          if (local.isDeleted && !tx.isDeleted) {
+            final localDeletedMs = local.deletedAt?.millisecondsSinceEpoch ??
+                local.updatedAt.millisecondsSinceEpoch;
+            if (!tx.updatedAt.isAfter(
+              DateTime.fromMillisecondsSinceEpoch(localDeletedMs),
+            )) {
+              continue; // Local Tombstone wins
+            }
+          }
 
-          if (isRemoteNewer || winsTieBreak) {
+          final shouldWin = ConflictResolver.shouldRemoteWin(
+            localUpdatedAt: local.updatedAt,
+            remoteUpdatedAt: tx.updatedAt,
+            localData: local.toSqlite(),
+            remoteData: tx.toSqlite(),
+          );
+
+          if (shouldWin) {
             if (tx.isDeleted) {
+              final remoteDeletedMs = tx.deletedAt?.millisecondsSinceEpoch ??
+                  tx.updatedAt.millisecondsSinceEpoch;
+              final effectiveUpdatedMs =
+                  tx.updatedAt.millisecondsSinceEpoch > remoteDeletedMs
+                      ? tx.updatedAt.millisecondsSinceEpoch
+                      : remoteDeletedMs;
+
               await txn.update(
                 'transactions',
                 {
                   'isDeleted': 1,
-                  'deletedAt':
-                      tx.deletedAt?.millisecondsSinceEpoch ??
-                      DateTime.now().millisecondsSinceEpoch,
+                  'deletedAt': remoteDeletedMs,
+                  'updatedAt': effectiveUpdatedMs,
                   'syncStatus': 'synced',
                 },
                 where: 'id = ? AND uid = ?',
@@ -484,18 +628,6 @@ class TransactionRepository with OwnedTableOps {
     });
 
     _notifyTransactionsChanged();
-  }
-
-  /// Deterministic Tie-Breaker theo SHA256 khi hai thiết bị có updatedAt giống hệt nhau
-  static bool _resolveTieBreaker(
-    Map<String, dynamic> local,
-    Map<String, dynamic> remote,
-  ) {
-    final localStr = json.encode(local);
-    final remoteStr = json.encode(remote);
-    final localHash = sha256.convert(utf8.encode(localStr)).toString();
-    final remoteHash = sha256.convert(utf8.encode(remoteStr)).toString();
-    return remoteHash.compareTo(localHash) >= 0;
   }
 
   /// Upsert an toàn tuân thủ interface ISyncableRepository

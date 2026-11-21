@@ -91,6 +91,14 @@ class FirestoreExpenseRepository implements IExpenseRepository {
   }
 
   @override
+  Future<void> update(ExpenseModel expense) async {
+    await _firestore
+        .collection(_collection)
+        .doc(expense.id)
+        .update(expense.toJson());
+  }
+
+  @override
   Future<void> delete(String id) async {
     await _firestore.collection(_collection).doc(id).delete();
   }

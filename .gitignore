@@ -68,6 +68,7 @@ assets/config/api_keys.json
 
 # tokenade — per-project cache / scaffold flag / dedup refs
 .tokenade/
+.agents/
 
 # tokenade — legacy per-project embedding model cache (now global)
 .fastembed_cache/

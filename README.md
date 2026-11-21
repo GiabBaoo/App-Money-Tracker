@@ -1,60 +1,61 @@
 # Money Tracker App (Personal & Group Expense Manager)
 
-A smart, modern personal and group financial management mobile application built on **Flutter**, featuring AI financial assistance, budget controls, split-expense calculations, and cross-device cloud synchronization.
+A modern, offline-first personal and group financial management mobile application built with **Flutter** and **Firebase**, featuring precision double-entry accounting, multi-wallet management, group bill splitting, location-tagged transactions, AI financial assistance, and reliable cloud synchronization.
 
 ---
 
 ## Key Features
 
 ### 1. Income/Expense & Multi-Wallet Management
-- **Multiple Wallet Types**: Manage Cash, Bank Accounts, E-wallets (Momo, ZaloPay, etc.), Credit Cards, and Savings.
-- **Fast Transaction Logging**: Record amount, category, date & time, receipt photos, location, and notes.
-- **Inter-wallet Transfers**: Easily transfer funds between accounts with strict balance verification and audit history.
-- **Recurring Transactions**: Automatically manage scheduled payments such as salary, rent, subscriptions, and utilities.
+- **Multiple Wallet Types**: Manage Cash, Bank Accounts, E-wallets (MoMo, ZaloPay, etc.), Credit Cards, and Savings with customizable palettes and default wallet support.
+- **Fast Transaction Logging**: Record amount, category, date & time, receipt photos, notes, and interactive **GPS location tagging** with place-name resolution and mini-map previews.
+- **Double-Entry Inter-Wallet Transfers**: Transfer funds between accounts with atomic balance updates, strict balance verification, and ledger reconciliation.
+- **Day-Grouped History & Calendar View**: Browse transactions grouped by day, search/filter across periods, or inspect daily cashflow in the calendar view.
+- **Recurring Transactions**: Manage scheduled payments such as salary, rent, subscriptions, and utilities.
 
 ### 2. Budgets & Savings Goals
-- **Category-based Budgets**: Set spending limits by category (Food & Dining, Shopping, Transport, etc.) on monthly or custom cycles.
-- **Visual Progress & Proactive Alerts**: Track expenses in real time with automated alerts when reaching 80% and 100% of limits.
-- **Savings Goals**: Set goals, log deposits, and monitor progress toward targets with estimated completion dates.
+- **Category-Based Budgets**: Set spending limits per category on monthly or custom cycles.
+- **Real-Time Tracking & Smart Alerts**: Automated notifications when approaching or exceeding spending thresholds (80% / 100%).
+- **Savings Goals**: Create savings targets, log deposits with atomic integrity, and track progress toward completion.
 
 ### 3. Group Expenses & Bill Splitting
-- **Shared Group Finances**: Create expense groups for families, room-mates, trips, or events.
+- **Shared Expense Groups**: Create and manage expense groups for families, roommates, trips, or events (with QR code invite/join support).
 - **Flexible Bill Splitting**: Split equally or customize amounts and percentages per participant.
-- **Debt Resolution & Settlement**: Real-time balance reports and optimized debt settlements to minimize transfer transactions.
+- **Debt Resolution & Settlement**: Real-time member balance summaries and optimized settlement tracking backed by both SQLite and Cloud Firestore.
 
 ### 4. Financial Reports & Analytics
-- **Interactive Visualizations**: Clean charts (Pie charts, Bar charts, Trend lines) powered by `fl_chart`.
-- **Multi-Period Filtering**: Filter transactions and spending patterns by week, month, quarter, year, or custom date ranges.
-- **Data Exporting**: Export reports in **PDF**, **Excel (.xlsx)**, or **CSV** formats.
+- **Interactive Charts**: Pie charts, bar charts, and trend visualizations powered by `fl_chart`.
+- **Precision Financial Metrics**: Dedicated calculation engine (`FinancialCalculationService` & integer minor-unit arithmetic) ensuring accurate totals, category breakdowns, and net worth without floating-point drift.
+- **Data Export**: Export financial reports to **PDF**, **Excel (.xlsx)**, and **CSV**.
 
 ### 5. Smart Utilities & AI Integration
-- **Smart Habit Autofill**: Learns spending frequency and habits to auto-suggest and autofill categories and notes when common amounts are entered.
-- **Streamlined Status Notifications & Mono Brand Icon**:
-  - Android-compliant monochrome **mono** icon on the status bar and taskbar with brand tinting.
-  - Distraction-free background syncs while preserving high-priority financial notices (budget alerts, daily/monthly ceilings, recurring bill deadlines).
-- **AI Financial Assistant (Google Gemini & Local LLM)**: Analyzes spending patterns, provides financial health tips, and answers budgeting questions.
-- **Natural Voice Input**: Create transactions using natural speech (e.g., *"Lunch 45 thousand cash wallet"*).
-- **Receipt OCR Scanner**: Automatically extracts amounts, dates, and merchant information from receipt snapshots.
-- **Bank SMS Parser**: Automatically parses balance change SMS messages from popular Vietnamese banks (Vietcombank, Techcombank, MB, BIDV, VPBank, ACB, etc.).
+- **AI Financial Assistant**: Powered by Google Gemini API to analyze spending habits, answer financial questions, and provide budgeting insights.
+- **Voice Input**: Log transactions hands-free using speech-to-text (`speech_to_text`).
+- **Home Screen Widgets**: Quick balance/expense overview directly on the device home screen (`home_widget`).
+- **Smart Notifications**: Budget threshold alerts, bill reminders, and distraction-free background sync notifications with monochrome Android status bar icons.
+- **Personalization**: Light/Dark theme switching and multi-language support.
 
-### 6. Security & Offline-First Architecture
-- **Biometric Security**: Protect sensitive financial information with Fingerprint / Face ID via `local_auth`.
-- **Encrypted Local Storage**: Sensitive credentials and preferences stored using `flutter_secure_storage`.
-- **Offline-First Sync**: Seamlessly works offline via local SQLite / Hive storage, automatically synchronizing to Firebase Cloud Firestore upon reconnecting.
-- **Quiet Midnight Backup**: Safe scheduled background sync without user interruption.
+### 6. Security, Data Isolation & Offline-First Architecture
+- **Firebase Auth & App Check**: Native Firebase Authentication (email verification, password reset) protected by Firebase App Check, plus Firestore and Storage security rules (`firestore.rules`, `storage.rules`).
+- **Biometric & Encrypted Storage**: Fingerprint / Face ID app lock via `local_auth` and encrypted credential storage via `flutter_secure_storage`.
+- **Per-User SQLite Isolation**: Strict multi-user data scoping (`SessionManager` & `OwnedTableOps`) with destructive-operation safeguards (`DestructiveOpsGuard`).
+- **Reliable Offline-First Sync**: Local SQLite persistence (`sqflite`) paired with a durable sync queue (`SyncQueueWriter` & `SyncService`) featuring conflict handling and automatic synchronization to Cloud Firestore when online.
+- **Structured Logging**: Centralized `AppLogger` for diagnostics without leaking sensitive user data.
 
 ---
 
 ## Tech Stack
 
-- **Framework**: Flutter (Dart SDK ^3.10.7)
-- **State Management**: Flutter Riverpod & Provider
-- **Backend & Cloud**: Firebase Core, Firebase Auth, Cloud Firestore, Firebase Storage, Firebase Messaging (FCM)
-- **Local Storage**: SQLite (`sqflite`), Hive
-- **Charts & UI**: `fl_chart`, Custom Micro-animations, Dark/Light Theme modes
-- **Security & Crypto**: `local_auth`, `flutter_secure_storage`, `crypto`
-- **File Processing & Reporting**: `excel`, `pdf`, `csv`, `printing`, `share_plus`
-- **AI & Integrations**: Google Gemini API, Local LLM Integration
+- **Framework**: Flutter (Dart SDK `^3.10.7`)
+- **State Management**: `flutter_riverpod`
+- **Backend & Cloud**: Firebase Core, Firebase Auth, Cloud Firestore, Firebase Storage, Firebase Messaging (FCM), Firebase App Check
+- **Local Storage**: SQLite (`sqflite`), `shared_preferences`, `flutter_secure_storage`
+- **Location & Maps**: `geolocator`, `geocoding`
+- **Charts & UI**: `fl_chart`, `cached_network_image`, `home_widget`, Dark/Light Theme
+- **Security**: `local_auth`, `crypto`, `firebase_app_check`
+- **QR & Media**: `qr_flutter`, `mobile_scanner`, `image_picker`, `speech_to_text`, `record`
+- **Reporting & Export**: `pdf`, `printing`, `excel`, `csv`, `file_saver`, `share_plus`
+- **AI Integration**: Google Gemini API (`http`)
 
 ---
 
@@ -62,25 +63,38 @@ A smart, modern personal and group financial management mobile application built
 
 ```text
 lib/
-├── core/                  # Core configurations, constants, theme, API key templates
+├── core/                  # Config, constants, errors, AppLogger, Riverpod providers,
+│                          # SessionManager, DestructiveOpsGuard, themes
 ├── data/
-│   ├── local/             # SQLite local database & data tables
-│   ├── models/            # Data transfer objects & entity converters
-│   └── repositories/      # Repositories handling business logic & data access
+│   ├── local/             # SQLite DatabaseHelper, OwnedTableOps, SyncQueueWriter
+│   └── repositories/      # Domain repositories (Wallet, Transaction, Budget, Goal, etc.)
 ├── features/
-│   └── group_expense/     # Shared group expense feature
-├── models/                # Domain models (Wallet, Transaction, Budget, Goal, etc.)
-├── modules/               # Feature-based presentation modules & screens
-│   ├── ai_assistant/      # AI assistant & financial conversations
-│   ├── auth/              # Sign up, Sign in, Password recovery
-│   ├── budget/            # Budget & savings management
-│   ├── calendar/          # Calendar view for daily transactions
-│   ├── home/              # Dashboard, wallets, summary & reports
-│   ├── settings/          # User preferences, security, devices, themes
-│   └── transaction/       # Create, edit, delete, view transaction details
-├── services/              # Infrastructure services (AI, SMS, Sync, Notification, Voice)
-├── utils/                 # Formatting utilities (currency, date-time, categories)
-└── widgets/               # Reusable UI widgets and custom components
+│   └── group_expense/     # Clean-architecture group expense module (data/domain/presentation)
+├── models/                # Core domain models (User, Wallet, Transaction, Budget, Goal, etc.)
+├── modules/               # Feature UI screens
+│   ├── ai_assistant/      # AI financial assistant chat
+│   ├── auth/              # Sign in, sign up, password recovery
+│   ├── budget/            # Budgets & savings goals
+│   ├── calendar/          # Calendar transaction tracker
+│   ├── home/              # Dashboard, wallets, statistics, notifications
+│   ├── onboarding/        # First-launch onboarding
+│   ├── settings/          # Profile, security, language, theme, data usage, support
+│   ├── splash/            # App splash & session bootstrap
+│   ├── transaction/       # Add, edit, detail, list, and categories
+│   └── wallet/            # Wallet creation & transaction history
+├── services/              # Auth, Firestore, Sync, FinancialCalculation, LedgerReconciliation,
+│                          # Location, PlaceNameResolver, SmartNotification, Theme, Language, AI
+├── utils/                 # Finance precision arithmetic, time utils, currency/category helpers
+└── widgets/               # Reusable UI components (LocationPickerSheet, MiniLocationMap,
+                           # DayGroupedTransactionList, VoiceInputBottomSheet, etc.)
+
+test/
+├── features/group_expense/  # Group expense & split calculation tests
+├── finance/                 # Precision arithmetic, double-entry transfer, atomic & goal tests
+├── regression/              # Phase 1–4 security, precision, sync, and logging regression suites
+├── location_transaction_test.dart
+├── phase3_reliable_sync_test.dart
+└── wallet_default_and_day_group_test.dart
 ```
 
 ---
@@ -88,9 +102,9 @@ lib/
 ## Getting Started
 
 ### Prerequisites
-- Flutter SDK (>= 3.10)
-- Android Studio / VS Code with Dart & Flutter extensions
-- Android/iOS emulator or a physical test device with USB debugging enabled
+- Flutter SDK (`>= 3.10.7`)
+- Android Studio or VS Code with Flutter & Dart extensions
+- Android/iOS emulator or physical device with debugging enabled
 
 ### Installation & Setup
 
@@ -106,28 +120,23 @@ lib/
    ```
 
 3. **Configure API Keys (Google Gemini AI)**:
-   - Copy the template file `lib/core/constants/api_keys.example.dart` to `lib/core/constants/api_keys.dart`:
+   - Copy the example file to create your local `api_keys.dart` (ignored by Git):
      ```bash
      cp lib/core/constants/api_keys.example.dart lib/core/constants/api_keys.dart
      ```
-   - Obtain an API key from [Google AI Studio](https://aistudio.google.com/).
-   - Populate `defaultGeminiApiKey` in `lib/core/constants/api_keys.dart`.
+   - Obtain a Gemini API key from [Google AI Studio](https://aistudio.google.com/) and fill in `defaultGeminiApiKey`.
 
-4. **Configure SMTP for OTP emails (`.env`)** — required, `.env` is bundled as an asset so the build fails if it is missing:
-   ```bash
-   cp .env.example .env
-   ```
-   - Fill `SMTP_SENDER_EMAIL` and `SMTP_APP_PASSWORD` (a Gmail [App Password](https://myaccount.google.com/apppasswords), preferably from a dedicated account).
-   - Values left empty → app still runs, OTP sending reports "not configured".
-   - Note: `.env` ships inside the APK and can be extracted; never put high-value secrets there.
+4. **Firebase Configuration**:
+   - Ensure your Firebase project configuration (`google-services.json` for Android / `GoogleService-Info.plist` for iOS) is properly configured.
+   - Email verification and password reset are handled natively by Firebase Auth SDK (no external SMTP credentials required).
 
-5. **Verify codebase**:
+5. **Run Static Analysis & Tests**:
    ```bash
    flutter analyze
    flutter test
    ```
 
-6. **Run the application**:
+6. **Run the Application**:
    ```bash
    flutter run
    ```
@@ -135,5 +144,6 @@ lib/
 ---
 
 ## Security & Contributing Guidelines
-- **Confidentiality**: Never commit secrets such as `.env`, `api_keys.dart`, or personal `google-services.json` files.
-- **Contributions**: Please create a separate feature branch and submit a Pull Request for review.
+- **Confidentiality**: Never commit secrets such as `.env`, `lib/core/constants/api_keys.dart`, or private keystore/service-account credentials.
+- **Code Quality**: Run `flutter analyze` and `flutter test` before opening a Pull Request.
+- **Contributions**: Create a dedicated feature branch and submit a Pull Request for review.

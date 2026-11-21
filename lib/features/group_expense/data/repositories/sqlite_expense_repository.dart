@@ -1,8 +1,16 @@
 import 'dart:async';
+import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/session/session_manager.dart';
 import '../../../../data/local/database_helper.dart';
+import '../../../../data/local/owned_table_ops.dart';
 import '../../../../data/local/sync_queue_writer.dart';
+import '../../../../models/wallet_model.dart';
+import '../../../../utils/finance_precision.dart';
+import '../../../../data/repositories/wallet_repository.dart';
+import '../../../../data/repositories/transaction_repository.dart';
+import '../../../../services/connectivity_service.dart';
+import '../../../../services/sync_service.dart';
 import '../../domain/repositories/i_expense_repository.dart';
 import '../dtos/create_expense_dto.dart';
 import '../models/expense_model.dart';
@@ -14,7 +22,11 @@ class SqliteExpenseRepository implements IExpenseRepository {
   final _changeController = StreamController<void>.broadcast();
 
   SqliteExpenseRepository([DatabaseHelper? dbHelper])
-    : _dbHelper = dbHelper ?? DatabaseHelper();
+    : _dbHelper = dbHelper ?? DatabaseHelper() {
+    SessionManager.instance.changes.listen((_) {
+      _changeController.add(null);
+    });
+  }
 
   @override
   Future<ExpenseModel> create(CreateExpenseDto dto, String createdBy) async {
@@ -50,7 +62,7 @@ class SqliteExpenseRepository implements IExpenseRepository {
     await db.transaction((txn) async {
       // 2. Dual-Ledger: Nếu thanh toán từ ví cá nhân của Payer, tạo bản ghi transactions và trừ số dư ví
       if (dto.paidFromWalletId != null && dto.paidFromWalletId!.isNotEmpty) {
-        linkedTxId = const Uuid().v4();
+        linkedTxId = 'gtx_$expenseId';
         final txRow = {
           'id': linkedTxId,
           'uid': dto.payerId,
@@ -70,7 +82,7 @@ class SqliteExpenseRepository implements IExpenseRepository {
           'groupId': dto.groupId,
           'groupIconCode': null,
           'source': 'group',
-          'syncStatus': 'synced',
+          'syncStatus': 'pending',
           'walletId': dto.paidFromWalletId,
           'location': '',
           'latitude': null,
@@ -82,17 +94,46 @@ class SqliteExpenseRepository implements IExpenseRepository {
           'deletedAt': null,
         };
 
-        await txn.insert('transactions', txRow);
-
-        // Trừ số dư ví cá nhân
-        await txn.rawUpdate(
-          'UPDATE wallets SET balance = balance - ?, updatedAt = ? WHERE id = ?',
-          [
-            totalAmountVnd,
-            now.toUtc().millisecondsSinceEpoch,
-            dto.paidFromWalletId,
-          ],
+        await txn.insert(
+          'transactions',
+          txRow,
+          conflictAlgorithm: ConflictAlgorithm.replace,
         );
+
+        // Trừ số dư ví cá nhân (chuẩn Dual-Ledger với sync_queue)
+        final wRows = await txn.query(
+          'wallets',
+          where: 'id = ? AND uid = ?',
+          whereArgs: [dto.paidFromWalletId, dto.payerId],
+          limit: 1,
+        );
+        if (wRows.isNotEmpty) {
+          final w = WalletModel.fromSqlite(wRows.first);
+          final newBal = FinancePrecision.roundCurrency(
+            w.balance - totalAmountVnd,
+            currency: w.currency,
+          );
+          final updatedW = w.copyWith(
+            balance: newBal,
+            updatedAt: now,
+            syncStatus: 'pending',
+          );
+          final wRow = updatedW.toSqlite();
+          await txn.update(
+            'wallets',
+            wRow,
+            where: 'id = ? AND uid = ?',
+            whereArgs: [dto.paidFromWalletId, dto.payerId],
+          );
+          await SyncQueueWriter.enqueue(
+            txn,
+            ownerUid: dto.payerId,
+            table: 'wallets',
+            recordId: dto.paidFromWalletId!,
+            action: 'UPDATE',
+            data: wRow,
+          );
+        }
 
         await SyncQueueWriter.enqueue(
           txn,
@@ -127,10 +168,10 @@ class SqliteExpenseRepository implements IExpenseRepository {
 
       await txn.insert('group_expenses', expense.toSqflite());
 
-      // 4. Ghi các bản ghi expense_splits
+      // 4. Ghi các bản ghi expense_splits với Deterministic ID
       for (final entry in intSplits.entries) {
         final splitModel = ExpenseSplitModel(
-          id: const Uuid().v4(),
+          id: '${expenseId}_${entry.key}',
           expenseId: expenseId,
           userId: entry.key,
           shareAmount: entry.value,
@@ -138,10 +179,14 @@ class SqliteExpenseRepository implements IExpenseRepository {
           createdAt: now,
           updatedAt: now,
         );
-        await txn.insert('expense_splits', splitModel.toSqflite());
+        await txn.insert(
+          'expense_splits',
+          splitModel.toSqflite(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
       }
 
-      // 5. Enqueue sync
+      // 5. Enqueue sync cho group_expenses
       await SyncQueueWriter.enqueue(
         txn,
         ownerUid: createdBy,
@@ -153,6 +198,12 @@ class SqliteExpenseRepository implements IExpenseRepository {
     });
 
     _changeController.add(null);
+    WalletRepository().notifyChanged();
+    TransactionRepository().notifyTransactionsChanged();
+
+    if (ConnectivityService().isOnline) {
+      unawaited(SyncService().syncAll());
+    }
 
     return ExpenseModel(
       id: expenseId,
@@ -256,18 +307,41 @@ class SqliteExpenseRepository implements IExpenseRepository {
       }
     }
 
-    StreamSubscription? sub;
     controller = StreamController<List<ExpenseModel>>.broadcast(
       onListen: () {
         updateList();
-        sub = _changeController.stream.listen((_) => updateList());
-      },
-      onCancel: () {
-        sub?.cancel();
+        _changeController.stream.listen((_) => updateList());
       },
     );
 
     return controller.stream;
+  }
+
+  @override
+  Future<void> update(ExpenseModel expense) async {
+    final db = await _dbHelper.database;
+    final now = DateTime.now();
+
+    await db.transaction((txn) async {
+      final updated = expense.copyWith(updatedAt: now);
+      await txn.update(
+        'group_expenses',
+        updated.toSqflite(),
+        where: 'id = ?',
+        whereArgs: [expense.id],
+      );
+
+      await SyncQueueWriter.enqueue(
+        txn,
+        ownerUid: expense.createdBy,
+        table: 'group_expenses',
+        recordId: expense.id,
+        action: 'UPDATE',
+        data: updated.toJson(),
+      );
+    });
+
+    _changeController.add(null);
   }
 
   @override
@@ -322,10 +396,39 @@ class SqliteExpenseRepository implements IExpenseRepository {
           );
 
           if (walletId.isNotEmpty) {
-            await txn.rawUpdate(
-              'UPDATE wallets SET balance = balance + ?, updatedAt = ? WHERE id = ?',
-              [amount, now.toUtc().millisecondsSinceEpoch, walletId],
+            final wRows = await txn.query(
+              'wallets',
+              where: 'id = ?',
+              whereArgs: [walletId],
+              limit: 1,
             );
+            if (wRows.isNotEmpty) {
+              final w = WalletModel.fromSqlite(wRows.first);
+              final newBal = FinancePrecision.roundCurrency(
+                w.balance + amount,
+                currency: w.currency,
+              );
+              final updatedW = w.copyWith(
+                balance: newBal,
+                updatedAt: now,
+                syncStatus: 'pending',
+              );
+              final wRow = updatedW.toSqlite();
+              await txn.update(
+                'wallets',
+                wRow,
+                where: 'id = ?',
+                whereArgs: [walletId],
+              );
+              await SyncQueueWriter.enqueue(
+                txn,
+                ownerUid: w.uid.isNotEmpty ? w.uid : activeUid,
+                table: 'wallets',
+                recordId: walletId,
+                action: 'UPDATE',
+                data: wRow,
+              );
+            }
           }
         }
       }
@@ -335,12 +438,18 @@ class SqliteExpenseRepository implements IExpenseRepository {
         ownerUid: activeUid,
         table: 'group_expenses',
         recordId: id,
-        action: 'DELETE',
+        action: 'SOFT_DELETE',
         data: {'id': id, 'isDeleted': 1},
       );
     });
 
     _changeController.add(null);
+    WalletRepository().notifyChanged();
+    TransactionRepository().notifyTransactionsChanged();
+
+    if (ConnectivityService().isOnline) {
+      unawaited(SyncService().syncAll());
+    }
   }
 
   Future<List<ExpenseSplitModel>> getSplits(String expenseId) async {
@@ -351,5 +460,99 @@ class SqliteExpenseRepository implements IExpenseRepository {
       whereArgs: [expenseId],
     );
     return rows.map((r) => ExpenseSplitModel.fromSqflite(r)).toList();
+  }
+
+  /// Upsert danh sách chi tiêu nhóm và các phần chia (splits) từ Firestore về SQLite
+  Future<void> upsertFromFirestore(List<ExpenseModel> expenses) async {
+    if (expenses.isEmpty) return;
+    final db = await _dbHelper.database;
+
+    await db.transaction((txn) async {
+      for (final exp in expenses) {
+        // Dirty shield
+        final pendingQueue = await txn.query(
+          'sync_queue',
+          columns: ['id'],
+          where: "tableName = 'group_expenses' AND recordId = ? AND status IN ('pending', 'processing')",
+          whereArgs: [exp.id],
+          limit: 1,
+        );
+        if (pendingQueue.isNotEmpty) continue;
+
+        final existing = await txn.query(
+          'group_expenses',
+          where: 'id = ?',
+          whereArgs: [exp.id],
+          limit: 1,
+        );
+
+        if (existing.isEmpty) {
+          if (!exp.isDeleted) {
+            await txn.insert('group_expenses', exp.toSqflite());
+          }
+        } else {
+          final local = ExpenseModel.fromSqflite(existing.first);
+          if (local.syncStatus == 'pending') continue;
+
+          final shouldWin = ConflictResolver.shouldRemoteWin(
+            localUpdatedAt: local.updatedAt,
+            remoteUpdatedAt: exp.updatedAt,
+            localData: local.toSqflite(),
+            remoteData: exp.toSqflite(),
+          );
+
+          if (shouldWin) {
+            if (exp.isDeleted) {
+              await txn.update(
+                'group_expenses',
+                {
+                  'isDeleted': 1,
+                  'deletedAt': (exp.deletedAt ?? exp.updatedAt).toUtc().millisecondsSinceEpoch,
+                  'updatedAt': exp.updatedAt.toUtc().millisecondsSinceEpoch,
+                  'syncStatus': 'synced',
+                },
+                where: 'id = ?',
+                whereArgs: [exp.id],
+              );
+            } else {
+              await txn.update(
+                'group_expenses',
+                exp.toSqflite(),
+                where: 'id = ?',
+                whereArgs: [exp.id],
+              );
+            }
+          }
+        }
+
+        // Đồng bộ expense_splits
+        if (!exp.isDeleted && exp.shares.isNotEmpty) {
+          for (final entry in exp.shares.entries) {
+            final splitId = '${exp.id}_${entry.key}';
+            await txn.rawInsert(
+              '''
+              INSERT INTO expense_splits (id, expenseId, userId, shareAmount, allocatedRemainder, createdAt, updatedAt)
+              VALUES (?, ?, ?, ?, 0, ?, ?)
+              ON CONFLICT(expenseId, userId) DO UPDATE SET
+                shareAmount = ?,
+                updatedAt = ?
+              ''',
+              [
+                splitId,
+                exp.id,
+                entry.key,
+                entry.value.round(),
+                exp.createdAt.toUtc().millisecondsSinceEpoch,
+                exp.updatedAt.toUtc().millisecondsSinceEpoch,
+                entry.value.round(),
+                exp.updatedAt.toUtc().millisecondsSinceEpoch,
+              ],
+            );
+          }
+        }
+      }
+    });
+
+    _changeController.add(null);
   }
 }

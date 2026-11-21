@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -10,6 +8,7 @@ import '../local/sync_queue_writer.dart';
 import '../../core/errors/business_exception.dart';
 import '../../core/session/session_manager.dart';
 import '../../models/wallet_model.dart';
+import '../../core/logging/app_logger.dart';
 import '../../models/transaction_model.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/sync_service.dart';
@@ -67,6 +66,182 @@ class WalletRepository with OwnedTableOps {
 
   // ════════ CRUD VÍ TIỀN ════════
 
+  bool _isHealingDefault = false;
+
+  /// Bỏ cờ mặc định của các ví khác trong cùng transaction và enqueue sync_queue
+  /// để Firestore cũng được cập nhật đồng bộ (tránh 2 ví cùng mặc định).
+  Future<void> _clearOtherDefaultsInTxn(
+    dynamic txn,
+    String uid, {
+    String? exceptWalletId,
+    required DateTime now,
+  }) async {
+    final whereClause = exceptWalletId != null
+        ? 'uid = ? AND isDefault = 1 AND id != ? AND (isDeleted IS NULL OR isDeleted = 0)'
+        : 'uid = ? AND isDefault = 1 AND (isDeleted IS NULL OR isDeleted = 0)';
+    final whereArgs = exceptWalletId != null ? [uid, exceptWalletId] : [uid];
+
+    final otherDefaults = await txn.query(
+      'wallets',
+      where: whereClause,
+      whereArgs: whereArgs,
+    );
+
+    for (final r in otherDefaults) {
+      final w = WalletModel.fromSqlite(r).copyWith(
+        isDefault: false,
+        updatedAt: now,
+        syncStatus: 'pending',
+      );
+      final updatedRow = stampOwner(w.toSqlite(), uid);
+      await updateOwned(txn, 'wallets', w.id, updatedRow, uid);
+      await SyncQueueWriter.enqueue(
+        txn,
+        ownerUid: uid,
+        table: 'wallets',
+        recordId: w.id,
+        action: 'UPDATE',
+        data: updatedRow,
+      );
+    }
+  }
+
+  /// Đảm bảo bất biến: với các ví đang hoạt động của [uid], luôn có ĐÚNG 1 ví mặc định.
+  /// Nếu >1 ví mặc định -> giữ ví có updatedAt mới nhất (hoặc [preferredWalletId]), tắt các ví còn lại + sync.
+  /// Nếu 0 ví mặc định -> chọn ví tạo sớm nhất làm mặc định + sync.
+  Future<bool> _ensureSingleDefaultInTxn(
+    dynamic txn,
+    String uid, {
+    required DateTime now,
+    String? preferredWalletId,
+  }) async {
+    final rows = await txn.query(
+      'wallets',
+      where: 'uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+      whereArgs: [uid],
+      orderBy: 'createdAt ASC',
+    );
+    if (rows.isEmpty) return false;
+
+    final wallets = rows.map((r) => WalletModel.fromSqlite(r)).toList();
+    final defaults = wallets.where((w) => w.isDefault).toList();
+
+    if (defaults.length == 1) return false;
+
+    bool changed = false;
+    if (defaults.length > 1) {
+      WalletModel keep;
+      if (preferredWalletId != null &&
+          defaults.any((w) => w.id == preferredWalletId)) {
+        keep = defaults.firstWhere((w) => w.id == preferredWalletId);
+      } else {
+        defaults.sort((a, b) {
+          final cmp = b.updatedAt.compareTo(a.updatedAt);
+          if (cmp != 0) return cmp;
+          return a.createdAt.compareTo(b.createdAt);
+        });
+        keep = defaults.first;
+      }
+
+      for (final w in defaults) {
+        if (w.id == keep.id) continue;
+        final updated = w.copyWith(
+          isDefault: false,
+          updatedAt: now,
+          syncStatus: 'pending',
+        );
+        final rowMap = stampOwner(updated.toSqlite(), uid);
+        await updateOwned(txn, 'wallets', w.id, rowMap, uid);
+        await SyncQueueWriter.enqueue(
+          txn,
+          ownerUid: uid,
+          table: 'wallets',
+          recordId: w.id,
+          action: 'UPDATE',
+          data: rowMap,
+        );
+        changed = true;
+      }
+    } else if (defaults.isEmpty) {
+      final chosen =
+          (preferredWalletId != null &&
+              wallets.any((w) => w.id == preferredWalletId))
+          ? wallets.firstWhere((w) => w.id == preferredWalletId)
+          : wallets.first;
+      final updated = chosen.copyWith(
+        isDefault: true,
+        updatedAt: now,
+        syncStatus: 'pending',
+      );
+      final rowMap = stampOwner(updated.toSqlite(), uid);
+      await updateOwned(txn, 'wallets', chosen.id, rowMap, uid);
+      await SyncQueueWriter.enqueue(
+        txn,
+        ownerUid: uid,
+        table: 'wallets',
+        recordId: chosen.id,
+        action: 'UPDATE',
+        data: rowMap,
+      );
+      changed = true;
+    }
+
+    return changed;
+  }
+
+  /// Đặt một ví cụ thể làm ví mặc định duy nhất
+  Future<void> setDefaultWallet(String walletId) async {
+    final uid = session.requireUid();
+    final db = await _dbHelper.database;
+    final now = DateTime.now();
+
+    await db.transaction((txn) async {
+      final existing = await findOwned(txn, 'wallets', walletId, uid);
+      if (existing == null) {
+        throw BusinessException(
+          BusinessErrorCode.notFound,
+          'wallets/$walletId không tồn tại',
+        );
+      }
+      final wallet = WalletModel.fromSqlite(existing);
+      if (wallet.isDeleted) {
+        throw BusinessException(
+          BusinessErrorCode.notFound,
+          'wallets/$walletId đã bị xóa',
+        );
+      }
+
+      await _clearOtherDefaultsInTxn(
+        txn,
+        uid,
+        exceptWalletId: walletId,
+        now: now,
+      );
+
+      final updated = wallet.copyWith(
+        isDefault: true,
+        updatedAt: now,
+        syncStatus: 'pending',
+      );
+      final rowMap = stampOwner(updated.toSqlite(), uid);
+      await updateOwned(txn, 'wallets', walletId, rowMap, uid);
+      await SyncQueueWriter.enqueue(
+        txn,
+        ownerUid: uid,
+        table: 'wallets',
+        recordId: walletId,
+        action: 'UPDATE',
+        data: rowMap,
+      );
+    });
+
+    _notifyChanged();
+
+    if (ConnectivityService().isOnline) {
+      unawaited(SyncService().syncAll());
+    }
+  }
+
   /// Thêm ví mới vào SQLite + enqueue sync
   Future<String> addWallet(WalletModel wallet) async {
     final uid = session.requireUid();
@@ -74,24 +249,40 @@ class WalletRepository with OwnedTableOps {
     final id = wallet.id.isEmpty ? _uuid.v4() : wallet.id;
     final now = DateTime.now();
 
-    final newWallet = wallet.copyWith(
-      id: id,
-      createdAt: now,
-      updatedAt: now,
-      syncStatus: 'pending',
-    );
-    final row = stampOwner(newWallet.toSqlite(), uid);
-
     await db.transaction((txn) async {
-      // Nếu ví này được đánh dấu mặc định, bỏ cờ mặc định của các ví khác cùng uid
-      if (wallet.isDefault) {
-        await txn.update(
-          'wallets',
-          {'isDefault': 0},
-          where: 'uid = ?',
-          whereArgs: [uid],
+      bool effectiveIsDefault = wallet.isDefault;
+
+      if (effectiveIsDefault) {
+        await _clearOtherDefaultsInTxn(
+          txn,
+          uid,
+          exceptWalletId: id,
+          now: now,
         );
+      } else {
+        // Nếu chưa có ví mặc định nào đang hoạt động thì tự động bật mặc định cho ví mới
+        final existingDefaults = await txn.query(
+          'wallets',
+          columns: ['id'],
+          where:
+              'uid = ? AND isDefault = 1 AND (isDeleted IS NULL OR isDeleted = 0)',
+          whereArgs: [uid],
+          limit: 1,
+        );
+        if (existingDefaults.isEmpty) {
+          effectiveIsDefault = true;
+        }
       }
+
+      final newWallet = wallet.copyWith(
+        id: id,
+        isDefault: effectiveIsDefault,
+        createdAt: now,
+        updatedAt: now,
+        syncStatus: 'pending',
+      );
+      final row = stampOwner(newWallet.toSqlite(), uid);
+
       await txn.insert('wallets', row);
       await SyncQueueWriter.enqueue(
         txn,
@@ -118,21 +309,38 @@ class WalletRepository with OwnedTableOps {
     final db = await _dbHelper.database;
     final now = DateTime.now();
 
-    final updatedWallet = wallet.copyWith(
-      updatedAt: now,
-      syncStatus: 'pending',
-    );
-    final row = stampOwner(updatedWallet.toSqlite(), uid);
-
     await db.transaction((txn) async {
-      if (wallet.isDefault) {
-        await txn.update(
-          'wallets',
-          {'isDefault': 0},
-          where: 'uid = ?',
-          whereArgs: [uid],
+      bool effectiveIsDefault = wallet.isDefault;
+
+      if (effectiveIsDefault) {
+        await _clearOtherDefaultsInTxn(
+          txn,
+          uid,
+          exceptWalletId: wallet.id,
+          now: now,
         );
+      } else {
+        // Không cho phép tắt mặc định nếu đây là ví mặc định duy nhất
+        final otherDefaults = await txn.query(
+          'wallets',
+          columns: ['id'],
+          where:
+              'uid = ? AND isDefault = 1 AND id != ? AND (isDeleted IS NULL OR isDeleted = 0)',
+          whereArgs: [uid, wallet.id],
+          limit: 1,
+        );
+        if (otherDefaults.isEmpty) {
+          effectiveIsDefault = true;
+        }
       }
+
+      final updatedWallet = wallet.copyWith(
+        isDefault: effectiveIsDefault,
+        updatedAt: now,
+        syncStatus: 'pending',
+      );
+      final row = stampOwner(updatedWallet.toSqlite(), uid);
+
       await updateOwned(txn, 'wallets', wallet.id, row, uid);
       await SyncQueueWriter.enqueue(
         txn,
@@ -151,10 +359,11 @@ class WalletRepository with OwnedTableOps {
     }
   }
 
-  /// Xóa ví (áp dụng Soft Delete / Tombstone)
+  /// Xóa ví (áp dụng Soft Delete / Tombstone và Cascade Soft Delete giao dịch liên kết)
   Future<void> deleteWallet(String walletId) async {
     final uid = session.requireUid();
     final db = await _dbHelper.database;
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
 
     await db.transaction((txn) async {
       await softDeleteOwned(txn, 'wallets', walletId, uid);
@@ -165,9 +374,47 @@ class WalletRepository with OwnedTableOps {
         recordId: walletId,
         action: 'SOFT_DELETE',
       );
+
+      // Cascade soft delete các giao dịch đang hoạt động thuộc về ví bị xóa
+      final txRows = await txn.query(
+        'transactions',
+        columns: ['id'],
+        where:
+            'walletId = ? AND uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+        whereArgs: [walletId, uid],
+      );
+      for (final r in txRows) {
+        final txId = r['id'] as String;
+        await txn.update(
+          'transactions',
+          {
+            'isDeleted': 1,
+            'deletedAt': nowMs,
+            'updatedAt': nowMs,
+            'syncStatus': 'pending',
+          },
+          where: 'id = ? AND uid = ?',
+          whereArgs: [txId, uid],
+        );
+        await SyncQueueWriter.enqueue(
+          txn,
+          ownerUid: uid,
+          table: 'transactions',
+          recordId: txId,
+          action: 'SOFT_DELETE',
+        );
+      }
+
+      // Nếu ví vừa xóa là ví mặc định, chọn ví còn lại sớm nhất làm mặc định
+      await _ensureSingleDefaultInTxn(
+        txn,
+        uid,
+        now: DateTime.fromMillisecondsSinceEpoch(nowMs),
+      );
     });
 
     _notifyChanged();
+    TransactionRepository().notifyTransactionsChanged();
 
     if (ConnectivityService().isOnline) {
       unawaited(SyncService().syncAll());
@@ -308,7 +555,7 @@ class WalletRepository with OwnedTableOps {
 
       // 3. Ghi nhận 2 giao dịch liên kết chuyên dụng với transferId (không mượn groupId)
       final expenseTx = TransactionModel(
-        id: _uuid.v4(),
+        id: '${transferId}_out',
         uid: uid,
         type: 'expense',
         category: 'Chuyển tiền',
@@ -339,7 +586,7 @@ class WalletRepository with OwnedTableOps {
       );
 
       final incomeTx = TransactionModel(
-        id: _uuid.v4(),
+        id: '${transferId}_in',
         uid: uid,
         type: 'income',
         category: 'Nhận chuyển tiền',
@@ -401,11 +648,14 @@ class WalletRepository with OwnedTableOps {
             await upsertFromFirestore(wallets);
             return;
           }
-        } catch (_) {}
+        } catch (e, st) {
+          AppLogger.warn('Không thể kéo ví từ Firestore lúc khởi tạo', tag: 'WalletRepository', error: e, stackTrace: st);
+        }
       }
 
+      final defaultWalletId = 'wlt_default_$uid';
       final defaultWallet = WalletModel(
-        id: _uuid.v4(),
+        id: defaultWalletId,
         uid: uid,
         name: 'Ví tiền mặt',
         type: WalletType.cash,
@@ -480,20 +730,39 @@ class WalletRepository with OwnedTableOps {
           final local = WalletModel.fromSqlite(existing.first);
           if (local.syncStatus == 'pending') continue; // Dirty Shield
 
-          final isRemoteNewer = fw.updatedAt.isAfter(local.updatedAt);
-          final isSameTime = fw.updatedAt.isAtSameMomentAs(local.updatedAt);
-          final winsTieBreak =
-              isSameTime && _resolveTieBreaker(local.toSqlite(), fw.toSqlite());
+          // Monotonic Delete Rule: Nếu local đã xóa mềm, chỉ chấp nhận khôi phục nếu remote mới hơn thời điểm xóa
+          if (local.isDeleted && !fw.isDeleted) {
+            final localDeletedMs = local.deletedAt?.millisecondsSinceEpoch ??
+                local.updatedAt.millisecondsSinceEpoch;
+            if (!fw.updatedAt.isAfter(
+              DateTime.fromMillisecondsSinceEpoch(localDeletedMs),
+            )) {
+              continue; // Local Tombstone wins
+            }
+          }
 
-          if (isRemoteNewer || winsTieBreak) {
+          final shouldWin = ConflictResolver.shouldRemoteWin(
+            localUpdatedAt: local.updatedAt,
+            remoteUpdatedAt: fw.updatedAt,
+            localData: local.toSqlite(),
+            remoteData: fw.toSqlite(),
+          );
+
+          if (shouldWin) {
             if (fw.isDeleted) {
+              final remoteDeletedMs = fw.deletedAt?.millisecondsSinceEpoch ??
+                  fw.updatedAt.millisecondsSinceEpoch;
+              final effectiveUpdatedMs =
+                  fw.updatedAt.millisecondsSinceEpoch > remoteDeletedMs
+                      ? fw.updatedAt.millisecondsSinceEpoch
+                      : remoteDeletedMs;
+
               await txn.update(
                 'wallets',
                 {
                   'isDeleted': 1,
-                  'deletedAt':
-                      fw.deletedAt?.millisecondsSinceEpoch ??
-                      DateTime.now().millisecondsSinceEpoch,
+                  'deletedAt': remoteDeletedMs,
+                  'updatedAt': effectiveUpdatedMs,
                   'syncStatus': 'synced',
                 },
                 where: 'id = ? AND uid = ?',
@@ -510,21 +779,16 @@ class WalletRepository with OwnedTableOps {
           }
         }
       }
+
+      // Tự chữa bất biến: nếu dữ liệu cloud có >1 hoặc 0 ví mặc định -> giữ đúng 1 ví & enqueue sync
+      await _ensureSingleDefaultInTxn(
+        txn,
+        currentUid,
+        now: DateTime.now(),
+      );
     });
 
     _notifyChanged();
-  }
-
-  /// Deterministic Tie-Breaker theo SHA256 khi hai thiết bị có updatedAt giống hệt nhau
-  static bool _resolveTieBreaker(
-    Map<String, dynamic> local,
-    Map<String, dynamic> remote,
-  ) {
-    final localStr = json.encode(local);
-    final remoteStr = json.encode(remote);
-    final localHash = sha256.convert(utf8.encode(localStr)).toString();
-    final remoteHash = sha256.convert(utf8.encode(remoteStr)).toString();
-    return remoteHash.compareTo(localHash) >= 0;
   }
 
   /// Upsert an toàn tuân thủ ISyncableRepository
@@ -558,6 +822,43 @@ class WalletRepository with OwnedTableOps {
       );
 
       final list = rows.map((r) => WalletModel.fromSqlite(r)).toList();
+
+      // Tự chữa dữ liệu cũ nếu phát hiện != 1 ví mặc định
+      if (list.isNotEmpty && !_isHealingDefault) {
+        final defaultCount = list.where((w) => w.isDefault).length;
+        if (defaultCount != 1) {
+          _isHealingDefault = true;
+          try {
+            bool healed = false;
+            await db.transaction((txn) async {
+              healed = await _ensureSingleDefaultInTxn(
+                txn,
+                uid,
+                now: DateTime.now(),
+              );
+            });
+            if (healed) {
+              final healedRows = await db.query(
+                'wallets',
+                where: 'uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+                whereArgs: [uid],
+                orderBy: 'isDefault DESC, createdAt ASC',
+              );
+              final healedList = healedRows
+                  .map((r) => WalletModel.fromSqlite(r))
+                  .toList();
+              _cachedWallets = healedList;
+              if (ConnectivityService().isOnline) {
+                unawaited(SyncService().syncAll());
+              }
+              return healedList;
+            }
+          } finally {
+            _isHealingDefault = false;
+          }
+        }
+      }
+
       _cachedWallets = list;
       return list;
     } catch (e) {

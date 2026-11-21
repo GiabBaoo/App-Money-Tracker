@@ -38,6 +38,7 @@ class MessageRepository with OwnedTableOps {
     final uid = session.requireUid();
     final db = await _dbHelper.database;
     final id = message.id.isEmpty ? _uuid.v4() : message.id;
+    final now = DateTime.now();
 
     final msg = MessageModel(
       id: id,
@@ -49,7 +50,9 @@ class MessageRepository with OwnedTableOps {
       fullMessage: message.fullMessage,
       isUnread: message.isUnread,
       createdAt: message.createdAt,
+      updatedAt: now,
       syncStatus: 'pending',
+      isDeleted: false,
     );
     final row = stampOwner(msg.toSqlite(), uid);
 
@@ -73,13 +76,13 @@ class MessageRepository with OwnedTableOps {
     final db = await _dbHelper.database;
 
     await db.transaction((txn) async {
-      await deleteOwned(txn, 'messages', messageId, uid);
+      await softDeleteOwned(txn, 'messages', messageId, uid);
       await SyncQueueWriter.enqueue(
         txn,
         ownerUid: uid,
         table: 'messages',
         recordId: messageId,
-        action: 'DELETE',
+        action: 'SOFT_DELETE',
       );
     });
 
@@ -100,27 +103,109 @@ class MessageRepository with OwnedTableOps {
     if (currentUid == null || messages.isEmpty) return;
 
     final db = await _dbHelper.database;
-    final batch = db.batch();
-    for (final msg in messages) {
-      if (msg.uid != currentUid) continue; // Bỏ qua doc khác uid
-      batch.insert(
-        'messages',
-        MessageModel(
-          id: msg.id,
-          uid: currentUid,
-          iconCode: msg.iconCode,
-          iconBgColorValue: msg.iconBgColorValue,
-          title: msg.title,
-          shortMessage: msg.shortMessage,
-          fullMessage: msg.fullMessage,
-          isUnread: msg.isUnread,
-          createdAt: msg.createdAt,
-          syncStatus: 'synced',
-        ).toSqlite(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    }
-    await batch.commit(noResult: true);
+    await db.transaction((txn) async {
+      for (final msg in messages) {
+        if (msg.uid != currentUid) continue; // Bỏ qua doc khác uid
+
+        // Kiểm tra Dirty Shield
+        final queuePending = await txn.query(
+          'sync_queue',
+          columns: ['id'],
+          where:
+              'tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
+          whereArgs: [
+            'messages',
+            msg.id,
+            currentUid,
+            currentUid,
+            'pending',
+            'processing',
+          ],
+          limit: 1,
+        );
+        if (queuePending.isNotEmpty) continue;
+
+        final existing = await txn.query(
+          'messages',
+          where: 'id = ? AND uid = ?',
+          whereArgs: [msg.id, currentUid],
+          limit: 1,
+        );
+
+        if (existing.isEmpty) {
+          if (!msg.isDeleted) {
+            await txn.insert(
+              'messages',
+              MessageModel(
+                id: msg.id,
+                uid: currentUid,
+                iconCode: msg.iconCode,
+                iconBgColorValue: msg.iconBgColorValue,
+                title: msg.title,
+                shortMessage: msg.shortMessage,
+                fullMessage: msg.fullMessage,
+                isUnread: msg.isUnread,
+                createdAt: msg.createdAt,
+                updatedAt: msg.updatedAt,
+                syncStatus: 'synced',
+                isDeleted: false,
+              ).toSqlite(),
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
+        } else {
+          final local = MessageModel.fromSqlite(existing.first);
+          if (local.syncStatus == 'pending') continue;
+
+          // Monotonic Delete Rule
+          if (local.isDeleted && !msg.isDeleted) {
+            final localDeletedMs = local.deletedAt?.millisecondsSinceEpoch ??
+                (local.updatedAt ?? local.createdAt).millisecondsSinceEpoch;
+            final remoteUpdatedMs = (msg.updatedAt ?? msg.createdAt).millisecondsSinceEpoch;
+            if (remoteUpdatedMs <= localDeletedMs) {
+              continue;
+            }
+          }
+
+          if (msg.isDeleted) {
+            final remoteDeletedMs = msg.deletedAt?.millisecondsSinceEpoch ??
+                (msg.updatedAt ?? msg.createdAt).millisecondsSinceEpoch;
+            await txn.update(
+              'messages',
+              {
+                'isDeleted': 1,
+                'deletedAt': remoteDeletedMs,
+                'updatedAt': remoteDeletedMs,
+                'syncStatus': 'synced',
+              },
+              where: 'id = ? AND uid = ?',
+              whereArgs: [msg.id, currentUid],
+            );
+          } else {
+            await txn.update(
+              'messages',
+              MessageModel(
+                id: msg.id,
+                uid: currentUid,
+                iconCode: msg.iconCode,
+                iconBgColorValue: msg.iconBgColorValue,
+                title: msg.title,
+                shortMessage: msg.shortMessage,
+                fullMessage: msg.fullMessage,
+                isUnread: msg.isUnread,
+                createdAt: msg.createdAt,
+                updatedAt: msg.updatedAt,
+                syncStatus: 'synced',
+                isDeleted: false,
+              ).toSqlite(),
+              where: 'id = ? AND uid = ?',
+              whereArgs: [msg.id, currentUid],
+            );
+          }
+        }
+      }
+    });
+
     _notifyChanged();
   }
 
@@ -135,7 +220,7 @@ class MessageRepository with OwnedTableOps {
     final db = await _dbHelper.database;
     final results = await db.query(
       'messages',
-      where: 'uid = ?',
+      where: 'uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
       whereArgs: [uid],
       orderBy: 'createdAt DESC',
     );

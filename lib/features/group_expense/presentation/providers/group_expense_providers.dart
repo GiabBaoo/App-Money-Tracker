@@ -3,9 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../data/repositories/user_repository.dart';
 import '../../data/repositories/firestore_debt_repository.dart';
-import '../../data/repositories/firestore_expense_repository.dart';
-import '../../data/repositories/firestore_group_repository.dart';
-import '../../data/repositories/firestore_settlement_repository.dart';
 import '../../domain/repositories/i_debt_repository.dart';
 import '../../domain/repositories/i_expense_repository.dart';
 import '../../domain/repositories/i_group_repository.dart';
@@ -55,11 +52,11 @@ final currentUserNameProvider = FutureProvider<String>((ref) async {
 });
 
 final groupRepositoryProvider = Provider<IGroupRepository>((ref) {
-  return FirestoreGroupRepository(ref.watch(firestoreProvider));
+  return SqliteGroupRepository();
 });
 
 final expenseRepositoryProvider = Provider<IExpenseRepository>((ref) {
-  return FirestoreExpenseRepository(ref.watch(firestoreProvider));
+  return SqliteExpenseRepository();
 });
 
 final debtRepositoryProvider = Provider<IDebtRepository>((ref) {
@@ -67,7 +64,7 @@ final debtRepositoryProvider = Provider<IDebtRepository>((ref) {
 });
 
 final settlementRepositoryProvider = Provider<ISettlementRepository>((ref) {
-  return FirestoreSettlementRepository(ref.watch(firestoreProvider));
+  return SqliteSettlementRepository();
 });
 
 final fundTransactionRepositoryProvider =

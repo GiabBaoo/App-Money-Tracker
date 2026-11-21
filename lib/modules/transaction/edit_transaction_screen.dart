@@ -20,8 +20,8 @@ import '../../utils/currency_format_utils.dart';
 import '../../utils/page_transitions.dart';
 import '../../utils/category_utils.dart';
 import '../../services/category_style_service.dart';
-import '../../services/location_service.dart';
-import 'package:geolocator/geolocator.dart';
+import '../../widgets/location_picker_sheet.dart';
+import '../../widgets/mini_location_map.dart';
 import 'category_screen.dart';
 
 class EditTransactionScreen extends StatefulWidget {
@@ -62,7 +62,6 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   String? _locationName;
   double? _latitude;
   double? _longitude;
-  bool _isLocating = false;
 
   @override
   void initState() {
@@ -134,7 +133,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
       final uid =
           FirebaseAuth.instance.currentUser?.uid ?? AuthService().currentUid;
       if (uid != null) {
-        _walletRepo.setUid(uid);
+
         final wallets = await _walletRepo.getWallets();
         if (mounted) {
           setState(() {
@@ -1599,6 +1598,32 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                 ),
                               ],
                             ),
+                            AnimatedSize(
+                              duration: const Duration(milliseconds: 220),
+                              curve: Curves.easeOutCubic,
+                              child: (_latitude != null && _longitude != null)
+                                  ? Padding(
+                                      padding: const EdgeInsets.only(top: 10),
+                                      child: MiniLocationMap(
+                                        latitude: _latitude!,
+                                        longitude: _longitude!,
+                                        placeName: _locationName,
+                                        height: 145,
+                                        actionLabel: isVi
+                                            ? 'Đổi vị trí'
+                                            : 'Change',
+                                        onTap: _handleLocationTap,
+                                        onClear: () {
+                                          setState(() {
+                                            _locationName = null;
+                                            _latitude = null;
+                                            _longitude = null;
+                                          });
+                                        },
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
 
                             const SizedBox(height: 20),
 
@@ -1892,291 +1917,34 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   }
 
   Future<void> _handleLocationTap() async {
-    final textController = TextEditingController(text: _locationName ?? '');
-
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (modalContext, setModalState) {
-            return Container(
-              padding: EdgeInsets.only(
-                top: 20,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-              ),
-              decoration: BoxDecoration(
-                color: context.cardBgColor,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(28),
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: context.dividerColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        isVi ? 'Vị trí giao dịch' : 'Transaction Location',
-                        style:
-                            (context.textTheme.titleMedium ?? const TextStyle())
-                                .copyWith(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: context.textPrimaryColor,
-                                ),
-                      ),
-                      if (_locationName != null && _locationName!.isNotEmpty)
-                        TextButton.icon(
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.redAccent,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                          ),
-                          icon: const Icon(Icons.delete_outline, size: 18),
-                          label: Text(isVi ? 'Xóa' : 'Remove'),
-                          onPressed: () {
-                            setState(() {
-                              _locationName = null;
-                              _latitude = null;
-                              _longitude = null;
-                            });
-                            Navigator.pop(ctx);
-                          },
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Ô nhập địa danh thủ công
-                  TextField(
-                    controller: textController,
-                    decoration: InputDecoration(
-                      hintText: isVi
-                          ? 'Nhập tên quán / địa danh...'
-                          : 'Enter place name...',
-                      prefixIcon: Icon(
-                        Icons.place_outlined,
-                        color: context.brandColor,
-                      ),
-                      filled: true,
-                      fillColor: context.inputBgColor,
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: context.borderColor),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(color: context.borderColor),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: context.brandColor,
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                    style: TextStyle(
-                      color: context.textPrimaryColor,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  // Nút lấy tọa độ GPS tự động
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: context.brandColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    icon: _isLocating
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Icon(Icons.my_location_rounded, size: 20),
-                    label: Text(
-                      _isLocating
-                          ? (isVi ? 'Đang xác định GPS...' : 'Locating GPS...')
-                          : (isVi
-                                ? 'Lấy vị trí GPS hiện tại'
-                                : 'Get current GPS location'),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    onPressed: _isLocating
-                        ? null
-                        : () async {
-                            setModalState(() {});
-                            setState(() => _isLocating = true);
-
-                            final isServiceEnabled = await LocationService
-                                .instance
-                                .isLocationServiceEnabled();
-                            if (!isServiceEnabled) {
-                              setState(() => _isLocating = false);
-                              if (mounted) _showGpsDisabledDialog(isVi);
-                              return;
-                            }
-
-                            var perm = await LocationService.instance
-                                .checkPermission();
-                            if (perm == LocationPermission.denied) {
-                              perm = await LocationService.instance
-                                  .requestPermission();
-                            }
-
-                            if (perm == LocationPermission.deniedForever) {
-                              setState(() => _isLocating = false);
-                              if (mounted)
-                                _showPermissionPermanentlyDeniedDialog(isVi);
-                              return;
-                            }
-
-                            if (perm == LocationPermission.denied) {
-                              setState(() => _isLocating = false);
-                              if (mounted) {
-                                TopToast.show(
-                                  context,
-                                  isVi
-                                      ? 'Chưa cấp quyền vị trí'
-                                      : 'Location permission denied',
-                                  isError: true,
-                                );
-                              }
-                              return;
-                            }
-
-                            final res = await LocationService.instance
-                                .getCurrentPlaceName(
-                                  timeout: const Duration(seconds: 5),
-                                );
-
-                            setState(() => _isLocating = false);
-
-                            if (res != null) {
-                              setState(() {
-                                _locationName = res.placeName;
-                                _latitude = res.latitude;
-                                _longitude = res.longitude;
-                              });
-                              if (ctx.mounted) {
-                                Navigator.pop(ctx);
-                              }
-                              if (mounted) {
-                                TopToast.show(
-                                  context,
-                                  isVi
-                                      ? 'Đã định vị: ${res.placeName}'
-                                      : 'Located: ${res.placeName}',
-                                );
-                              }
-                            } else {
-                              if (mounted) {
-                                TopToast.show(
-                                  context,
-                                  isVi
-                                      ? 'Không thể lấy vị trí. Vui lòng nhập tay.'
-                                      : 'Could not locate. Please enter manually.',
-                                  isError: true,
-                                );
-                              }
-                            }
-                          },
-                  ),
-                  const SizedBox(height: 10),
-                  // Nút Lưu tên địa danh thủ công
-                  OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: context.textPrimaryColor,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(color: context.borderColor),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    onPressed: () {
-                      final customName = textController.text.trim();
-                      setState(() {
-                        if (customName.isNotEmpty) {
-                          _locationName = customName;
-                        } else {
-                          _locationName = null;
-                          _latitude = null;
-                          _longitude = null;
-                        }
-                      });
-                      Navigator.pop(ctx);
-                    },
-                    child: Text(
-                      isVi ? 'Áp dụng tên này' : 'Apply this name',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-    textController.dispose();
-  }
-
-  void _showGpsDisabledDialog(bool isVi) async {
-    final open = await MonoDialog.confirm(
+    final res = await LocationPickerSheet.show(
       context,
-      title: isVi ? 'Dịch vụ vị trí đang tắt' : 'Location Services Disabled',
-      message: isVi
-          ? 'Vui lòng bật GPS trên thiết bị để ứng dụng tự động lấy địa danh.'
-          : 'Please enable GPS on your device to automatically detect place names.',
-      cancelText: isVi ? 'Đóng' : 'Close',
-      confirmText: isVi ? 'Mở cài đặt' : 'Open Settings',
-      icon: Icons.location_off_rounded,
+      initialName: _locationName,
+      initialLatitude: _latitude,
+      initialLongitude: _longitude,
     );
-    if (open == true) {
-      LocationService.instance.openLocationSettings();
-    }
-  }
+    if (res == null || !mounted) return;
 
-  void _showPermissionPermanentlyDeniedDialog(bool isVi) async {
-    final open = await MonoDialog.confirm(
-      context,
-      title: isVi ? 'Quyền vị trí bị chặn' : 'Location Permission Denied',
-      message: isVi
-          ? 'Bạn đã từ chối quyền vị trí vĩnh viễn. Vui lòng vào Cài đặt để cấp quyền cho ứng dụng.'
-          : 'Location permission is permanently denied. Please grant permission in App Settings.',
-      cancelText: isVi ? 'Để sau' : 'Later',
-      confirmText: isVi ? 'Mở Cài đặt' : 'Open Settings',
-      icon: Icons.location_disabled_rounded,
-    );
-    if (open == true) {
-      LocationService.instance.openAppSettings();
+    setState(() {
+      if (res.removed) {
+        _locationName = null;
+        _latitude = null;
+        _longitude = null;
+      } else {
+        _locationName = res.placeName;
+        _latitude = res.latitude;
+        _longitude = res.longitude;
+      }
+    });
+
+    if (!res.removed &&
+        res.placeName != null &&
+        res.latitude != null &&
+        res.longitude != null) {
+      TopToast.show(
+        context,
+        isVi ? 'Đã định vị: ${res.placeName}' : 'Located: ${res.placeName}',
+      );
     }
   }
 }

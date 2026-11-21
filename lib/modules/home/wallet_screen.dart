@@ -7,7 +7,9 @@ import '../../models/transaction_model.dart';
 import '../../data/repositories/wallet_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../utils/currency_format_utils.dart';
+import '../../utils/time_utils.dart';
 import '../../widgets/animated_scale_button.dart';
+import '../../widgets/day_grouped_transaction_list.dart';
 import '../../widgets/transaction_item.dart';
 import '../../widgets/top_toast.dart';
 import '../../widgets/mono_dialog.dart';
@@ -41,6 +43,7 @@ class _WalletScreenState extends State<WalletScreen>
   String? _selectedWalletId; // Ví được chọn (null = tất cả)
   List<WalletModel> _latestWallets = [];
   bool _isBalanceVisible = true; // Bật / tắt ẩn số dư tổng tài sản
+  bool _groupByDay = false; // Chuyển đổi hiển thị Gần đây <-> Theo ngày (tối đa 3 ngày)
 
   @override
   void initState() {
@@ -51,8 +54,8 @@ class _WalletScreenState extends State<WalletScreen>
     _scrollController.addListener(_onScroll);
     final uid = AuthService().currentUid;
     if (uid != null) {
-      _walletRepo.setUid(uid);
-      _txRepo.setUid(uid);
+
+
       _walletRepo.ensureDefaultWalletExists(uid);
       // Khôi phục số dư gốc ban đầu chuẩn xác (chỉ chạy 1 lần duy nhất nếu chưa khôi phục)
       TransactionBalanceService().restoreCorrectUserBaselineOnce(
@@ -1411,7 +1414,25 @@ class _WalletScreenState extends State<WalletScreen>
                   ],
                 ),
                 const SizedBox(height: 8),
-                if (recentTx.isEmpty)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TransactionViewModeToggle(
+                      groupByDay: _groupByDay,
+                      onChanged: (val) => setState(() => _groupByDay = val),
+                    ),
+                    if (_groupByDay)
+                      Text(
+                        isVi ? 'Tối đa 3 ngày gần nhất' : 'Up to 3 recent days',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: isDark ? Colors.white54 : Colors.grey.shade600,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (filteredTx.isEmpty)
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 24),
@@ -1447,6 +1468,17 @@ class _WalletScreenState extends State<WalletScreen>
                         ),
                       ],
                     ),
+                  )
+                else if (_groupByDay)
+                  DayGroupedTransactionList(
+                    groups: TimeUtils.groupTransactionsByDay(
+                      filteredTx,
+                      maxDays: 3,
+                    ),
+                    reverseBalances: reverseBalances,
+                    walletMap: walletMap,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
                   )
                 else
                   ...recentTx.map((tx) {
@@ -1883,7 +1915,7 @@ class _WalletScreenState extends State<WalletScreen>
                                   color: Colors.white,
                                 ),
                               ),
-                              onSelected: (value) {
+                              onSelected: (value) async {
                                 if (value == 'history') {
                                   Navigator.push(
                                     context,
@@ -1893,6 +1925,16 @@ class _WalletScreenState extends State<WalletScreen>
                                       ),
                                     ),
                                   );
+                                } else if (value == 'set_default') {
+                                  await _walletRepo.setDefaultWallet(wallet.id);
+                                  if (context.mounted) {
+                                    TopToast.show(
+                                      context,
+                                      isVi
+                                          ? 'Đã đặt "${wallet.name}" làm ví mặc định'
+                                          : 'Set "${wallet.name}" as default wallet',
+                                    );
+                                  }
                                 } else if (value == 'edit') {
                                   _showWalletForm(context, wallet: wallet);
                                 } else if (value == 'delete') {
@@ -1914,6 +1956,25 @@ class _WalletScreenState extends State<WalletScreen>
                                     ],
                                   ),
                                 ),
+                                if (!wallet.isDefault)
+                                  PopupMenuItem(
+                                    value: 'set_default',
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.star_rounded,
+                                          size: 18,
+                                          color: Color(0xFFF59E0B),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          isVi
+                                              ? 'Đặt làm mặc định'
+                                              : 'Set as default',
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 PopupMenuItem(
                                   value: 'edit',
                                   child: Text(context.tr('edit_wallet')),

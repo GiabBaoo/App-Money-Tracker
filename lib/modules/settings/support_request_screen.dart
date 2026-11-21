@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../utils/page_transitions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../services/firestore_service.dart';
+import '../../data/repositories/message_repository.dart';
 import '../../models/message_model.dart';
 import 'success_screen.dart';
 import '../../widgets/mono_toast.dart';
@@ -45,7 +45,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
   late String _selectedTopic = _topics[0];
   final _titleController = TextEditingController();
   final _detailsController = TextEditingController();
-  final FirestoreService _firestoreService = FirestoreService();
+  final MessageRepository _messageRepository = MessageRepository();
   bool _isLoading = false;
 
   @override
@@ -236,7 +236,7 @@ class _SupportRequestScreenState extends State<SupportRequestScreen> {
                                           ? 'Chào bạn,\n\nYêu cầu hỗ trợ về "${_titleController.text.trim()}" (Mã số: #$randomId) của bạn đã được gửi đến bộ phận Chăm sóc khách hàng. Tư vấn viên của chúng tôi sẽ liên hệ lại với bạn trong vòng 24 giờ tới.\n\nTrân trọng!'
                                           : 'Hello,\n\nYour support request regarding "${_titleController.text.trim()}" (ID: #$randomId) has been sent to Customer Support. An agent will contact you within the next 24 hours.\n\nBest regards!',
                                     );
-                                    await _firestoreService.addMessage(message);
+                                    await _messageRepository.addMessage(message);
                                   }
 
                                   if (!context.mounted) return;

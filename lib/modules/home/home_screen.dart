@@ -21,9 +21,12 @@ import '../../widgets/top_toast.dart';
 import '../budget/budget_and_goals_screen.dart';
 import '../ai_assistant/ai_assistant_screen.dart';
 import '../../widgets/mono_liquid_glass_logo.dart';
+import '../../services/financial_calculation_service.dart';
 
 import '../transaction/all_transactions_screen.dart';
 import '../../utils/currency_format_utils.dart';
+import '../../utils/time_utils.dart';
+import '../../widgets/day_grouped_transaction_list.dart';
 import '../../widgets/transaction_item.dart';
 import '../../widgets/user_avatar.dart';
 import '../../features/group_expense/presentation/screens/group_list_screen.dart';
@@ -31,7 +34,6 @@ import '../../data/repositories/wallet_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../data/repositories/notification_repository.dart';
-import '../../services/auth_service.dart';
 import '../../services/language_service.dart';
 import '../../services/smart_notification_service.dart';
 import '../../services/local_notification_service.dart';
@@ -356,18 +358,12 @@ class _HomeBodyState extends State<HomeBody>
 
   bool _showOfflineBanner = false;
   bool _isBalanceVisible = true;
+  bool _groupByDay = false;
   Timer? _offlineBannerTimer;
 
   @override
   void initState() {
     super.initState();
-    final uid = AuthService().currentUid;
-    if (uid != null) {
-      _walletRepo.setUid(uid);
-      TransactionRepository().setUid(uid);
-      UserRepository().setUid(uid);
-      _notiRepo.setUid(uid);
-    }
     _walletRepo.getWallets().then((_) {
       if (mounted) setState(() {});
     });
@@ -702,30 +698,22 @@ class _HomeBodyState extends State<HomeBody>
                         initialData: TransactionRepository().latestTransactions,
                         stream: TransactionRepository().getTransactionsStream(),
                         builder: (context, snapshot) {
-                          double totalIncome = 0;
-                          double totalExpense = 0;
                           final txList =
                               (snapshot.data != null &&
                                   snapshot.data!.isNotEmpty)
                               ? snapshot.data!
                               : TransactionRepository().latestTransactions;
                           final now = DateTime.now();
-                          for (var tx in txList) {
-                            // Chỉ tính cho tháng và năm hiện tại & loại trừ chuyển tiền nội bộ
-                            if (tx.date.month == now.month &&
-                                tx.date.year == now.year) {
-                              if (tx.isTransfer) continue;
-                              if (tx.type == 'income') {
-                                totalIncome += tx.amount;
-                              } else {
-                                totalExpense += tx.amount;
-                              }
-                            }
-                          }
+                          final metrics =
+                              FinancialCalculationService.calculatePeriodMetrics(
+                                txList,
+                                filterMonth: now.month,
+                                filterYear: now.year,
+                              );
                           return _buildBalanceCard(
                             totalBalance,
-                            totalIncome,
-                            totalExpense,
+                            metrics.totalIncome,
+                            metrics.totalExpense,
                           );
                         },
                       );
@@ -740,38 +728,75 @@ class _HomeBodyState extends State<HomeBody>
         // BỘ 4 NÚT THAO TÁC NHANH (QUICK ACTIONS GRID) - CÔNG THÁI HỌC VÙNG NGÓN TAY CÁI
         _buildQuickActionsGrid(context, isDark),
 
-        // TIÊU ĐỀ LỊCH SỬ GIAO DỊCH (TINH GỌN, ĐÃ BỎ NÚT LỊCH THU CHI)
+        // TIÊU ĐỀ LỊCH SỬ GIAO DỊCH + CHUYỂN CHẾ ĐỘ GẦN ĐÂY / THEO NGÀY
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 18, 24, 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                context.tr('tx_history'),
-                style:
-                    context.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: context.textPrimaryColor,
-                    ) ??
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      context.tr('tx_history'),
+                      style:
+                          context.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: context.textPrimaryColor,
+                          ) ??
+                          const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () => Navigator.push(
+                      context,
+                      PageTransitions.slideRight(const AllTransactionsScreen()),
+                    ),
+                    child: Text(
+                      context.tr('see_all'),
+                      style:
+                          context.textTheme.labelLarge?.copyWith(
+                            color: context.colors.primary,
+                            fontWeight: FontWeight.w700,
+                          ) ??
+                          TextStyle(
+                            color: context.colors.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                  ),
+                ],
               ),
-              TextButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  PageTransitions.slideRight(const AllTransactionsScreen()),
-                ),
-                child: Text(
-                  context.tr('see_all'),
-                  style:
-                      context.textTheme.labelLarge?.copyWith(
-                        color: context.colors.primary,
-                        fontWeight: FontWeight.w700,
-                      ) ??
-                      TextStyle(
-                        color: context.colors.primary,
-                        fontWeight: FontWeight.w700,
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TransactionViewModeToggle(
+                    groupByDay: _groupByDay,
+                    onChanged: (val) => setState(() => _groupByDay = val),
+                  ),
+                  if (_groupByDay)
+                    Text(
+                      LanguageScope.of(context).isVietnamese
+                          ? 'Tối đa 3 ngày gần nhất'
+                          : 'Up to 3 recent days',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: isDark ? Colors.white54 : Colors.grey.shade600,
                       ),
-                ),
+                    ),
+                ],
               ),
             ],
           ),
@@ -798,11 +823,7 @@ class _HomeBodyState extends State<HomeBody>
 
               allTx.sort(CurrencyUtils.compareTransactionsChronological);
 
-              // Hiển thị danh sách các giao dịch gần đây nhất (tối đa 10 giao dịch)
-              // Giúp giao diện luôn hiển thị đầy đủ dòng tiền mới nhất, không bị giới hạn chỉ 1 giao dịch khi vừa sang tháng
-              final displayTransactions = allTx.take(10).toList();
-
-              if (displayTransactions.isEmpty) {
+              if (allTx.isEmpty) {
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.only(top: 20),
@@ -824,6 +845,23 @@ class _HomeBodyState extends State<HomeBody>
                     allTransactions: allTx,
                     wallets: effectiveWallets,
                   );
+
+              if (_groupByDay) {
+                final dayGroups = TimeUtils.groupTransactionsByDay(
+                  allTx,
+                  maxDays: 3,
+                );
+                return DayGroupedTransactionList(
+                  listKey: const PageStorageKey('home_tx_day_groups'),
+                  groups: dayGroups,
+                  reverseBalances: reverseBalances,
+                  walletMap: walletMap,
+                  animateItems: true,
+                );
+              }
+
+              // Hiển thị danh sách các giao dịch gần đây nhất (tối đa 10 giao dịch)
+              final displayTransactions = allTx.take(10).toList();
 
               return ListView.builder(
                 key: const PageStorageKey('home_tx_list'),

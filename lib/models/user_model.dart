@@ -176,4 +176,42 @@ class UserModel {
       'syncStatus': syncStatus,
     };
   }
+
+  UserModel copyWith({
+    String? uid,
+    String? name,
+    String? email,
+    String? phone,
+    String? gender,
+    DateTime? dateOfBirth,
+    String? avatarUrl,
+    String? avatarLocalPath,
+    String? accountType,
+    DateTime? joinDate,
+    String? currency,
+    String? role,
+    Map<String, dynamic>? dataUsage,
+    List<dynamic>? customCategories,
+    DateTime? lastPasswordUpdate,
+    String? syncStatus,
+  }) {
+    return UserModel(
+      uid: uid ?? this.uid,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      gender: gender ?? this.gender,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      avatarLocalPath: avatarLocalPath ?? this.avatarLocalPath,
+      accountType: accountType ?? this.accountType,
+      joinDate: joinDate ?? this.joinDate,
+      currency: currency ?? this.currency,
+      role: role ?? this.role,
+      dataUsage: dataUsage ?? this.dataUsage,
+      customCategories: customCategories ?? this.customCategories,
+      lastPasswordUpdate: lastPasswordUpdate ?? this.lastPasswordUpdate,
+      syncStatus: syncStatus ?? this.syncStatus,
+    );
+  }
 }

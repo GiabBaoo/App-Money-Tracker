@@ -11,7 +11,6 @@ import '../../services/category_style_service.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/staggered_list_item.dart';
 import '../../widgets/transaction_item.dart';
-import '../../services/auth_service.dart';
 import '../../services/language_service.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -52,12 +51,6 @@ class _WalletHistoryScreenState extends State<WalletHistoryScreen> {
     final now = DateTime.now();
     _selectedMonth = DateTime(now.year, now.month);
     CategoryStyleService.instance.addListener(_onCategoryStyleChanged);
-
-    final uid = AuthService().currentUid;
-    if (uid != null) {
-      _walletRepo.setUid(uid);
-      _txRepo.setUid(uid);
-    }
 
     _searchController.addListener(() {
       setState(() {

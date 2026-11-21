@@ -52,6 +52,7 @@ void main() {
       final service = EmailService(
         config: const EmailConfig(senderEmail: '', appPassword: ''),
       );
+      // ignore: deprecated_member_use_from_same_package
       final res = await service.sendOtp(
         toEmail: 'user@example.com',
         otpCode: '123456',

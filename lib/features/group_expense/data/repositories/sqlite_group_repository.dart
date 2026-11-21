@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/session/session_manager.dart';
 import '../../../../data/local/database_helper.dart';
+import '../../../../data/local/owned_table_ops.dart';
 import '../../../../data/local/sync_queue_writer.dart';
 import '../../domain/repositories/i_group_repository.dart';
 import '../dtos/create_group_dto.dart';
@@ -14,7 +16,11 @@ class SqliteGroupRepository implements IGroupRepository {
   final _changeController = StreamController<void>.broadcast();
 
   SqliteGroupRepository([DatabaseHelper? dbHelper])
-    : _dbHelper = dbHelper ?? DatabaseHelper();
+    : _dbHelper = dbHelper ?? DatabaseHelper() {
+    SessionManager.instance.changes.listen((_) {
+      _changeController.add(null);
+    });
+  }
 
   @override
   Future<GroupModel> create(CreateGroupDto dto, String adminId) async {
@@ -43,7 +49,7 @@ class SqliteGroupRepository implements IGroupRepository {
 
       for (final memberId in allMemberIds) {
         final memberModel = GroupMemberModel(
-          id: const Uuid().v4(),
+          id: '${id}_$memberId',
           groupId: id,
           userId: memberId,
           role: memberId == adminId ? 'owner' : 'member',
@@ -51,7 +57,11 @@ class SqliteGroupRepository implements IGroupRepository {
           status: 'active',
           updatedAt: now,
         );
-        await txn.insert('group_members', memberModel.toSqflite());
+        await txn.insert(
+          'group_members',
+          memberModel.toSqflite(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
       }
 
       await SyncQueueWriter.enqueue(
@@ -203,7 +213,7 @@ class SqliteGroupRepository implements IGroupRepository {
         ownerUid: activeUid,
         table: 'groups',
         recordId: id,
-        action: 'DELETE',
+        action: 'SOFT_DELETE',
         data: {'id': id, 'isDeleted': 1},
       );
     });
@@ -236,7 +246,7 @@ class SqliteGroupRepository implements IGroupRepository {
         );
       } else {
         final member = GroupMemberModel(
-          id: const Uuid().v4(),
+          id: '${groupId}_$userId',
           groupId: groupId,
           userId: userId,
           role: 'member',
@@ -298,5 +308,99 @@ class SqliteGroupRepository implements IGroupRepository {
       whereArgs: [groupId],
     );
     return rows.map((r) => GroupMemberModel.fromSqflite(r)).toList();
+  }
+
+  /// Upsert danh sách nhóm và thành viên từ Firestore về SQLite
+  Future<void> upsertFromFirestore(List<GroupModel> groups) async {
+    if (groups.isEmpty) return;
+    final db = await _dbHelper.database;
+
+    await db.transaction((txn) async {
+      for (final g in groups) {
+        // Dirty shield
+        final pendingQueue = await txn.query(
+          'sync_queue',
+          columns: ['id'],
+          where: "tableName = 'groups' AND recordId = ? AND status IN ('pending', 'processing')",
+          whereArgs: [g.id],
+          limit: 1,
+        );
+        if (pendingQueue.isNotEmpty) continue;
+
+        final existing = await txn.query(
+          'groups',
+          where: 'id = ?',
+          whereArgs: [g.id],
+          limit: 1,
+        );
+
+        if (existing.isEmpty) {
+          if (!g.isDeleted) {
+            await txn.insert('groups', g.toSqflite());
+          }
+        } else {
+          final local = GroupModel.fromSqflite(existing.first);
+          if (local.syncStatus == 'pending') continue;
+
+          final shouldWin = ConflictResolver.shouldRemoteWin(
+            localUpdatedAt: local.updatedAt,
+            remoteUpdatedAt: g.updatedAt,
+            localData: local.toSqflite(),
+            remoteData: g.toSqflite(),
+          );
+
+          if (shouldWin) {
+            if (g.isDeleted) {
+              await txn.update(
+                'groups',
+                {
+                  'isDeleted': 1,
+                  'deletedAt': (g.deletedAt ?? g.updatedAt).toUtc().millisecondsSinceEpoch,
+                  'updatedAt': g.updatedAt.toUtc().millisecondsSinceEpoch,
+                  'syncStatus': 'synced',
+                },
+                where: 'id = ?',
+                whereArgs: [g.id],
+              );
+            } else {
+              await txn.update(
+                'groups',
+                g.toSqflite(),
+                where: 'id = ?',
+                whereArgs: [g.id],
+              );
+            }
+          }
+        }
+
+        // Đồng bộ danh sách group_members theo g.memberIds
+        if (!g.isDeleted) {
+          for (final memberId in g.memberIds) {
+            final mId = '${g.id}_$memberId';
+            await txn.rawInsert(
+              '''
+              INSERT INTO group_members (id, groupId, userId, role, joinedAt, status, updatedAt, syncStatus)
+              VALUES (?, ?, ?, ?, ?, 'active', ?, 'synced')
+              ON CONFLICT(groupId, userId) DO UPDATE SET
+                status = 'active',
+                leftAt = NULL,
+                updatedAt = ?
+              ''',
+              [
+                mId,
+                g.id,
+                memberId,
+                memberId == g.ownerId ? 'owner' : 'member',
+                g.createdAt.toUtc().millisecondsSinceEpoch,
+                g.updatedAt.toUtc().millisecondsSinceEpoch,
+                g.updatedAt.toUtc().millisecondsSinceEpoch,
+              ],
+            );
+          }
+        }
+      }
+    });
+
+    _changeController.add(null);
   }
 }

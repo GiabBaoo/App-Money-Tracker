@@ -111,7 +111,7 @@ class _AddWalletSheetState extends State<AddWalletSheet> {
     _selectedType = w?.type ?? WalletType.cash;
     _selectedColor = w?.colorValue ?? _paletteColors[0];
     _selectedIconCode = w?.iconCode ?? Icons.payments_rounded.codePoint;
-    _isDefault = w?.isDefault ?? false;
+    _isDefault = w?.isDefault ?? _walletRepo.latestWallets.isEmpty;
   }
 
   @override
@@ -957,43 +957,63 @@ class _AddWalletSheetState extends State<AddWalletSheet> {
             const SizedBox(height: 16),
 
             // ════════════ 8. ĐẶT LÀM VÍ MẶC ĐỊNH & GHI CHÚ ════════════
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.inputBgDark : AppColors.inputBgLight,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                  width: 1,
-                ),
-              ),
-              child: SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  context.tr('default_wallet_label'),
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimaryLight,
+            Builder(
+              builder: (_) {
+                final isLockedDefault =
+                    (_isEditing && (widget.wallet?.isDefault ?? false)) ||
+                    (!_isEditing && _walletRepo.latestWallets.isEmpty);
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 4,
                   ),
-                ),
-                subtitle: Text(
-                  isVi
-                      ? 'Tự động chọn ví này khi ghi nhận thu chi mới'
-                      : 'Automatically select this wallet for new transactions',
-                  style: TextStyle(
-                    fontSize: 11.5,
+                  decoration: BoxDecoration(
                     color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
+                        ? AppColors.inputBgDark
+                        : AppColors.inputBgLight,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark
+                          ? AppColors.borderDark
+                          : AppColors.borderLight,
+                      width: 1,
+                    ),
                   ),
-                ),
-                value: _isDefault,
-                activeThumbColor: activeColor,
-                onChanged: (val) => setState(() => _isDefault = val),
-              ),
+                  child: SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      context.tr('default_wallet_label'),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? AppColors.textPrimaryDark
+                            : AppColors.textPrimaryLight,
+                      ),
+                    ),
+                    subtitle: Text(
+                      isLockedDefault
+                          ? (isVi
+                                ? 'Ví mặc định hiện tại. Chọn ví khác làm mặc định để thay đổi'
+                                : 'Current default wallet. Set another wallet as default to change')
+                          : (isVi
+                                ? 'Tự động chọn ví này khi ghi nhận thu chi mới'
+                                : 'Automatically select this wallet for new transactions'),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                      ),
+                    ),
+                    value: _isDefault,
+                    activeThumbColor: activeColor,
+                    onChanged: isLockedDefault
+                        ? null
+                        : (val) => setState(() => _isDefault = val),
+                  ),
+                );
+              },
             ),
 
             const SizedBox(height: 12),

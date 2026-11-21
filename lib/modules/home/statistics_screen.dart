@@ -14,6 +14,7 @@ import '../../widgets/animated_scale_button.dart';
 import '../../widgets/staggered_list_item.dart';
 import '../../widgets/transaction_item.dart';
 import '../../services/category_style_service.dart';
+import '../../services/financial_calculation_service.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -298,54 +299,26 @@ class StatisticsScreenState extends State<StatisticsScreen>
                     !tx.date.isAfter(range.end);
               }).toList();
 
+              // Tính toán các chỉ số tài chính thông minh chuẩn mực thông qua FinancialCalculationService
+              final periodMetrics =
+                  FinancialCalculationService.calculatePeriodMetrics(
+                    filteredAll,
+                  );
+              final totalIncome = periodMetrics.totalIncome;
+              final totalExpense = periodMetrics.totalExpense;
+              final savingsRate = periodMetrics.savingsRate;
+
               // Lọc bỏ các giao dịch chuyển tiền nội bộ và phân lập dòng tiền mục tiêu tiết kiệm
               final actualTx = filteredAll
-                  .where(
-                    (tx) =>
-                        !tx.isTransfer &&
-                        (tx.goalId == null || tx.goalId!.isEmpty),
-                  )
+                  .where((tx) => !tx.isAssetReallocation)
                   .toList();
-
-              // Tính toán bóc tách phí chuyển tiền thực tế phát sinh (Expense_transfer - Income_transfer)
-              final transferTx = filteredAll
-                  .where((tx) => tx.isTransfer)
-                  .toList();
-              final transferExpense = transferTx
-                  .where((tx) => !tx.isIncome)
-                  .fold<double>(0, (s, tx) => s + tx.amount);
-              final transferIncome = transferTx
-                  .where((tx) => tx.isIncome)
-                  .fold<double>(0, (s, tx) => s + tx.amount);
-              final transferFeeTotal = (transferExpense - transferIncome).clamp(
-                0.0,
-                double.infinity,
-              );
 
               final filtered = actualTx
                   .where((tx) => _isExpense ? !tx.isIncome : tx.isIncome)
                   .toList();
               final chartPoints = _buildChartData(filtered, range);
-              final total =
-                  filtered.fold<double>(0, (sum, tx) => sum + tx.amount) +
-                  (_isExpense ? transferFeeTotal : 0.0);
+              final total = _isExpense ? totalExpense : totalIncome;
               final categoryGroups = _getCategoryGroups(filtered);
-
-              // Tính toán các chỉ số tài chính thông minh dựa trên thu/chi thực tế (+ phí chuyển tiền)
-              final totalIncome = actualTx
-                  .where((tx) => tx.isIncome)
-                  .fold<double>(0, (s, tx) => s + tx.amount);
-              final totalExpense =
-                  actualTx
-                      .where((tx) => !tx.isIncome)
-                      .fold<double>(0, (s, tx) => s + tx.amount) +
-                  transferFeeTotal;
-              final savingsRate = totalIncome > 0
-                  ? ((totalIncome - totalExpense) / totalIncome * 100).clamp(
-                      -100.0,
-                      100.0,
-                    )
-                  : 0.0;
 
               return SingleChildScrollView(
                 controller: _scrollController,

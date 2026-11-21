@@ -8,6 +8,7 @@ import '../local/owned_table_ops.dart';
 import '../local/sync_queue_writer.dart';
 import '../../core/errors/business_exception.dart';
 import '../../models/user_model.dart';
+import '../../core/logging/app_logger.dart';
 
 /// Repository quản lý thông tin người dùng — đọc/ghi từ SQLite (Singleton).
 class UserRepository with OwnedTableOps {
@@ -142,7 +143,9 @@ class UserRepository with OwnedTableOps {
           return user;
         }
       }
-    } catch (_) {}
+    } catch (e, st) {
+      AppLogger.warn('Không thể kéo user từ Firestore', tag: 'UserRepository', error: e, stackTrace: st);
+    }
 
     // Fallback an toàn từ FirebaseAuth đúng uid phiên
     final authUser = FirebaseAuth.instance.currentUser;
@@ -184,7 +187,9 @@ class UserRepository with OwnedTableOps {
       if (doc.exists) {
         return UserModel.fromFirestore(doc);
       }
-    } catch (_) {}
+    } catch (e, st) {
+      AppLogger.warn('Không thể kéo user từ Firestore', tag: 'UserRepository', error: e, stackTrace: st);
+    }
     return null;
   }
 
@@ -213,7 +218,9 @@ class UserRepository with OwnedTableOps {
           return await getUserById(uid);
         }
       }
-    } catch (_) {}
+    } catch (e, st) {
+      AppLogger.warn('Không thể kéo user từ Firestore', tag: 'UserRepository', error: e, stackTrace: st);
+    }
 
     try {
       final snapshot = await FirebaseFirestore.instance
@@ -224,7 +231,9 @@ class UserRepository with OwnedTableOps {
       if (snapshot.docs.isNotEmpty) {
         return UserModel.fromFirestore(snapshot.docs.first);
       }
-    } catch (_) {}
+    } catch (e, st) {
+      AppLogger.warn('Không thể kéo user từ Firestore', tag: 'UserRepository', error: e, stackTrace: st);
+    }
 
     return null;
   }
@@ -260,19 +269,97 @@ class UserRepository with OwnedTableOps {
 
   // ════════ SYNC HELPERS ════════
 
-  /// Upsert user từ Firestore (dùng khi sync download)
-  Future<void> upsertFromFirestore(UserModel user) async {
+  /// Upsert user từ Firestore (dùng khi sync download, áp dụng Dirty Shield & Category Set-Union)
+  Future<void> upsertFromFirestore(UserModel remoteUser) async {
     final currentUid = session.uidOrNull;
-    if (currentUid == null || user.uid != currentUid) return;
+    if (currentUid == null || remoteUser.uid != currentUid) return;
 
-    _cachedUser = user;
     final db = await _dbHelper.database;
+
+    // 1. Kiểm tra Local Dirty Shield: nếu có thay đổi user đang chờ đẩy lên
+    final pendingQueue = await db.query(
+      'sync_queue',
+      columns: ['id'],
+      where:
+          'tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
+      whereArgs: ['users', currentUid, currentUid, currentUid, 'pending', 'processing'],
+      limit: 1,
+    );
+
+    final localRows = await db.query(
+      'users',
+      where: 'uid = ?',
+      whereArgs: [currentUid],
+      limit: 1,
+    );
+
+    if (localRows.isNotEmpty) {
+      final localUser = UserModel.fromSqlite(localRows.first);
+      final isLocalDirty = pendingQueue.isNotEmpty || localUser.syncStatus == 'pending';
+
+      if (isLocalDirty) {
+        // Hợp nhất danh mục tùy chỉnh (Category Set-Union Merge) để không làm mất danh mục vừa tạo offline
+        final mergedCategories = _mergeCustomCategories(
+          localUser.customCategories,
+          remoteUser.customCategories,
+        );
+
+        final preservedUser = localUser.copyWith(
+          customCategories: mergedCategories,
+        );
+        _cachedUser = preservedUser;
+        await db.update(
+          'users',
+          {
+            'customCategories': json.encode(mergedCategories),
+          },
+          where: 'uid = ?',
+          whereArgs: [currentUid],
+        );
+        _notifyUserChanged();
+        return;
+      }
+    }
+
+    _cachedUser = remoteUser;
     await db.insert(
       'users',
-      user.toSqlite(),
+      remoteUser.toSqlite(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
     _notifyUserChanged();
+  }
+
+  /// Hợp nhất 2 danh sách danh mục tùy chỉnh theo tên chuẩn hóa
+  static List<dynamic> _mergeCustomCategories(
+    List<dynamic> localCats,
+    List<dynamic> remoteCats,
+  ) {
+    final seen = <String>{};
+    final result = <dynamic>[];
+
+    String extractName(dynamic cat) {
+      if (cat is Map) return (cat['name'] as String? ?? '').trim().toLowerCase();
+      return cat.toString().trim().toLowerCase();
+    }
+
+    // Ưu tiên danh mục local trước
+    for (final c in localCats) {
+      final name = extractName(c);
+      if (name.isNotEmpty && seen.add(name)) {
+        result.add(c);
+      }
+    }
+
+    // Bổ sung các danh mục từ remote chưa có ở local
+    for (final c in remoteCats) {
+      final name = extractName(c);
+      if (name.isNotEmpty && seen.add(name)) {
+        result.add(c);
+      }
+    }
+
+    return result;
   }
 
   /// Đánh dấu đã sync

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../core/theme/app_theme.dart';
-import '../../services/firestore_service.dart';
+import '../../core/logging/app_logger.dart';
 import '../../services/language_service.dart';
 import '../../models/user_model.dart';
 import '../../services/voice_service.dart';
@@ -16,7 +16,7 @@ class DataUsageScreen extends StatefulWidget {
 }
 
 class _DataUsageScreenState extends State<DataUsageScreen> {
-  final FirestoreService _firestoreService = FirestoreService();
+  final UserRepository _userRepository = UserRepository();
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +65,7 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
                   ),
                 ),
                 child: StreamBuilder<UserModel?>(
-                  stream: _firestoreService.getUserStream(),
+                  stream: _userRepository.getUserStream(),
                   builder: (context, snapshot) {
                     final user = snapshot.data;
                     if (user == null)
@@ -156,12 +156,12 @@ class _DataUsageScreenState extends State<DataUsageScreen> {
           if (key == 'microphone') await VoiceService().init();
         }
       }
-      await _firestoreService.updateDataUsagePreference(key, val);
-      final updatedDataUsage = Map<String, dynamic>.from(user.dataUsage);
-      updatedDataUsage[key] = val;
-      await UserRepository().updateUserProfile({'dataUsage': updatedDataUsage});
-    } catch (e) {
-      debugPrint('DataUsageScreen _updatePermission error: $e');
+      await _userRepository.updateDataUsagePreference(key, val);
+
+
+
+    } catch (e, st) {
+      AppLogger.error('DataUsageScreen _updatePermission error', tag: 'DataUsageScreen', error: e, stackTrace: st);
     }
   }
 
