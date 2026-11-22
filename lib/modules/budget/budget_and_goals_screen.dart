@@ -407,9 +407,17 @@ class _BudgetAndGoalsScreenState extends State<BudgetAndGoalsScreen>
 
         double totalLimit = 0;
         double totalSpent = 0;
-        for (var b in budgets) {
-          totalLimit += b.limitAmount;
-          totalSpent += b.currentSpent;
+        final allBudget = budgets
+            .where((b) => b.category == 'Tất cả')
+            .firstOrNull;
+        if (allBudget != null) {
+          totalLimit = allBudget.limitAmount;
+          totalSpent = allBudget.currentSpent;
+        } else {
+          for (var b in budgets) {
+            totalLimit += b.limitAmount;
+            totalSpent += b.currentSpent;
+          }
         }
         final overallProgress = totalLimit > 0
             ? (totalSpent / totalLimit).clamp(0.0, 1.0)

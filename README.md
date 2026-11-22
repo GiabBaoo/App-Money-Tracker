@@ -8,7 +8,7 @@ A modern, offline-first personal and group financial management mobile applicati
 
 ### 1. Income/Expense & Multi-Wallet Management
 - **Multiple Wallet Types**: Manage Cash, Bank Accounts, E-wallets (MoMo, ZaloPay, etc.), Credit Cards, and Savings with customizable palettes and default wallet support.
-- **Fast Transaction Logging**: Record amount, category, date & time, receipt photos, notes, and interactive **GPS location tagging** with place-name resolution and mini-map previews.
+- **Fast Transaction Logging**: Record amount, category, date & time, receipt photos (with instant thumbnail preview, full-screen zoom, and offline-first background upload), notes, and interactive **GPS location tagging** with multi-source place-name resolution (ArcGIS POI, Photon, Nominatim, plus optional Google Places / Goong Maps) and mini-map previews.
 - **Double-Entry Inter-Wallet Transfers**: Transfer funds between accounts with atomic balance updates, strict balance verification, and ledger reconciliation.
 - **Day-Grouped History & Calendar View**: Browse transactions grouped by day, search/filter across periods, or inspect daily cashflow in the calendar view.
 - **Recurring Transactions**: Manage scheduled payments such as salary, rent, subscriptions, and utilities.
@@ -19,7 +19,7 @@ A modern, offline-first personal and group financial management mobile applicati
 - **Savings Goals**: Create savings targets, log deposits with atomic integrity, and track progress toward completion.
 
 ### 3. Group Expenses & Bill Splitting
-- **Shared Expense Groups**: Create and manage expense groups for families, roommates, trips, or events (with QR code invite/join support).
+- **Shared Expense Groups**: Create and manage expense groups for families, roommates, trips, or events with secure invite-token/QR code workflows (`group_invites`) validated by Cloud Firestore security rules.
 - **Flexible Bill Splitting**: Split equally or customize amounts and percentages per participant.
 - **Debt Resolution & Settlement**: Real-time member balance summaries and optimized settlement tracking backed by both SQLite and Cloud Firestore.
 
@@ -38,8 +38,8 @@ A modern, offline-first personal and group financial management mobile applicati
 ### 6. Security, Data Isolation & Offline-First Architecture
 - **Firebase Auth & App Check**: Native Firebase Authentication (email verification, password reset) protected by Firebase App Check, plus Firestore and Storage security rules (`firestore.rules`, `storage.rules`).
 - **Biometric & Encrypted Storage**: Fingerprint / Face ID app lock via `local_auth` and encrypted credential storage via `flutter_secure_storage`.
-- **Per-User SQLite Isolation**: Strict multi-user data scoping (`SessionManager` & `OwnedTableOps`) with destructive-operation safeguards (`DestructiveOpsGuard`).
-- **Reliable Offline-First Sync**: Local SQLite persistence (`sqflite`) paired with a durable sync queue (`SyncQueueWriter` & `SyncService`) featuring conflict handling and automatic synchronization to Cloud Firestore when online.
+- **Per-User SQLite Isolation & Clean Session Lifecycle**: Strict multi-user data scoping (`SessionManager` & `OwnedTableOps`), uid-bound biometric unlock, complete local/cloud wipe on account deletion, and destructive-operation safeguards (`DestructiveOpsGuard`).
+- **Reliable Offline-First Sync**: Local SQLite persistence (`sqflite`) paired with a durable sync queue (`SyncQueueWriter`, `SyncTrigger` & `SyncService`), initial cloud bootstrap before default-wallet creation, defensive Firestore parsing (`firestore_parse`), and ledger reconciliation (`LedgerReconciliationService`).
 - **Structured Logging**: Centralized `AppLogger` for diagnostics without leaking sensitive user data.
 
 ---
@@ -82,8 +82,9 @@ lib/
 │   ├── splash/            # App splash & session bootstrap
 │   ├── transaction/       # Add, edit, detail, list, and categories
 │   └── wallet/            # Wallet creation & transaction history
-├── services/              # Auth, Firestore, Sync, FinancialCalculation, LedgerReconciliation,
-│                          # Location, PlaceNameResolver, SmartNotification, Theme, Language, AI
+├── services/              # Auth, Firestore, Sync, SyncTrigger, FinancialCalculation,
+│                          # LedgerReconciliation, ReceiptStorage, Location, PlaceNameResolver,
+│                          # SmartNotification, Theme, Language, AI
 ├── utils/                 # Finance precision arithmetic, time utils, currency/category helpers
 └── widgets/               # Reusable UI components (LocationPickerSheet, MiniLocationMap,
                            # DayGroupedTransactionList, VoiceInputBottomSheet, etc.)
@@ -94,6 +95,7 @@ test/
 ├── regression/              # Phase 1–4 security, precision, sync, and logging regression suites
 ├── location_transaction_test.dart
 ├── phase3_reliable_sync_test.dart
+├── plan_fixes_test.dart
 └── wallet_default_and_day_group_test.dart
 ```
 
@@ -119,12 +121,13 @@ test/
    flutter pub get
    ```
 
-3. **Configure API Keys (Google Gemini AI)**:
+3. **Configure API Keys & Optional Place Search Providers**:
    - Copy the example file to create your local `api_keys.dart` (ignored by Git):
      ```bash
      cp lib/core/constants/api_keys.example.dart lib/core/constants/api_keys.dart
      ```
    - Obtain a Gemini API key from [Google AI Studio](https://aistudio.google.com/) and fill in `defaultGeminiApiKey`.
+   - *(Optional)* Copy `.env.example` to `.env` to configure `GOOGLE_PLACES_API_KEY` or `GOONG_API_KEY` for enhanced location autocomplete (defaults to the built-in free multi-source engine when omitted).
 
 4. **Firebase Configuration**:
    - Ensure your Firebase project configuration (`google-services.json` for Android / `GoogleService-Info.plist` for iOS) is properly configured.

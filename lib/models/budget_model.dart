@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../core/utils/firestore_parse.dart';
 import '../utils/category_utils.dart';
 
 class BudgetModel {
@@ -150,24 +151,18 @@ class BudgetModel {
     final data = doc.data() as Map<String, dynamic>? ?? {};
     return BudgetModel(
       id: doc.id,
-      uid: data['uid'] as String? ?? '',
-      category: data['category'] as String? ?? '',
-      categoryIconCode: data['categoryIconCode'] as int? ?? 0xe148,
-      limitAmount: (data['limitAmount'] as num?)?.toDouble() ?? 0.0,
-      period: data['period'] as String? ?? 'monthly',
-      month: data['month'] as int? ?? DateTime.now().month,
-      year: data['year'] as int? ?? DateTime.now().year,
-      createdAt: data['createdAt'] != null
-          ? (data['createdAt'] as Timestamp).toDate()
-          : DateTime.now(),
-      updatedAt: data['updatedAt'] != null
-          ? (data['updatedAt'] as Timestamp).toDate()
-          : DateTime.now(),
+      uid: FirestoreParse.parseString(data['uid']),
+      category: FirestoreParse.parseString(data['category']),
+      categoryIconCode: FirestoreParse.parseInt(data['categoryIconCode']) ?? 0xe148,
+      limitAmount: FirestoreParse.parseDouble(data['limitAmount']),
+      period: FirestoreParse.parseString(data['period'], defaultValue: 'monthly'),
+      month: FirestoreParse.parseInt(data['month']) ?? DateTime.now().month,
+      year: FirestoreParse.parseInt(data['year']) ?? DateTime.now().year,
+      createdAt: FirestoreParse.parseDate(data['createdAt']) ?? DateTime.now(),
+      updatedAt: FirestoreParse.parseDate(data['updatedAt']) ?? DateTime.now(),
       syncStatus: 'synced',
-      isDeleted: data['isDeleted'] as bool? ?? false,
-      deletedAt: data['deletedAt'] != null
-          ? (data['deletedAt'] as Timestamp).toDate()
-          : null,
+      isDeleted: FirestoreParse.parseBool(data['isDeleted']),
+      deletedAt: FirestoreParse.parseDate(data['deletedAt']),
     );
   }
 }

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../utils/page_transitions.dart';
@@ -111,7 +110,7 @@ class _FingerprintUnlockScreenState extends State<FingerprintUnlockScreen> {
 
   Future<void> _logoutToLogin() async {
     HapticFeedback.lightImpact();
-    await FirebaseAuth.instance.signOut();
+    await AuthService().logout();
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,

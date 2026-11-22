@@ -16,6 +16,7 @@ class FirestoreGroupRepository implements IGroupRepository {
     final id = const Uuid().v4();
     final now = DateTime.now();
 
+    // Rules yêu cầu tạo nhóm chỉ với [adminId]; các thành viên khác vào qua group_invites
     final group = GroupModel(
       id: id,
       name: dto.name,
@@ -23,13 +24,36 @@ class FirestoreGroupRepository implements IGroupRepository {
       iconUrl: dto.iconUrl,
       iconCode: dto.iconCode,
       adminId: adminId,
-      memberIds: [adminId, ...dto.memberIds],
+      memberIds: [adminId],
       groupType: dto.groupType,
       createdAt: now,
       updatedAt: now,
     );
 
     await _firestore.collection(_collection).doc(id).set(group.toJson());
+
+    // Tạo lời mời pending trong group_invites cho các thành viên khác
+    final invitees = dto.memberIds.where((m) => m != adminId).toSet();
+    if (invitees.isNotEmpty) {
+      final expiresAt = now.add(const Duration(days: 7));
+      final batch = _firestore.batch();
+      for (final inviteeUid in invitees) {
+        final inviteRef = _firestore
+            .collection('group_invites')
+            .doc('${id}_$inviteeUid');
+        batch.set(inviteRef, {
+          'groupId': id,
+          'groupName': dto.name,
+          'inviteeUid': inviteeUid,
+          'invitedBy': adminId,
+          'status': 'pending',
+          'createdAt': Timestamp.fromDate(now),
+          'expiresAt': Timestamp.fromDate(expiresAt),
+        });
+      }
+      await batch.commit();
+    }
+
     return group;
   }
 
@@ -37,7 +61,7 @@ class FirestoreGroupRepository implements IGroupRepository {
   Future<GroupModel> getById(String id) async {
     final doc = await _firestore.collection(_collection).doc(id).get();
     if (!doc.exists) throw Exception('Group not found');
-    return GroupModel.fromJson(doc.data()!);
+    return GroupModel.fromJson({...doc.data()!, 'id': doc.id});
   }
 
   @override
@@ -49,7 +73,7 @@ class FirestoreGroupRepository implements IGroupRepository {
 
     // Filter and sort on client side to avoid index requirement
     final groups = snapshot.docs
-        .map((doc) => GroupModel.fromJson(doc.data()))
+        .map((doc) => GroupModel.fromJson({...doc.data(), 'id': doc.id}))
         .where((group) => group.isDeleted == false)
         .toList();
 
@@ -66,7 +90,7 @@ class FirestoreGroupRepository implements IGroupRepository {
         .map((snapshot) {
           // Filter and sort on client side to avoid index requirement
           final groups = snapshot.docs
-              .map((doc) => GroupModel.fromJson(doc.data()))
+              .map((doc) => GroupModel.fromJson({...doc.data(), 'id': doc.id}))
               .where((group) => group.isDeleted == false)
               .toList();
 

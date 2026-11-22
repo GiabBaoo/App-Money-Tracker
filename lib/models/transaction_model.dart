@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../core/utils/firestore_parse.dart';
 import '../utils/category_utils.dart';
 
 class TransactionModel {
@@ -106,49 +107,49 @@ class TransactionModel {
 
   // Chuyển từ Firestore sang Object
   factory TransactionModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    final photoUrl = data['photoUrl'] as String? ?? '';
-    final photoStoragePath = data['photoStoragePath'] as String? ?? '';
-    final hasPhoto = data['hasPhoto'] as bool? ?? photoUrl.isNotEmpty;
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+    final photoUrl = FirestoreParse.parseString(data['photoUrl']);
+    final photoStoragePath = FirestoreParse.parseString(data['photoStoragePath']);
+    final hasPhoto = FirestoreParse.parseBool(
+      data['hasPhoto'],
+      defaultValue: photoUrl.isNotEmpty,
+    );
+    final createdAt = FirestoreParse.parseDate(data['createdAt']) ?? DateTime.now();
 
     return TransactionModel(
       id: doc.id,
-      uid: data['uid'] ?? '',
-      type: data['type'] ?? 'expense',
-      category: data['category'] ?? '',
-      categoryIconCode: data['categoryIconCode'] ?? Icons.category.codePoint,
-      amount: (data['amount'] ?? 0).toDouble(),
-      date: data['date'] != null
-          ? (data['date'] as Timestamp).toDate()
-          : DateTime.now(),
-      time: data['time'] ?? '',
-      description: data['description'] ?? '',
+      uid: FirestoreParse.parseString(data['uid']),
+      type: FirestoreParse.parseString(data['type'], defaultValue: 'expense'),
+      category: FirestoreParse.parseString(data['category']),
+      categoryIconCode:
+          FirestoreParse.parseInt(data['categoryIconCode']) ??
+          Icons.category.codePoint,
+      amount: FirestoreParse.parseDouble(data['amount']),
+      date: FirestoreParse.parseDate(data['date']) ?? DateTime.now(),
+      time: FirestoreParse.parseString(data['time']),
+      description: FirestoreParse.parseString(data['description']),
       hasPhoto: hasPhoto,
       photoUrl: photoUrl,
       photoStoragePath: photoStoragePath,
-      createdAt: data['createdAt'] != null
-          ? (data['createdAt'] as Timestamp).toDate()
-          : DateTime.now(),
-      updatedAt: data['updatedAt'] != null
-          ? (data['updatedAt'] as Timestamp).toDate()
-          : (data['createdAt'] != null
-                ? (data['createdAt'] as Timestamp).toDate()
-                : DateTime.now()),
-      groupId: data['groupId'],
-      groupIconCode: data['groupIconCode'],
-      source: data['source'] ?? 'personal', // Backward compatibility
-      walletId: data['walletId'] as String? ?? '',
-      transferId: data['transferId'] as String?,
-      goalId: data['goalId'] as String?,
-      groupExpenseId: data['groupExpenseId'] as String?,
+      createdAt: createdAt,
+      updatedAt: FirestoreParse.parseDate(data['updatedAt']) ?? createdAt,
+      groupId: data['groupId']?.toString(),
+      groupIconCode: FirestoreParse.parseInt(data['groupIconCode']),
+      source: FirestoreParse.parseString(data['source'], defaultValue: 'personal'),
+      walletId: FirestoreParse.parseString(data['walletId']),
+      transferId: data['transferId']?.toString(),
+      goalId: data['goalId']?.toString(),
+      groupExpenseId: data['groupExpenseId']?.toString(),
       syncStatus: 'synced',
-      location: data['location'] as String?,
-      latitude: (data['latitude'] as num?)?.toDouble(),
-      longitude: (data['longitude'] as num?)?.toDouble(),
-      isDeleted: data['isDeleted'] as bool? ?? false,
-      deletedAt: data['deletedAt'] != null
-          ? (data['deletedAt'] as Timestamp).toDate()
+      location: data['location']?.toString(),
+      latitude: data['latitude'] != null
+          ? FirestoreParse.parseDouble(data['latitude'])
           : null,
+      longitude: data['longitude'] != null
+          ? FirestoreParse.parseDouble(data['longitude'])
+          : null,
+      isDeleted: FirestoreParse.parseBool(data['isDeleted']),
+      deletedAt: FirestoreParse.parseDate(data['deletedAt']),
     );
   }
 

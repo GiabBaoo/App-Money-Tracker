@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../services/auth_service.dart';
 import '../../services/biometric_service.dart';
 import '../../widgets/animated_scale_button.dart';
 import '../../widgets/mono_toast.dart';
@@ -19,8 +19,6 @@ class _BiometricScreenState extends State<BiometricScreen> {
   bool _isFingerprintEnabled = false;
   bool _isSaving = false;
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
   @override
   void initState() {
     super.initState();
@@ -28,7 +26,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
   }
 
   Future<void> _loadCurrentPreference() async {
-    final uid = _auth.currentUser?.uid;
+    final uid = AuthService().currentUid;
     if (uid == null) return;
 
     try {
@@ -46,7 +44,7 @@ class _BiometricScreenState extends State<BiometricScreen> {
   Future<bool> _persistPreference(bool enabled) async {
     HapticFeedback.selectionClick();
     final isVi = LanguageScope.of(context).isVietnamese;
-    final uid = _auth.currentUser?.uid;
+    final uid = AuthService().currentUid;
     if (uid == null) {
       if (!mounted) return false;
       _showSnackbar(

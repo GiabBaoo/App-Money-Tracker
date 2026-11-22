@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/utils/firestore_parse.dart';
 
 class GroupModel {
   final String id;
@@ -41,16 +42,9 @@ class GroupModel {
   String get adminId => ownerId;
 
   factory GroupModel.fromJson(Map<String, dynamic> json) {
-    DateTime parseDate(dynamic val) {
-      if (val is Timestamp) return val.toDate();
-      if (val is int)
-        return DateTime.fromMillisecondsSinceEpoch(val, isUtc: true);
-      if (val is String) return DateTime.tryParse(val) ?? DateTime.now();
-      return DateTime.now();
-    }
-
-    final owner =
-        json['ownerId'] as String? ?? json['adminId'] as String? ?? '';
+    final owner = FirestoreParse.parseString(
+      json['ownerId'] ?? json['adminId'],
+    );
     final rawMembers = json['memberIds'];
     List<String> members = [];
     if (rawMembers is List) {
@@ -62,22 +56,29 @@ class GroupModel {
     }
 
     return GroupModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      description: json['description'] as String?,
-      iconUrl: json['iconUrl'] as String?,
-      iconCode: json['iconCode'] as int?,
+      id: FirestoreParse.parseString(json['id']),
+      name: FirestoreParse.parseString(json['name']),
+      description: json['description']?.toString(),
+      iconUrl: json['iconUrl']?.toString(),
+      iconCode: FirestoreParse.parseInt(json['iconCode']),
       ownerId: owner,
       memberIds: members,
-      groupType: json['groupType'] as String? ?? 'group',
-      currency: json['currency'] as String? ?? 'VND',
-      createdAt: parseDate(json['createdAt']),
-      updatedAt: parseDate(json['updatedAt']),
-      isDeleted: json['isDeleted'] == true || json['isDeleted'] == 1,
-      deletedAt: json['deletedAt'] != null
-          ? parseDate(json['deletedAt'])
-          : null,
-      syncStatus: json['syncStatus'] as String? ?? 'synced',
+      groupType: FirestoreParse.parseString(
+        json['groupType'],
+        defaultValue: 'group',
+      ),
+      currency: FirestoreParse.parseString(
+        json['currency'],
+        defaultValue: 'VND',
+      ),
+      createdAt: FirestoreParse.parseDate(json['createdAt']) ?? DateTime.now(),
+      updatedAt: FirestoreParse.parseDate(json['updatedAt']) ?? DateTime.now(),
+      isDeleted: FirestoreParse.parseBool(json['isDeleted']),
+      deletedAt: FirestoreParse.parseDate(json['deletedAt']),
+      syncStatus: FirestoreParse.parseString(
+        json['syncStatus'],
+        defaultValue: 'synced',
+      ),
     );
   }
 

@@ -309,6 +309,11 @@ class AiActionHandler {
           .toList();
     }
 
+    // Lọc bỏ giao dịch chuyển ví và tiết kiệm mục tiêu để báo cáo thu/chi chính xác
+    filtered = filtered
+        .where((tx) => !tx.isTransfer && !tx.isSavingsGoal)
+        .toList();
+
     double expense = 0;
     double income = 0;
     final Map<String, double> categorySums = {};

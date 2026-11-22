@@ -13,6 +13,7 @@ import '../modules/ai_assistant/ai_assistant_screen.dart';
 import '../modules/home/wallet_screen.dart';
 import '../modules/home/statistics_screen.dart';
 import '../modules/budget/budget_and_goals_screen.dart';
+import 'auth_service.dart';
 import 'widget_snapshot_builder.dart';
 import 'widget_deep_link_parser.dart';
 
@@ -184,6 +185,11 @@ class AppWidgetService {
   Future<void> syncAll() async {
     if (kIsWeb || !Platform.isAndroid) return;
 
+    if (AuthService().currentUid == null) {
+      await clearOnLogout();
+      return;
+    }
+
     try {
       final wallets = await WalletRepository().getWallets();
       final transactions = await TransactionRepository().getAllTransactions();
@@ -246,6 +252,11 @@ class AppWidgetService {
           await HomeWidget.saveWidgetData<double>(
             entry.key,
             entry.value as double,
+          );
+        } else if (entry.value is int) {
+          await HomeWidget.saveWidgetData<int>(
+            entry.key,
+            entry.value as int,
           );
         } else if (entry.value is bool) {
           await HomeWidget.saveWidgetData<bool>(entry.key, entry.value as bool);

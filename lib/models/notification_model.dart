@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../core/utils/firestore_parse.dart';
 
 class NotificationModel {
   final String id;
@@ -45,26 +46,22 @@ class NotificationModel {
     final data = doc.data() as Map<String, dynamic>? ?? {};
     return NotificationModel(
       id: doc.id,
-      uid: data['uid'] ?? '',
-      iconCode: data['iconCode'] ?? Icons.notifications.codePoint,
-      title: data['title'] ?? '',
-      description: data['description'] ?? '',
-      isRead: data['isRead'] ?? false,
-      createdAt: data['createdAt'] != null
-          ? (data['createdAt'] as Timestamp).toDate()
-          : DateTime.now(),
-      updatedAt: data['updatedAt'] != null
-          ? (data['updatedAt'] as Timestamp).toDate()
-          : null,
-      type: data['type'] as String?,
-      groupId: data['groupId'] as String?,
-      groupName: data['groupName'] as String?,
-      status: data['status'] as String?,
+      uid: FirestoreParse.parseString(data['uid']),
+      iconCode:
+          FirestoreParse.parseInt(data['iconCode']) ??
+          Icons.notifications.codePoint,
+      title: FirestoreParse.parseString(data['title']),
+      description: FirestoreParse.parseString(data['description']),
+      isRead: FirestoreParse.parseBool(data['isRead']),
+      createdAt: FirestoreParse.parseDate(data['createdAt']) ?? DateTime.now(),
+      updatedAt: FirestoreParse.parseDate(data['updatedAt']),
+      type: data['type']?.toString(),
+      groupId: data['groupId']?.toString(),
+      groupName: data['groupName']?.toString(),
+      status: data['status']?.toString(),
       syncStatus: 'synced',
-      isDeleted: data['isDeleted'] == true,
-      deletedAt: data['deletedAt'] != null
-          ? (data['deletedAt'] as Timestamp).toDate()
-          : null,
+      isDeleted: FirestoreParse.parseBool(data['isDeleted']),
+      deletedAt: FirestoreParse.parseDate(data['deletedAt']),
     );
   }
 

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/utils/firestore_parse.dart';
 
 enum SettlementStatus { pendingConfirmation, confirmed, rejected }
 
@@ -40,43 +41,36 @@ class SettlementModel {
   int get amountVnd => amount.round();
 
   factory SettlementModel.fromJson(Map<String, dynamic> json) {
-    DateTime parseDate(dynamic val) {
-      if (val is Timestamp) return val.toDate();
-      if (val is int)
-        return DateTime.fromMillisecondsSinceEpoch(val, isUtc: true);
-      if (val is String) return DateTime.tryParse(val) ?? DateTime.now();
-      return DateTime.now();
-    }
-
-    final statusStr = json['status'] as String? ?? 'pendingConfirmation';
+    final statusStr = FirestoreParse.parseString(
+      json['status'],
+      defaultValue: 'pendingConfirmation',
+    );
     final status = SettlementStatus.values.firstWhere((e) {
       final name = e.toString().split('.').last.toLowerCase();
       final raw = statusStr.replaceAll('_', '').toLowerCase();
       return name == raw;
     }, orElse: () => SettlementStatus.pendingConfirmation);
 
+    final createdAt = FirestoreParse.parseDate(json['createdAt']) ?? DateTime.now();
     return SettlementModel(
-      id: json['id'] as String,
-      groupId: json['groupId'] as String,
-      payerId: json['payerId'] as String,
-      payeeId: json['payeeId'] as String,
-      amount: (json['amount'] as num).toDouble(),
+      id: FirestoreParse.parseString(json['id']),
+      groupId: FirestoreParse.parseString(json['groupId']),
+      payerId: FirestoreParse.parseString(json['payerId']),
+      payeeId: FirestoreParse.parseString(json['payeeId']),
+      amount: FirestoreParse.parseDouble(json['amount']),
       status: status,
-      notes: json['notes'] as String?,
-      proofPhotoUrl: json['proofPhotoUrl'] as String?,
-      linkedTransactionId: json['linkedTransactionId'] as String?,
-      createdAt: parseDate(json['createdAt']),
-      confirmedAt: json['confirmedAt'] != null
-          ? parseDate(json['confirmedAt'])
-          : null,
-      updatedAt: json['updatedAt'] != null
-          ? parseDate(json['updatedAt'])
-          : parseDate(json['createdAt']),
-      isDeleted: json['isDeleted'] == true || json['isDeleted'] == 1,
-      deletedAt: json['deletedAt'] != null
-          ? parseDate(json['deletedAt'])
-          : null,
-      syncStatus: json['syncStatus'] as String? ?? 'synced',
+      notes: json['notes']?.toString(),
+      proofPhotoUrl: json['proofPhotoUrl']?.toString(),
+      linkedTransactionId: json['linkedTransactionId']?.toString(),
+      createdAt: createdAt,
+      confirmedAt: FirestoreParse.parseDate(json['confirmedAt']),
+      updatedAt: FirestoreParse.parseDate(json['updatedAt']) ?? createdAt,
+      isDeleted: FirestoreParse.parseBool(json['isDeleted']),
+      deletedAt: FirestoreParse.parseDate(json['deletedAt']),
+      syncStatus: FirestoreParse.parseString(
+        json['syncStatus'],
+        defaultValue: 'synced',
+      ),
     );
   }
 

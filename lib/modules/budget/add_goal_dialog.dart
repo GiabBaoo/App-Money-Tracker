@@ -349,11 +349,12 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
           const SizedBox(height: 6),
           InkWell(
             onTap: () async {
+              final now = DateTime.now();
               final picked = await showDatePicker(
                 context: context,
                 initialDate: _deadline,
-                firstDate: DateTime.now(),
-                lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
+                firstDate: _deadline.isBefore(now) ? _deadline : now,
+                lastDate: now.add(const Duration(days: 365 * 10)),
               );
               if (picked != null) {
                 setState(() => _deadline = picked);

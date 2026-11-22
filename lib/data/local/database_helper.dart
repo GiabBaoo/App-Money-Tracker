@@ -15,7 +15,7 @@ class DatabaseHelper {
   DatabaseHelper._internal();
 
   static Database? _database;
-  static const int _dbVersion = 10;
+  static const int _dbVersion = 17;
   static const String _dbName = 'money_tracker.db';
 
   Future<Database> get database async {
@@ -1231,6 +1231,150 @@ class DatabaseHelper {
 
         debugPrint('SQLite: Migration v10 completed successfully.');
       });
+    }
+
+    if (oldVersion < 11) {
+      debugPrint(
+        'SQLite: Upgrading database to v11 (Reset dead group sync_queue items)...',
+      );
+      await db.transaction((txn) async {
+        final now = DateTime.now().millisecondsSinceEpoch;
+        await txn.rawUpdate(
+          "UPDATE sync_queue SET status = 'pending', retryCount = 0, nextRetryAt = 0, updatedAt = ? "
+          "WHERE status = 'dead' AND tableName IN ('groups', 'group_members', 'group_expenses', 'group_settlements')",
+          [now],
+        );
+      });
+      debugPrint('SQLite: Migration v11 completed successfully.');
+    }
+
+    if (oldVersion < 12) {
+      debugPrint(
+        'SQLite: Upgrading database to v12 (Repair quarantined/dead wallet & transaction sync items)...',
+      );
+      await db.transaction((txn) async {
+        final now = DateTime.now().millisecondsSinceEpoch;
+
+        // 1. Khôi phục ownerUid/uid bị trống trong sync_queue từ các bảng nguồn
+        const ownedTables = [
+          'wallets',
+          'transactions',
+          'budgets',
+          'goals',
+          'notifications',
+          'messages',
+        ];
+        for (final t in ownedTables) {
+          await txn.rawUpdate(
+            '''
+            UPDATE sync_queue
+            SET ownerUid = (SELECT s.uid FROM $t s WHERE s.id = sync_queue.recordId),
+                uid = (SELECT s.uid FROM $t s WHERE s.id = sync_queue.recordId)
+            WHERE (ownerUid = '' OR uid = '') AND tableName = ?
+              AND EXISTS (SELECT 1 FROM $t s WHERE s.id = sync_queue.recordId AND s.uid <> '')
+            ''',
+            [t],
+          );
+        }
+
+        // 2. Mở khóa các bản ghi dead/quarantined hợp lệ về pending để đẩy lại lên Firestore
+        await txn.rawUpdate(
+          "UPDATE sync_queue SET status = 'pending', retryCount = 0, nextRetryAt = 0, updatedAt = ? "
+          "WHERE status IN ('dead', 'quarantined') AND (ownerUid <> '' OR uid <> '')",
+          [now],
+        );
+
+        // 3. Đảm bảo toàn bộ ví đang hoạt động trên máy nguồn được đánh dấu pending kèm payload đầy đủ
+        final activeWallets = await txn.query(
+          'wallets',
+          where: 'isDeleted IS NULL OR isDeleted = 0',
+        );
+        for (final w in activeWallets) {
+          final wId = w['id'] as String? ?? '';
+          final wUid = w['uid'] as String? ?? '';
+          if (wId.isEmpty || wUid.isEmpty) continue;
+
+          final payload = Map<String, Object?>.from(w);
+          payload['syncStatus'] = 'pending';
+
+          await txn.update(
+            'wallets',
+            {'syncStatus': 'pending'},
+            where: 'id = ? AND uid = ?',
+            whereArgs: [wId, wUid],
+          );
+          await txn.delete(
+            'sync_queue',
+            where: 'tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?)',
+            whereArgs: ['wallets', wId, wUid, wUid],
+          );
+          await txn.insert('sync_queue', {
+            'uid': wUid,
+            'ownerUid': wUid,
+            'tableName': 'wallets',
+            'recordId': wId,
+            'action': 'INSERT',
+            'data': json.encode(payload),
+            'createdAt': now,
+            'updatedAt': now,
+            'retryCount': 0,
+            'nextRetryAt': 0,
+            'status': 'pending',
+            'priority': 1,
+          });
+        }
+      });
+      debugPrint('SQLite: Migration v12 completed successfully.');
+    }
+
+    if (oldVersion < 16) {
+      debugPrint(
+        'SQLite: Upgrading database to v16 (Remove hardcoded wallet balance rules, allow full user editing & clean Firebase pull)...',
+      );
+      await db.transaction((txn) async {
+        // Chuyển các ví bị gắn cờ local_only trước đây về trạng thái synced bình thường
+        // để người dùng toàn quyền chỉnh sửa trên máy chính và pull trực tiếp từ Firebase về máy phụ.
+        await txn.rawUpdate(
+          "UPDATE wallets SET syncStatus = 'synced' WHERE syncStatus = 'local_only'",
+        );
+      });
+      debugPrint('SQLite: Migration v16 completed successfully.');
+    }
+
+    if (oldVersion < 17) {
+      debugPrint(
+        'SQLite: Upgrading database to v17 (Clean up spurious 0-balance default wallet when real wallets exist)...',
+      );
+      await db.transaction((txn) async {
+        // Nếu người dùng đã có ví thật khác đang hoạt động, dọn bỏ ví mặc định 0đ rỗng tự sinh (wlt_default_*)
+        await txn.rawDelete('''
+          DELETE FROM wallets
+          WHERE id LIKE 'wlt_default_%'
+            AND balance = 0
+            AND initialBalance = 0
+            AND EXISTS (
+              SELECT 1 FROM wallets w2
+              WHERE w2.uid = wallets.uid
+                AND w2.id <> wallets.id
+                AND (w2.isDeleted IS NULL OR w2.isDeleted = 0)
+            )
+            AND NOT EXISTS (
+              SELECT 1 FROM transactions t
+              WHERE t.uid = wallets.uid
+                AND t.walletId = wallets.id
+                AND (t.isDeleted IS NULL OR t.isDeleted = 0)
+            )
+        ''');
+        await txn.rawDelete('''
+          DELETE FROM sync_queue
+          WHERE tableName = 'wallets'
+            AND recordId LIKE 'wlt_default_%'
+            AND NOT EXISTS (
+              SELECT 1 FROM wallets w WHERE w.id = sync_queue.recordId
+            )
+        ''');
+      });
+      debugPrint('SQLite: Migration v17 completed successfully.');
     }
   }
 

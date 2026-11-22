@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -140,6 +142,28 @@ class _InviteMemberScreenState extends State<InviteMemberScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final inviterUid = FirebaseAuth.instance.currentUser?.uid;
+      if (inviterUid == null) {
+        throw Exception(isVi ? 'Chưa đăng nhập' : 'Not logged in');
+      }
+
+      // 1. Tạo/cập nhật lời mời group_invites/{groupId}_{inviteeUid} trên Firestore
+      final now = DateTime.now();
+      final expiresAt = now.add(const Duration(days: 7));
+      final inviteRef = FirebaseFirestore.instance
+          .collection('group_invites')
+          .doc('${widget.groupId}_$_foundUserId');
+      await inviteRef.set({
+        'groupId': widget.groupId,
+        'groupName': widget.groupName,
+        'inviteeUid': _foundUserId!,
+        'invitedBy': inviterUid,
+        'status': 'pending',
+        'createdAt': Timestamp.fromDate(now),
+        'expiresAt': Timestamp.fromDate(expiresAt),
+      });
+
+      // 2. Gửi thông báo lời mời cho người được mời
       await NotificationService().notifyGroupInvitation(
         groupName: widget.groupName,
         inviterName: isVi ? 'Trưởng nhóm' : 'Group Admin',

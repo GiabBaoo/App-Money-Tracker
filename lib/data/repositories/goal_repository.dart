@@ -12,6 +12,7 @@ import '../../models/wallet_model.dart';
 import '../../models/transaction_model.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/sync_service.dart';
+import '../../services/sync_trigger.dart';
 import '../../utils/finance_precision.dart';
 import 'wallet_repository.dart';
 import 'transaction_repository.dart';
@@ -99,6 +100,7 @@ class GoalRepository with OwnedTableOps {
     });
 
     await _notifyChanged();
+    SyncTrigger.requestSync();
     return id;
   }
 
@@ -124,6 +126,7 @@ class GoalRepository with OwnedTableOps {
     });
 
     await _notifyChanged();
+    SyncTrigger.requestSync();
   }
 
   /// Xóa mục tiêu (áp dụng Soft Delete / Tombstone)
@@ -143,6 +146,7 @@ class GoalRepository with OwnedTableOps {
     });
 
     await _notifyChanged();
+    SyncTrigger.requestSync();
   }
 
   /// Nạp tiền tiết kiệm vào mục tiêu (Bảo đảm đối ứng 1:1 với ví nguồn)

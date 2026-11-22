@@ -20,42 +20,89 @@ class SmartNotificationService {
   final TransactionRepository _txRepo = TransactionRepository();
   final WalletRepository _walletRepo = WalletRepository();
   final NotificationRepository _notiRepo = NotificationRepository();
+  final Set<String> _inFlightDedupKeys = {};
 
-  Future<void> _addNotificationAndPush(
+  /// Thêm thông báo + đẩy status bar với khóa chống trùng theo (uid, type, refId, day).
+  /// Trả về `true` nếu thực sự đã tạo thông báo, `false` nếu bị bỏ qua do trùng hoặc lỗi.
+  Future<bool> _addNotificationAndPush(
     NotificationModel noti, {
     bool pushStatusBar = false,
+    String? refId,
   }) async {
-    // Tránh spam tạo nhiều thông báo cùng loại trong cùng 1 ngày
-    try {
-      final db = await DatabaseHelper().database;
-      final startOfDay = DateTime(
-        noti.createdAt.year,
-        noti.createdAt.month,
-        noti.createdAt.day,
-      ).millisecondsSinceEpoch;
-      final existing = await db.query(
-        'notifications',
-        where: 'uid = ? AND type = ? AND createdAt >= ?',
-        whereArgs: [noti.uid, noti.type, startOfDay],
-        limit: 1,
-      );
-      if (existing.isNotEmpty) {
-        debugPrint(
-          'SmartNotificationService: Notification of type "${noti.type}" already exists today, skipping.',
-        );
-        return;
-      }
-    } catch (_) {}
+    final dayKey =
+        '${noti.createdAt.year}-${noti.createdAt.month}-${noti.createdAt.day}';
+    final effectiveRef = refId ?? noti.groupId ?? '';
+    final dedupKey = '${noti.uid}|${noti.type ?? ''}|$effectiveRef|$dayKey';
 
-    await _notiRepo.addNotification(noti);
-    // Chỉ bắn ra ngoài thanh trạng thái khi được chỉ định rõ (tránh làm phiền khi vừa mở app)
-    if (pushStatusBar) {
-      await LocalNotificationService.instance.showInstantNotification(
-        id: noti.title.hashCode,
-        title: noti.title,
-        body: noti.description,
-        payload: noti.type,
-      );
+    if (!_inFlightDedupKeys.add(dedupKey)) {
+      return false;
+    }
+
+    try {
+      // Tránh spam tạo nhiều thông báo cùng (uid, type, refId) trong cùng 1 ngày
+      try {
+        final db = await DatabaseHelper().database;
+        final startOfDay = DateTime(
+          noti.createdAt.year,
+          noti.createdAt.month,
+          noti.createdAt.day,
+        ).millisecondsSinceEpoch;
+        final whereClause = effectiveRef.isNotEmpty
+            ? 'uid = ? AND type = ? AND groupId = ? AND createdAt >= ?'
+            : 'uid = ? AND type = ? AND createdAt >= ?';
+        final whereArgs = effectiveRef.isNotEmpty
+            ? [noti.uid, noti.type, effectiveRef, startOfDay]
+            : [noti.uid, noti.type, startOfDay];
+        final existing = await db.query(
+          'notifications',
+          where: whereClause,
+          whereArgs: whereArgs,
+          limit: 1,
+        );
+        if (existing.isNotEmpty) {
+          debugPrint(
+            'SmartNotificationService: Notification "$dedupKey" already exists today, skipping.',
+          );
+          return false;
+        }
+      } catch (_) {}
+
+      final toSave = (effectiveRef.isNotEmpty && noti.groupId == null)
+          ? NotificationModel(
+              id: noti.id,
+              uid: noti.uid,
+              iconCode: noti.iconCode,
+              title: noti.title,
+              description: noti.description,
+              isRead: noti.isRead,
+              createdAt: noti.createdAt,
+              updatedAt: noti.updatedAt,
+              type: noti.type,
+              groupId: effectiveRef,
+              groupName: noti.groupName,
+              status: noti.status,
+              syncStatus: noti.syncStatus,
+              isDeleted: noti.isDeleted,
+              deletedAt: noti.deletedAt,
+            )
+          : noti;
+
+      await _notiRepo.addNotification(toSave);
+      // Chỉ bắn ra ngoài thanh trạng thái khi được chỉ định rõ (tránh làm phiền khi vừa mở app)
+      if (pushStatusBar) {
+        await LocalNotificationService.instance.showInstantNotification(
+          id: dedupKey.hashCode,
+          title: toSave.title,
+          body: toSave.description,
+          payload: toSave.type,
+        );
+      }
+      return true;
+    } catch (e) {
+      debugPrint('SmartNotificationService _addNotificationAndPush error: $e');
+      return false;
+    } finally {
+      _inFlightDedupKeys.remove(dedupKey);
     }
   }
 
@@ -99,6 +146,8 @@ class SmartNotificationService {
             .where(
               (t) =>
                   t.type == 'expense' &&
+                  !t.isTransfer &&
+                  !t.isSavingsGoal &&
                   t.date.year == now.year &&
                   t.date.month == now.month,
             )
@@ -110,6 +159,8 @@ class SmartNotificationService {
             .where(
               (t) =>
                   t.type == 'expense' &&
+                  !t.isTransfer &&
+                  !t.isSavingsGoal &&
                   t.date.year == prevYear &&
                   t.date.month == prevMonth,
             )
@@ -269,6 +320,8 @@ class SmartNotificationService {
         .where(
           (t) =>
               t.type == 'expense' &&
+              !t.isTransfer &&
+              !t.isSavingsGoal &&
               t.date.year == now.year &&
               t.date.month == now.month &&
               t.date.day == now.day,
@@ -348,6 +401,8 @@ class SmartNotificationService {
         .where(
           (t) =>
               t.type == 'expense' &&
+              !t.isTransfer &&
+              !t.isSavingsGoal &&
               t.date.year == now.year &&
               t.date.month == now.month,
         )
@@ -412,6 +467,8 @@ class SmartNotificationService {
           .where(
             (t) =>
                 t.type == 'expense' &&
+                !t.isTransfer &&
+                !t.isSavingsGoal &&
                 t.date.year == now.year &&
                 t.date.month == now.month,
           )
@@ -635,13 +692,20 @@ class SmartNotificationService {
                   'Bạn đã chi ${CurrencyUtils.formatCurrency(b.currentSpent)}/${CurrencyUtils.formatCurrency(b.limitAmount)} (vượt ${CurrencyUtils.formatCurrency(excess)}). Hãy kiểm soát chi tiêu cho danh mục này!',
               isRead: false,
               type: 'budget_limit_exceeded',
+              groupId: b.id,
             );
-            await _addNotificationAndPush(noti, pushStatusBar: true);
-            await prefs.setBool(key100, true);
-            await prefs.setBool(
-              key80,
-              true,
-            ); // Đã vượt 100% thì tự đánh dấu đã qua 80%
+            final sent = await _addNotificationAndPush(
+              noti,
+              pushStatusBar: true,
+              refId: b.id,
+            );
+            if (sent) {
+              await prefs.setBool(key100, true);
+              await prefs.setBool(
+                key80,
+                true,
+              ); // Đã vượt 100% thì tự đánh dấu đã qua 80%
+            }
           }
         } else if (percentage >= 80.0) {
           if (!alreadyWarned80) {
@@ -654,9 +718,16 @@ class SmartNotificationService {
                   'Đã chi ${CurrencyUtils.formatCurrency(b.currentSpent)}/${CurrencyUtils.formatCurrency(b.limitAmount)}. Chỉ còn lại ${CurrencyUtils.formatCurrency(remaining)} cho tháng này!',
               isRead: false,
               type: 'budget_limit_warning',
+              groupId: b.id,
             );
-            await _addNotificationAndPush(noti, pushStatusBar: true);
-            await prefs.setBool(key80, true);
+            final sent = await _addNotificationAndPush(
+              noti,
+              pushStatusBar: true,
+              refId: b.id,
+            );
+            if (sent) {
+              await prefs.setBool(key80, true);
+            }
           }
         }
       }

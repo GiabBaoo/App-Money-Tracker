@@ -204,7 +204,17 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                             EditTransactionScreen(transaction: _transaction),
                           ),
                         );
+                        if (!context.mounted) return;
                         if (result == true) {
+                          Navigator.pop(context, true);
+                          return;
+                        }
+                        final refreshed = await TransactionRepository()
+                            .getTransactionById(_transaction.id);
+                        if (!context.mounted) return;
+                        if (refreshed == null || refreshed.isDeleted) {
+                          Navigator.pop(context, true);
+                        } else {
                           await _refreshTransaction();
                         }
                       } else if (value == 'delete') {

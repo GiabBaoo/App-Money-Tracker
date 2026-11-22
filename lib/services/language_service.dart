@@ -147,6 +147,7 @@ class LanguageService extends ChangeNotifier {
         return subMap[_currentLanguage] ?? subMap['vi'] ?? clean;
       }
     }
+    debugPrint('Missing translation: $key');
     return key;
   }
 
@@ -435,6 +436,13 @@ class LanguageService extends ChangeNotifier {
     'filter_income': {'vi': 'Thu nhập', 'en': 'Income'},
     'filter_expense': {'vi': 'Chi tiêu', 'en': 'Expense'},
     'filter_transfers': {'vi': 'Chuyển tiền', 'en': 'Transfers'},
+    'total_income': {'vi': 'Tổng thu', 'en': 'Total Income'},
+    'total_expense': {'vi': 'Tổng chi', 'en': 'Total Expense'},
+    'change_photo': {'vi': 'Đổi ảnh', 'en': 'Change photo'},
+    'no_data': {'vi': 'Chưa có dữ liệu', 'en': 'No data'},
+    'total': {'vi': 'Tổng cộng', 'en': 'Total'},
+    'all_transactions': {'vi': 'Tất cả giao dịch', 'en': 'All Transactions'},
+    'delete_wallet': {'vi': 'Xóa ví', 'en': 'Delete Wallet'},
     'no_matching_tx': {
       'vi': 'Không tìm thấy giao dịch nào phù hợp',
       'en': 'No matching transactions found',

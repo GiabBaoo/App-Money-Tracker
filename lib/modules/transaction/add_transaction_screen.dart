@@ -493,19 +493,13 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
         final transactionId = const Uuid().v4();
 
         String permanentLocalPath = '';
-        String finalPhotoUrl = '';
-        String finalStoragePath = '';
 
         if (_pickedPhoto != null) {
-          final receiptRes = await ReceiptStorageService()
-              .processAndUploadReceipt(
-                uid: uid,
-                transactionId: transactionId,
-                pickedFile: File(_pickedPhoto!.path),
+          permanentLocalPath = await ReceiptStorageService()
+              .saveReceiptPermanently(
+                File(_pickedPhoto!.path),
+                transactionId,
               );
-          permanentLocalPath = receiptRes.photoLocalPath;
-          finalPhotoUrl = receiptRes.photoUrl;
-          finalStoragePath = receiptRes.photoStoragePath;
         }
 
         final transaction = TransactionModel(
@@ -526,8 +520,8 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           walletId: walletId,
           hasPhoto: _pickedPhoto != null,
           photoLocalPath: permanentLocalPath,
-          photoUrl: finalPhotoUrl,
-          photoStoragePath: finalStoragePath,
+          photoUrl: '',
+          photoStoragePath: '',
           location: _locationName,
           latitude: _latitude,
           longitude: _longitude,
@@ -535,6 +529,17 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
         // Lưu vào SQLite nguyên tử
         await TransactionBalanceService().addTransactionAtomic(transaction);
+
+        // Upload ảnh hóa đơn chạy nền (timeout 20s), xong thì cập nhật photoUrl
+        if (permanentLocalPath.isNotEmpty) {
+          unawaited(
+            ReceiptStorageService().uploadReceiptInBackgroundAndUpdateTx(
+              uid: uid,
+              transactionId: transactionId,
+              permanentLocalPath: permanentLocalPath,
+            ),
+          );
+        }
 
         // Chạy các tác vụ nền không chặn UI thread
         unawaited(
@@ -773,8 +778,9 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
       () async {
         return await _imagePicker.pickImage(
           source: source,
-          maxWidth: 1600,
-          imageQuality: 85,
+          maxWidth: 1280,
+          maxHeight: 1280,
+          imageQuality: 70,
         );
       },
     );
@@ -1242,6 +1248,18 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
 
                         // 6. THẺ NGUỒN TIỀN (VÍ), THỜI GIAN & HÓA ĐƠN
                         _buildOptionsRow(isDark, dateFormatted),
+
+                        // 6.5. THUMBNAIL ẢNH HÓA ĐƠN ĐÃ CHỌN/CHỤP
+                        AnimatedSize(
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeOutCubic,
+                          child: _pickedPhoto != null
+                              ? Padding(
+                                  padding: const EdgeInsets.only(top: 12),
+                                  child: _buildReceiptThumbnail(isDark),
+                                )
+                              : const SizedBox.shrink(),
+                        ),
 
                         // 7. BẢN ĐỒ MINI HIỂN THỊ VỊ TRÍ ĐÃ CHỌN
                         AnimatedSize(
@@ -1926,7 +1944,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
                 ? Icons.check_circle_rounded
                 : Icons.add_a_photo_rounded,
             label: _pickedPhoto != null
-                ? context.tr('done')
+                ? context.tr('change_photo')
                 : context.tr('receipt_photo'),
             iconColor: _pickedPhoto != null
                 ? const Color(0xFF10B981)
@@ -1959,6 +1977,93 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
             isDark: isDark,
             onTap: _handleLocationPillTap,
             isHighlighted: _locationName != null && _locationName!.isNotEmpty,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReceiptThumbnail(bool isDark) {
+    final photo = _pickedPhoto;
+    if (photo == null) return const SizedBox.shrink();
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          GestureDetector(
+            onTap: () {
+              ReceiptStorageService.showFullScreenViewer(
+                context,
+                photoLocalPath: photo.path,
+                photoUrl: '',
+                title: context.tr('receipt_photo'),
+              );
+            },
+            child: Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: context.borderColor,
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(11),
+                child: Image.file(
+                  File(photo.path),
+                  width: 64,
+                  height: 64,
+                  fit: BoxFit.cover,
+                  cacheWidth: 192,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 64,
+                    height: 64,
+                    color: context.inputBgColor,
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.broken_image_rounded,
+                      size: 24,
+                      color: context.textMutedColor,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: -6,
+            right: -6,
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                setState(() => _pickedPhoto = null);
+              },
+              child: Container(
+                width: 22,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.72),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 13,
+                  color: Colors.white,
+                ),
+              ),
+            ),
           ),
         ],
       ),

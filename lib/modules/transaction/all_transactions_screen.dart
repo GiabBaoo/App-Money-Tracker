@@ -505,11 +505,21 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                       // Lọc theo loại hình
                       if (_selectedType == 'Thu nhập') {
                         transactions = transactions
-                            .where((tx) => tx.isIncome && !tx.isTransfer)
+                            .where(
+                              (tx) =>
+                                  tx.isIncome &&
+                                  !tx.isTransfer &&
+                                  !tx.isSavingsGoal,
+                            )
                             .toList();
                       } else if (_selectedType == 'Chi tiêu') {
                         transactions = transactions
-                            .where((tx) => !tx.isIncome && !tx.isTransfer)
+                            .where(
+                              (tx) =>
+                                  !tx.isIncome &&
+                                  !tx.isTransfer &&
+                                  !tx.isSavingsGoal,
+                            )
                             .toList();
                       } else if (_selectedType == 'Chuyển ví') {
                         transactions = transactions
@@ -1797,7 +1807,7 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
     double dailyIncome = 0;
     double dailyExpense = 0;
     for (final tx in transactions) {
-      if (tx.isTransfer) continue;
+      if (tx.isTransfer || tx.isSavingsGoal) continue;
       if (tx.isIncome) {
         dailyIncome += tx.amount;
       } else {

@@ -40,10 +40,32 @@ class ExpenseService {
       throw Exception('Số tiền phải lớn hơn 0');
     }
 
-    if (dto.splitMethod == SplitMethod.custom && dto.customShares != null) {
-      final totalShares = dto.customShares!.values.reduce((a, b) => a + b);
-      if ((totalShares - dto.amount).abs() > 0.01) {
-        throw Exception('Tổng chia không khớp với số tiền');
+    if (dto.splitMethod == SplitMethod.custom ||
+        dto.splitMethod == SplitMethod.exact ||
+        dto.splitMethod == SplitMethod.percentage ||
+        dto.splitMethod == SplitMethod.shares) {
+      if (dto.customShares == null || dto.customShares!.isEmpty) {
+        throw Exception('Vui lòng nhập chi tiết phần chia cho từng thành viên');
+      }
+      if (dto.splitMethod == SplitMethod.custom ||
+          dto.splitMethod == SplitMethod.exact) {
+        final totalShares = dto.customShares!.values.reduce((a, b) => a + b);
+        if ((totalShares - dto.amount).abs() > 0.01) {
+          throw Exception('Tổng chia không khớp với số tiền');
+        }
+      } else if (dto.splitMethod == SplitMethod.percentage) {
+        final totalPct = dto.customShares!.values.reduce((a, b) => a + b);
+        if ((totalPct - 100.0).abs() > 0.01) {
+          throw Exception('Tổng tỷ lệ phần trăm phải bằng 100%');
+        }
+      } else if (dto.splitMethod == SplitMethod.shares) {
+        final totalParts = dto.customShares!.values.fold<double>(
+          0,
+          (a, b) => a + b,
+        );
+        if (totalParts <= 0) {
+          throw Exception('Tổng số phần chia phải lớn hơn 0');
+        }
       }
     }
 

@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import '../../../../core/utils/firestore_parse.dart';
 import '../models/fund_transaction_model.dart';
 
 class FirestoreFundTransactionRepository {
@@ -93,8 +95,11 @@ class FirestoreFundTransactionRepository {
     // 1. Xóa fund transaction
     await _firestore.collection(_collection).doc(transaction.id).delete();
 
-    // 2. Tìm và xóa transaction cá nhân tương ứng (nếu có)
-    // Tìm các giao dịch có cùng uid, groupId, amount và source là 'fund'
+    // 2. Chỉ xóa transaction cá nhân nếu người đang đăng nhập là chính chủ giao dịch
+    // (admin xóa fund_transaction không được đụng transactions cá nhân người khác)
+    final currentUid = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUid == null || currentUid != transaction.userId) return;
+
     final personalTxQuery = await _firestore
         .collection('transactions')
         .where('uid', isEqualTo: transaction.userId)
@@ -104,9 +109,9 @@ class FirestoreFundTransactionRepository {
         .get();
 
     for (var doc in personalTxQuery.docs) {
-      final txDate = (doc.data()['createdAt'] as Timestamp).toDate();
-      // Kiểm tra nếu thời gian tạo khớp (cho phép sai số 2 giây)
-      if (txDate.difference(transaction.createdAt).inSeconds.abs() <= 2) {
+      final txDate = FirestoreParse.parseDate(doc.data()['createdAt']);
+      if (txDate != null &&
+          txDate.difference(transaction.createdAt).inSeconds.abs() <= 2) {
         await doc.reference.delete();
       }
     }
@@ -119,7 +124,12 @@ class FirestoreFundTransactionRepository {
         .snapshots()
         .map((snapshot) {
           final transactions = snapshot.docs
-              .map((doc) => FundTransactionModel.fromJson(doc.data()))
+              .map(
+                (doc) => FundTransactionModel.fromJson({
+                  ...doc.data(),
+                  'id': doc.id,
+                }),
+              )
               .toList();
 
           // Sort by date descending
@@ -137,7 +147,10 @@ class FirestoreFundTransactionRepository {
         .map((snapshot) {
           double balance = 0;
           for (var doc in snapshot.docs) {
-            final transaction = FundTransactionModel.fromJson(doc.data());
+            final transaction = FundTransactionModel.fromJson({
+              ...doc.data(),
+              'id': doc.id,
+            });
             if (transaction.type == TransactionType.contribute) {
               balance += transaction.amount;
             } else {
@@ -156,7 +169,10 @@ class FirestoreFundTransactionRepository {
 
     double balance = 0;
     for (var doc in snapshot.docs) {
-      final transaction = FundTransactionModel.fromJson(doc.data());
+      final transaction = FundTransactionModel.fromJson({
+        ...doc.data(),
+        'id': doc.id,
+      });
       if (transaction.type == TransactionType.contribute) {
         balance += transaction.amount;
       } else {

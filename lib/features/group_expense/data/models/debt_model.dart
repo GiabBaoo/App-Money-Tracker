@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/utils/firestore_parse.dart';
 
 enum DebtStatus { active, settled, partiallySettled }
 
@@ -26,15 +27,10 @@ class DebtModel {
   int get amountVnd => amount.round();
 
   factory DebtModel.fromJson(Map<String, dynamic> json) {
-    DateTime parseDate(dynamic val) {
-      if (val is Timestamp) return val.toDate();
-      if (val is int)
-        return DateTime.fromMillisecondsSinceEpoch(val, isUtc: true);
-      if (val is String) return DateTime.tryParse(val) ?? DateTime.now();
-      return DateTime.now();
-    }
-
-    final statusStr = json['status'] as String? ?? 'active';
+    final statusStr = FirestoreParse.parseString(
+      json['status'],
+      defaultValue: 'active',
+    );
     final status = DebtStatus.values.firstWhere(
       (e) =>
           e.toString().split('.').last.toLowerCase() ==
@@ -43,14 +39,14 @@ class DebtModel {
     );
 
     return DebtModel(
-      id: json['id'] as String,
-      groupId: json['groupId'] as String,
-      debtorId: json['debtorId'] as String,
-      creditorId: json['creditorId'] as String,
-      amount: (json['amount'] as num).toDouble(),
+      id: FirestoreParse.parseString(json['id']),
+      groupId: FirestoreParse.parseString(json['groupId']),
+      debtorId: FirestoreParse.parseString(json['debtorId']),
+      creditorId: FirestoreParse.parseString(json['creditorId']),
+      amount: FirestoreParse.parseDouble(json['amount']),
       status: status,
-      createdAt: parseDate(json['createdAt']),
-      updatedAt: parseDate(json['updatedAt']),
+      createdAt: FirestoreParse.parseDate(json['createdAt']) ?? DateTime.now(),
+      updatedAt: FirestoreParse.parseDate(json['updatedAt']) ?? DateTime.now(),
     );
   }
 

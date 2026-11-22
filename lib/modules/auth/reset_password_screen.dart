@@ -178,7 +178,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     } else {
       // LUONG QUEN MK
       if (widget.emailForReset != null) {
-        await _authService.resetPasswordWithEmail(
+        final resetResult = await _authService.resetPasswordWithEmail(
           email: widget.emailForReset!,
           newPassword: newPassword,
           otpCode: widget.otpCode ?? '',
@@ -186,6 +186,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         setState(() => _isLoading = false);
 
         if (!mounted) return;
+        if (!resetResult.success) {
+          _showSnackBar(resetResult.message, isError: true);
+          return;
+        }
 
         Navigator.push(
           context,

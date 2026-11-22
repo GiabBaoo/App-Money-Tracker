@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/utils/firestore_parse.dart';
 
 class UserModel {
   final String uid;
@@ -48,29 +49,31 @@ class UserModel {
       final data = doc.data() as Map<String, dynamic>? ?? {};
       return UserModel(
         uid: doc.id,
-        name: data['name'] ?? '',
-        email: data['email'] ?? '',
-        phone: data['phone'] ?? '',
-        gender: data['gender'] ?? 'Nam',
-        dateOfBirth: data['dateOfBirth'] != null
-            ? (data['dateOfBirth'] as Timestamp).toDate()
-            : null,
-        avatarUrl: data['avatarUrl'] ?? '',
-        accountType: data['accountType'] ?? 'FREE',
-        joinDate: data['joinDate'] != null
-            ? (data['joinDate'] as Timestamp).toDate()
-            : DateTime.now(),
-        currency: data['currency'] ?? 'VND',
-        role: data['role'] ?? 'user',
+        name: FirestoreParse.parseString(data['name']),
+        email: FirestoreParse.parseString(data['email']),
+        phone: FirestoreParse.parseString(data['phone']),
+        gender: FirestoreParse.parseString(data['gender'], defaultValue: 'Nam'),
+        dateOfBirth: FirestoreParse.parseDate(data['dateOfBirth']),
+        avatarUrl: FirestoreParse.parseString(data['avatarUrl']),
+        accountType: FirestoreParse.parseString(
+          data['accountType'],
+          defaultValue: 'FREE',
+        ),
+        joinDate: FirestoreParse.parseDate(data['joinDate']) ?? DateTime.now(),
+        currency: FirestoreParse.parseString(
+          data['currency'],
+          defaultValue: 'VND',
+        ),
+        role: FirestoreParse.parseString(data['role'], defaultValue: 'user'),
         dataUsage: data['dataUsage'] is Map
             ? Map<String, dynamic>.from(data['dataUsage'] as Map)
             : {'location': true, 'contacts': false},
         customCategories: data['customCategories'] is List
             ? List<dynamic>.from(data['customCategories'] as List)
             : [],
-        lastPasswordUpdate: data['lastPasswordUpdate'] != null
-            ? (data['lastPasswordUpdate'] as Timestamp).toDate()
-            : null,
+        lastPasswordUpdate: FirestoreParse.parseDate(
+          data['lastPasswordUpdate'],
+        ),
         syncStatus: 'synced',
       );
     } catch (e) {

@@ -16,6 +16,7 @@ import '../../widgets/mono_dialog.dart';
 import '../../services/language_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/transaction_balance_service.dart';
+import '../../services/sync_service.dart';
 import '../../utils/page_transitions.dart';
 import '../wallet/wallet_history_screen.dart';
 import '../wallet/add_wallet_sheet.dart';
@@ -54,13 +55,16 @@ class _WalletScreenState extends State<WalletScreen>
     _scrollController.addListener(_onScroll);
     final uid = AuthService().currentUid;
     if (uid != null) {
-
-
-      _walletRepo.ensureDefaultWalletExists(uid);
       // Khôi phục số dư gốc ban đầu chuẩn xác (chỉ chạy 1 lần duy nhất nếu chưa khôi phục)
       TransactionBalanceService().restoreCorrectUserBaselineOnce(
         targetUid: uid,
       );
+      // Nếu bộ nhớ cục bộ chưa có ví nào khi mở màn hình Ví, chủ động đồng bộ ngay từ Firebase
+      _walletRepo.getWallets().then((wallets) {
+        if (wallets.isEmpty) {
+          SyncService().syncAll();
+        }
+      });
     }
   }
 
@@ -1340,7 +1344,7 @@ class _WalletScreenState extends State<WalletScreen>
                             child: Text(
                               sectionTitle,
                               style: TextStyle(
-                                fontSize: 14.5,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: isDark
                                     ? Colors.white
@@ -1354,19 +1358,19 @@ class _WalletScreenState extends State<WalletScreen>
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 2,
+                              horizontal: 6,
+                              vertical: 1.5,
                             ),
                             decoration: BoxDecoration(
                               color: const Color(
                                 0xFF438883,
                               ).withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               '${filteredTx.length}',
                               style: const TextStyle(
-                                fontSize: 11,
+                                fontSize: 10.5,
                                 fontWeight: FontWeight.bold,
                                 color: Color(0xFF438883),
                               ),
@@ -1389,6 +1393,7 @@ class _WalletScreenState extends State<WalletScreen>
                         );
                       },
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             context.tr('see_all'),
@@ -1413,23 +1418,10 @@ class _WalletScreenState extends State<WalletScreen>
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TransactionViewModeToggle(
-                      groupByDay: _groupByDay,
-                      onChanged: (val) => setState(() => _groupByDay = val),
-                    ),
-                    if (_groupByDay)
-                      Text(
-                        isVi ? 'Tối đa 3 ngày gần nhất' : 'Up to 3 recent days',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: isDark ? Colors.white54 : Colors.grey.shade600,
-                        ),
-                      ),
-                  ],
+                const SizedBox(height: 6),
+                TransactionViewModeToggle(
+                  groupByDay: _groupByDay,
+                  onChanged: (val) => setState(() => _groupByDay = val),
                 ),
                 const SizedBox(height: 8),
                 if (filteredTx.isEmpty)

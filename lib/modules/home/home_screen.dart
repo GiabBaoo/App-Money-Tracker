@@ -728,9 +728,9 @@ class _HomeBodyState extends State<HomeBody>
         // BỘ 4 NÚT THAO TÁC NHANH (QUICK ACTIONS GRID) - CÔNG THÁI HỌC VÙNG NGÓN TAY CÁI
         _buildQuickActionsGrid(context, isDark),
 
-        // TIÊU ĐỀ LỊCH SỬ GIAO DỊCH + CHUYỂN CHẾ ĐỘ GẦN ĐÂY / THEO NGÀY
+        // TIÊU ĐỀ LỊCH SỬ GIAO DỊCH + CHUYỂN CHẾ ĐỘ GẦN ĐÂY / THEO NGÀY (DƯỚI TIÊU ĐỀ)
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 18, 24, 8),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 6),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -742,11 +742,12 @@ class _HomeBodyState extends State<HomeBody>
                       context.tr('tx_history'),
                       style:
                           context.textTheme.titleMedium?.copyWith(
+                            fontSize: 17,
                             fontWeight: FontWeight.bold,
                             color: context.textPrimaryColor,
                           ) ??
                           const TextStyle(
-                            fontSize: 18,
+                            fontSize: 17,
                             fontWeight: FontWeight.bold,
                           ),
                       maxLines: 1,
@@ -755,7 +756,10 @@ class _HomeBodyState extends State<HomeBody>
                   ),
                   TextButton(
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 4,
+                      ),
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
@@ -763,40 +767,38 @@ class _HomeBodyState extends State<HomeBody>
                       context,
                       PageTransitions.slideRight(const AllTransactionsScreen()),
                     ),
-                    child: Text(
-                      context.tr('see_all'),
-                      style:
-                          context.textTheme.labelLarge?.copyWith(
-                            color: context.colors.primary,
-                            fontWeight: FontWeight.w700,
-                          ) ??
-                          TextStyle(
-                            color: context.colors.primary,
-                            fontWeight: FontWeight.w700,
-                          ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          context.tr('see_all'),
+                          style:
+                              context.textTheme.labelMedium?.copyWith(
+                                fontSize: 12.5,
+                                color: context.colors.primary,
+                                fontWeight: FontWeight.w700,
+                              ) ??
+                              TextStyle(
+                                fontSize: 12.5,
+                                color: context.colors.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        const SizedBox(width: 2),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 11,
+                          color: context.colors.primary,
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TransactionViewModeToggle(
-                    groupByDay: _groupByDay,
-                    onChanged: (val) => setState(() => _groupByDay = val),
-                  ),
-                  if (_groupByDay)
-                    Text(
-                      LanguageScope.of(context).isVietnamese
-                          ? 'Tối đa 3 ngày gần nhất'
-                          : 'Up to 3 recent days',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: isDark ? Colors.white54 : Colors.grey.shade600,
-                      ),
-                    ),
-                ],
+              const SizedBox(height: 6),
+              TransactionViewModeToggle(
+                groupByDay: _groupByDay,
+                onChanged: (val) => setState(() => _groupByDay = val),
               ),
             ],
           ),

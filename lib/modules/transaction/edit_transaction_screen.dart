@@ -1,4 +1,5 @@
 import '../../services/language_service.dart';
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -470,13 +471,14 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
 
       final newType = _isIncome ? 'income' : 'expense';
       final newAmount = amount;
-      final newWalletId = _selectedWallet?.id ?? '';
+      final newWalletId = _selectedWallet?.id ?? widget.transaction.walletId;
 
-      // 1. Xử lý ảnh giao dịch:
+      // 1. Xử lý ảnh giao dịch (lưu local trước, upload nền để không chặn UI):
       bool finalHasPhoto = _hasPhoto;
       String finalPhotoUrl = _currentPhotoUrl;
       String finalPhotoLocalPath = _currentPhotoLocalPath;
       String finalPhotoStoragePath = _currentPhotoStoragePath;
+      String? pendingBackgroundUploadPath;
 
       if (_photoRemoved) {
         finalHasPhoto = false;
@@ -485,26 +487,17 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         finalPhotoStoragePath = '';
       } else if (_newPickedPhoto != null) {
         finalHasPhoto = true;
-
-        try {
-          final uploadRes = await ReceiptStorageService()
-              .processAndUploadReceipt(
-                uid: uid,
-                transactionId: widget.transaction.id,
-                pickedFile: File(_newPickedPhoto!.path),
-              );
-          finalPhotoLocalPath = uploadRes.photoLocalPath;
-          finalPhotoUrl = uploadRes.photoUrl;
-          finalPhotoStoragePath = uploadRes.photoStoragePath;
-        } catch (photoError) {
-          debugPrint('EditTransaction: Upload photo error: $photoError');
-          finalPhotoLocalPath = _newPickedPhoto!.path;
-        }
+        finalPhotoLocalPath = await ReceiptStorageService()
+            .saveReceiptPermanently(
+              File(_newPickedPhoto!.path),
+              widget.transaction.id,
+            );
+        finalPhotoUrl = '';
+        finalPhotoStoragePath = '';
+        pendingBackgroundUploadPath = finalPhotoLocalPath;
       }
 
-      final updatedTransaction = TransactionModel(
-        id: widget.transaction.id,
-        uid: widget.transaction.uid,
+      final updatedTransaction = widget.transaction.copyWith(
         type: newType,
         category: _currentCategory,
         categoryIconCode: _currentIconCode,
@@ -516,18 +509,15 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         ),
         time: timeStr,
         description: _descriptionController.text.trim(),
-        createdAt: widget.transaction.createdAt,
         hasPhoto: finalHasPhoto,
         photoUrl: finalPhotoUrl,
         photoStoragePath: finalPhotoStoragePath,
         photoLocalPath: finalPhotoLocalPath,
-        groupId: widget.transaction.groupId,
-        groupIconCode: widget.transaction.groupIconCode,
-        source: widget.transaction.source,
         walletId: newWalletId,
         location: _locationName,
         latitude: _latitude,
         longitude: _longitude,
+        clearLocation: _locationName == null && _latitude == null && _longitude == null,
       );
 
       // 2. Cập nhật giao dịch và cân đối số dư ví trong 1 transaction nguyên tử
@@ -535,6 +525,16 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         oldTx: widget.transaction,
         newTx: updatedTransaction,
       );
+
+      if (pendingBackgroundUploadPath != null) {
+        unawaited(
+          ReceiptStorageService().uploadReceiptInBackgroundAndUpdateTx(
+            uid: uid,
+            transactionId: widget.transaction.id,
+            permanentLocalPath: pendingBackgroundUploadPath,
+          ),
+        );
+      }
 
       // Kích hoạt sync đồng bộ lên Firestore trong nền nếu có mạng
       final isOnline = ConnectivityService().isOnline;
@@ -695,7 +695,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     ),
                     AnimatedScaleButton(
                       scaleDown: 0.9,
-                      onTap: _isLoading ? null : _handleSave,
+                      onTap: (_isLoading || _selectedWallet == null)
+                          ? null
+                          : _handleSave,
                       child: Container(
                         width: 40,
                         height: 40,
@@ -1683,7 +1685,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
             ],
           ),
           child: AnimatedScaleButton(
-            onTap: _isLoading ? null : _handleSave,
+            onTap: (_isLoading || _selectedWallet == null) ? null : _handleSave,
             child: Container(
               height: 50,
               decoration: BoxDecoration(

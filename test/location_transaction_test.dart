@@ -154,5 +154,92 @@ void main() {
       await tester.tap(find.byIcon(Icons.close_rounded));
       expect(cleared, isTrue);
     });
+
+    test('PlaceNameResolver.foldVietnamese preserves 1-to-1 length for highlighting', () {
+      const s1 = 'Hồng Trà Ngô Gia';
+      const s2 = 'Katinat Cao Thắng, Quận 3';
+      expect(PlaceNameResolver.foldVietnamese(s1), 'hong tra ngo gia');
+      expect(PlaceNameResolver.foldVietnamese(s1).length, s1.length);
+      expect(PlaceNameResolver.foldVietnamese(s2), 'katinat cao thang, quan 3');
+      expect(PlaceNameResolver.foldVietnamese(s2).length, s2.length);
+    });
+
+    test('PlaceNameResolver.normalizeVietnameseQuery expands common abbreviations', () {
+      expect(
+        PlaceNameResolver.normalizeVietnameseQuery('katinat cao thang q3 tphcm'),
+        'katinat cao thang Quận 3 Hồ Chí Minh',
+      );
+      expect(
+        PlaceNameResolver.normalizeVietnameseQuery('hong tra ngo gia p.5 q10'),
+        'hong tra ngo gia Phường 5 Quận 10',
+      );
+    });
+
+    test('PlaceNameResolver.rankSmartResults prioritizes full POI match & nearest branch', () {
+      // Người dùng ở Quận 3, TP.HCM
+      const userLat = 10.7720;
+      const userLon = 106.6830;
+
+      final katinatCandidates = [
+        const LocationResult(
+          placeName: 'Đường Cao Thắng, Quận 3, TP. Hồ Chí Minh',
+          title: 'Đường Cao Thắng',
+          subtitle: 'Quận 3, TP. Hồ Chí Minh',
+          latitude: 10.7721,
+          longitude: 106.6831,
+          provider: 'nominatim',
+        ),
+        const LocationResult(
+          placeName:
+              'Katinat Coffee & Tea House - Cao Thắng, 91 Cao Thắng, Phường 3, Quận 3, TP. Hồ Chí Minh',
+          title: 'Katinat Coffee & Tea House - Cao Thắng',
+          subtitle: '91 Cao Thắng, Phường 3, Quận 3, TP. Hồ Chí Minh',
+          latitude: 10.7725,
+          longitude: 106.6835,
+          provider: 'arcgis',
+        ),
+      ];
+
+      final rankedKatinat = PlaceNameResolver.rankSmartResults(
+        katinatCandidates,
+        query: 'katinat cao thang',
+        userLat: userLat,
+        userLon: userLon,
+      );
+      expect(rankedKatinat.first.displayTitle, contains('Katinat'));
+      expect(rankedKatinat.first.displaySubtitle, contains('91 Cao Thắng'));
+
+      final teaCandidates = [
+        const LocationResult(
+          placeName: 'Hồng Trà Ngô Gia, 120 Lê Văn Sỹ, Phú Nhuận, TP. Hồ Chí Minh',
+          title: 'Hồng Trà Ngô Gia',
+          subtitle: '120 Lê Văn Sỹ, Phú Nhuận, TP. Hồ Chí Minh',
+          latitude: 10.7930,
+          longitude: 106.6780,
+          provider: 'arcgis',
+        ),
+        const LocationResult(
+          placeName: 'Hồng Trà Ngô Gia, 45 Cao Thắng, Quận 3, TP. Hồ Chí Minh',
+          title: 'Hồng Trà Ngô Gia',
+          subtitle: '45 Cao Thắng, Quận 3, TP. Hồ Chí Minh',
+          latitude: 10.7722,
+          longitude: 106.6832,
+          provider: 'arcgis',
+        ),
+      ];
+
+      final rankedTea = PlaceNameResolver.rankSmartResults(
+        teaCandidates,
+        query: 'hong tra ngo gia',
+        userLat: userLat,
+        userLon: userLon,
+      );
+      expect(rankedTea.length, 2);
+      expect(rankedTea.first.displaySubtitle, contains('45 Cao Thắng'));
+      expect(
+        rankedTea.first.distanceMeters!,
+        lessThan(rankedTea.last.distanceMeters!),
+      );
+    });
   });
 }

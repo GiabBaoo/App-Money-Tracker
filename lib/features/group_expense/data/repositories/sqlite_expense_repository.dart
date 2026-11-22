@@ -35,33 +35,60 @@ class SqliteExpenseRepository implements IExpenseRepository {
     final now = DateTime.now();
     final totalAmountVnd = dto.amount.round();
 
-    // 1. Tính toán chia tiền
-    Map<String, int> intSplits;
-    if (dto.splitMethod == SplitMethod.equal) {
-      intSplits = VndSplitCalculator.calculateEqualSplit(
-        totalAmountVnd: totalAmountVnd,
-        participantIds: dto.participantIds,
-        payerId: dto.payerId,
-      );
-    } else if (dto.splitMethod == SplitMethod.custom &&
-        dto.customShares != null) {
-      intSplits = dto.customShares!.map((k, v) => MapEntry(k, v.round()));
-    } else if (dto.splitMethod == SplitMethod.singlePayer) {
-      intSplits = {dto.payerId: totalAmountVnd};
-    } else {
-      intSplits = VndSplitCalculator.calculateEqualSplit(
-        totalAmountVnd: totalAmountVnd,
-        participantIds: dto.participantIds,
-        payerId: dto.payerId,
-      );
+    // 1. Tính toán chia tiền qua VndSplitCalculator cho mọi kiểu chia
+    final Map<String, int> intSplits;
+    switch (dto.splitMethod) {
+      case SplitMethod.equal:
+        intSplits = VndSplitCalculator.calculateEqualSplit(
+          totalAmountVnd: totalAmountVnd,
+          participantIds: dto.participantIds,
+          payerId: dto.payerId,
+        );
+        break;
+      case SplitMethod.percentage:
+        if (dto.customShares == null || dto.customShares!.isEmpty) {
+          throw Exception('Thiếu tỷ lệ phần trăm chia tiền');
+        }
+        intSplits = VndSplitCalculator.calculatePercentageSplit(
+          totalAmountVnd: totalAmountVnd,
+          percentages: dto.customShares!,
+          payerId: dto.payerId,
+        );
+        break;
+      case SplitMethod.shares:
+        if (dto.customShares == null || dto.customShares!.isEmpty) {
+          throw Exception('Thiếu số phần chia tiền');
+        }
+        intSplits = VndSplitCalculator.calculateSharesSplit(
+          totalAmountVnd: totalAmountVnd,
+          shares: dto.customShares!.map((k, v) => MapEntry(k, v.round())),
+          payerId: dto.payerId,
+        );
+        break;
+      case SplitMethod.exact:
+      case SplitMethod.custom:
+        if (dto.customShares == null || dto.customShares!.isEmpty) {
+          throw Exception('Thiếu số tiền chia lẻ');
+        }
+        intSplits = VndSplitCalculator.calculateExactSplit(
+          totalAmountVnd: totalAmountVnd,
+          exactAmounts: dto.customShares!.map((k, v) => MapEntry(k, v.round())),
+        );
+        break;
+      case SplitMethod.singlePayer:
+        intSplits = {dto.payerId: totalAmountVnd};
+        break;
     }
 
     final doubleShares = intSplits.map((k, v) => MapEntry(k, v.toDouble()));
+    final currentUid = SessionManager.instance.uidOrNull ?? createdBy;
     String? linkedTxId;
 
     await db.transaction((txn) async {
-      // 2. Dual-Ledger: Nếu thanh toán từ ví cá nhân của Payer, tạo bản ghi transactions và trừ số dư ví
-      if (dto.paidFromWalletId != null && dto.paidFromWalletId!.isNotEmpty) {
+      // 2. Dual-Ledger: CHỈ tạo transactions & trừ ví cá nhân khi payerId == currentUid
+      if (dto.paidFromWalletId != null &&
+          dto.paidFromWalletId!.isNotEmpty &&
+          dto.payerId == currentUid) {
         linkedTxId = 'gtx_$expenseId';
         final txRow = {
           'id': linkedTxId,
@@ -307,10 +334,14 @@ class SqliteExpenseRepository implements IExpenseRepository {
       }
     }
 
+    StreamSubscription? sub;
     controller = StreamController<List<ExpenseModel>>.broadcast(
       onListen: () {
         updateList();
-        _changeController.stream.listen((_) => updateList());
+        sub = _changeController.stream.listen((_) => updateList());
+      },
+      onCancel: () {
+        sub?.cancel();
       },
     );
 
@@ -321,6 +352,7 @@ class SqliteExpenseRepository implements IExpenseRepository {
   Future<void> update(ExpenseModel expense) async {
     final db = await _dbHelper.database;
     final now = DateTime.now();
+    final activeUid = SessionManager.instance.uidOrNull ?? expense.createdBy;
 
     await db.transaction((txn) async {
       final updated = expense.copyWith(updatedAt: now);
@@ -331,9 +363,32 @@ class SqliteExpenseRepository implements IExpenseRepository {
         whereArgs: [expense.id],
       );
 
+      // Cập nhật lại expense_splits khớp với expense.shares mới
+      await txn.delete(
+        'expense_splits',
+        where: 'expenseId = ?',
+        whereArgs: [expense.id],
+      );
+      for (final entry in updated.shares.entries) {
+        final splitModel = ExpenseSplitModel(
+          id: '${expense.id}_${entry.key}',
+          expenseId: expense.id,
+          userId: entry.key,
+          shareAmount: entry.value.round(),
+          allocatedRemainder: 0,
+          createdAt: updated.createdAt,
+          updatedAt: now,
+        );
+        await txn.insert(
+          'expense_splits',
+          splitModel.toSqflite(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+
       await SyncQueueWriter.enqueue(
         txn,
-        ownerUid: expense.createdBy,
+        ownerUid: activeUid,
         table: 'group_expenses',
         recordId: expense.id,
         action: 'UPDATE',
@@ -383,6 +438,7 @@ class SqliteExpenseRepository implements IExpenseRepository {
           whereArgs: [linkedTxId],
         );
         if (txRows.isNotEmpty) {
+          final txUid = (txRows.first['uid'] as String?) ?? activeUid;
           final walletId = txRows.first['walletId'] as String;
           await txn.update(
             'transactions',
@@ -390,9 +446,17 @@ class SqliteExpenseRepository implements IExpenseRepository {
               'isDeleted': 1,
               'deletedAt': now.toUtc().millisecondsSinceEpoch,
               'updatedAt': now.toUtc().millisecondsSinceEpoch,
+              'syncStatus': 'pending',
             },
             where: 'id = ?',
             whereArgs: [linkedTxId],
+          );
+          await SyncQueueWriter.enqueue(
+            txn,
+            ownerUid: txUid,
+            table: 'transactions',
+            recordId: linkedTxId,
+            action: 'SOFT_DELETE',
           );
 
           if (walletId.isNotEmpty) {
@@ -525,7 +589,7 @@ class SqliteExpenseRepository implements IExpenseRepository {
           }
         }
 
-        // Đồng bộ expense_splits
+        // Đồng bộ expense_splits (upsert mới & xóa splits không còn trên cloud)
         if (!exp.isDeleted && exp.shares.isNotEmpty) {
           for (final entry in exp.shares.entries) {
             final splitId = '${exp.id}_${entry.key}';
@@ -549,6 +613,14 @@ class SqliteExpenseRepository implements IExpenseRepository {
               ],
             );
           }
+
+          final splitUsers = exp.shares.keys.toList();
+          final placeholders = List.filled(splitUsers.length, '?').join(',');
+          await txn.delete(
+            'expense_splits',
+            where: 'expenseId = ? AND userId NOT IN ($placeholders)',
+            whereArgs: [exp.id, ...splitUsers],
+          );
         }
       }
     });

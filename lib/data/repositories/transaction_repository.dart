@@ -90,9 +90,7 @@ class TransactionRepository with OwnedTableOps {
 
     _notifyTransactionsChanged();
 
-    if (ConnectivityService().isOnline) {
-      unawaited(SyncService().syncAll());
-    }
+    unawaited(SyncService().syncAll());
 
     return id;
   }
@@ -149,9 +147,7 @@ class TransactionRepository with OwnedTableOps {
 
     _notifyTransactionsChanged();
 
-    if (ConnectivityService().isOnline) {
-      unawaited(SyncService().syncAll());
-    }
+    unawaited(SyncService().syncAll());
   }
 
   /// Xóa giao dịch (áp dụng Soft Delete / Tombstone và hoàn lại số dư ví nguyên tử)
@@ -296,9 +292,7 @@ class TransactionRepository with OwnedTableOps {
     _notifyTransactionsChanged();
     WalletRepository().notifyChanged();
 
-    if (ConnectivityService().isOnline) {
-      unawaited(SyncService().syncAll());
-    }
+    unawaited(SyncService().syncAll());
   }
 
   /// Tự động kiểm tra và dọn dẹp các giao dịch cũ - ĐÃ VÔ HIỆU HÓA để bảo toàn hóa đơn và số dư người dùng

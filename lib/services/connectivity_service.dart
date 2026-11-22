@@ -64,24 +64,13 @@ class ConnectivityService {
       }
     } catch (_) {}
 
-    // Thử truy vấn socket DNS hoặc HTTP nhanh
-    try {
-      final lookup = await InternetAddress.lookup(
-        'google.com',
-      ).timeout(const Duration(seconds: 2));
-      if (lookup.isNotEmpty && lookup[0].rawAddress.isNotEmpty) {
-        if (!_isOnline) {
-          _isOnline = true;
-          _isOnlineController.add(true);
-        }
-        return true;
-      }
-    } catch (_) {
+    // Thử truy vấn socket DNS hoặc HTTP nhanh (kèm fallback firestore.googleapis.com)
+    for (final host in ['firestore.googleapis.com', 'google.com']) {
       try {
-        final res = await http
-            .head(Uri.parse('https://www.google.com'))
-            .timeout(const Duration(seconds: 2));
-        if (res.statusCode >= 200 && res.statusCode < 400) {
+        final lookup = await InternetAddress.lookup(
+          host,
+        ).timeout(const Duration(seconds: 3));
+        if (lookup.isNotEmpty && lookup[0].rawAddress.isNotEmpty) {
           if (!_isOnline) {
             _isOnline = true;
             _isOnlineController.add(true);
@@ -90,6 +79,19 @@ class ConnectivityService {
         }
       } catch (_) {}
     }
+
+    try {
+      final res = await http
+          .head(Uri.parse('https://www.google.com'))
+          .timeout(const Duration(seconds: 3));
+      if (res.statusCode >= 200 && res.statusCode < 400) {
+        if (!_isOnline) {
+          _isOnline = true;
+          _isOnlineController.add(true);
+        }
+        return true;
+      }
+    } catch (_) {}
 
     // Cả DNS và HTTP đều thất bại => Thực tế không có kết nối internet
     if (_isOnline) {

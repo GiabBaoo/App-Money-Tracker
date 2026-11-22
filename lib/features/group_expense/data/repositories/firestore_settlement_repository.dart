@@ -35,7 +35,7 @@ class FirestoreSettlementRepository implements ISettlementRepository {
   Future<SettlementModel> getById(String id) async {
     final doc = await _firestore.collection(_collection).doc(id).get();
     if (!doc.exists) throw Exception('Settlement not found');
-    return SettlementModel.fromJson(doc.data()!);
+    return SettlementModel.fromJson({...doc.data()!, 'id': doc.id});
   }
 
   @override
@@ -47,7 +47,7 @@ class FirestoreSettlementRepository implements ISettlementRepository {
 
     // Sort on client side to avoid index requirement
     final settlements = snapshot.docs
-        .map((doc) => SettlementModel.fromJson(doc.data()))
+        .map((doc) => SettlementModel.fromJson({...doc.data(), 'id': doc.id}))
         .toList();
 
     settlements.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -63,7 +63,10 @@ class FirestoreSettlementRepository implements ISettlementRepository {
         .map((snapshot) {
           // Sort on client side to avoid index requirement
           final settlements = snapshot.docs
-              .map((doc) => SettlementModel.fromJson(doc.data()))
+              .map(
+                (doc) =>
+                    SettlementModel.fromJson({...doc.data(), 'id': doc.id}),
+              )
               .toList();
 
           settlements.sort((a, b) => b.createdAt.compareTo(a.createdAt));

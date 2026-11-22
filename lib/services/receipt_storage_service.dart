@@ -1,9 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../data/local/database_helper.dart';
+import '../data/local/sync_queue_writer.dart';
+import '../data/repositories/transaction_repository.dart';
+import 'connectivity_service.dart';
+import 'sync_trigger.dart';
 
 /// Dịch vụ quản lý và lưu trữ hóa đơn, chứng từ:
 /// - Lưu trữ vĩnh viễn trên máy (Documents/receipts - không bị xóa khi dọn cache)
@@ -53,7 +59,9 @@ class ReceiptStorageService {
     }
   }
 
-  /// Upload ảnh hóa đơn: Thử Firebase Storage trước -> Fallback Base64 an toàn nếu lỗi billing/mạng
+  static const int _maxBase64Bytes = 200 * 1024; // Giới hạn Base64 fallback <= 200 KB
+
+  /// Upload ảnh hóa đơn lên Firebase Storage (có timeout 20s) và giới hạn Base64 fallback <= 200 KB.
   Future<({String photoUrl, String photoStoragePath, String photoLocalPath})>
   processAndUploadReceipt({
     required String uid,
@@ -65,7 +73,29 @@ class ReceiptStorageService {
       pickedFile,
       transactionId,
     );
+    return uploadSavedReceipt(
+      uid: uid,
+      transactionId: transactionId,
+      permanentLocalPath: permanentLocalPath,
+    );
+  }
+
+  /// Upload file đã lưu local lên Firebase Storage (timeout 20s).
+  /// Nếu lỗi/offline: chỉ fallback Base64 khi file <= 200 KB, ngược lại giữ local path.
+  Future<({String photoUrl, String photoStoragePath, String photoLocalPath})>
+  uploadSavedReceipt({
+    required String uid,
+    required String transactionId,
+    required String permanentLocalPath,
+  }) async {
     final fileToUpload = File(permanentLocalPath);
+    if (!await fileToUpload.exists()) {
+      return (
+        photoUrl: '',
+        photoStoragePath: '',
+        photoLocalPath: permanentLocalPath,
+      );
+    }
 
     final ext = fileToUpload.path.contains('.')
         ? fileToUpload.path.split('.').last.toLowerCase()
@@ -73,51 +103,114 @@ class ReceiptStorageService {
     final fileName = '$transactionId.$ext';
     final storagePath = 'transaction_images/$uid/$transactionId/$fileName';
 
-    try {
-      // 2. Thử upload lên Firebase Storage
-      final ref = _storage.ref().child(storagePath);
-      final metadata = SettableMetadata(
-        contentType: 'image/jpeg',
-        cacheControl: 'public, max-age=31536000',
-      );
-      final task = await ref.putFile(fileToUpload, metadata);
-      final downloadUrl = await task.ref.getDownloadURL();
-
-      debugPrint(
-        'ReceiptStorage: Tải lên Firebase Storage thành công: $downloadUrl',
-      );
-      return (
-        photoUrl: downloadUrl,
-        photoStoragePath: storagePath,
-        photoLocalPath: permanentLocalPath,
-      );
-    } catch (storageError) {
-      debugPrint(
-        'ReceiptStorage: Firebase Storage upload không thành công ($storageError). Kích hoạt Base64 Fallback...',
-      );
-
-      // 3. Fallback: Mã hóa Base64 Data URI lưu trực tiếp lên Firestore
+    if (ConnectivityService().isOnline) {
       try {
-        final bytes = await fileToUpload.readAsBytes();
-        final base64String = base64Encode(bytes);
-        final dataUri = 'data:image/jpeg;base64,$base64String';
+        final ref = _storage.ref().child(storagePath);
+        final metadata = SettableMetadata(
+          contentType: 'image/jpeg',
+          cacheControl: 'public, max-age=31536000',
+        );
+        final task = await ref
+            .putFile(fileToUpload, metadata)
+            .timeout(const Duration(seconds: 20));
+        final downloadUrl = await task.ref
+            .getDownloadURL()
+            .timeout(const Duration(seconds: 10));
 
         debugPrint(
-          'ReceiptStorage: Đã tạo Base64 fallback (${(bytes.length / 1024).toStringAsFixed(1)} KB)',
+          'ReceiptStorage: Tải lên Firebase Storage thành công: $downloadUrl',
         );
+        return (
+          photoUrl: downloadUrl,
+          photoStoragePath: storagePath,
+          photoLocalPath: permanentLocalPath,
+        );
+      } catch (storageError) {
+        debugPrint(
+          'ReceiptStorage: Firebase Storage upload không thành công ($storageError)',
+        );
+      }
+    }
+
+    // Fallback Base64 chỉ khi dung lượng <= 200 KB để không làm phình Firestore doc
+    try {
+      final bytes = await fileToUpload.readAsBytes();
+      if (bytes.length <= _maxBase64Bytes) {
+        final base64String = base64Encode(bytes);
+        final dataUri = 'data:image/jpeg;base64,$base64String';
         return (
           photoUrl: dataUri,
           photoStoragePath: '',
           photoLocalPath: permanentLocalPath,
         );
-      } catch (fallbackError) {
-        debugPrint('ReceiptStorage: Base64 fallback error: $fallbackError');
-        return (
-          photoUrl: '',
-          photoStoragePath: '',
-          photoLocalPath: permanentLocalPath,
-        );
       }
+    } catch (fallbackError) {
+      debugPrint('ReceiptStorage: Base64 fallback error: $fallbackError');
+    }
+
+    return (
+      photoUrl: '',
+      photoStoragePath: '',
+      photoLocalPath: permanentLocalPath,
+    );
+  }
+
+  /// Chạy upload ảnh nền sau khi giao dịch đã lưu local, xong thì cập nhật photoUrl vào SQLite + sync_queue.
+  Future<void> uploadReceiptInBackgroundAndUpdateTx({
+    required String uid,
+    required String transactionId,
+    required String permanentLocalPath,
+  }) async {
+    try {
+      final res = await uploadSavedReceipt(
+        uid: uid,
+        transactionId: transactionId,
+        permanentLocalPath: permanentLocalPath,
+      );
+      if (res.photoUrl.isEmpty) return;
+
+      final db = await DatabaseHelper().database;
+      final nowMs = DateTime.now().millisecondsSinceEpoch;
+      await db.transaction((txn) async {
+        final existing = await txn.query(
+          'transactions',
+          where: 'id = ? AND uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+          whereArgs: [transactionId, uid],
+          limit: 1,
+        );
+        if (existing.isEmpty) return;
+
+        await txn.update(
+          'transactions',
+          {
+            'photoUrl': res.photoUrl,
+            'photoStoragePath': res.photoStoragePath,
+            'hasPhoto': 1,
+            'updatedAt': nowMs,
+            'syncStatus': 'pending',
+          },
+          where: 'id = ? AND uid = ?',
+          whereArgs: [transactionId, uid],
+        );
+        await SyncQueueWriter.enqueue(
+          txn,
+          ownerUid: uid,
+          table: 'transactions',
+          recordId: transactionId,
+          action: 'UPDATE',
+          data: {
+            'uid': uid,
+            'photoUrl': res.photoUrl,
+            'photoStoragePath': res.photoStoragePath,
+            'hasPhoto': true,
+            'updatedAt': nowMs,
+          },
+        );
+      });
+      TransactionRepository().notifyTransactionsChanged();
+      SyncTrigger.requestSync();
+    } catch (e) {
+      debugPrint('ReceiptStorage: Background upload error: $e');
     }
   }
 
@@ -134,13 +227,19 @@ class ReceiptStorageService {
     if (photoLocalPath.isNotEmpty) {
       final file = File(photoLocalPath);
       if (file.existsSync()) {
+        final int? resolvedCacheWidth = (width != null && width.isFinite)
+            ? (width * 2.5).round()
+            : (height != null && height.isFinite ? null : 800);
+        final int? resolvedCacheHeight = (height != null && height.isFinite)
+            ? (height * 2.5).round()
+            : null;
         return Image.file(
           file,
           width: width,
           height: height,
           fit: fit,
-          cacheWidth: width != null ? (width * 2.5).round() : 800,
-          cacheHeight: height != null ? (height * 2.5).round() : null,
+          cacheWidth: resolvedCacheWidth,
+          cacheHeight: resolvedCacheHeight,
           filterQuality: FilterQuality.low,
           errorBuilder: (context, error, stackTrace) =>
               _buildFallbackImage(photoUrl, fit, width, height, placeholder),

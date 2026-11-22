@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../core/session/session_manager.dart';
 import '../services/biometric_service.dart';
 import '../services/midnight_sync_service.dart';
 import '../services/auth_service.dart';
 import '../services/app_widget_service.dart';
+import '../services/sync_service.dart';
 import '../modules/auth/fingerprint_unlock_screen.dart';
 import '../utils/page_transitions.dart';
 
@@ -26,6 +28,8 @@ class _LifecycleManagerState extends State<LifecycleManager>
     with WidgetsBindingObserver {
   bool _wasInBackground = false;
   bool _isLocked = false;
+  StreamSubscription<User?>? _authSub;
+  StreamSubscription<SessionSnapshot?>? _sessionSub;
 
   @override
   void initState() {
@@ -33,8 +37,18 @@ class _LifecycleManagerState extends State<LifecycleManager>
     WidgetsBinding.instance.addObserver(this);
 
     // Tự động mở khóa cờ _isLocked khi người dùng đăng xuất
-    FirebaseAuth.instance.authStateChanges().listen((user) {
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user == null && _isLocked && mounted) {
+        setState(() {
+          _isLocked = false;
+        });
+        AppWidgetService.instance.setNavigationReady(false);
+      }
+    });
+
+    // Reset _isLocked khi SessionManager deactivate (đăng xuất / chuyển tài khoản)
+    _sessionSub = SessionManager.instance.changes.listen((snapshot) {
+      if (snapshot == null && _isLocked && mounted) {
         setState(() {
           _isLocked = false;
         });
@@ -45,6 +59,8 @@ class _LifecycleManagerState extends State<LifecycleManager>
 
   @override
   void dispose() {
+    _authSub?.cancel();
+    _sessionSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -64,6 +80,9 @@ class _LifecycleManagerState extends State<LifecycleManager>
       // Tự động kiểm tra và bù trừ sao lưu nửa đêm nếu người dùng vừa mở lại ứng dụng
       MidnightSyncService.instance.checkAndRunCatchUpSync();
       unawaited(AppWidgetService.instance.syncAll());
+      if (SessionManager.instance.uidOrNull != null) {
+        unawaited(SyncService().syncAll());
+      }
 
       if (_wasInBackground &&
           !_isLocked &&

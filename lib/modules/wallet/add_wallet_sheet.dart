@@ -959,9 +959,10 @@ class _AddWalletSheetState extends State<AddWalletSheet> {
             // ════════════ 8. ĐẶT LÀM VÍ MẶC ĐỊNH & GHI CHÚ ════════════
             Builder(
               builder: (_) {
-                final isLockedDefault =
-                    (_isEditing && (widget.wallet?.isDefault ?? false)) ||
-                    (!_isEditing && _walletRepo.latestWallets.isEmpty);
+                final hasOtherActiveWallets = _walletRepo.latestWallets.any(
+                  (w) => !w.isDeleted && w.id != widget.wallet?.id,
+                );
+                final isLockedDefault = !hasOtherActiveWallets && _isDefault;
                 return Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
@@ -994,8 +995,8 @@ class _AddWalletSheetState extends State<AddWalletSheet> {
                     subtitle: Text(
                       isLockedDefault
                           ? (isVi
-                                ? 'Ví mặc định hiện tại. Chọn ví khác làm mặc định để thay đổi'
-                                : 'Current default wallet. Set another wallet as default to change')
+                                ? 'Cần có ít nhất 1 ví mặc định khi chỉ có 1 ví'
+                                : 'At least one default wallet is required when only one wallet exists')
                           : (isVi
                                 ? 'Tự động chọn ví này khi ghi nhận thu chi mới'
                                 : 'Automatically select this wallet for new transactions'),

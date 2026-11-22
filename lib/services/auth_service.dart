@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../data/local/database_helper.dart';
 import 'firestore_service.dart';
@@ -13,6 +15,7 @@ import '../utils/device_utils.dart';
 import '../data/repositories/user_repository.dart';
 import 'app_widget_service.dart';
 import 'sync_service.dart';
+import 'sync_trigger.dart';
 import '../core/session/session_manager.dart';
 import '../core/logging/app_logger.dart';
 
@@ -75,7 +78,12 @@ class AuthService {
     _offlineUid = uid;
     _isOfflineSession = false;
     SessionManager.instance.activate(uid);
-    SyncService().startRealtimeListeners();
+    // Đợi microtask để SessionManager.changes phát xong rồi mới bật realtime listeners
+    Future.microtask(() {
+      if (SessionManager.instance.uidOrNull == uid && !_isOfflineSession) {
+        SyncService().startRealtimeListeners();
+      }
+    });
   }
 
   /// Thiết lập người dùng ngoại tuyến (Offline)
@@ -119,7 +127,10 @@ class AuthService {
     if (expected == null) return false;
     final current = _auth.currentUser;
     if (current != null) return current.uid == expected;
-    if (!ConnectivityService().isOnline) return false;
+    if (!_connectivityIsAvailableOrCheck()) {
+      final hasNet = await ConnectivityService().checkRealInternet();
+      if (!hasNet) return false;
+    }
 
     final email = await _secureStorage.read(key: 'last_offline_email');
     if (email == null) return false;
@@ -142,11 +153,15 @@ class AuthService {
         return false;
       }
       _isOfflineSession = false;
+      SyncService().startRealtimeListeners();
+      unawaited(SyncService().initialDownload(expected));
       return true;
     } catch (_) {
       return false;
     }
   }
+
+  bool _connectivityIsAvailableOrCheck() => ConnectivityService().isOnline;
 
   static String _hashPassword(String email, String password) {
     final salt = 'MONO_OFFLINE_SALT_${email.trim().toLowerCase()}';
@@ -176,6 +191,7 @@ class AuthService {
         value: normalizedEmail,
       );
       await _secureStorage.write(key: 'last_offline_uid', value: uid);
+      await _secureStorage.write(key: 'last_auth_password', value: password);
     } catch (e) {
       debugPrint('Error saving offline credentials: $e');
     }
@@ -451,7 +467,9 @@ class AuthService {
 
       if (isLocalPasswordMatch) {
         await prepareAccountSwitch(savedUid);
-        final bool isConnOnline = ConnectivityService().isOnline;
+        final bool isConnOnline =
+            ConnectivityService().isOnline ||
+            await ConnectivityService().checkRealInternet();
         if (isConnOnline) {
           setOnlineUid(savedUid);
         } else {
@@ -464,13 +482,31 @@ class AuthService {
           value: normalizedEmail,
         );
         await _secureStorage.write(key: 'last_offline_uid', value: savedUid);
+        await _secureStorage.write(key: 'last_auth_password', value: password);
+
+        // Khi đăng nhập, tự động lấy bản sao lưu mới nhất từ Firebase ngay để ví tiền & số dư luôn chuẩn xác
+        if (isConnOnline) {
+          try {
+            if (_auth.currentUser == null) {
+              await _auth
+                  .signInWithEmailAndPassword(
+                    email: email.trim(),
+                    password: password,
+                  )
+                  .timeout(const Duration(seconds: 5));
+            }
+            await SyncService()
+                .restoreLatestCloudBackup(savedUid)
+                .timeout(const Duration(seconds: 8));
+          } catch (e) {
+            debugPrint('AuthService: Fast-pass restoreLatestCloudBackup error: $e');
+          }
+        }
 
         // Kích hoạt đồng bộ ngầm và xác thực Firebase Auth ở chế độ nền (KHÔNG CHẶN MÀN HÌNH)
-        if (isConnOnline) {
-          unawaited(
-            _runBackgroundAuthSync(normalizedEmail, password, savedUid),
-          );
-        }
+        unawaited(
+          _runBackgroundAuthSync(normalizedEmail, password, savedUid),
+        );
 
         return (
           success: true,
@@ -509,7 +545,16 @@ class AuthService {
           uid: uid,
         );
 
-        // Đồng bộ dữ liệu ngầm không chặn luồng đăng nhập
+        // Chờ tải ví và giao dịch ban đầu trên máy mới (tối đa 15 giây) để vào Home thấy đủ số dư ngay
+        try {
+          await SyncService()
+              .initialDownload(uid)
+              .timeout(const Duration(seconds: 15));
+        } catch (e) {
+          debugPrint('AuthService: initialDownload during login timeout/error: $e');
+        }
+
+        // Đồng bộ hồ sơ, phiên thiết bị và bật realtime listeners ở chế độ nền
         unawaited(_runBackgroundAuthSync(normalizedEmail, password, uid));
       }
 
@@ -558,7 +603,17 @@ class AuthService {
 
       final activeUid = _auth.currentUser?.uid ?? uid;
 
-      // 1. Đồng bộ hồ sơ từ Firestore về SQLite
+      // 1. Ưu tiên tải dữ liệu tài chính (ví, giao dịch...) trước để không bị chặn bởi tác vụ phụ
+      if (SessionManager.instance.uidOrNull == activeUid &&
+          _auth.currentUser?.uid == activeUid) {
+        await SyncService().initialDownload(activeUid);
+        if (SessionManager.instance.uidOrNull == activeUid &&
+            !_isOfflineSession) {
+          SyncService().startRealtimeListeners();
+        }
+      }
+
+      // 2. Đồng bộ hồ sơ từ Firestore về SQLite
       try {
         final userDoc = await _firestore
             .collection('users')
@@ -573,7 +628,7 @@ class AuthService {
         AppLogger.warn('Không thể đồng bộ UserModel Firestore', tag: 'AuthService', error: e, stackTrace: st);
       }
 
-      // 2. Ghi lại thời điểm đăng nhập bằng mật khẩu
+      // 3. Ghi lại thời điểm đăng nhập bằng mật khẩu
       try {
         await _firestore
             .collection('biometric_prefs')
@@ -586,14 +641,16 @@ class AuthService {
         AppLogger.warn('Không thể đồng bộ UserModel Firestore', tag: 'AuthService', error: e, stackTrace: st);
       }
 
-      // 3. Đăng ký phiên thiết bị hoạt động
+      // 4. Đăng ký phiên thiết bị hoạt động (có timeout chống treo)
       try {
         final deviceInfo = await DeviceUtils.getDeviceInfo();
-        await FirestoreService().registerDeviceSession(
-          deviceName: deviceInfo['name']!,
-          deviceType: deviceInfo['type']!,
-          deviceId: deviceInfo['deviceId'],
-        );
+        await FirestoreService()
+            .registerDeviceSession(
+              deviceName: deviceInfo['name']!,
+              deviceType: deviceInfo['type']!,
+              deviceId: deviceInfo['deviceId'],
+            )
+            .timeout(const Duration(seconds: 4));
       } catch (e, st) {
         AppLogger.warn('Không thể đồng bộ UserModel Firestore', tag: 'AuthService', error: e, stackTrace: st);
       }
@@ -610,27 +667,69 @@ class AuthService {
     return (pendingCount: pending, deadCount: dead, isOnline: online);
   }
 
+  /// Dọn dẹp toàn bộ phiên cục bộ dùng chung cho logout() và deleteAccount()
+  Future<void> _clearLocalSession(String? uid, {String? email}) async {
+    SyncTrigger.cancel();
+    SyncService().stopRealtimeListeners();
+    _isOfflineSession = false;
+    _offlineUid = null;
+
+    final effectiveEmail =
+        email?.trim().toLowerCase() ??
+        (await _secureStorage.read(key: 'last_offline_email'))
+            ?.trim()
+            .toLowerCase();
+
+    final keysToDelete = <String>[
+      'last_auth_password',
+      'last_offline_uid',
+      'last_offline_email',
+      'saved_login_password',
+      'biometric_uid',
+      if (uid != null && uid.isNotEmpty) 'fingerprint_enabled_$uid',
+      if (effectiveEmail != null && effectiveEmail.isNotEmpty)
+        'offline_auth_uid_$effectiveEmail',
+    ];
+    for (final key in keysToDelete) {
+      try {
+        await _secureStorage.delete(key: key);
+      } catch (_) {}
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('saved_login_email');
+      await prefs.remove('saved_remember_me');
+    } catch (_) {}
+
+    unawaited(AppWidgetService.instance.clearOnLogout());
+    SessionManager.instance.end();
+  }
+
   // ==================== DANG XUAT ====================
   Future<void> logout() async {
-    // Phase 3: Cố gắng đẩy hàng đợi sync_queue còn tồn trước khi đăng xuất nếu có mạng
+    // Phase 3: Đẩy toàn bộ hàng đợi sync_queue (chỉ upload, không download) trước khi đăng xuất
     try {
-      final isOnline = ConnectivityService().isOnline;
       final pending = await SyncService().getPendingSyncCount();
-      if (isOnline && pending > 0) {
-        debugPrint('AuthService: Pre-logout sync flush ($pending items)...');
-        await SyncService().syncAll().timeout(const Duration(seconds: 4));
+      if (pending > 0) {
+        debugPrint('AuthService: Pre-logout upload flush ($pending items)...');
+        await SyncService().flushPendingUploads(
+          timeout: const Duration(seconds: 6),
+        );
       }
     } catch (e) {
       debugPrint('AuthService: Pre-logout flush error: $e');
     }
     final session = SessionManager.instance;
+    final activeUid = currentUid;
+    final activeEmail = _authNullable?.currentUser?.email;
     session.beginSwitch(); // 1. Chặn ghi mới, vô hiệu epoch cũ
     SyncService().stopRealtimeListeners(); // 2. Ngừng nhận snapshot
     await SyncService().quiesce(
       timeout: const Duration(seconds: 5),
     ); // 3. Chờ/abort upload đang chạy
 
-    final user = _auth.currentUser;
+    final user = _authNullable?.currentUser;
     if (user != null) {
       try {
         final sessionId = await DeviceUtils.getSessionId(user.uid);
@@ -639,14 +738,8 @@ class AuthService {
         AppLogger.warn('Không thể đồng bộ UserModel Firestore', tag: 'AuthService', error: e, stackTrace: st);
       }
     }
-    _isOfflineSession = false;
-    _offlineUid = null;
-    await _secureStorage.delete(key: 'last_auth_password');
-    await _secureStorage.delete(key: 'last_offline_uid');
-    unawaited(AppWidgetService.instance.clearOnLogout());
     await _auth.signOut();
-
-    session.end(); // 6. Repos nhận event: xóa cache, phát rỗng
+    await _clearLocalSession(activeUid, email: activeEmail);
     // Tuyệt đối không xóa SQLite dữ liệu hoặc sync_queue (I5)
   }
 
@@ -761,6 +854,24 @@ class AuthService {
         'lastPasswordUpdate': FieldValue.serverTimestamp(),
       });
 
+      // Cập nhật hash offline & saved_login_password nếu Remember-Me đang bật
+      if (user.email != null) {
+        await _saveOfflineCredentials(
+          email: user.email!,
+          password: newPassword,
+          uid: user.uid,
+        );
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          if (prefs.getBool('saved_remember_me') == true) {
+            await _secureStorage.write(
+              key: 'saved_login_password',
+              value: newPassword,
+            );
+          }
+        } catch (_) {}
+      }
+
       return (success: true, message: 'Cập nhật mật khẩu thành công!');
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {
@@ -822,9 +933,14 @@ class AuthService {
       try {
         await DatabaseHelper().clearUserData(uid);
       } catch (e, st) {
-        AppLogger.warn('Không thể đồng bộ UserModel Firestore', tag: 'AuthService', error: e, stackTrace: st);
+        AppLogger.warn('Không thể xóa dữ liệu SQLite khi xóa tài khoản', tag: 'AuthService', error: e, stackTrace: st);
       }
-      SessionManager.instance.end();
+      if (lowerEmail != null && lowerEmail.isNotEmpty) {
+        try {
+          await _secureStorage.delete(key: 'offline_auth_hash_$lowerEmail');
+        } catch (_) {}
+      }
+      await _clearLocalSession(uid, email: lowerEmail);
 
       return (success: true, message: 'Xoa tai khoan thanh cong!');
     } on FirebaseAuthException catch (e) {
@@ -897,6 +1013,25 @@ class AuthService {
         .get();
     await deleteInChunks(goals.docs);
 
+    try {
+      final categories = await _firestore
+          .collection('categories')
+          .where('uid', isEqualTo: uid)
+          .get();
+      await deleteInChunks(categories.docs);
+    } catch (_) {}
+
+    try {
+      final supportRequests = await _firestore
+          .collection('support_requests')
+          .where('uid', isEqualTo: uid)
+          .get();
+      await deleteInChunks(supportRequests.docs);
+    } catch (_) {}
+
+    // Xóa file trên Firebase Storage (avatars/, transaction_images/)
+    await _deleteUserStorageFiles(uid);
+
     // Xóa hồ sơ user
     await _firestore.collection('users').doc(uid).delete();
 
@@ -909,6 +1044,39 @@ class AuthService {
     }
     if (rawEmail != null && rawEmail.isNotEmpty) {
       await _firestore.collection('password_resets').doc(rawEmail).delete();
+    }
+  }
+
+  /// Xóa toàn bộ file Storage của user trong avatars/ và transaction_images/
+  Future<void> _deleteUserStorageFiles(String uid) async {
+    Future<void> deletePrefix(Reference ref) async {
+      try {
+        final listResult = await ref.listAll();
+        for (final item in listResult.items) {
+          try {
+            await item.delete();
+          } catch (_) {}
+        }
+        for (final prefix in listResult.prefixes) {
+          await deletePrefix(prefix);
+        }
+      } catch (_) {}
+    }
+
+    try {
+      final storage = FirebaseStorage.instance;
+      await deletePrefix(storage.ref('avatars/$uid'));
+      try {
+        await storage.ref('avatars/$uid.jpg').delete();
+      } catch (_) {}
+      await deletePrefix(storage.ref('transaction_images/$uid'));
+    } catch (e, st) {
+      AppLogger.warn(
+        'Lỗi dọn dẹp Firebase Storage khi xóa tài khoản',
+        tag: 'AuthService',
+        error: e,
+        stackTrace: st,
+      );
     }
   }
 

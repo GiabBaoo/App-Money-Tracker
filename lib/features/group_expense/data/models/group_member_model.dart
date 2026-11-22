@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/utils/firestore_parse.dart';
 
 class GroupMemberModel {
   final String id;
@@ -34,25 +35,20 @@ class GroupMemberModel {
   bool get isAdmin => role == 'admin' || role == 'owner';
 
   factory GroupMemberModel.fromJson(Map<String, dynamic> json) {
-    DateTime parseDate(dynamic val) {
-      if (val is Timestamp) return val.toDate();
-      if (val is int)
-        return DateTime.fromMillisecondsSinceEpoch(val, isUtc: true);
-      if (val is String) return DateTime.tryParse(val) ?? DateTime.now();
-      return DateTime.now();
-    }
-
     return GroupMemberModel(
-      id: json['id'] as String,
-      groupId: json['groupId'] as String,
-      userId: json['userId'] as String,
-      role: json['role'] as String? ?? 'member',
-      nickname: json['nickname'] as String?,
-      joinedAt: parseDate(json['joinedAt']),
-      status: json['status'] as String? ?? 'active',
-      leftAt: json['leftAt'] != null ? parseDate(json['leftAt']) : null,
-      updatedAt: parseDate(json['updatedAt']),
-      syncStatus: json['syncStatus'] as String? ?? 'synced',
+      id: FirestoreParse.parseString(json['id']),
+      groupId: FirestoreParse.parseString(json['groupId']),
+      userId: FirestoreParse.parseString(json['userId']),
+      role: FirestoreParse.parseString(json['role'], defaultValue: 'member'),
+      nickname: json['nickname']?.toString(),
+      joinedAt: FirestoreParse.parseDate(json['joinedAt']) ?? DateTime.now(),
+      status: FirestoreParse.parseString(json['status'], defaultValue: 'active'),
+      leftAt: FirestoreParse.parseDate(json['leftAt']),
+      updatedAt: FirestoreParse.parseDate(json['updatedAt']) ?? DateTime.now(),
+      syncStatus: FirestoreParse.parseString(
+        json['syncStatus'],
+        defaultValue: 'synced',
+      ),
     );
   }
 

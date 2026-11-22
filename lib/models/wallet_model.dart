@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../core/utils/firestore_parse.dart';
 import '../services/language_service.dart';
 
 /// Phân loại ví / nơi chứa tiền
@@ -106,34 +107,27 @@ class WalletModel {
     final data = doc.data() as Map<String, dynamic>? ?? {};
     return WalletModel(
       id: doc.id,
-      uid: data['uid'] as String? ?? '',
-      name: data['name'] as String? ?? '',
-      type: data['type'] as String? ?? WalletType.cash,
-      balance: (data['balance'] as num?)?.toDouble() ?? 0.0,
-      initialBalance: (data['initialBalance'] as num?)?.toDouble() ?? 0.0,
-      currency: data['currency'] as String? ?? 'VND',
+      uid: FirestoreParse.parseString(data['uid']),
+      name: FirestoreParse.parseString(data['name']),
+      type: FirestoreParse.parseString(data['type'], defaultValue: WalletType.cash),
+      balance: FirestoreParse.parseDouble(data['balance']),
+      initialBalance: FirestoreParse.parseDouble(data['initialBalance']),
+      currency: FirestoreParse.parseString(data['currency'], defaultValue: 'VND'),
       iconCode:
-          data['iconCode'] as int? ??
+          FirestoreParse.parseInt(data['iconCode']) ??
           Icons.account_balance_wallet_rounded.codePoint,
       colorValue:
-          data['colorValue'] as int? ?? const Color(0xFF438883).toARGB32(),
-      isDefault: data['isDefault'] is bool
-          ? (data['isDefault'] as bool)
-          : (data['isDefault'] == 1 || data['isDefault'] == 'true'),
-      accountNumber: data['accountNumber'] as String? ?? '',
-      bankName: data['bankName'] as String? ?? '',
-      note: data['note'] as String? ?? '',
-      createdAt: data['createdAt'] != null
-          ? (data['createdAt'] as Timestamp).toDate()
-          : DateTime.now(),
-      updatedAt: data['updatedAt'] != null
-          ? (data['updatedAt'] as Timestamp).toDate()
-          : DateTime.now(),
+          FirestoreParse.parseInt(data['colorValue']) ??
+          const Color(0xFF438883).toARGB32(),
+      isDefault: FirestoreParse.parseBool(data['isDefault']),
+      accountNumber: FirestoreParse.parseString(data['accountNumber']),
+      bankName: FirestoreParse.parseString(data['bankName']),
+      note: FirestoreParse.parseString(data['note']),
+      createdAt: FirestoreParse.parseDate(data['createdAt']) ?? DateTime.now(),
+      updatedAt: FirestoreParse.parseDate(data['updatedAt']) ?? DateTime.now(),
       syncStatus: 'synced',
-      isDeleted: data['isDeleted'] as bool? ?? false,
-      deletedAt: data['deletedAt'] != null
-          ? (data['deletedAt'] as Timestamp).toDate()
-          : null,
+      isDeleted: FirestoreParse.parseBool(data['isDeleted']),
+      deletedAt: FirestoreParse.parseDate(data['deletedAt']),
     );
   }
 

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/utils/firestore_parse.dart';
 
 enum TransactionType { contribute, withdraw }
 
@@ -38,16 +39,19 @@ class FundTransactionModel {
 
   factory FundTransactionModel.fromJson(Map<String, dynamic> json) {
     return FundTransactionModel(
-      id: json['id'] as String,
-      groupId: json['groupId'] as String,
-      userId: json['userId'] as String,
-      userName: json['userName'] as String? ?? 'Người dùng',
-      amount: (json['amount'] as num).toDouble(),
+      id: FirestoreParse.parseString(json['id']),
+      groupId: FirestoreParse.parseString(json['groupId']),
+      userId: FirestoreParse.parseString(json['userId']),
+      userName: FirestoreParse.parseString(
+        json['userName'],
+        defaultValue: 'Người dùng',
+      ),
+      amount: FirestoreParse.parseDouble(json['amount']),
       type: json['type'] == 'contribute'
           ? TransactionType.contribute
           : TransactionType.withdraw,
-      createdAt: (json['createdAt'] as Timestamp).toDate(),
-      notes: json['notes'] as String?,
+      createdAt: FirestoreParse.parseDate(json['createdAt']) ?? DateTime.now(),
+      notes: json['notes']?.toString(),
     );
   }
 }

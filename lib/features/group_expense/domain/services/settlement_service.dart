@@ -40,7 +40,28 @@ class SettlementService {
       throw Exception('Số tiền thanh toán vượt quá số nợ');
     }
 
+    // Chặn tạo quyết toán mới khi đã có quyết toán đang chờ xác nhận giữa 2 người
+    final existingSettlements = await _settlementRepository.getByGroupId(
+      dto.groupId,
+    );
+    final hasPendingBetweenPair = existingSettlements.any(
+      (s) =>
+          !s.isDeleted &&
+          s.status == SettlementStatus.pendingConfirmation &&
+          ((s.payerId == dto.payerId && s.payeeId == dto.payeeId) ||
+              (s.payerId == dto.payeeId && s.payeeId == dto.payerId)),
+    );
+    if (hasPendingBetweenPair) {
+      throw Exception(
+        'Đã có yêu cầu thanh toán đang chờ xác nhận giữa hai người',
+      );
+    }
+
     return await _settlementRepository.create(dto);
+  }
+
+  Future<SettlementModel> getSettlementById(String settlementId) async {
+    return await _settlementRepository.getById(settlementId);
   }
 
   Future<void> confirmSettlement(String settlementId, String userId) async {

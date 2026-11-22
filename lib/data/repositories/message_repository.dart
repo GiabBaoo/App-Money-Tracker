@@ -5,6 +5,7 @@ import '../local/database_helper.dart';
 import '../local/owned_table_ops.dart';
 import '../local/sync_queue_writer.dart';
 import '../../models/message_model.dart';
+import '../../services/sync_trigger.dart';
 
 /// Repository quản lý tin nhắn hỗ trợ — đọc/ghi từ SQLite.
 class MessageRepository with OwnedTableOps {
@@ -69,6 +70,7 @@ class MessageRepository with OwnedTableOps {
     });
 
     _notifyChanged();
+    SyncTrigger.requestSync();
   }
 
   Future<void> deleteMessage(String messageId) async {
@@ -87,6 +89,7 @@ class MessageRepository with OwnedTableOps {
     });
 
     _notifyChanged();
+    SyncTrigger.requestSync();
   }
 
   // ════════ QUERIES ════════

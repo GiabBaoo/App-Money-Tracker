@@ -130,7 +130,7 @@ void main() async {
     activeUid = await authService.initOfflineSession();
   }
 
-  if (activeUid != null) {
+  if (activeUid != null && SessionManager.instance.uidOrNull != activeUid) {
     SessionManager.instance.activate(activeUid);
   }
 
@@ -145,8 +145,13 @@ void main() async {
       MidnightSyncService.instance.init();
 
       if (currentUser != null) {
-        syncService.initialDownload();
-        if (connectivityService.isOnline) {
+        unawaited(syncService.initialDownload(currentUser.uid));
+        syncService.startRealtimeListeners();
+        unawaited(FirestoreService().ensureCurrentDeviceRegistered());
+      } else if (activeUid != null) {
+        final reauthed = await authService.silentReauthenticateIfNeeded();
+        if (reauthed) {
+          unawaited(syncService.initialDownload(activeUid));
           syncService.startRealtimeListeners();
           unawaited(FirestoreService().ensureCurrentDeviceRegistered());
         }

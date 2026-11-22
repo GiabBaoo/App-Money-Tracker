@@ -8,6 +8,7 @@ import '../local/owned_table_ops.dart';
 import '../local/sync_queue_writer.dart';
 import '../../models/budget_model.dart';
 import '../../core/logging/app_logger.dart';
+import '../../services/sync_trigger.dart';
 import 'transaction_repository.dart';
 
 class BudgetRepository with OwnedTableOps {
@@ -89,6 +90,7 @@ class BudgetRepository with OwnedTableOps {
           (tx) =>
               tx.type == 'expense' &&
               !tx.isTransfer &&
+              !tx.isSavingsGoal &&
               tx.date.month == targetMonth &&
               tx.date.year == targetYear,
         )
@@ -141,6 +143,7 @@ class BudgetRepository with OwnedTableOps {
     });
 
     await _notifyChanged(month: budget.month, year: budget.year);
+    SyncTrigger.requestSync();
     return id;
   }
 
@@ -166,6 +169,7 @@ class BudgetRepository with OwnedTableOps {
     });
 
     await _notifyChanged(month: budget.month, year: budget.year);
+    SyncTrigger.requestSync();
   }
 
   /// Xóa ngân sách (áp dụng Soft Delete / Tombstone)
@@ -185,6 +189,7 @@ class BudgetRepository with OwnedTableOps {
     });
 
     await _notifyChanged(month: month, year: year);
+    SyncTrigger.requestSync();
   }
 
   /// Đổi tên danh mục trong mọi ngân sách (khi user đổi tên danh mục tự tạo).

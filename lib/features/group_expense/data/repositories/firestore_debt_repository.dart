@@ -22,7 +22,9 @@ class FirestoreDebtRepository implements IDebtRepository {
         .where('status', isEqualTo: 'active')
         .get();
 
-    return snapshot.docs.map((doc) => DebtModel.fromJson(doc.data())).toList();
+    return snapshot.docs
+        .map((doc) => DebtModel.fromJson({...doc.data(), 'id': doc.id}))
+        .toList();
   }
 
   @override
@@ -34,7 +36,7 @@ class FirestoreDebtRepository implements IDebtRepository {
         .snapshots()
         .map(
           (snapshot) => snapshot.docs
-              .map((doc) => DebtModel.fromJson(doc.data()))
+              .map((doc) => DebtModel.fromJson({...doc.data(), 'id': doc.id}))
               .toList(),
         );
   }
@@ -54,8 +56,12 @@ class FirestoreDebtRepository implements IDebtRepository {
         .get();
 
     return [
-      ...debtorSnapshot.docs.map((doc) => DebtModel.fromJson(doc.data())),
-      ...creditorSnapshot.docs.map((doc) => DebtModel.fromJson(doc.data())),
+      ...debtorSnapshot.docs.map(
+        (doc) => DebtModel.fromJson({...doc.data(), 'id': doc.id}),
+      ),
+      ...creditorSnapshot.docs.map(
+        (doc) => DebtModel.fromJson({...doc.data(), 'id': doc.id}),
+      ),
     ];
   }
 

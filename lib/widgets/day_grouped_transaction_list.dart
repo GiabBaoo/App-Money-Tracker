@@ -24,12 +24,12 @@ class TransactionViewModeToggle extends StatelessWidget {
     final isVi = LanguageScope.of(context).isVietnamese;
 
     return Container(
-      padding: const EdgeInsets.all(2.5),
+      padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
         color: isDark
             ? Colors.white.withValues(alpha: 0.08)
             : const Color(0xFFEEF3F2),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(9),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -72,17 +72,17 @@ class TransactionViewModeToggle extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
         decoration: BoxDecoration(
           color: selected
               ? (isDark ? const Color(0xFF2DD4BF) : const Color(0xFF438883))
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(7),
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 11.5,
+            fontSize: 11,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             color: selected
                 ? (isDark ? const Color(0xFF0A1614) : Colors.white)

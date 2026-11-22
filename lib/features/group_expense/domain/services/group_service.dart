@@ -86,9 +86,10 @@ class GroupService {
       throw Exception('Chỉ admin mới có thể xóa thành viên khác');
     }
 
-    // Bất biến GRP-I3: Kiểm tra công nợ ròng trước khi rời nhóm
+    // Bất biến GRP-I3: Tính lại công nợ từ sổ cái trước khi kiểm tra rời nhóm
     final debtCalc = _debtCalculator;
     if (debtCalc != null) {
+      await debtCalc.recalculateDebts(groupId);
       final debts = await debtCalc.getGroupDebts(groupId);
       final userBalance = debtCalc.getUserBalance(debts, memberId);
       if (userBalance.abs() > 0.5) {

@@ -6,8 +6,10 @@ import '../data/local/database_helper.dart';
 import '../data/local/sync_queue_writer.dart';
 import '../data/repositories/transaction_repository.dart';
 import '../data/repositories/wallet_repository.dart';
+import '../data/repositories/goal_repository.dart';
 import '../models/transaction_model.dart';
 import '../models/wallet_model.dart';
+import '../models/goal_model.dart';
 import '../utils/finance_precision.dart';
 import 'connectivity_service.dart';
 import 'sync_service.dart';
@@ -72,10 +74,8 @@ class TransactionBalanceService {
     _txRepo.notifyTransactionsChanged();
     _walletRepo.notifyChanged();
 
-    // Tự động đẩy sync nếu đang online
-    if (ConnectivityService().isOnline) {
-      unawaited(SyncService().syncAll());
-    }
+    // Tự động đẩy sync
+    unawaited(SyncService().syncAll());
 
     // Tự động cập nhật số dư Android App Widget
     unawaited(AppWidgetService.instance.updateWidgetBalance());
@@ -148,14 +148,57 @@ class TransactionBalanceService {
         action: 'UPDATE',
         data: row,
       );
+
+      // Bước 5: Nếu là giao dịch mục tiêu tiết kiệm, cập nhật chênh lệch goals.currentAmount
+      final goalId = newTx.goalId ?? oldTx.goalId;
+      if (goalId != null && goalId.isNotEmpty) {
+        final oldGoalDelta = oldType == 'expense' ? oldAmount : -oldAmount;
+        final newGoalDelta = newType == 'expense' ? newAmount : -newAmount;
+        final netGoalDelta = newGoalDelta - oldGoalDelta;
+        if (netGoalDelta.abs() > 0.001) {
+          final goalRows = await txn.query(
+            'goals',
+            where: 'id = ? AND uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+            whereArgs: [goalId, uid],
+            limit: 1,
+          );
+          if (goalRows.isNotEmpty) {
+            final goal = GoalModel.fromSqlite(goalRows.first);
+            final nextAmount = FinancePrecision.roundCurrency(
+              (goal.currentAmount + netGoalDelta).clamp(0.0, double.infinity),
+            );
+            final updatedGoal = goal.copyWith(
+              currentAmount: nextAmount,
+              updatedAt: now,
+              syncStatus: 'pending',
+            );
+            final goalMap = updatedGoal.toSqlite();
+            await txn.update(
+              'goals',
+              goalMap,
+              where: 'id = ? AND uid = ?',
+              whereArgs: [goalId, uid],
+            );
+            await SyncQueueWriter.enqueue(
+              txn,
+              ownerUid: uid,
+              table: 'goals',
+              recordId: goalId,
+              action: 'UPDATE',
+              data: goalMap,
+            );
+          }
+        }
+      }
     });
 
     _txRepo.notifyTransactionsChanged();
     _walletRepo.notifyChanged();
-
-    if (ConnectivityService().isOnline) {
-      unawaited(SyncService().syncAll());
+    if ((newTx.goalId ?? oldTx.goalId)?.isNotEmpty == true) {
+      GoalRepository().notifyChanged();
     }
+
+    unawaited(SyncService().syncAll());
 
     // Tự động cập nhật số dư Android App Widget
     unawaited(AppWidgetService.instance.updateWidgetBalance());

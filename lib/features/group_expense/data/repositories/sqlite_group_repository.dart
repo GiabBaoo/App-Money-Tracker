@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/session/session_manager.dart';
 import '../../../../data/local/database_helper.dart';
 import '../../../../data/local/owned_table_ops.dart';
 import '../../../../data/local/sync_queue_writer.dart';
+import '../../../../services/connectivity_service.dart';
+import '../../../../services/sync_trigger.dart';
 import '../../domain/repositories/i_group_repository.dart';
 import '../dtos/create_group_dto.dart';
 import '../dtos/update_group_dto.dart';
@@ -28,7 +31,9 @@ class SqliteGroupRepository implements IGroupRepository {
     final id = const Uuid().v4();
     final now = DateTime.now();
 
-    final allMemberIds = {adminId, ...dto.memberIds}.toList();
+    // Tạo nhóm chỉ với [adminId] đúng Firestore rules; các thành viên khác vào qua group_invites
+    final allMemberIds = [adminId];
+    final extraInvitees = dto.memberIds.where((m) => m != adminId).toSet();
 
     final group = GroupModel(
       id: id,
@@ -66,7 +71,7 @@ class SqliteGroupRepository implements IGroupRepository {
 
       await SyncQueueWriter.enqueue(
         txn,
-        ownerUid: adminId,
+        ownerUid: SessionManager.instance.uidOrNull ?? adminId,
         table: 'groups',
         recordId: id,
         action: 'INSERT',
@@ -74,7 +79,32 @@ class SqliteGroupRepository implements IGroupRepository {
       );
     });
 
+    // Nếu có danh sách thành viên được mời thêm khi tạo nhóm và đang online → gửi group_invites
+    if (extraInvitees.isNotEmpty && ConnectivityService().isOnline) {
+      unawaited(() async {
+        try {
+          final fs = FirebaseFirestore.instance;
+          await fs.collection('groups').doc(id).set(group.toJson());
+          final expiresAt = now.add(const Duration(days: 7));
+          final batch = fs.batch();
+          for (final inviteeUid in extraInvitees) {
+            batch.set(fs.collection('group_invites').doc('${id}_$inviteeUid'), {
+              'groupId': id,
+              'groupName': dto.name,
+              'inviteeUid': inviteeUid,
+              'invitedBy': adminId,
+              'status': 'pending',
+              'createdAt': Timestamp.fromDate(now),
+              'expiresAt': Timestamp.fromDate(expiresAt),
+            });
+          }
+          await batch.commit();
+        } catch (_) {}
+      }());
+    }
+
     _changeController.add(null);
+    SyncTrigger.requestSync();
     return group;
   }
 
@@ -259,7 +289,7 @@ class SqliteGroupRepository implements IGroupRepository {
 
       await SyncQueueWriter.enqueue(
         txn,
-        ownerUid: userId,
+        ownerUid: SessionManager.instance.uidOrNull ?? userId,
         table: 'group_members',
         recordId: '${groupId}_$userId',
         action: 'INSERT',
@@ -268,6 +298,7 @@ class SqliteGroupRepository implements IGroupRepository {
     });
 
     _changeController.add(null);
+    SyncTrigger.requestSync();
   }
 
   @override
@@ -289,7 +320,7 @@ class SqliteGroupRepository implements IGroupRepository {
 
       await SyncQueueWriter.enqueue(
         txn,
-        ownerUid: userId,
+        ownerUid: SessionManager.instance.uidOrNull ?? userId,
         table: 'group_members',
         recordId: '${groupId}_$userId',
         action: 'UPDATE',
@@ -298,6 +329,7 @@ class SqliteGroupRepository implements IGroupRepository {
     });
 
     _changeController.add(null);
+    SyncTrigger.requestSync();
   }
 
   Future<List<GroupMemberModel>> getMembers(String groupId) async {
@@ -373,7 +405,7 @@ class SqliteGroupRepository implements IGroupRepository {
           }
         }
 
-        // Đồng bộ danh sách group_members theo g.memberIds
+        // Đồng bộ danh sách group_members theo g.memberIds (thêm mới & xóa thành viên không còn trên cloud)
         if (!g.isDeleted) {
           for (final memberId in g.memberIds) {
             final mId = '${g.id}_$memberId';
@@ -395,6 +427,15 @@ class SqliteGroupRepository implements IGroupRepository {
                 g.updatedAt.toUtc().millisecondsSinceEpoch,
                 g.updatedAt.toUtc().millisecondsSinceEpoch,
               ],
+            );
+          }
+
+          if (g.memberIds.isNotEmpty) {
+            final placeholders = List.filled(g.memberIds.length, '?').join(',');
+            await txn.delete(
+              'group_members',
+              where: 'groupId = ? AND userId NOT IN ($placeholders)',
+              whereArgs: [g.id, ...g.memberIds],
             );
           }
         }

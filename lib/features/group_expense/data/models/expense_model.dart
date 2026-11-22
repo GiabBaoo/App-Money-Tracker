@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/utils/firestore_parse.dart';
 
 enum SplitMethod { equal, custom, singlePayer, percentage, shares, exact }
 
@@ -54,14 +55,6 @@ class ExpenseModel {
   int get amountVnd => amount.round();
 
   factory ExpenseModel.fromJson(Map<String, dynamic> json) {
-    DateTime parseDate(dynamic val) {
-      if (val is Timestamp) return val.toDate();
-      if (val is int)
-        return DateTime.fromMillisecondsSinceEpoch(val, isUtc: true);
-      if (val is String) return DateTime.tryParse(val) ?? DateTime.now();
-      return DateTime.now();
-    }
-
     final rawParticipants = json['participantIds'];
     List<String> participants = [];
     if (rawParticipants is List) {
@@ -72,7 +65,10 @@ class ExpenseModel {
     Map<String, double> sharesMap = {};
     if (rawShares is Map) {
       sharesMap = rawShares.map(
-        (key, value) => MapEntry(key.toString(), (value as num).toDouble()),
+        (key, value) => MapEntry(
+          key.toString(),
+          FirestoreParse.parseDouble(value),
+        ),
       );
     }
 
@@ -86,7 +82,10 @@ class ExpenseModel {
       } catch (_) {}
     }
 
-    final splitMethodStr = json['splitMethod'] as String? ?? 'equal';
+    final splitMethodStr = FirestoreParse.parseString(
+      json['splitMethod'],
+      defaultValue: 'equal',
+    );
     final split = SplitMethod.values.firstWhere(
       (e) =>
           e.toString().split('.').last.toLowerCase() ==
@@ -94,30 +93,38 @@ class ExpenseModel {
       orElse: () => SplitMethod.equal,
     );
 
+    final payerId = FirestoreParse.parseString(json['payerId']);
     return ExpenseModel(
-      id: json['id'] as String,
-      groupId: json['groupId'] as String,
-      name: json['name'] as String,
-      amount: (json['amount'] as num).toDouble(),
-      payerId: json['payerId'] as String,
+      id: FirestoreParse.parseString(json['id']),
+      groupId: FirestoreParse.parseString(json['groupId']),
+      name: FirestoreParse.parseString(json['name']),
+      amount: FirestoreParse.parseDouble(json['amount']),
+      payerId: payerId,
       participantIds: participants,
       splitMethod: split,
       shares: sharesMap,
-      category: json['category'] as String? ?? 'Khác',
-      categoryIconCode: (json['categoryIconCode'] as num?)?.toInt() ?? 0,
-      date: parseDate(json['date']),
-      notes: json['notes'] as String?,
+      category: FirestoreParse.parseString(
+        json['category'],
+        defaultValue: 'Khác',
+      ),
+      categoryIconCode: FirestoreParse.parseInt(json['categoryIconCode']) ?? 0,
+      date: FirestoreParse.parseDate(json['date']) ?? DateTime.now(),
+      notes: json['notes']?.toString(),
       photoUrls: photos,
-      createdBy: json['createdBy'] as String? ?? json['payerId'] as String,
-      linkedTransactionId: json['linkedTransactionId'] as String?,
-      createdAt: parseDate(json['createdAt']),
-      updatedAt: parseDate(json['updatedAt']),
-      isDeleted: json['isDeleted'] == true || json['isDeleted'] == 1,
-      deletedAt: json['deletedAt'] != null
-          ? parseDate(json['deletedAt'])
-          : null,
-      syncStatus: json['syncStatus'] as String? ?? 'synced',
-      version: (json['version'] as num?)?.toInt() ?? 1,
+      createdBy: FirestoreParse.parseString(
+        json['createdBy'],
+        defaultValue: payerId,
+      ),
+      linkedTransactionId: json['linkedTransactionId']?.toString(),
+      createdAt: FirestoreParse.parseDate(json['createdAt']) ?? DateTime.now(),
+      updatedAt: FirestoreParse.parseDate(json['updatedAt']) ?? DateTime.now(),
+      isDeleted: FirestoreParse.parseBool(json['isDeleted']),
+      deletedAt: FirestoreParse.parseDate(json['deletedAt']),
+      syncStatus: FirestoreParse.parseString(
+        json['syncStatus'],
+        defaultValue: 'synced',
+      ),
+      version: FirestoreParse.parseInt(json['version']) ?? 1,
     );
   }
 

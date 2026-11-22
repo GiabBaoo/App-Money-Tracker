@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../core/utils/firestore_parse.dart';
 
 class GoalModel {
   final String id;
@@ -171,28 +172,22 @@ class GoalModel {
     final data = doc.data() as Map<String, dynamic>? ?? {};
     return GoalModel(
       id: doc.id,
-      uid: data['uid'] as String? ?? '',
-      title: data['title'] as String? ?? '',
-      targetAmount: (data['targetAmount'] as num?)?.toDouble() ?? 0.0,
-      currentAmount: (data['currentAmount'] as num?)?.toDouble() ?? 0.0,
-      deadline: data['deadline'] != null
-          ? (data['deadline'] as Timestamp).toDate()
-          : DateTime.now().add(const Duration(days: 30)),
-      iconCode: data['iconCode'] as int? ?? 0xe532,
-      colorValue: data['colorValue'] as int? ?? 0xFF438883,
-      walletId: data['walletId'] as String? ?? '',
-      note: data['note'] as String? ?? '',
-      createdAt: data['createdAt'] != null
-          ? (data['createdAt'] as Timestamp).toDate()
-          : DateTime.now(),
-      updatedAt: data['updatedAt'] != null
-          ? (data['updatedAt'] as Timestamp).toDate()
-          : DateTime.now(),
+      uid: FirestoreParse.parseString(data['uid']),
+      title: FirestoreParse.parseString(data['title']),
+      targetAmount: FirestoreParse.parseDouble(data['targetAmount']),
+      currentAmount: FirestoreParse.parseDouble(data['currentAmount']),
+      deadline:
+          FirestoreParse.parseDate(data['deadline']) ??
+          DateTime.now().add(const Duration(days: 30)),
+      iconCode: FirestoreParse.parseInt(data['iconCode']) ?? 0xe532,
+      colorValue: FirestoreParse.parseInt(data['colorValue']) ?? 0xFF438883,
+      walletId: FirestoreParse.parseString(data['walletId']),
+      note: FirestoreParse.parseString(data['note']),
+      createdAt: FirestoreParse.parseDate(data['createdAt']) ?? DateTime.now(),
+      updatedAt: FirestoreParse.parseDate(data['updatedAt']) ?? DateTime.now(),
       syncStatus: 'synced',
-      isDeleted: data['isDeleted'] as bool? ?? false,
-      deletedAt: data['deletedAt'] != null
-          ? (data['deletedAt'] as Timestamp).toDate()
-          : null,
+      isDeleted: FirestoreParse.parseBool(data['isDeleted']),
+      deletedAt: FirestoreParse.parseDate(data['deletedAt']),
     );
   }
 }

@@ -5,6 +5,7 @@ import '../local/database_helper.dart';
 import '../local/owned_table_ops.dart';
 import '../local/sync_queue_writer.dart';
 import '../../models/notification_model.dart';
+import '../../services/sync_trigger.dart';
 
 /// Repository quản lý thông báo — đọc/ghi từ SQLite.
 /// SINGLETON: Đảm bảo badge chuông trên home_screen và notification_screen
@@ -75,6 +76,7 @@ class NotificationRepository with OwnedTableOps {
     });
 
     _notifyChanged();
+    SyncTrigger.requestSync();
   }
 
   Future<void> markAsRead(String notificationId) async {
@@ -99,6 +101,7 @@ class NotificationRepository with OwnedTableOps {
     });
 
     _notifyChanged();
+    SyncTrigger.requestSync();
   }
 
   Future<void> markAllAsRead() async {
@@ -125,6 +128,7 @@ class NotificationRepository with OwnedTableOps {
     });
 
     _notifyChanged();
+    SyncTrigger.requestSync();
   }
 
   Future<void> deleteNotification(String notificationId) async {
@@ -143,6 +147,7 @@ class NotificationRepository with OwnedTableOps {
     });
 
     _notifyChanged();
+    SyncTrigger.requestSync();
   }
 
   // ════════ QUERIES ════════
@@ -328,6 +333,7 @@ class NotificationRepository with OwnedTableOps {
       );
     });
     _notifyChanged();
+    SyncTrigger.requestSync();
   }
 
   Future<NotificationModel?> getById(String notificationId) async {

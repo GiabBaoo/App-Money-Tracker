@@ -78,12 +78,7 @@ class SettlementConfirmScreen extends ConsumerWidget {
                   ),
                 ),
                 child: FutureBuilder<SettlementModel>(
-                  future: settlementService
-                      .getGroupSettlements(settlementId)
-                      .then(
-                        (settlements) =>
-                            settlements.firstWhere((s) => s.id == settlementId),
-                      ),
+                  future: settlementService.getSettlementById(settlementId),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());

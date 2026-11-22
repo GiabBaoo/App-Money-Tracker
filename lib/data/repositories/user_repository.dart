@@ -9,6 +9,7 @@ import '../local/sync_queue_writer.dart';
 import '../../core/errors/business_exception.dart';
 import '../../models/user_model.dart';
 import '../../core/logging/app_logger.dart';
+import '../../services/sync_trigger.dart';
 
 /// Repository quản lý thông tin người dùng — đọc/ghi từ SQLite (Singleton).
 class UserRepository with OwnedTableOps {
@@ -97,6 +98,7 @@ class UserRepository with OwnedTableOps {
 
     await getUser(); // Cập nhật lại _cachedUser
     _notifyUserChanged();
+    SyncTrigger.requestSync();
   }
 
   /// Cập nhật nhanh ảnh đại diện và phát tín hiệu cho toàn bộ UI tức thời
@@ -261,10 +263,13 @@ class UserRepository with OwnedTableOps {
       table: 'users',
       recordId: uid,
       action: 'UPDATE',
-      data: {'dataUsage.$key': value},
+      data: {
+        'dataUsage': {key: value},
+      },
     );
 
     _notifyUserChanged();
+    SyncTrigger.requestSync();
   }
 
   // ════════ SYNC HELPERS ════════

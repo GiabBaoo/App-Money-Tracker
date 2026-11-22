@@ -43,7 +43,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     final isVi = LanguageScope.of(context).isVietnamese;
     setState(() => _isManualSyncing = true);
     try {
-      final success = await _syncService.syncAll();
+      final success = await _syncService.createCloudBackupSnapshot();
       await _loadPendingCount();
 
       if (mounted) {
@@ -51,8 +51,8 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
           TopToast.show(
             context,
             isVi
-                ? 'Đồng bộ dữ liệu lên Firebase thành công!'
-                : 'Firebase cloud sync successful!',
+                ? 'Đã tạo bản sao lưu & đồng bộ lên Firebase thành công!'
+                : 'Cloud backup created & synced to Firebase!',
           );
         } else {
           if (!_connectivity.isOnline) {
@@ -67,8 +67,8 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
             TopToast.show(
               context,
               isVi
-                  ? 'Đồng bộ hoàn tất (đã cập nhật phiên bản mới nhất).'
-                  : 'Sync completed (latest version updated).',
+                  ? 'Đồng bộ hoàn tất (đã cập nhật bản sao lưu mới nhất).'
+                  : 'Sync completed (latest backup updated).',
             );
           }
         }

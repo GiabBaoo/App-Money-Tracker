@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,8 @@ import '../../../../data/repositories/user_repository.dart';
 import '../../../../models/notification_model.dart';
 import '../../../../models/user_model.dart';
 import '../../../../services/notification_service.dart';
+import '../../data/models/group_model.dart';
+import '../../data/repositories/sqlite_group_repository.dart';
 import '../providers/group_expense_providers.dart';
 import 'group_detail_screen.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -38,6 +41,8 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
   bool _isAccepted = false;
   bool _isRejected = false;
   String? _errorMessage;
+  GroupModel? _invitePreviewGroup;
+  bool _isLoadingInvite = true;
 
   @override
   void initState() {
@@ -47,8 +52,64 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
       if (mounted) {
         _checkUserAuth();
         _checkNotificationStatus();
+        _loadInviteFromFirestore();
       }
     });
+  }
+
+  /// Đọc thông tin lời mời trực tiếp từ Firestore group_invites (vì người được mời chưa có group trong SQLite)
+  Future<void> _loadInviteFromFirestore() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) {
+      if (mounted) setState(() => _isLoadingInvite = false);
+      return;
+    }
+    try {
+      final fs = FirebaseFirestore.instance;
+      final inviteDoc = await fs
+          .collection('group_invites')
+          .doc('${widget.groupId}_$userId')
+          .get();
+      if (inviteDoc.exists && inviteDoc.data() != null) {
+        final data = inviteDoc.data()!;
+        final status = data['status'] as String? ?? 'pending';
+        final groupName = data['groupName'] as String? ?? 'Nhóm chi tiêu';
+        final invitedBy = data['invitedBy'] as String? ?? '';
+        final createdAt = data['createdAt'] is Timestamp
+            ? (data['createdAt'] as Timestamp).toDate()
+            : DateTime.now();
+        if (mounted) {
+          setState(() {
+            _invitePreviewGroup = GroupModel(
+              id: widget.groupId,
+              name: groupName,
+              ownerId: invitedBy,
+              memberIds: invitedBy.isNotEmpty ? [invitedBy] : [],
+              createdAt: createdAt,
+              updatedAt: createdAt,
+            );
+            if (status == 'accepted') _isAccepted = true;
+            if (status == 'rejected') _isRejected = true;
+            _isLoadingInvite = false;
+          });
+        }
+        return;
+      }
+
+      // Nếu đã là thành viên rồi, thử đọc trực tiếp group trên Firestore
+      final groupDoc = await fs.collection('groups').doc(widget.groupId).get();
+      if (groupDoc.exists && groupDoc.data() != null && mounted) {
+        setState(() {
+          _invitePreviewGroup = GroupModel.fromJson({
+            ...groupDoc.data()!,
+            'id': groupDoc.id,
+          });
+          _isLoadingInvite = false;
+        });
+        return;
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _isLoadingInvite = false);
   }
 
   Future<void> _checkNotificationStatus() async {
@@ -143,41 +204,91 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
     });
 
     try {
-      // Kiểm tra xem group có tồn tại không
-      final groupRepository = ref.read(groupRepositoryProvider);
-      final group = await groupRepository.getById(widget.groupId);
+      final fs = FirebaseFirestore.instance;
+      final inviteRef = fs
+          .collection('group_invites')
+          .doc('${widget.groupId}_$userId');
+      final groupRef = fs.collection('groups').doc(widget.groupId);
 
-      // Kiểm tra xem user đã là thành viên chưa
-      if (group.memberIds.contains(userId)) {
-        // Đã là thành viên, chuyển thẳng vào group detail
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            PageTransitions.slideRight(
-              GroupDetailScreen(groupId: widget.groupId),
-            ),
-          );
+      // 1. Đọc lời mời từ Firestore
+      final inviteDoc = await inviteRef.get();
+      String groupName = _invitePreviewGroup?.name ?? 'Nhóm chi tiêu';
+      String adminId = _invitePreviewGroup?.adminId ?? '';
+
+      if (inviteDoc.exists && inviteDoc.data() != null) {
+        final invData = inviteDoc.data()!;
+        groupName = invData['groupName'] as String? ?? groupName;
+        adminId = invData['invitedBy'] as String? ?? adminId;
+        final invStatus = invData['status'] as String? ?? 'pending';
+
+        if (invStatus == 'pending') {
+          // Chấp nhận lời mời + arrayUnion(userId) trong cùng 1 batch nguyên tử đúng Firestore rules
+          final batch = fs.batch();
+          batch.update(inviteRef, {
+            'status': 'accepted',
+            'respondedAt': FieldValue.serverTimestamp(),
+          });
+          batch.update(groupRef, {
+            'memberIds': FieldValue.arrayUnion([userId]),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+          await batch.commit();
         }
-        return;
+      } else {
+        // Fallback nếu user đã là thành viên sẵn
+        final existingGroupDoc = await groupRef.get();
+        if (!existingGroupDoc.exists) {
+          throw Exception('Invite not found');
+        }
+        final existingGroup = GroupModel.fromJson({
+          ...existingGroupDoc.data()!,
+          'id': existingGroupDoc.id,
+        });
+        if (existingGroup.memberIds.contains(userId)) {
+          await SqliteGroupRepository().upsertFromFirestore([existingGroup]);
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              PageTransitions.slideRight(
+                GroupDetailScreen(groupId: widget.groupId),
+              ),
+            );
+          }
+          return;
+        }
+        throw Exception('Invite required');
       }
 
-      // Thêm user vào group bằng method addMember
-      await groupRepository.addMember(widget.groupId, userId);
+      // 2. Kéo group vừa tham gia từ Firestore về SQLite local
+      try {
+        final joinedDoc = await groupRef.get();
+        if (joinedDoc.exists && joinedDoc.data() != null) {
+          final joinedGroup = GroupModel.fromJson({
+            ...joinedDoc.data()!,
+            'id': joinedDoc.id,
+          });
+          groupName = joinedGroup.name;
+          adminId = joinedGroup.adminId;
+          await SqliteGroupRepository().upsertFromFirestore([joinedGroup]);
+        }
+      } catch (_) {}
 
       // Lấy tên người dùng hiện tại
       final userName =
           await _getCurrentUserName() ?? (isVi ? 'Một người dùng' : 'A user');
 
       // Gửi thông báo tới admin về việc chấp nhận lời mời
-      await _sendNotificationToAdmin(
-        adminId: group.adminId,
-        groupName: group.name,
-        title: isVi ? '✅ Chấp nhận lời mời' : '✅ Accepted invitation',
-        description: isVi
-            ? '$userName đã chấp nhận lời mời tham gia quỹ "${group.name}"'
-            : '$userName accepted invitation to join "${group.name}"',
-        iconCode: Icons.check_circle.codePoint,
-      );
+      if (adminId.isNotEmpty) {
+        await _sendNotificationToAdmin(
+          adminId: adminId,
+          groupName: groupName,
+          title: isVi ? '✅ Chấp nhận lời mời' : '✅ Accepted invitation',
+          description: isVi
+              ? '$userName đã chấp nhận lời mời tham gia quỹ "$groupName"'
+              : '$userName accepted invitation to join "$groupName"',
+          iconCode: Icons.check_circle.codePoint,
+        );
+      }
 
       // Cập nhật trạng thái thông báo hiện tại
       if (widget.notificationId != null) {
@@ -196,8 +307,8 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
         MonoToast.success(
           context,
           isVi
-              ? '🎉 Đã tham gia quỹ "${group.name}" thành công!'
-              : '🎉 Joined fund "${group.name}" successfully!',
+              ? '🎉 Đã tham gia quỹ "$groupName" thành công!'
+              : '🎉 Joined fund "$groupName" successfully!',
         );
 
         // Chuyển hướng vào trong quỹ sau 2 giây
@@ -227,6 +338,19 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
     });
 
     try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId != null) {
+        try {
+          await FirebaseFirestore.instance
+              .collection('group_invites')
+              .doc('${widget.groupId}_$userId')
+              .update({
+                'status': 'rejected',
+                'respondedAt': FieldValue.serverTimestamp(),
+              });
+        } catch (_) {}
+      }
+
       // Lấy tên người dùng hiện tại
       final userName =
           await _getCurrentUserName() ?? (isVi ? 'Một người dùng' : 'A user');
@@ -283,10 +407,13 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
     final textSecondary = context.colors.onSurfaceVariant;
     final borderColor = context.borderColor;
     final groupAsync = ref.watch(groupDetailsProvider(widget.groupId));
+    final effectiveGroupAsync = _invitePreviewGroup != null
+        ? AsyncValue.data(_invitePreviewGroup)
+        : (_isLoadingInvite ? const AsyncValue.loading() : groupAsync);
 
     return Scaffold(
       backgroundColor: bgColor,
-      body: groupAsync.when(
+      body: effectiveGroupAsync.when(
         data: (group) {
           if (group == null) {
             return Scaffold(

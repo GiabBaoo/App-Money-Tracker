@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../core/utils/firestore_parse.dart';
 
 class MessageModel {
   final String id;
@@ -39,24 +40,20 @@ class MessageModel {
     final data = doc.data() as Map<String, dynamic>? ?? {};
     return MessageModel(
       id: doc.id,
-      uid: data['uid'] ?? '',
-      iconCode: data['iconCode'] ?? Icons.message.codePoint,
-      iconBgColorValue: data['iconBgColorValue'] ?? 0xFF438883,
-      title: data['title'] ?? '',
-      shortMessage: data['shortMessage'] ?? '',
-      fullMessage: data['fullMessage'] ?? '',
-      isUnread: data['isUnread'] ?? true,
-      createdAt: data['createdAt'] != null
-          ? (data['createdAt'] as Timestamp).toDate()
-          : DateTime.now(),
-      updatedAt: data['updatedAt'] != null
-          ? (data['updatedAt'] as Timestamp).toDate()
-          : null,
+      uid: FirestoreParse.parseString(data['uid']),
+      iconCode:
+          FirestoreParse.parseInt(data['iconCode']) ?? Icons.message.codePoint,
+      iconBgColorValue:
+          FirestoreParse.parseInt(data['iconBgColorValue']) ?? 0xFF438883,
+      title: FirestoreParse.parseString(data['title']),
+      shortMessage: FirestoreParse.parseString(data['shortMessage']),
+      fullMessage: FirestoreParse.parseString(data['fullMessage']),
+      isUnread: FirestoreParse.parseBool(data['isUnread'], defaultValue: true),
+      createdAt: FirestoreParse.parseDate(data['createdAt']) ?? DateTime.now(),
+      updatedAt: FirestoreParse.parseDate(data['updatedAt']),
       syncStatus: 'synced',
-      isDeleted: data['isDeleted'] == true,
-      deletedAt: data['deletedAt'] != null
-          ? (data['deletedAt'] as Timestamp).toDate()
-          : null,
+      isDeleted: FirestoreParse.parseBool(data['isDeleted']),
+      deletedAt: FirestoreParse.parseDate(data['deletedAt']),
     );
   }
 

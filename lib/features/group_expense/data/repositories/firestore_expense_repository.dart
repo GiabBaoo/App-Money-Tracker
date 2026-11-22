@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 import '../../domain/repositories/i_expense_repository.dart';
+import '../../domain/services/vnd_split_calculator.dart';
 import '../dtos/create_expense_dto.dart';
 import '../models/expense_model.dart';
 
@@ -15,18 +16,51 @@ class FirestoreExpenseRepository implements IExpenseRepository {
     final id = const Uuid().v4();
     final now = DateTime.now();
 
-    Map<String, double> shares;
-    if (dto.splitMethod == SplitMethod.equal) {
-      final shareAmount = dto.amount / dto.participantIds.length;
-      shares = {for (var id in dto.participantIds) id: shareAmount};
-    } else if (dto.splitMethod == SplitMethod.custom &&
-        dto.customShares != null) {
-      shares = dto.customShares!;
-    } else if (dto.splitMethod == SplitMethod.singlePayer) {
-      shares = {dto.payerId: dto.amount};
-    } else {
-      throw Exception('Invalid split method or missing custom shares');
+    final totalAmountVnd = dto.amount.round();
+    final Map<String, int> intSplits;
+    switch (dto.splitMethod) {
+      case SplitMethod.equal:
+        intSplits = VndSplitCalculator.calculateEqualSplit(
+          totalAmountVnd: totalAmountVnd,
+          participantIds: dto.participantIds,
+          payerId: dto.payerId,
+        );
+        break;
+      case SplitMethod.percentage:
+        if (dto.customShares == null || dto.customShares!.isEmpty) {
+          throw Exception('Thiếu tỷ lệ phần trăm chia tiền');
+        }
+        intSplits = VndSplitCalculator.calculatePercentageSplit(
+          totalAmountVnd: totalAmountVnd,
+          percentages: dto.customShares!,
+          payerId: dto.payerId,
+        );
+        break;
+      case SplitMethod.shares:
+        if (dto.customShares == null || dto.customShares!.isEmpty) {
+          throw Exception('Thiếu số phần chia tiền');
+        }
+        intSplits = VndSplitCalculator.calculateSharesSplit(
+          totalAmountVnd: totalAmountVnd,
+          shares: dto.customShares!.map((k, v) => MapEntry(k, v.round())),
+          payerId: dto.payerId,
+        );
+        break;
+      case SplitMethod.exact:
+      case SplitMethod.custom:
+        if (dto.customShares == null || dto.customShares!.isEmpty) {
+          throw Exception('Thiếu số tiền chia lẻ');
+        }
+        intSplits = VndSplitCalculator.calculateExactSplit(
+          totalAmountVnd: totalAmountVnd,
+          exactAmounts: dto.customShares!.map((k, v) => MapEntry(k, v.round())),
+        );
+        break;
+      case SplitMethod.singlePayer:
+        intSplits = {dto.payerId: totalAmountVnd};
+        break;
     }
+    final shares = intSplits.map((k, v) => MapEntry(k, v.toDouble()));
 
     final expense = ExpenseModel(
       id: id,
@@ -54,7 +88,7 @@ class FirestoreExpenseRepository implements IExpenseRepository {
   Future<ExpenseModel> getById(String id) async {
     final doc = await _firestore.collection(_collection).doc(id).get();
     if (!doc.exists) throw Exception('Expense not found');
-    return ExpenseModel.fromJson(doc.data()!);
+    return ExpenseModel.fromJson({...doc.data()!, 'id': doc.id});
   }
 
   @override
@@ -66,7 +100,7 @@ class FirestoreExpenseRepository implements IExpenseRepository {
 
     // Sort on client side to avoid index requirement
     final expenses = snapshot.docs
-        .map((doc) => ExpenseModel.fromJson(doc.data()))
+        .map((doc) => ExpenseModel.fromJson({...doc.data(), 'id': doc.id}))
         .toList();
 
     expenses.sort((a, b) => b.date.compareTo(a.date));
@@ -82,7 +116,7 @@ class FirestoreExpenseRepository implements IExpenseRepository {
         .map((snapshot) {
           // Sort on client side to avoid index requirement
           final expenses = snapshot.docs
-              .map((doc) => ExpenseModel.fromJson(doc.data()))
+              .map((doc) => ExpenseModel.fromJson({...doc.data(), 'id': doc.id}))
               .toList();
 
           expenses.sort((a, b) => b.date.compareTo(a.date));

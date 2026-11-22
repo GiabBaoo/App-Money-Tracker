@@ -1,29 +1,36 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'place_name_resolver.dart';
 
 export 'place_name_resolver.dart' show LocationResult;
 
-/// Service quản lý lấy tọa độ GPS và phân giải tên địa danh
+/// Service quản lý lấy tọa độ GPS, tìm kiếm địa điểm thông minh & lịch sử địa điểm gần đây
 class LocationService {
   LocationService._internal();
   static final LocationService instance = LocationService._internal();
   factory LocationService() => instance;
 
+  static const String _recentPlacesKey = 'recent_searched_locations_v1';
+  static const int _maxRecentPlaces = 15;
+
   double? _cachedLat;
   double? _cachedLon;
   DateTime? _cachedAt;
+  List<LocationResult>? _recentCache;
 
   /// Tìm vị trí (tên hiển thị + tọa độ) từ chuỗi địa chỉ người dùng nhập.
   /// Nếu truyền [nearLatitude]/[nearLongitude] (hoặc đã có cache GPS),
-  /// kết quả sẽ ưu tiên các địa điểm gần nhất.
+  /// kết quả sẽ ưu tiên các địa điểm khớp nhất & gần nhất.
   Future<List<LocationResult>> searchAddress(
     String query, {
-    int limit = 6,
+    int limit = 8,
     bool preferVietnam = true,
     double? nearLatitude,
     double? nearLongitude,
+    String? sessionToken,
   }) async {
     return PlaceNameResolver.instance.searchAddress(
       query,
@@ -31,7 +38,93 @@ class LocationService {
       preferVietnam: preferVietnam,
       nearLatitude: nearLatitude ?? _cachedLat,
       nearLongitude: nearLongitude ?? _cachedLon,
+      sessionToken: sessionToken,
     );
+  }
+
+  /// Lấy tọa độ & địa chỉ chi tiết cho gợi ý autocomplete (Google / Goong / ArcGIS suggest).
+  Future<LocationResult?> resolvePlaceDetail(
+    LocationResult candidate, {
+    String? sessionToken,
+    double? nearLatitude,
+    double? nearLongitude,
+  }) async {
+    return PlaceNameResolver.instance.resolvePlaceDetail(
+      candidate,
+      sessionToken: sessionToken,
+      nearLatitude: nearLatitude ?? _cachedLat,
+      nearLongitude: nearLongitude ?? _cachedLon,
+    );
+  }
+
+  /// Lấy danh sách địa điểm người dùng đã chọn gần đây (0ms cache / SharedPreferences).
+  Future<List<LocationResult>> getRecentPlaces() async {
+    if (_recentCache != null) return List.unmodifiable(_recentCache!);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final rawList = prefs.getStringList(_recentPlacesKey) ?? const [];
+      final parsed = <LocationResult>[];
+      for (final item in rawList) {
+        try {
+          final map = jsonDecode(item);
+          if (map is Map<String, dynamic>) {
+            final loc = LocationResult.fromJson(map);
+            if (loc.placeName.isNotEmpty) parsed.add(loc);
+          }
+        } catch (_) {}
+      }
+      _recentCache = parsed;
+      return List.unmodifiable(parsed);
+    } catch (e) {
+      debugPrint('LocationService.getRecentPlaces error: $e');
+      return const [];
+    }
+  }
+
+  /// Lưu địa điểm vừa chọn lên đầu danh sách gần đây (giống Google Maps Recent).
+  Future<void> saveRecentPlace(LocationResult place) async {
+    if (place.placeName.trim().isEmpty) return;
+    try {
+      final current = List<LocationResult>.from(await getRecentPlaces());
+      final normTarget = PlaceNameResolver.foldVietnamese(place.placeName);
+      current.removeWhere(
+        (e) => PlaceNameResolver.foldVietnamese(e.placeName) == normTarget,
+      );
+      current.insert(
+        0,
+        place.copyWith(provider: 'recent', requiresDetailLookup: false),
+      );
+      if (current.length > _maxRecentPlaces) {
+        current.removeRange(_maxRecentPlaces, current.length);
+      }
+      _recentCache = current;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(
+        _recentPlacesKey,
+        current.map((e) => jsonEncode(e.toJson())).toList(),
+      );
+    } catch (e) {
+      debugPrint('LocationService.saveRecentPlace error: $e');
+    }
+  }
+
+  /// Xóa một địa điểm khỏi lịch sử gần đây.
+  Future<void> removeRecentPlace(String placeName) async {
+    try {
+      final current = List<LocationResult>.from(await getRecentPlaces());
+      final normTarget = PlaceNameResolver.foldVietnamese(placeName);
+      current.removeWhere(
+        (e) => PlaceNameResolver.foldVietnamese(e.placeName) == normTarget,
+      );
+      _recentCache = current;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(
+        _recentPlacesKey,
+        current.map((e) => jsonEncode(e.toJson())).toList(),
+      );
+    } catch (e) {
+      debugPrint('LocationService.removeRecentPlace error: $e');
+    }
   }
 
   /// Lấy nhanh tọa độ hiện tại (có cache 3 phút + fallback lastKnownPosition)
