@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
-import '../../services/sync_service.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/language_service.dart';
-import '../../widgets/top_toast.dart';
-import '../../widgets/mono_dialog.dart';
-import '../../utils/page_transitions.dart';
+import '../../services/sync_service.dart';
 import '../../utils/currency_format_utils.dart';
+import '../../utils/page_transitions.dart';
+import '../../widgets/mono_dialog.dart';
+import '../../widgets/top_toast.dart';
 import 'data_usage_screen.dart';
 import 'delete_confirmation_screen.dart';
 import 'privacy_policy_screen.dart';
@@ -20,20 +20,32 @@ class PrivacyScreen extends StatefulWidget {
 }
 
 class _PrivacyScreenState extends State<PrivacyScreen> {
+  static const int _initialVisibleBackups = 3;
+
   final _syncService = SyncService();
   final _connectivity = ConnectivityService();
-  bool _isManualSyncing = false;
+
   bool _isCreatingBackup = false;
   bool _isLoadingBackups = false;
+  bool _showAllBackups = false;
   String? _restoringBackupId;
   int _pendingCount = 0;
   List<CloudBackupSummary> _backups = const [];
 
+  bool get _isBusy =>
+      _isCreatingBackup || _restoringBackupId != null || _syncService.isSyncing;
+
   @override
   void initState() {
     super.initState();
-    _loadPendingCount();
-    _loadCloudBackups();
+    _refreshAll();
+  }
+
+  Future<void> _refreshAll() async {
+    await Future.wait([
+      _loadPendingCount(),
+      _loadCloudBackups(),
+    ]);
   }
 
   Future<void> _loadPendingCount() async {
@@ -58,74 +70,9 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     }
   }
 
-  /// Đồng bộ 2 chiều thực sự: đẩy thay đổi cục bộ lên Firebase & kéo dữ liệu mới nhất từ Firebase về máy
-  Future<void> _triggerManualSync() async {
-    if (_isManualSyncing ||
-        _isCreatingBackup ||
-        _restoringBackupId != null ||
-        _syncService.isSyncing) {
-      return;
-    }
-
-    final isVi = LanguageScope.of(context).isVietnamese;
-    setState(() => _isManualSyncing = true);
-    try {
-      final report = await _syncService.forceFullResync();
-      await _loadPendingCount();
-      await _loadCloudBackups();
-
-      if (mounted) {
-        if (report.isSuccess) {
-          final downloadedWallets = report.downloadSuccess['wallets'] ?? 0;
-          final downloadedTxs = report.downloadSuccess['transactions'] ?? 0;
-          TopToast.show(
-            context,
-            isVi
-                ? 'Đồng bộ 2 chiều thành công ($downloadedWallets ví, $downloadedTxs giao dịch)!'
-                : '2-way sync completed ($downloadedWallets wallets, $downloadedTxs transactions)!',
-          );
-        } else if (!_connectivity.isOnline ||
-            report.uploadError == 'Device is offline.') {
-          TopToast.show(
-            context,
-            isVi
-                ? 'Không có kết nối mạng. Dữ liệu đã lưu ở SQLite.'
-                : 'No internet connection. Data saved to SQLite.',
-            isError: true,
-          );
-        } else {
-          TopToast.show(
-            context,
-            isVi
-                ? 'Đồng bộ chưa hoàn tất: ${report.uploadError ?? report.downloadErrors.values.first}'
-                : 'Sync incomplete: ${report.uploadError ?? report.downloadErrors.values.first}',
-            isError: true,
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        TopToast.show(
-          context,
-          isVi ? 'Lỗi đồng bộ: $e' : 'Sync error: $e',
-          isError: true,
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isManualSyncing = false);
-      }
-    }
-  }
-
   /// Tạo bản sao lưu mới từ trạng thái hiện tại trên máy lên Firebase
   Future<void> _triggerCreateBackup() async {
-    if (_isManualSyncing ||
-        _isCreatingBackup ||
-        _restoringBackupId != null ||
-        _syncService.isSyncing) {
-      return;
-    }
+    if (_isBusy) return;
 
     final isVi = LanguageScope.of(context).isVietnamese;
     setState(() => _isCreatingBackup = true);
@@ -133,8 +80,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       final success = await _syncService.createCloudBackupSnapshot(
         label: isVi ? 'Sao lưu thủ công' : 'Manual Backup',
       );
-      await _loadPendingCount();
-      await _loadCloudBackups();
+      await _refreshAll();
 
       if (mounted) {
         if (success) {
@@ -171,9 +117,8 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
 
   /// Khôi phục dữ liệu từ một bản sao lưu đã chọn trong danh sách
   Future<void> _confirmAndRestoreBackup(CloudBackupSummary backup) async {
-    if (_isManualSyncing || _isCreatingBackup || _restoringBackupId != null) {
-      return;
-    }
+    if (_isCreatingBackup || _restoringBackupId != null) return;
+
     final isVi = LanguageScope.of(context).isVietnamese;
     final timeStr = DateFormat('HH:mm - dd/MM/yyyy').format(backup.backedUpAt);
     final walletSummary = backup.wallets
@@ -202,8 +147,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     setState(() => _restoringBackupId = backup.id);
     try {
       final ok = await _syncService.restoreCloudBackupById(backup.id);
-      await _loadPendingCount();
-      await _loadCloudBackups();
+      await _refreshAll();
 
       if (mounted) {
         if (ok) {
@@ -268,7 +212,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     }
   }
 
-  void _clearCache() async {
+  Future<void> _clearCache() async {
     final isVi = LanguageScope.of(context).isVietnamese;
     final confirmed = await MonoDialog.confirm(
       context,
@@ -295,7 +239,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
 
   String _formatLastSyncTime(DateTime? time, bool isVi) {
     if (time == null) {
-      return isVi ? 'Chưa đồng bộ phiên này' : 'Not synced this session';
+      return isVi ? 'Chưa đồng bộ' : 'Not yet';
     }
     final diff = DateTime.now().difference(time);
     if (diff.inSeconds < 45) return isVi ? 'Vừa xong' : 'Just now';
@@ -304,7 +248,10 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
           ? '${diff.inMinutes} phút trước'
           : '${diff.inMinutes} mins ago';
     }
-    return DateFormat('HH:mm - dd/MM/yyyy').format(time);
+    if (diff.inHours < 24) {
+      return DateFormat('HH:mm').format(time);
+    }
+    return DateFormat('dd/MM HH:mm').format(time);
   }
 
   @override
@@ -312,8 +259,8 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     final isVi = LanguageScope.of(context).isVietnamese;
     final isDark = context.isDark;
     final isOnline = _connectivity.isOnline;
-    final isSyncing = _isManualSyncing || _syncService.isSyncing;
     final lastSyncTime = _syncService.lastSyncTime;
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.bgDark : context.brandColor,
@@ -323,9 +270,8 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
           children: [
             // Top App Bar
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
                     icon: const Icon(
@@ -335,228 +281,170 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  Text(
-                    isVi ? 'Dữ liệu và riêng tư' : 'Data & Privacy',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                  Expanded(
+                    child: Text(
+                      isVi ? 'Dữ liệu và riêng tư' : 'Data & Privacy',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 44),
+                  const SizedBox(width: 48),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
 
-            // Main Content Area
+            // Main Content Sheet
             Expanded(
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Theme.of(context).scaffoldBackgroundColor,
                   borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(30),
+                    top: Radius.circular(28),
                   ),
                 ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 24,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(28),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // HERO: CLOUD SYNC CARD
-                      _buildSyncHeroCard(
-                        isDark,
-                        isOnline,
-                        isSyncing,
-                        lastSyncTime,
-                        isVi,
+                  child: RefreshIndicator(
+                    color: context.brandColor,
+                    onRefresh: _refreshAll,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        20,
+                        22,
+                        20,
+                        bottomPadding + 28,
                       ),
-                      const SizedBox(height: 24),
-
-                      // Section 0: BẢN SAO LƯU & KHÔI PHỤC ĐÁM MÂY
-                      _buildCloudBackupsSection(isDark, isVi),
-                      const SizedBox(height: 24),
-
-                      // Section 1: QUẢN LÝ DỮ LIỆU
-                      _buildSectionTitle(
-                        isVi ? 'QUẢN LÝ DỮ LIỆU' : 'DATA MANAGEMENT',
-                      ),
-                      _buildCardContainer(
-                        isDark: isDark,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildSettingRow(
+                          // 1. Trạng thái đồng bộ tự động (không có nút Đồng bộ ngay)
+                          _buildAutoSyncStatusCard(
                             isDark: isDark,
-                            icon: Icons.data_usage_rounded,
-                            title: isVi ? 'Sử dụng dữ liệu' : 'Data Usage',
-                            subtitle: isVi
-                                ? 'Kiểm soát mức tiêu thụ dữ liệu mạng và bộ nhớ'
-                                : 'Control network data and storage usage',
-                            onTap: () => Navigator.push(
-                              context,
-                              PageTransitions.slideRight(
-                                const DataUsageScreen(),
-                              ),
-                            ),
+                            isOnline: isOnline,
+                            lastSyncTime: lastSyncTime,
+                            isVi: isVi,
                           ),
-                          _buildDivider(isDark),
-                          _buildSettingRow(
-                            isDark: isDark,
-                            icon: Icons.cleaning_services_rounded,
-                            title: isVi
-                                ? 'Dọn dẹp bộ nhớ đệm (Cache)'
-                                : 'Clear App Cache',
-                            subtitle: isVi
-                                ? 'Giải phóng dung lượng hình ảnh tạm'
-                                : 'Free up temporary image storage',
-                            onTap: _clearCache,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
+                          const SizedBox(height: 24),
 
-                      // Section 2: CHÍNH SÁCH BẢO VỆ RIÊNG TƯ
-                      _buildSectionTitle(
-                        isVi ? 'CHÍNH SÁCH & BẢO MẬT' : 'POLICIES & PRIVACY',
-                      ),
-                      _buildCardContainer(
-                        isDark: isDark,
-                        children: [
-                          _buildSettingRow(
-                            isDark: isDark,
-                            icon: Icons.privacy_tip_outlined,
-                            title: isVi
-                                ? 'Chính sách bảo mật'
-                                : 'Privacy Policy',
-                            subtitle: isVi
-                                ? 'Tìm hiểu cách chúng tôi bảo vệ thông tin của bạn'
-                                : 'Learn how we protect your information',
-                            onTap: () => Navigator.push(
-                              context,
-                              PageTransitions.slideRight(
-                                const PrivacyPolicyScreen(),
-                              ),
-                            ),
+                          // 2. Sao lưu & Khôi phục đám mây
+                          _buildCloudBackupsSection(isDark, isVi),
+                          const SizedBox(height: 24),
+
+                          // 3. Dữ liệu & Bộ nhớ
+                          _buildSectionTitle(
+                            isVi ? 'DỮ LIỆU & BỘ NHỚ' : 'DATA & STORAGE',
                           ),
-                          _buildDivider(isDark),
-                          _buildSettingRow(
+                          _buildCardContainer(
                             isDark: isDark,
-                            icon: Icons.lock_person_outlined,
-                            title: isVi
-                                ? 'Quyền sở hữu dữ liệu'
-                                : 'Data Ownership',
-                            subtitle: isVi
-                                ? 'Dữ liệu tài chính chỉ thuộc về bạn và luôn được mã hóa'
-                                : 'Your financial records belong exclusively to you and are always encrypted',
-                            badge: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: context.brandColor.withValues(
-                                  alpha: 0.12,
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                isVi ? 'An toàn' : 'Secured',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: context.brandColor,
+                            children: [
+                              _buildSettingRow(
+                                isDark: isDark,
+                                icon: Icons.data_usage_rounded,
+                                title: isVi ? 'Sử dụng dữ liệu' : 'Data Usage',
+                                subtitle: isVi
+                                    ? 'Kiểm soát mức tiêu thụ mạng và dung lượng'
+                                    : 'Monitor network and local storage usage',
+                                onTap: () => Navigator.push(
+                                  context,
+                                  PageTransitions.slideRight(
+                                    const DataUsageScreen(),
+                                  ),
                                 ),
                               ),
-                            ),
+                              _buildDivider(),
+                              _buildSettingRow(
+                                isDark: isDark,
+                                icon: Icons.cleaning_services_rounded,
+                                title: isVi
+                                    ? 'Dọn dẹp bộ nhớ đệm'
+                                    : 'Clear App Cache',
+                                subtitle: isVi
+                                    ? 'Xóa ảnh tạm để giải phóng dung lượng máy'
+                                    : 'Remove temporary image cache safely',
+                                onTap: _clearCache,
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
+                          const SizedBox(height: 24),
 
-                      // Section 3: VÙNG NGUY HIỂM (Danger Zone)
-                      _buildSectionTitle(
-                        isVi ? 'VÙNG NGUY HIỂM' : 'DANGER ZONE',
-                      ),
-                      _buildCardContainer(
-                        isDark: isDark,
-                        children: [
-                          InkWell(
-                            onTap: () => Navigator.push(
-                              context,
-                              PageTransitions.slideRight(
-                                const DeleteConfirmationScreen(),
-                              ),
-                            ),
-                            borderRadius: BorderRadius.circular(18),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: context.expense.withValues(
-                                        alpha: isDark ? 0.2 : 0.12,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Icon(
-                                      Icons.delete_forever_rounded,
-                                      color: context.expense,
-                                      size: 22,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          isVi
-                                              ? 'Xóa tài khoản vĩnh viễn'
-                                              : 'Delete Account Permanently',
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                            color: context.expense,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 3),
-                                        Text(
-                                          isVi
-                                              ? 'Xóa tài khoản và toàn bộ dữ liệu trên đám mây'
-                                              : 'Permanently remove your account and all cloud data',
-                                          style: TextStyle(
-                                            fontSize: 12.5,
-                                            color:
-                                                context.colors.onSurfaceVariant,
-                                            height: 1.25,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.arrow_forward_ios_rounded,
-                                    size: 14,
-                                    color: context.colors.onSurfaceVariant
-                                        .withValues(alpha: 0.5),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          // 4. Quyền riêng tư & Bảo mật
+                          _buildSectionTitle(
+                            isVi
+                                ? 'QUYỀN RIÊNG TƯ & BẢO MẬT'
+                                : 'PRIVACY & SECURITY',
                           ),
+                          _buildCardContainer(
+                            isDark: isDark,
+                            children: [
+                              _buildSettingRow(
+                                isDark: isDark,
+                                icon: Icons.privacy_tip_outlined,
+                                title: isVi
+                                    ? 'Chính sách bảo mật'
+                                    : 'Privacy Policy',
+                                subtitle: isVi
+                                    ? 'Cách chúng tôi thu thập và bảo vệ dữ liệu'
+                                    : 'How we collect and protect your data',
+                                onTap: () => Navigator.push(
+                                  context,
+                                  PageTransitions.slideRight(
+                                    const PrivacyPolicyScreen(),
+                                  ),
+                                ),
+                              ),
+                              _buildDivider(),
+                              _buildSettingRow(
+                                isDark: isDark,
+                                icon: Icons.verified_user_outlined,
+                                title: isVi
+                                    ? 'Quyền sở hữu dữ liệu'
+                                    : 'Data Ownership',
+                                subtitle: isVi
+                                    ? 'Dữ liệu tài chính được mã hóa và thuộc toàn quyền của bạn'
+                                    : 'Encrypted financial records owned exclusively by you',
+                                badge: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 9,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: context.income.withValues(
+                                      alpha: 0.12,
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    isVi ? 'Đã mã hóa' : 'Encrypted',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: context.income,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 28),
+
+                          // 5. Vùng nguy hiểm (tách biệt rõ ràng, chống chạm nhầm)
+                          _buildSectionTitle(
+                            isVi ? 'VÙNG NGUY HIỂM' : 'DANGER ZONE',
+                            color: context.expense,
+                          ),
+                          _buildDangerZoneCard(isDark: isDark, isVi: isVi),
                         ],
                       ),
-                      const SizedBox(height: 30),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -567,23 +455,26 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     );
   }
 
-  Widget _buildSyncHeroCard(
-    bool isDark,
-    bool isOnline,
-    bool isSyncing,
-    DateTime? lastSyncTime,
-    bool isVi,
-  ) {
+  /// Card trạng thái đồng bộ tự động (gọn, dễ quét, không có nút Đồng bộ ngay)
+  Widget _buildAutoSyncStatusCard({
+    required bool isDark,
+    required bool isOnline,
+    required DateTime? lastSyncTime,
+    required bool isVi,
+  }) {
+    final statusColor = isOnline ? context.income : context.warning;
+    final isSyncingNow = _syncService.isSyncing;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: context.cardBg,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: context.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+            color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -602,10 +493,12 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                               ? context.brandColor
                               : context.colors.onSurfaceVariant)
                           .withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
-                  isOnline ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
+                  isOnline
+                      ? Icons.cloud_done_rounded
+                      : Icons.cloud_off_rounded,
                   color: isOnline
                       ? context.brandColor
                       : context.colors.onSurfaceVariant,
@@ -618,14 +511,16 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isVi ? 'Đồng bộ đám mây Firebase' : 'Firebase Cloud Sync',
+                      isVi
+                          ? 'Đồng bộ đám mây tự động'
+                          : 'Automatic Cloud Sync',
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w700,
                         color: context.colors.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Row(
                       children: [
                         Container(
@@ -633,22 +528,30 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                           height: 8,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isOnline ? context.income : context.warning,
+                            color: statusColor,
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          isOnline
-                              ? (isVi
-                                    ? 'Đang kết nối Firestore'
-                                    : 'Connected to Firestore')
-                              : (isVi
-                                    ? 'Chế độ ngoại tuyến (SQLite)'
-                                    : 'Offline Mode (SQLite)'),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: context.colors.onSurfaceVariant,
+                        Expanded(
+                          child: Text(
+                            isSyncingNow
+                                ? (isVi
+                                      ? 'Đang tự động đồng bộ...'
+                                      : 'Auto-syncing in background...')
+                                : isOnline
+                                ? (isVi
+                                      ? 'Đã kết nối Firebase Firestore'
+                                      : 'Connected to Firebase Firestore')
+                                : (isVi
+                                      ? 'Ngoại tuyến • Lưu tạm trên SQLite'
+                                      : 'Offline • Saved locally on SQLite'),
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w500,
+                              color: context.colors.onSurfaceVariant,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -658,183 +561,46 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
+          // 3 chỉ số nhanh: Gần nhất | Hàng chờ | Lịch sao lưu
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
             decoration: BoxDecoration(
               color: isDark
                   ? context.surfaceElevatedColor
-                  : const Color(0xFFF9FAFB),
-              borderRadius: BorderRadius.circular(12),
+                  : const Color(0xFFF7F8FA),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isVi ? 'Đồng bộ gần nhất' : 'Last Synced',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: context.colors.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      _formatLastSyncTime(lastSyncTime, isVi),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: context.colors.onSurface,
-                      ),
-                    ),
-                  ],
+                Expanded(
+                  child: _buildSyncMetricItem(
+                    label: isVi ? 'Gần nhất' : 'Last Sync',
+                    value: _formatLastSyncTime(lastSyncTime, isVi),
+                    valueColor: context.colors.onSurface,
+                  ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      isVi ? 'Hàng chờ đồng bộ' : 'Pending Queue',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: context.colors.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      _pendingCount == 0
-                          ? (isVi ? 'Đã đồng bộ 100%' : '100% Synced')
-                          : (isVi
-                                ? '$_pendingCount mục chờ đẩy'
-                                : '$_pendingCount items pending'),
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: _pendingCount == 0
-                            ? context.income
-                            : context.warning,
-                      ),
-                    ),
-                  ],
+                _buildVerticalStatDivider(),
+                Expanded(
+                  child: _buildSyncMetricItem(
+                    label: isVi ? 'Hàng chờ' : 'Queue',
+                    value: _pendingCount == 0
+                        ? (isVi ? 'Đã đồng bộ' : 'Synced')
+                        : (isVi ? '$_pendingCount mục' : '$_pendingCount pending'),
+                    valueColor:
+                        _pendingCount == 0 ? context.income : context.warning,
+                  ),
+                ),
+                _buildVerticalStatDivider(),
+                Expanded(
+                  child: _buildSyncMetricItem(
+                    label: isVi ? 'Tự sao lưu' : 'Auto Backup',
+                    value: isVi ? '00:00 hằng ngày' : 'Daily 00:00',
+                    valueColor: context.brandColor,
+                  ),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Action Button 1: "Đồng bộ ngay bây giờ" (2 chiều: đẩy & tải mới nhất)
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.brandColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                elevation: 0,
-              ),
-              onPressed:
-                  (isSyncing || _isCreatingBackup || _restoringBackupId != null)
-                  ? null
-                  : _triggerManualSync,
-              child: isSyncing
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          isVi ? 'Đang đồng bộ dữ liệu...' : 'Syncing data...',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.sync_rounded, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          isVi ? 'Đồng bộ ngay bây giờ' : 'Sync Now',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Action Button 2: "Tạo bản sao lưu mới"
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: context.brandColor,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                side: BorderSide(color: context.brandColor.withValues(alpha: 0.55)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              onPressed:
-                  (isSyncing || _isCreatingBackup || _restoringBackupId != null)
-                  ? null
-                  : _triggerCreateBackup,
-              child: _isCreatingBackup
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            color: context.brandColor,
-                            strokeWidth: 2,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          isVi ? 'Đang tạo bản sao lưu...' : 'Creating backup...',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.cloud_upload_outlined, size: 19),
-                        const SizedBox(width: 8),
-                        Text(
-                          isVi ? 'Tạo bản sao lưu mới' : 'Create New Backup',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
             ),
           ),
         ],
@@ -842,7 +608,55 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     );
   }
 
+  Widget _buildSyncMetricItem({
+    required String label,
+    required String value,
+    required Color valueColor,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: context.colors.onSurfaceVariant,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 3),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+            color: valueColor,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVerticalStatDivider() {
+    return Container(
+      width: 1,
+      height: 26,
+      margin: const EdgeInsets.symmetric(horizontal: 6),
+      color: context.dividerColor,
+    );
+  }
+
+  /// Phần Sao lưu & Khôi phục (gom nút Tạo bản sao lưu mới vào đúng ngữ cảnh)
   Widget _buildCloudBackupsSection(bool isDark, bool isVi) {
+    final hasHiddenBackups = _backups.length > _initialVisibleBackups;
+    final visibleBackups = _showAllBackups
+        ? _backups
+        : _backups.take(_initialVisibleBackups).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -850,26 +664,29 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _buildSectionTitle(
-              isVi ? 'BẢN SAO LƯU & KHÔI PHỤC' : 'CLOUD BACKUPS & RESTORE',
+              isVi ? 'SAO LƯU & KHÔI PHỤC' : 'BACKUP & RESTORE',
             ),
             InkWell(
               onTap: _isLoadingBackups ? null : _loadCloudBackups,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 10, left: 6, right: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 6,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.refresh_rounded,
-                      size: 15,
+                      size: 16,
                       color: context.brandColor,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      isVi ? 'Tải lại' : 'Refresh',
+                      isVi ? 'Làm mới' : 'Refresh',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w600,
                         color: context.brandColor,
                       ),
@@ -880,13 +697,54 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
             ),
           ],
         ),
-        _buildCardContainer(
-          isDark: isDark,
-          children: [
-            if (_isLoadingBackups && _backups.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Center(
+
+        // Nút tạo bản sao lưu mới đặt ngay đầu mục Sao lưu (thumb-friendly 48px)
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.brandColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            onPressed: _isBusy ? null : _triggerCreateBackup,
+            icon: _isCreatingBackup
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Icon(Icons.cloud_upload_outlined, size: 20),
+            label: Text(
+              _isCreatingBackup
+                  ? (isVi ? 'Đang tạo bản sao lưu...' : 'Creating backup...')
+                  : (isVi ? 'Tạo bản sao lưu mới' : 'Create New Backup'),
+              style: const TextStyle(
+                fontSize: 14.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Danh sách các bản sao lưu
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeInOut,
+          child: _buildCardContainer(
+            isDark: isDark,
+            children: [
+              if (_isLoadingBackups && _backups.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 26),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -910,40 +768,98 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                       ),
                     ],
                   ),
-                ),
-              )
-            else if (_backups.isEmpty)
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.cloud_queue_rounded,
-                      color: context.colors.onSurfaceVariant,
-                      size: 22,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        isVi
-                            ? 'Chưa có bản sao lưu nào trên Firebase. Nhấn "Tạo bản sao lưu mới" để lưu trạng thái hiện tại.'
-                            : 'No cloud backups yet. Tap "Create New Backup" to save your current data.',
-                        style: TextStyle(
-                          fontSize: 13,
+                )
+              else if (_backups.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: context.colors.onSurfaceVariant.withValues(
+                            alpha: 0.1,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.cloud_queue_rounded,
                           color: context.colors.onSurfaceVariant,
-                          height: 1.35,
+                          size: 22,
                         ),
                       ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          isVi
+                              ? 'Chưa có bản sao lưu nào trên Firebase. Nhấn "Tạo bản sao lưu mới" để lưu trạng thái ví hiện tại.'
+                              : 'No cloud backups yet. Tap "Create New Backup" to save your current wallet snapshot.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: context.colors.onSurfaceVariant,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else ...[
+                for (int i = 0; i < visibleBackups.length; i++) ...[
+                  _buildBackupItemTile(
+                    visibleBackups[i],
+                    i == 0,
+                    isDark,
+                    isVi,
+                  ),
+                  if (i < visibleBackups.length - 1 || hasHiddenBackups)
+                    Divider(
+                      height: 1,
+                      thickness: 1,
+                      indent: 16,
+                      endIndent: 16,
+                      color: context.dividerColor,
                     ),
-                  ],
-                ),
-              )
-            else
-              for (int i = 0; i < _backups.length; i++) ...[
-                _buildBackupItemTile(_backups[i], i == 0, isDark, isVi),
-                if (i < _backups.length - 1) _buildDivider(isDark),
+                ],
+                if (hasHiddenBackups)
+                  InkWell(
+                    onTap: () =>
+                        setState(() => _showAllBackups = !_showAllBackups),
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(18),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _showAllBackups
+                                ? (isVi ? 'Thu gọn danh sách' : 'Show less')
+                                : (isVi
+                                      ? 'Xem thêm ${_backups.length - _initialVisibleBackups} bản cũ hơn'
+                                      : 'Show ${_backups.length - _initialVisibleBackups} older backups'),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: context.brandColor,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            _showAllBackups
+                                ? Icons.keyboard_arrow_up_rounded
+                                : Icons.keyboard_arrow_down_rounded,
+                            size: 18,
+                            color: context.brandColor,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -960,10 +876,11 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     final titleText = backup.displayTitle(isVi: isVi);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header: Icon + Title + Total Balance
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -971,7 +888,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: context.brandColor.withValues(
-                    alpha: isDark ? 0.2 : 0.12,
+                    alpha: isDark ? 0.2 : 0.1,
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1043,23 +960,12 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   ],
                 ),
               ),
-              if (!backup.isLatestDoc)
-                IconButton(
-                  tooltip: isVi ? 'Xóa bản sao lưu' : 'Delete backup',
-                  icon: Icon(
-                    Icons.delete_outline_rounded,
-                    size: 19,
-                    color: context.colors.onSurfaceVariant,
-                  ),
-                  visualDensity: VisualDensity.compact,
-                  onPressed: _restoringBackupId != null
-                      ? null
-                      : () => _confirmAndDeleteBackup(backup),
-                ),
             ],
           ),
+
+          // Chi tiết các ví dạng chip gọn
           if (backup.wallets.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Wrap(
               spacing: 6,
               runSpacing: 6,
@@ -1087,61 +993,166 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               }).toList(),
             ),
           ],
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            height: 42,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: context.brandColor.withValues(alpha: 0.12),
-                foregroundColor: context.brandColor,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
-                minimumSize: const Size(double.infinity, 42),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onPressed:
-                  (_isManualSyncing ||
-                      _isCreatingBackup ||
-                      _restoringBackupId != null)
-                  ? null
-                  : () => _confirmAndRestoreBackup(backup),
-              icon: isRestoringThis
-                  ? SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(
-                        color: context.brandColor,
-                        strokeWidth: 2,
+
+          // Hàng nút thao tác công thái học: Khôi phục (chính) + Xóa (tách biệt bên phải)
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: context.brandColor.withValues(
+                        alpha: 0.12,
                       ),
-                    )
-                  : const Icon(Icons.restore_rounded, size: 17),
-              label: Text(
-                isRestoringThis
-                    ? (isVi ? 'Đang khôi phục...' : 'Restoring...')
-                    : (isVi ? 'Khôi phục bản này' : 'Restore This Backup'),
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
+                      foregroundColor: context.brandColor,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: (_isCreatingBackup || _restoringBackupId != null)
+                        ? null
+                        : () => _confirmAndRestoreBackup(backup),
+                    icon: isRestoringThis
+                        ? SizedBox(
+                            width: 15,
+                            height: 15,
+                            child: CircularProgressIndicator(
+                              color: context.brandColor,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(Icons.restore_rounded, size: 18),
+                    label: Text(
+                      isRestoringThis
+                          ? (isVi ? 'Đang khôi phục...' : 'Restoring...')
+                          : (isVi ? 'Khôi phục bản này' : 'Restore This Backup'),
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
+              if (!backup.isLatestDoc) ...[
+                const SizedBox(width: 10),
+                SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      foregroundColor: context.colors.onSurfaceVariant,
+                      side: BorderSide(color: context.borderColor),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: _restoringBackupId != null
+                        ? null
+                        : () => _confirmAndDeleteBackup(backup),
+                    child: Tooltip(
+                      message: isVi ? 'Xóa bản sao lưu' : 'Delete backup',
+                      child: const Icon(Icons.delete_outline_rounded, size: 20),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildDangerZoneCard({required bool isDark, required bool isVi}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.expense.withValues(alpha: isDark ? 0.08 : 0.04),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: context.expense.withValues(alpha: 0.28),
+        ),
+      ),
+      child: InkWell(
+        onTap: () => Navigator.push(
+          context,
+          PageTransitions.slideRight(
+            const DeleteConfirmationScreen(),
+          ),
+        ),
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: context.expense.withValues(
+                    alpha: isDark ? 0.22 : 0.12,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.delete_forever_rounded,
+                  color: context.expense,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isVi
+                          ? 'Xóa tài khoản vĩnh viễn'
+                          : 'Delete Account Permanently',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: context.expense,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      isVi
+                          ? 'Xóa tài khoản và toàn bộ dữ liệu trên máy & đám mây'
+                          : 'Permanently remove your account and all local & cloud data',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: context.colors.onSurfaceVariant,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: context.expense.withValues(alpha: 0.7),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, {Color? color}) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 10),
       child: Text(
         title,
         style: TextStyle(
-          color: context.colors.onSurfaceVariant,
+          color: color ?? context.colors.onSurfaceVariant,
           fontSize: 12,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.8,
@@ -1161,7 +1172,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
         border: Border.all(color: context.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
+            color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1183,7 +1194,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         child: Row(
           children: [
             Container(
@@ -1215,7 +1226,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                     style: TextStyle(
                       fontSize: 12.5,
                       color: context.colors.onSurfaceVariant,
-                      height: 1.25,
+                      height: 1.3,
                     ),
                   ),
                 ],
@@ -1236,7 +1247,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     );
   }
 
-  Widget _buildDivider(bool isDark) {
+  Widget _buildDivider() {
     return Divider(
       height: 1,
       thickness: 1,
