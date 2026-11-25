@@ -26,6 +26,9 @@ class FirestoreService {
   // ======================== TRANSACTIONS ========================
 
   // Thêm giao dịch mới
+  @Deprecated(
+    'Dùng TransactionBalanceService.addTransactionAtomic để đồng bộ SQLite + số dư ví',
+  )
   Future<void> addTransaction(TransactionModel transaction) async {
     if (_uid == null) return;
     await _db.collection('transactions').add(transaction.toFirestore());
@@ -33,6 +36,9 @@ class FirestoreService {
 
   // Thêm giao dịch mới và trả về documentId
   // (dùng cho luồng upload ảnh: cần id để tạo path trong Firebase Storage)
+  @Deprecated(
+    'Dùng TransactionBalanceService.addTransactionAtomic để đồng bộ SQLite + số dư ví',
+  )
   Future<String> addTransactionAndGetId(TransactionModel transaction) async {
     if (_uid == null) {
       throw StateError('User is not authenticated');

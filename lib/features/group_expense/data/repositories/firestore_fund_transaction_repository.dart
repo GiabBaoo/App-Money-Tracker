@@ -2,7 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import '../../../../core/session/session_manager.dart';
 import '../../../../core/utils/firestore_parse.dart';
+import '../../../../data/repositories/transaction_repository.dart';
+import '../../../../models/transaction_model.dart';
+import '../../../../services/transaction_balance_service.dart';
 import '../models/fund_transaction_model.dart';
 
 class FirestoreFundTransactionRepository {
@@ -40,52 +44,64 @@ class FirestoreFundTransactionRepository {
     // Lưu fund transaction
     await _firestore.collection(_collection).doc(id).set(transaction.toJson());
 
-    // Tạo transaction trong collection 'transactions' để hiện trong thống kê cá nhân
-    // GÓP QUỸ: Chỉ tạo khoản CHI cho cá nhân nếu là QUỸ CÁ NHÂN
-    if (type == TransactionType.contribute && isPersonalGroup) {
-      final transactionData = {
-        'uid': userId,
-        'type': 'expense',
-        'category': category ?? 'Góp quỹ ${groupName ?? ""}',
-        'categoryIconCode':
-            categoryIconCode ??
-            groupIconCode ??
-            Icons.account_balance_wallet.codePoint,
-        'amount': amount,
-        'date': Timestamp.fromDate(now),
-        'time':
-            '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
-        'description': notes ?? 'Góp quỹ nhóm',
-        'createdAt': Timestamp.fromDate(now),
-        'groupId': groupId,
-        'groupIconCode': groupIconCode,
-        'source': 'fund',
-      };
+    // Tạo transaction trong sổ cái cá nhân nếu là QUỸ CÁ NHÂN
+    if (isPersonalGroup &&
+        (type == TransactionType.contribute ||
+            type == TransactionType.withdraw)) {
+      final isContribute = type == TransactionType.contribute;
+      final txId = 'ftx_$id';
+      final txType = isContribute ? 'expense' : 'income';
+      final txCategory =
+          category ??
+          (isContribute
+              ? 'Góp quỹ ${groupName ?? ""}'
+              : 'Rút từ quỹ ${groupName ?? ""}');
+      final txIconCode =
+          categoryIconCode ??
+          groupIconCode ??
+          Icons.account_balance_wallet.codePoint;
+      final txTime =
+          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+      final txDesc =
+          notes ?? (isContribute ? 'Góp quỹ nhóm' : 'Rút từ quỹ cá nhân');
 
-      await _firestore.collection('transactions').add(transactionData);
-    }
-    // RÚT QUỸ: Chỉ tạo khoản THU cho cá nhân nếu là QUỸ CÁ NHÂN
-    else if (type == TransactionType.withdraw && isPersonalGroup) {
-      final transactionData = {
-        'uid': userId,
-        'type': 'income', // Rút về ví cá nhân là Khoản Thu
-        'category': category ?? 'Rút từ quỹ ${groupName ?? ""}',
-        'categoryIconCode':
-            categoryIconCode ??
-            groupIconCode ??
-            Icons.account_balance_wallet.codePoint,
-        'amount': amount,
-        'date': Timestamp.fromDate(now),
-        'time':
-            '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
-        'description': notes ?? 'Rút từ quỹ cá nhân',
-        'createdAt': Timestamp.fromDate(now),
-        'groupId': groupId,
-        'groupIconCode': groupIconCode,
-        'source': 'fund',
-      };
-
-      await _firestore.collection('transactions').add(transactionData);
+      if (SessionManager.instance.uidOrNull == userId) {
+        final personalTx = TransactionModel(
+          id: txId,
+          uid: userId,
+          type: txType,
+          category: txCategory,
+          categoryIconCode: txIconCode,
+          amount: amount,
+          date: DateTime(now.year, now.month, now.day),
+          time: txTime,
+          description: txDesc,
+          createdAt: now,
+          updatedAt: now.toUtc(),
+          groupId: groupId,
+          groupIconCode: groupIconCode,
+          source: 'fund',
+        );
+        await TransactionBalanceService().addTransactionAtomic(personalTx);
+      } else {
+        await _firestore.collection('transactions').doc(txId).set({
+          'id': txId,
+          'uid': userId,
+          'type': txType,
+          'category': txCategory,
+          'categoryIconCode': txIconCode,
+          'amount': amount,
+          'date': Timestamp.fromDate(now),
+          'time': txTime,
+          'description': txDesc,
+          'createdAt': Timestamp.fromDate(now),
+          'updatedAt': Timestamp.fromDate(now.toUtc()),
+          'isDeleted': false,
+          'groupId': groupId,
+          'groupIconCode': groupIconCode,
+          'source': 'fund',
+        });
+      }
     }
 
     return transaction;
@@ -100,6 +116,28 @@ class FirestoreFundTransactionRepository {
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
     if (currentUid == null || currentUid != transaction.userId) return;
 
+    final deterministicId = 'ftx_${transaction.id}';
+    if (SessionManager.instance.uidOrNull == currentUid) {
+      try {
+        await TransactionRepository().deleteTransaction(deterministicId);
+      } catch (_) {}
+    }
+
+    // Xóa mềm (Tombstone) trên Firestore để không bị máy khác backfill hồi sinh
+    final nowTs = Timestamp.fromDate(DateTime.now().toUtc());
+    final detDoc = await _firestore
+        .collection('transactions')
+        .doc(deterministicId)
+        .get();
+    if (detDoc.exists) {
+      await detDoc.reference.set({
+        'isDeleted': true,
+        'deletedAt': nowTs,
+        'updatedAt': nowTs,
+      }, SetOptions(merge: true));
+      return;
+    }
+
     final personalTxQuery = await _firestore
         .collection('transactions')
         .where('uid', isEqualTo: transaction.userId)
@@ -112,7 +150,11 @@ class FirestoreFundTransactionRepository {
       final txDate = FirestoreParse.parseDate(doc.data()['createdAt']);
       if (txDate != null &&
           txDate.difference(transaction.createdAt).inSeconds.abs() <= 2) {
-        await doc.reference.delete();
+        await doc.reference.set({
+          'isDeleted': true,
+          'deletedAt': nowTs,
+          'updatedAt': nowTs,
+        }, SetOptions(merge: true));
       }
     }
   }

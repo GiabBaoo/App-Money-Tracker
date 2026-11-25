@@ -61,6 +61,9 @@ class SessionManager {
         'UID không hợp lệ: "$uid"',
       );
     }
+    if (_state == SessionState.active && _uid == uid) {
+      return;
+    }
     _uid = uid;
     _state = SessionState.active;
     _epoch++;

@@ -13,7 +13,6 @@ import '../../features/group_expense/data/models/fund_transaction_model.dart';
 import '../../utils/page_transitions.dart';
 import '../../services/auth_service.dart';
 import '../../services/smart_notification_service.dart';
-import '../../services/connectivity_service.dart';
 import '../../services/receipt_storage_service.dart';
 import '../../services/biometric_service.dart';
 import '../../widgets/top_toast.dart';
@@ -23,7 +22,6 @@ import '../../models/transaction_model.dart';
 import '../../models/wallet_model.dart';
 import '../../data/repositories/wallet_repository.dart';
 import '../../services/transaction_balance_service.dart';
-import '../../services/sync_service.dart';
 import '../../services/location_service.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../widgets/location_picker_sheet.dart';
@@ -569,9 +567,7 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
     String catName,
   ) async {
     try {
-      if (ConnectivityService().isOnline) {
-        SyncService().syncNow();
-      }
+      // SyncService().syncAll() đã được kích hoạt nguyên tử trong TransactionBalanceService.addTransactionAtomic
       SmartNotificationService.instance.syncDailyReminderState();
       if (!isInc) {
         SmartNotificationService.instance.checkDailySpendingLimit(

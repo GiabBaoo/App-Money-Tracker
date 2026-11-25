@@ -7,6 +7,7 @@ import '../../services/language_service.dart';
 import '../../widgets/top_toast.dart';
 import '../../widgets/mono_dialog.dart';
 import '../../utils/page_transitions.dart';
+import '../../utils/currency_format_utils.dart';
 import 'data_usage_screen.dart';
 import 'delete_confirmation_screen.dart';
 import 'privacy_policy_screen.dart';
@@ -22,12 +23,17 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
   final _syncService = SyncService();
   final _connectivity = ConnectivityService();
   bool _isManualSyncing = false;
+  bool _isCreatingBackup = false;
+  bool _isLoadingBackups = false;
+  String? _restoringBackupId;
   int _pendingCount = 0;
+  List<CloudBackupSummary> _backups = const [];
 
   @override
   void initState() {
     super.initState();
     _loadPendingCount();
+    _loadCloudBackups();
   }
 
   Future<void> _loadPendingCount() async {
@@ -37,40 +43,64 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     }
   }
 
+  Future<void> _loadCloudBackups() async {
+    if (_isLoadingBackups) return;
+    setState(() => _isLoadingBackups = true);
+    try {
+      final list = await _syncService.listCloudBackups();
+      if (mounted) {
+        setState(() => _backups = list);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingBackups = false);
+      }
+    }
+  }
+
+  /// Đồng bộ 2 chiều thực sự: đẩy thay đổi cục bộ lên Firebase & kéo dữ liệu mới nhất từ Firebase về máy
   Future<void> _triggerManualSync() async {
-    if (_isManualSyncing || _syncService.isSyncing) return;
+    if (_isManualSyncing ||
+        _isCreatingBackup ||
+        _restoringBackupId != null ||
+        _syncService.isSyncing) {
+      return;
+    }
 
     final isVi = LanguageScope.of(context).isVietnamese;
     setState(() => _isManualSyncing = true);
     try {
-      final success = await _syncService.createCloudBackupSnapshot();
+      final report = await _syncService.forceFullResync();
       await _loadPendingCount();
+      await _loadCloudBackups();
 
       if (mounted) {
-        if (success) {
+        if (report.isSuccess) {
+          final downloadedWallets = report.downloadSuccess['wallets'] ?? 0;
+          final downloadedTxs = report.downloadSuccess['transactions'] ?? 0;
           TopToast.show(
             context,
             isVi
-                ? 'Đã tạo bản sao lưu & đồng bộ lên Firebase thành công!'
-                : 'Cloud backup created & synced to Firebase!',
+                ? 'Đồng bộ 2 chiều thành công ($downloadedWallets ví, $downloadedTxs giao dịch)!'
+                : '2-way sync completed ($downloadedWallets wallets, $downloadedTxs transactions)!',
+          );
+        } else if (!_connectivity.isOnline ||
+            report.uploadError == 'Device is offline.') {
+          TopToast.show(
+            context,
+            isVi
+                ? 'Không có kết nối mạng. Dữ liệu đã lưu ở SQLite.'
+                : 'No internet connection. Data saved to SQLite.',
+            isError: true,
           );
         } else {
-          if (!_connectivity.isOnline) {
-            TopToast.show(
-              context,
-              isVi
-                  ? 'Không có kết nối mạng. Dữ liệu đã lưu ở SQLite.'
-                  : 'No internet connection. Data saved to SQLite.',
-              isError: true,
-            );
-          } else {
-            TopToast.show(
-              context,
-              isVi
-                  ? 'Đồng bộ hoàn tất (đã cập nhật bản sao lưu mới nhất).'
-                  : 'Sync completed (latest backup updated).',
-            );
-          }
+          TopToast.show(
+            context,
+            isVi
+                ? 'Đồng bộ chưa hoàn tất: ${report.uploadError ?? report.downloadErrors.values.first}'
+                : 'Sync incomplete: ${report.uploadError ?? report.downloadErrors.values.first}',
+            isError: true,
+          );
         }
       }
     } catch (e) {
@@ -84,6 +114,156 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     } finally {
       if (mounted) {
         setState(() => _isManualSyncing = false);
+      }
+    }
+  }
+
+  /// Tạo bản sao lưu mới từ trạng thái hiện tại trên máy lên Firebase
+  Future<void> _triggerCreateBackup() async {
+    if (_isManualSyncing ||
+        _isCreatingBackup ||
+        _restoringBackupId != null ||
+        _syncService.isSyncing) {
+      return;
+    }
+
+    final isVi = LanguageScope.of(context).isVietnamese;
+    setState(() => _isCreatingBackup = true);
+    try {
+      final success = await _syncService.createCloudBackupSnapshot(
+        label: isVi ? 'Sao lưu thủ công' : 'Manual Backup',
+      );
+      await _loadPendingCount();
+      await _loadCloudBackups();
+
+      if (mounted) {
+        if (success) {
+          TopToast.show(
+            context,
+            isVi
+                ? 'Đã tạo bản sao lưu mới trên Firebase thành công!'
+                : 'New cloud backup created on Firebase!',
+          );
+        } else {
+          TopToast.show(
+            context,
+            isVi
+                ? 'Không thể tạo bản sao lưu. Vui lòng kiểm tra kết nối mạng.'
+                : 'Could not create backup. Please check your internet connection.',
+            isError: true,
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        TopToast.show(
+          context,
+          isVi ? 'Lỗi tạo sao lưu: $e' : 'Backup error: $e',
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCreatingBackup = false);
+      }
+    }
+  }
+
+  /// Khôi phục dữ liệu từ một bản sao lưu đã chọn trong danh sách
+  Future<void> _confirmAndRestoreBackup(CloudBackupSummary backup) async {
+    if (_isManualSyncing || _isCreatingBackup || _restoringBackupId != null) {
+      return;
+    }
+    final isVi = LanguageScope.of(context).isVietnamese;
+    final timeStr = DateFormat('HH:mm - dd/MM/yyyy').format(backup.backedUpAt);
+    final walletSummary = backup.wallets
+        .map((w) => '• ${w.name}: ${CurrencyUtils.formatCurrency(w.balance)}')
+        .join('\n');
+
+    final confirmed = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Khôi phục bản sao lưu?' : 'Restore Cloud Backup?',
+      message: isVi
+          ? 'Khôi phục bản sao lưu lúc $timeStr?\n\n'
+                'Tổng số dư: ${CurrencyUtils.formatCurrency(backup.totalBalance)}\n'
+                '$walletSummary\n\n'
+                'Số dư các ví trên máy và Firebase sẽ được cập nhật khớp theo bản sao lưu này.'
+          : 'Restore backup from $timeStr?\n\n'
+                'Total balance: ${CurrencyUtils.formatCurrency(backup.totalBalance)}\n'
+                '$walletSummary\n\n'
+                'Your wallets on this device and Firebase will be updated to match this backup.',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      confirmText: isVi ? 'Khôi phục ngay' : 'Restore Now',
+      icon: Icons.restore_rounded,
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _restoringBackupId = backup.id);
+    try {
+      final ok = await _syncService.restoreCloudBackupById(backup.id);
+      await _loadPendingCount();
+      await _loadCloudBackups();
+
+      if (mounted) {
+        if (ok) {
+          TopToast.show(
+            context,
+            isVi
+                ? 'Đã khôi phục thành công! Tổng số dư: ${CurrencyUtils.formatCurrency(backup.totalBalance)}'
+                : 'Restored successfully! Total balance: ${CurrencyUtils.formatCurrency(backup.totalBalance)}',
+          );
+        } else {
+          TopToast.show(
+            context,
+            isVi
+                ? 'Khôi phục thất bại. Vui lòng kiểm tra kết nối mạng và thử lại.'
+                : 'Restore failed. Please check your connection and try again.',
+            isError: true,
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        TopToast.show(
+          context,
+          isVi ? 'Lỗi khôi phục: $e' : 'Restore error: $e',
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _restoringBackupId = null);
+      }
+    }
+  }
+
+  Future<void> _confirmAndDeleteBackup(CloudBackupSummary backup) async {
+    if (backup.isLatestDoc || _restoringBackupId != null) return;
+    final isVi = LanguageScope.of(context).isVietnamese;
+    final timeStr = DateFormat('HH:mm - dd/MM/yyyy').format(backup.backedUpAt);
+
+    final confirmed = await MonoDialog.confirm(
+      context,
+      title: isVi ? 'Xóa bản sao lưu?' : 'Delete Backup?',
+      message: isVi
+          ? 'Xóa bản sao lưu lúc $timeStr khỏi Firebase? Dữ liệu hiện tại trên máy không bị ảnh hưởng.'
+          : 'Delete backup from $timeStr on Firebase? Your current data will not be affected.',
+      cancelText: isVi ? 'Hủy' : 'Cancel',
+      confirmText: isVi ? 'Xóa' : 'Delete',
+      isDestructive: true,
+      icon: Icons.delete_outline_rounded,
+    );
+
+    if (confirmed != true || !mounted) return;
+    final ok = await _syncService.deleteCloudBackup(backup.id);
+    if (ok) {
+      await _loadCloudBackups();
+      if (mounted) {
+        TopToast.show(
+          context,
+          isVi ? 'Đã xóa bản sao lưu.' : 'Backup deleted.',
+        );
       }
     }
   }
@@ -195,6 +375,10 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                         lastSyncTime,
                         isVi,
                       ),
+                      const SizedBox(height: 24),
+
+                      // Section 0: BẢN SAO LƯU & KHÔI PHỤC ĐÁM MÂY
+                      _buildCloudBackupsSection(isDark, isVi),
                       const SizedBox(height: 24),
 
                       // Section 1: QUẢN LÝ DỮ LIỆU
@@ -540,7 +724,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Action Button: "Đồng bộ ngay bây giờ"
+          // Action Button 1: "Đồng bộ ngay bây giờ" (2 chiều: đẩy & tải mới nhất)
           SizedBox(
             width: double.infinity,
             height: 48,
@@ -548,12 +732,16 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.brandColor,
                 foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
                 elevation: 0,
               ),
-              onPressed: isSyncing ? null : _triggerManualSync,
+              onPressed:
+                  (isSyncing || _isCreatingBackup || _restoringBackupId != null)
+                  ? null
+                  : _triggerManualSync,
               child: isSyncing
                   ? Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -590,6 +778,356 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                         ),
                       ],
                     ),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Action Button 2: "Tạo bản sao lưu mới"
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: context.brandColor,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                side: BorderSide(color: context.brandColor.withValues(alpha: 0.55)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed:
+                  (isSyncing || _isCreatingBackup || _restoringBackupId != null)
+                  ? null
+                  : _triggerCreateBackup,
+              child: _isCreatingBackup
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            color: context.brandColor,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          isVi ? 'Đang tạo bản sao lưu...' : 'Creating backup...',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.cloud_upload_outlined, size: 19),
+                        const SizedBox(width: 8),
+                        Text(
+                          isVi ? 'Tạo bản sao lưu mới' : 'Create New Backup',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCloudBackupsSection(bool isDark, bool isVi) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildSectionTitle(
+              isVi ? 'BẢN SAO LƯU & KHÔI PHỤC' : 'CLOUD BACKUPS & RESTORE',
+            ),
+            InkWell(
+              onTap: _isLoadingBackups ? null : _loadCloudBackups,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 10, left: 6, right: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.refresh_rounded,
+                      size: 15,
+                      color: context.brandColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      isVi ? 'Tải lại' : 'Refresh',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: context.brandColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        _buildCardContainer(
+          isDark: isDark,
+          children: [
+            if (_isLoadingBackups && _backups.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          color: context.brandColor,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        isVi
+                            ? 'Đang tải danh sách bản sao lưu...'
+                            : 'Loading cloud backups...',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: context.colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else if (_backups.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.cloud_queue_rounded,
+                      color: context.colors.onSurfaceVariant,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        isVi
+                            ? 'Chưa có bản sao lưu nào trên Firebase. Nhấn "Tạo bản sao lưu mới" để lưu trạng thái hiện tại.'
+                            : 'No cloud backups yet. Tap "Create New Backup" to save your current data.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: context.colors.onSurfaceVariant,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              for (int i = 0; i < _backups.length; i++) ...[
+                _buildBackupItemTile(_backups[i], i == 0, isDark, isVi),
+                if (i < _backups.length - 1) _buildDivider(isDark),
+              ],
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBackupItemTile(
+    CloudBackupSummary backup,
+    bool isNewest,
+    bool isDark,
+    bool isVi,
+  ) {
+    final isRestoringThis = _restoringBackupId == backup.id;
+    final timeStr = DateFormat('HH:mm • dd/MM/yyyy').format(backup.backedUpAt);
+    final titleText = backup.displayTitle(isVi: isVi);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: context.brandColor.withValues(
+                    alpha: isDark ? 0.2 : 0.12,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.backup_rounded,
+                  color: context.brandColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            titleText,
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              color: context.colors.onSurface,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isNewest) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: context.income.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              isVi ? 'Mới nhất' : 'Latest',
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: context.income,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '$timeStr  •  ${backup.walletCount} ${isVi ? 'ví' : 'wallets'}  •  ${backup.transactionCount} ${isVi ? 'giao dịch' : 'txs'}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${isVi ? 'Tổng số dư' : 'Total'}: ${CurrencyUtils.formatCurrency(backup.totalBalance)}',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: context.brandColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!backup.isLatestDoc)
+                IconButton(
+                  tooltip: isVi ? 'Xóa bản sao lưu' : 'Delete backup',
+                  icon: Icon(
+                    Icons.delete_outline_rounded,
+                    size: 19,
+                    color: context.colors.onSurfaceVariant,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: _restoringBackupId != null
+                      ? null
+                      : () => _confirmAndDeleteBackup(backup),
+                ),
+            ],
+          ),
+          if (backup.wallets.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: backup.wallets.map((w) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? context.surfaceElevatedColor
+                        : const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${w.name}: ${CurrencyUtils.formatCurrency(w.balance)}',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: context.colors.onSurface,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: context.brandColor.withValues(alpha: 0.12),
+                foregroundColor: context.brandColor,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                minimumSize: const Size(double.infinity, 42),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed:
+                  (_isManualSyncing ||
+                      _isCreatingBackup ||
+                      _restoringBackupId != null)
+                  ? null
+                  : () => _confirmAndRestoreBackup(backup),
+              icon: isRestoringThis
+                  ? SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        color: context.brandColor,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(Icons.restore_rounded, size: 17),
+              label: Text(
+                isRestoringThis
+                    ? (isVi ? 'Đang khôi phục...' : 'Restoring...')
+                    : (isVi ? 'Khôi phục bản này' : 'Restore This Backup'),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
         ],

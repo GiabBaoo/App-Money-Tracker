@@ -149,11 +149,18 @@ class _WalletScreenState extends State<WalletScreen>
             ),
           ),
 
-          // 2. NỘI DUNG CUỘN THỐNG NHẤT
-          SingleChildScrollView(
-            controller: _scrollController,
-            key: const PageStorageKey('wallet_unified_scroll'),
-            physics: const BouncingScrollPhysics(),
+          // 2. NỘI DUNG CUỘN THỐNG NHẤT (kéo xuống để đồng bộ 2 chiều)
+          RefreshIndicator(
+            color: const Color(0xFF438883),
+            onRefresh: () async {
+              await SyncService().syncAll();
+            },
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              key: const PageStorageKey('wallet_unified_scroll'),
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
             padding: EdgeInsets.only(
               top: headerHeight + 6,
               bottom:
@@ -306,6 +313,7 @@ class _WalletScreenState extends State<WalletScreen>
                 _buildRecentTransactionsSection(isDark),
               ],
             ),
+          ),
           ),
 
           // 3. STICKY TOP APP BAR (FROSTED GLASSMORPHISM VỚI MINI BALANCE KHI CUỘN)

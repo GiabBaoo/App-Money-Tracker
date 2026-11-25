@@ -9,8 +9,10 @@ import '../../core/errors/business_exception.dart';
 import '../../core/safety/destructive_ops_guard.dart';
 import '../../models/transaction_model.dart';
 import '../../models/wallet_model.dart';
+import '../../models/goal_model.dart';
 import '../../utils/finance_precision.dart';
 import 'wallet_repository.dart';
+import 'goal_repository.dart';
 import '../../services/sync_service.dart';
 import '../../services/connectivity_service.dart';
 import '../../services/ai_financial_context_service.dart';
@@ -62,21 +64,92 @@ class TransactionRepository with OwnedTableOps {
 
   // ════════ TRANSACTIONS CRUD ════════
 
-  /// Thêm giao dịch mới vào SQLite + enqueue sync
+  /// Helper điều chỉnh số dư ví nguyên tử bên trong SQLite transaction (dùng timestamp tịnh tiến)
+  Future<void> _adjustWalletBalanceInTxn(
+    DatabaseExecutor txn,
+    String walletId,
+    double amountDelta,
+    String uid,
+  ) async {
+    if (walletId.isEmpty) return;
+    final walletRows = await txn.query(
+      'wallets',
+      where: 'id = ? AND uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+      whereArgs: [walletId, uid],
+      limit: 1,
+    );
+    if (walletRows.isEmpty) return;
+
+    final w = WalletModel.fromSqlite(walletRows.first);
+    final newBal = FinancePrecision.roundCurrency(
+      w.balance + amountDelta,
+      currency: w.currency,
+    );
+    final nextMs = nextMonotonicTimestamp(w.updatedAt.millisecondsSinceEpoch);
+    final updatedW = w.copyWith(
+      balance: newBal,
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(nextMs),
+      syncStatus: 'pending',
+    );
+    final wRow = stampOwner(updatedW.toSqlite(), uid);
+    await txn.update(
+      'wallets',
+      wRow,
+      where: 'id = ? AND uid = ?',
+      whereArgs: [walletId, uid],
+    );
+    await SyncQueueWriter.enqueue(
+      txn,
+      ownerUid: uid,
+      table: 'wallets',
+      recordId: walletId,
+      action: 'UPDATE',
+      data: wRow,
+    );
+  }
+
+  /// Thêm giao dịch mới vào SQLite + cập nhật số dư ví nguyên tử + enqueue sync
   Future<String> addTransaction(TransactionModel transaction) async {
     final uid = session.requireUid();
     final db = await _dbHelper.database;
     final id = transaction.id.isEmpty ? _uuid.v4() : transaction.id;
     final now = DateTime.now();
 
-    final tx = transaction.copyWith(
-      id: id,
-      updatedAt: now,
-      syncStatus: 'pending',
-    );
-    final row = stampOwner(tx.toSqlite(), uid);
-
     await db.transaction((txn) async {
+      String resolvedWalletId = transaction.walletId;
+      if (resolvedWalletId.isNotEmpty) {
+        final exists = await txn.query(
+          'wallets',
+          columns: ['id'],
+          where: 'id = ? AND uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+          whereArgs: [resolvedWalletId, uid],
+          limit: 1,
+        );
+        if (exists.isEmpty) resolvedWalletId = '';
+      }
+      if (resolvedWalletId.isEmpty) {
+        final fallback = await txn.query(
+          'wallets',
+          columns: ['id'],
+          where: 'uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+          whereArgs: [uid],
+          orderBy: 'isDefault DESC, createdAt ASC',
+          limit: 1,
+        );
+        if (fallback.isNotEmpty) {
+          resolvedWalletId = fallback.first['id'] as String;
+        }
+      }
+
+      final tx = transaction.copyWith(
+        id: id,
+        uid: uid,
+        walletId: resolvedWalletId,
+        updatedAt: now,
+        syncStatus: 'pending',
+      );
+      final row = stampOwner(tx.toSqlite(), uid);
+
       await txn.insert('transactions', row);
       await SyncQueueWriter.enqueue(
         txn,
@@ -86,9 +159,17 @@ class TransactionRepository with OwnedTableOps {
         action: 'INSERT',
         data: row,
       );
+
+      if (resolvedWalletId.isNotEmpty) {
+        final delta = tx.type == 'income' ? tx.amount : -tx.amount;
+        await _adjustWalletBalanceInTxn(txn, resolvedWalletId, delta, uid);
+      }
     });
 
+    await WalletRepository().getWallets();
+    await getAllTransactions();
     _notifyTransactionsChanged();
+    WalletRepository().notifyChanged();
 
     unawaited(SyncService().syncAll());
 
@@ -124,16 +205,49 @@ class TransactionRepository with OwnedTableOps {
     return id;
   }
 
-  /// Cập nhật giao dịch
+  /// Cập nhật giao dịch + cân đối số dư ví nguyên tử
   Future<void> updateTransaction(TransactionModel transaction) async {
     final uid = session.requireUid();
     final db = await _dbHelper.database;
-    final now = DateTime.now();
-
-    final updated = transaction.copyWith(updatedAt: now, syncStatus: 'pending');
-    final row = stampOwner(updated.toSqlite(), uid);
 
     await db.transaction((txn) async {
+      final oldRows = await txn.query(
+        'transactions',
+        where: 'id = ? AND uid = ?',
+        whereArgs: [transaction.id, uid],
+        limit: 1,
+      );
+      int? prevUpdatedMs;
+      if (oldRows.isNotEmpty) {
+        final oldTx = TransactionModel.fromSqlite(oldRows.first);
+        prevUpdatedMs = oldTx.updatedAt.millisecondsSinceEpoch;
+        if (oldTx.walletId.isNotEmpty) {
+          final revertDelta = oldTx.type == 'income'
+              ? -oldTx.amount
+              : oldTx.amount;
+          await _adjustWalletBalanceInTxn(txn, oldTx.walletId, revertDelta, uid);
+        }
+      }
+
+      if (transaction.walletId.isNotEmpty) {
+        final applyDelta = transaction.type == 'income'
+            ? transaction.amount
+            : -transaction.amount;
+        await _adjustWalletBalanceInTxn(
+          txn,
+          transaction.walletId,
+          applyDelta,
+          uid,
+        );
+      }
+
+      final nextMs = nextMonotonicTimestamp(prevUpdatedMs);
+      final updated = transaction.copyWith(
+        updatedAt: DateTime.fromMillisecondsSinceEpoch(nextMs),
+        syncStatus: 'pending',
+      );
+      final row = stampOwner(updated.toSqlite(), uid);
+
       await updateOwned(txn, 'transactions', transaction.id, row, uid);
       await SyncQueueWriter.enqueue(
         txn,
@@ -145,7 +259,10 @@ class TransactionRepository with OwnedTableOps {
       );
     });
 
+    await WalletRepository().getWallets();
+    await getAllTransactions();
     _notifyTransactionsChanged();
+    WalletRepository().notifyChanged();
 
     unawaited(SyncService().syncAll());
   }
@@ -155,6 +272,7 @@ class TransactionRepository with OwnedTableOps {
     final uid = session.requireUid();
     final db = await _dbHelper.database;
     final nowMs = DateTime.now().millisecondsSinceEpoch;
+    bool goalUpdated = false;
 
     await db.transaction((txn) async {
       final rows = await txn.query(
@@ -167,41 +285,47 @@ class TransactionRepository with OwnedTableOps {
       if (rows.isNotEmpty) {
         final tx = TransactionModel.fromSqlite(rows.first);
 
-        // 1. Hoàn lại số dư ví nếu giao dịch có gắn walletId
+        // 1. Hoàn lại số dư ví nếu giao dịch có gắn walletId (dùng timestamp tịnh tiến)
         if (tx.walletId.isNotEmpty) {
           final revertDelta = (tx.type == 'income') ? -tx.amount : tx.amount;
-          final walletRows = await txn.query(
-            'wallets',
-            where: 'id = ? AND uid = ?',
-            whereArgs: [tx.walletId, uid],
+          await _adjustWalletBalanceInTxn(txn, tx.walletId, revertDelta, uid);
+        }
+
+        // 1b. Nếu giao dịch liên kết mục tiêu tiết kiệm (goalId), hoàn lại goals.currentAmount
+        if (tx.goalId != null && tx.goalId!.isNotEmpty) {
+          final goalRows = await txn.query(
+            'goals',
+            where: 'id = ? AND uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+            whereArgs: [tx.goalId, uid],
             limit: 1,
           );
-          if (walletRows.isNotEmpty) {
-            final w = WalletModel.fromSqlite(walletRows.first);
-            final newBal = FinancePrecision.roundCurrency(
-              w.balance + revertDelta,
-              currency: w.currency,
+          if (goalRows.isNotEmpty) {
+            final goal = GoalModel.fromSqlite(goalRows.first);
+            final revertGoalDelta = (tx.type == 'expense')
+                ? -tx.amount
+                : tx.amount;
+            final nextAmount = FinancePrecision.roundCurrency(
+              (goal.currentAmount + revertGoalDelta).clamp(0.0, double.infinity),
             );
-            final updatedW = w.copyWith(
-              balance: newBal,
-              updatedAt: DateTime.now(),
+            final goalNowMs = nextMonotonicTimestamp(
+              goal.updatedAt.millisecondsSinceEpoch,
+            );
+            final updatedGoal = goal.copyWith(
+              currentAmount: nextAmount,
+              updatedAt: DateTime.fromMillisecondsSinceEpoch(goalNowMs),
               syncStatus: 'pending',
             );
-            final wRow = updatedW.toSqlite();
-            await txn.update(
-              'wallets',
-              wRow,
-              where: 'id = ? AND uid = ?',
-              whereArgs: [tx.walletId, uid],
-            );
+            final goalMap = stampOwner(updatedGoal.toSqlite(), uid);
+            await updateOwned(txn, 'goals', goal.id, goalMap, uid);
             await SyncQueueWriter.enqueue(
               txn,
               ownerUid: uid,
-              table: 'wallets',
-              recordId: tx.walletId,
+              table: 'goals',
+              recordId: goal.id,
               action: 'UPDATE',
-              data: wRow,
+              data: goalMap,
             );
+            goalUpdated = true;
           }
         }
 
@@ -223,39 +347,12 @@ class TransactionRepository with OwnedTableOps {
               final pairedRevertDelta = (pairedTx.type == 'income')
                   ? -pairedTx.amount
                   : pairedTx.amount;
-              final pWalletRows = await txn.query(
-                'wallets',
-                where: 'id = ? AND uid = ?',
-                whereArgs: [pairedTx.walletId, uid],
-                limit: 1,
+              await _adjustWalletBalanceInTxn(
+                txn,
+                pairedTx.walletId,
+                pairedRevertDelta,
+                uid,
               );
-              if (pWalletRows.isNotEmpty) {
-                final pw = WalletModel.fromSqlite(pWalletRows.first);
-                final pNewBal = FinancePrecision.roundCurrency(
-                  pw.balance + pairedRevertDelta,
-                  currency: pw.currency,
-                );
-                final pUpdatedW = pw.copyWith(
-                  balance: pNewBal,
-                  updatedAt: DateTime.now(),
-                  syncStatus: 'pending',
-                );
-                final pwRow = pUpdatedW.toSqlite();
-                await txn.update(
-                  'wallets',
-                  pwRow,
-                  where: 'id = ? AND uid = ?',
-                  whereArgs: [pairedTx.walletId, uid],
-                );
-                await SyncQueueWriter.enqueue(
-                  txn,
-                  ownerUid: uid,
-                  table: 'wallets',
-                  recordId: pairedTx.walletId,
-                  action: 'UPDATE',
-                  data: pwRow,
-                );
-              }
             }
             await txn.update(
               'transactions',
@@ -289,8 +386,13 @@ class TransactionRepository with OwnedTableOps {
       );
     });
 
+    await WalletRepository().getWallets();
+    await getAllTransactions();
     _notifyTransactionsChanged();
     WalletRepository().notifyChanged();
+    if (goalUpdated) {
+      GoalRepository().notifyChanged();
+    }
 
     unawaited(SyncService().syncAll());
   }
@@ -328,7 +430,7 @@ class TransactionRepository with OwnedTableOps {
     throw UnimplementedError('Triển khai lại ở P1 cùng cơ chế tính lại số dư');
   }
 
-  /// Cập nhật ảnh cho giao dịch
+  /// Cập nhật ảnh cho giao dịch (enqueue full-row payload)
   Future<void> updateTransactionPhoto({
     required String transactionId,
     String? photoUrl,
@@ -337,26 +439,33 @@ class TransactionRepository with OwnedTableOps {
   }) async {
     final uid = session.requireUid();
     final db = await _dbHelper.database;
-    final updates = <String, dynamic>{
-      'hasPhoto': 1,
-      'updatedAt': DateTime.now().millisecondsSinceEpoch,
-      'syncStatus': 'pending',
-    };
-    if (photoUrl != null) updates['photoUrl'] = photoUrl;
-    if (photoStoragePath != null) {
-      updates['photoStoragePath'] = photoStoragePath;
-    }
-    if (photoLocalPath != null) updates['photoLocalPath'] = photoLocalPath;
 
     await db.transaction((txn) async {
-      await updateOwned(txn, 'transactions', transactionId, updates, uid);
+      final existing = await findOwned(txn, 'transactions', transactionId, uid);
+      if (existing == null) return;
+
+      final prevUpdatedMs = existing['updatedAt'] as int?;
+      final nowMs = nextMonotonicTimestamp(prevUpdatedMs);
+
+      final fullRow = Map<String, dynamic>.from(existing);
+      fullRow['hasPhoto'] = 1;
+      fullRow['updatedAt'] = nowMs;
+      fullRow['syncStatus'] = 'pending';
+      if (photoUrl != null) fullRow['photoUrl'] = photoUrl;
+      if (photoStoragePath != null) {
+        fullRow['photoStoragePath'] = photoStoragePath;
+      }
+      if (photoLocalPath != null) fullRow['photoLocalPath'] = photoLocalPath;
+
+      final stamped = stampOwner(fullRow, uid);
+      await updateOwned(txn, 'transactions', transactionId, stamped, uid);
       await SyncQueueWriter.enqueue(
         txn,
         ownerUid: uid,
         table: 'transactions',
         recordId: transactionId,
         action: 'UPDATE',
-        data: updates,
+        data: stamped,
       );
     });
 
@@ -716,12 +825,14 @@ class TransactionRepository with OwnedTableOps {
   void notifyTransactionsChanged() => _notifyTransactionsChanged();
 
   void _notifyTransactionsChanged() {
-    _loadAndEmitTransactions();
-    _loadAndEmitBalance();
-    if (!_changeStream.isClosed) {
-      _changeStream.add(null);
-    }
     AiFinancialContextService().invalidateCache();
+    unawaited(() async {
+      await _loadAndEmitTransactions();
+      await _loadAndEmitBalance();
+      if (!_changeStream.isClosed) {
+        _changeStream.add(null);
+      }
+    }());
   }
 
   void dispose() {

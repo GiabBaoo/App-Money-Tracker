@@ -34,6 +34,7 @@ import '../features/group_expense/data/repositories/sqlite_settlement_repository
 import 'ledger_reconciliation_service.dart';
 import 'connectivity_service.dart';
 import 'auth_service.dart';
+import 'app_widget_service.dart';
 
 /// Interface khóa bất đồng bộ
 abstract class ISyncLock {
@@ -122,7 +123,12 @@ class SyncQueueItem {
       try {
         parsedData = json.decode(rawData) as Map<String, dynamic>;
       } catch (e, st) {
-        AppLogger.warn('Không thể decode JSON sync_queue data', tag: 'SyncService', error: e, stackTrace: st);
+        AppLogger.warn(
+          'Không thể decode JSON sync_queue data',
+          tag: 'SyncService',
+          error: e,
+          stackTrace: st,
+        );
       }
     }
     return SyncQueueItem(
@@ -179,6 +185,128 @@ class SyncExecutionReport {
   bool get isSuccess => !hasErrors;
 }
 
+/// Phân loại bản sao lưu đám mây
+enum CloudBackupType { autoDaily, manual, preRestore }
+
+extension CloudBackupTypeX on CloudBackupType {
+  String get wireValue {
+    switch (this) {
+      case CloudBackupType.autoDaily:
+        return 'auto_daily';
+      case CloudBackupType.manual:
+        return 'manual';
+      case CloudBackupType.preRestore:
+        return 'pre_restore';
+    }
+  }
+
+  static CloudBackupType fromWire(
+    String? value, {
+    String? docId,
+    String? label,
+  }) {
+    switch (value) {
+      case 'auto_daily':
+        return CloudBackupType.autoDaily;
+      case 'pre_restore':
+        return CloudBackupType.preRestore;
+      case 'manual':
+        return CloudBackupType.manual;
+    }
+    if (docId != null && docId.startsWith('daily_')) {
+      return CloudBackupType.autoDaily;
+    }
+    final lower = (label ?? '').toLowerCase();
+    if (lower.contains('cuối ngày') ||
+        lower.contains('00:00') ||
+        lower.contains('tự động') ||
+        lower.contains('daily') ||
+        lower.contains('auto')) {
+      return CloudBackupType.autoDaily;
+    }
+    if (lower.contains('trước khi khôi phục') ||
+        lower.contains('pre-restore') ||
+        lower.contains('an toàn')) {
+      return CloudBackupType.preRestore;
+    }
+    return CloudBackupType.manual;
+  }
+}
+
+/// Tóm tắt một bản sao lưu đám mây trong `users/{uid}/backups/{backupId}`
+class CloudBackupSummary {
+  final String id;
+  final DateTime backedUpAt;
+  final int backedUpAtMs;
+  final int walletCount;
+  final int transactionCount;
+  final int budgetCount;
+  final int goalCount;
+  final double totalBalance;
+  final List<WalletModel> wallets;
+  final String? label;
+  final bool isLatestDoc;
+  final CloudBackupType backupType;
+  final String? dateKey;
+  final bool hasTransactionsSnapshot;
+  final int txChunkCount;
+  final int schemaVersion;
+
+  const CloudBackupSummary({
+    required this.id,
+    required this.backedUpAt,
+    required this.backedUpAtMs,
+    required this.walletCount,
+    required this.transactionCount,
+    required this.budgetCount,
+    required this.goalCount,
+    required this.totalBalance,
+    required this.wallets,
+    this.label,
+    this.isLatestDoc = false,
+    this.backupType = CloudBackupType.manual,
+    this.dateKey,
+    this.hasTransactionsSnapshot = false,
+    this.txChunkCount = 0,
+    this.schemaVersion = 1,
+  });
+
+  bool get isAutoDaily => backupType == CloudBackupType.autoDaily;
+  bool get isPreRestore => backupType == CloudBackupType.preRestore;
+
+  String displayTitle({required bool isVi}) {
+    switch (backupType) {
+      case CloudBackupType.autoDaily:
+        String dateStr;
+        final parts = (dateKey ?? '').split('-');
+        if (parts.length == 3) {
+          dateStr = '${parts[2]}/${parts[1]}/${parts[0]}';
+        } else {
+          final d = backedUpAt.day.toString().padLeft(2, '0');
+          final m = backedUpAt.month.toString().padLeft(2, '0');
+          dateStr = '$d/$m/${backedUpAt.year}';
+        }
+        return isVi
+            ? 'Sao lưu tự động • $dateStr'
+            : 'Daily Auto Backup • $dateStr';
+      case CloudBackupType.preRestore:
+        return isVi
+            ? 'Sao lưu trước khi khôi phục'
+            : 'Pre-Restore Safety Backup';
+      case CloudBackupType.manual:
+        final raw = label?.trim();
+        if (raw == null ||
+            raw.isEmpty ||
+            raw == 'Sao lưu thủ công' ||
+            raw == 'Manual Backup' ||
+            raw.contains('00:00')) {
+          return isVi ? 'Sao lưu thủ công' : 'Manual Backup';
+        }
+        return raw;
+    }
+  }
+}
+
 abstract class ISyncService {
   void init({
     required TransactionRepository transactionRepo,
@@ -196,8 +324,21 @@ abstract class ISyncService {
   Future<bool> syncAll();
   Future<SyncExecutionReport> syncAllDetailed();
   Future<SyncExecutionReport> forceFullResync();
-  Future<bool> createCloudBackupSnapshot();
+  Future<bool> createCloudBackupSnapshot({
+    String? label,
+    String? backupId,
+    CloudBackupType backupType = CloudBackupType.manual,
+    String? dateKey,
+    bool updateLatestPointer = true,
+  });
+  Future<bool> hasCloudBackup(String backupId);
   Future<bool> restoreLatestCloudBackup([String? uid]);
+  Future<List<CloudBackupSummary>> listCloudBackups();
+  Future<bool> restoreCloudBackupById(
+    String backupId, {
+    bool createSafetyBackup = true,
+  });
+  Future<bool> deleteCloudBackup(String backupId);
   Future<bool> syncSingleTransaction(String txId);
   Future<int> getPendingSyncCount();
   Future<int> getDeadCount();
@@ -206,6 +347,7 @@ abstract class ISyncService {
   Future<bool> retryDeadLetterItem(int queueId);
   Future<int> retryAllDeadLetters();
   void startRealtimeListeners();
+  void ensureRealtimeListenersActive();
   void stopRealtimeListeners();
   Future<void> quiesce({Duration timeout = const Duration(seconds: 5)});
   void dispose();
@@ -230,7 +372,8 @@ class SyncService implements ISyncService {
         _lastReport = null;
         _initialDownloadDone.clear();
         stopRealtimeListeners();
-      } else if (newUid != _listenersUid) {
+      } else if (newUid != _listenersUid ||
+          snapshot?.epoch != _listenersEpoch) {
         _lastSyncTime = null;
         _lastReport = null;
         stopRealtimeListeners();
@@ -261,9 +404,14 @@ class SyncService implements ISyncService {
   SqliteExpenseRepository? _expenseRepo;
   SqliteSettlementRepository? _settlementRepo;
 
+  static const int _expectedListenerCount = 7;
+
   StreamSubscription<bool>? _connectivitySubscription;
+  StreamSubscription<User?>? _authStateSubscription;
   final List<StreamSubscription> _firestoreSubscriptions = [];
   String? _listenersUid;
+  int? _listenersEpoch;
+  Timer? _rtReconcileDebounce;
   final Map<String, bool> _initialDownloadDone = {};
   final StreamController<String> _initialDownloadCompletedController =
       StreamController<String>.broadcast();
@@ -278,16 +426,21 @@ class SyncService implements ISyncService {
   String? get listenersUid => _listenersUid;
 
   bool _isSyncing = false;
+  bool _isRestoring = false;
   bool _isInitialized = false;
   bool _pendingResync = false;
   DateTime? _lastSyncTime;
   SyncExecutionReport? _lastReport;
+
+  static const int _inlineBackupTxLimit = 350;
+  static const int _backupTxChunkSize = 350;
 
   Future<void>? _currentRun;
   bool _accepting = true;
   static const int _maxRetry = 8;
 
   bool get isSyncing => _isSyncing;
+  bool get isRestoring => _isRestoring;
   DateTime? get lastSyncTime => _lastSyncTime;
   SyncExecutionReport? get lastReport => _lastReport;
 
@@ -319,7 +472,12 @@ class SyncService implements ISyncService {
       );
       return (res.first['count'] as int?) ?? 0;
     } catch (e, st) {
-      AppLogger.warn('Lỗi retryAllDeadLetters', tag: 'SyncService', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Lỗi retryAllDeadLetters',
+        tag: 'SyncService',
+        error: e,
+        stackTrace: st,
+      );
       return 0;
     }
   }
@@ -337,7 +495,12 @@ class SyncService implements ISyncService {
       );
       return (res.first['count'] as int?) ?? 0;
     } catch (e, st) {
-      AppLogger.warn('Lỗi retryAllDeadLetters', tag: 'SyncService', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Lỗi retryAllDeadLetters',
+        tag: 'SyncService',
+        error: e,
+        stackTrace: st,
+      );
       return 0;
     }
   }
@@ -392,7 +555,12 @@ class SyncService implements ISyncService {
       }
       return false;
     } catch (e, st) {
-      AppLogger.error('Lỗi retryDeadLetterItem', tag: 'SyncService', error: e, stackTrace: st);
+      AppLogger.error(
+        'Lỗi retryDeadLetterItem',
+        tag: 'SyncService',
+        error: e,
+        stackTrace: st,
+      );
       return false;
     }
   }
@@ -421,7 +589,12 @@ class SyncService implements ISyncService {
       }
       return count;
     } catch (e, st) {
-      AppLogger.warn('Lỗi retryAllDeadLetters', tag: 'SyncService', error: e, stackTrace: st);
+      AppLogger.warn(
+        'Lỗi retryAllDeadLetters',
+        tag: 'SyncService',
+        error: e,
+        stackTrace: st,
+      );
       return 0;
     }
   }
@@ -452,7 +625,8 @@ class SyncService implements ISyncService {
     _settlementRepo = settlementRepo ?? SqliteSettlementRepository();
     _isInitialized = true;
 
-    // Lắng nghe khi mạng khôi phục → tự động re-auth và sync toàn bộ nếu hợp lệ
+    // Lắng nghe khi mạng khôi phục → tự động re-auth, bật listener và sync toàn bộ nếu hợp lệ
+    _connectivitySubscription?.cancel();
     _connectivitySubscription = _connectivity.onlineStream.listen((
       isOnline,
     ) async {
@@ -464,8 +638,27 @@ class SyncService implements ISyncService {
         if (FirebaseAuth.instance.currentUser == null) {
           await AuthService().silentReauthenticateIfNeeded();
         }
+        ensureRealtimeListenersActive();
         if (_initialDownloadDone[uid] != true) {
           unawaited(initialDownload(uid));
+        } else {
+          unawaited(syncAll());
+        }
+      }
+    });
+
+    // Lắng nghe trạng thái FirebaseAuth để tự động khôi phục listener khi phiên auth sẵn sàng
+    _authStateSubscription?.cancel();
+    _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen((
+      user,
+    ) {
+      if (user != null &&
+          _isInitialized &&
+          _accepting &&
+          user.uid == SessionManager.instance.uidOrNull) {
+        ensureRealtimeListenersActive();
+        if (_initialDownloadDone[user.uid] != true) {
+          unawaited(initialDownload(user.uid));
         } else {
           unawaited(syncAll());
         }
@@ -481,9 +674,18 @@ class SyncService implements ISyncService {
     if (ownerUid != null) {
       try {
         final db = await _dbHelper.database;
-        await db.delete('sync_metadata', where: 'uid = ?', whereArgs: [ownerUid]);
+        await db.delete(
+          'sync_metadata',
+          where: 'uid = ?',
+          whereArgs: [ownerUid],
+        );
       } catch (e, st) {
-        AppLogger.warn('Không thể decode JSON sync_queue data', tag: 'SyncService', error: e, stackTrace: st);
+        AppLogger.warn(
+          'Không thể decode JSON sync_queue data',
+          tag: 'SyncService',
+          error: e,
+          stackTrace: st,
+        );
       }
     }
     return syncAllDetailed();
@@ -567,6 +769,12 @@ class SyncService implements ISyncService {
       return 0;
     } finally {
       _syncLock.release();
+      if (_pendingResync &&
+          _accepting &&
+          SessionManager.instance.uidOrNull != null) {
+        _pendingResync = false;
+        unawaited(syncAll());
+      }
     }
   }
 
@@ -611,7 +819,8 @@ class SyncService implements ISyncService {
         report.uploadError == 'FirebaseAuth UID does not match Session UID.' ||
         report.uploadError == 'Another sync cycle is currently running.' ||
         report.uploadError == 'No valid session UID.' ||
-        report.uploadError == 'SyncService is not accepting requests (quiesced).';
+        report.uploadError ==
+            'SyncService is not accepting requests (quiesced).';
 
     if (!downloadFailed && SessionManager.instance.uidOrNull == targetUid) {
       _initialDownloadDone[targetUid] = true;
@@ -628,11 +837,46 @@ class SyncService implements ISyncService {
     }
   }
 
-  /// Tạo một bản sao lưu toàn diện (Cloud Backup Snapshot) từ thiết bị hiện tại lên Firebase
-  /// Được gọi khi người dùng bấm nút "Đồng bộ ngay bây giờ" trong trang Dữ liệu và riêng tư.
-  /// Đảm bảo ghi đè sạch sẽ toàn bộ ví tiền, số dư, giao dịch, ngân sách và mục tiêu của thiết bị này lên Firebase.
+  /// Kiểm tra một bản sao lưu cụ thể đã tồn tại trên Firestore chưa (hỗ trợ idempotency cho sao lưu cuối ngày)
   @override
-  Future<bool> createCloudBackupSnapshot() async {
+  Future<bool> hasCloudBackup(String backupId) async {
+    if (backupId.trim().isEmpty) return false;
+    final ownerUid = SessionManager.instance.uidOrNull;
+    if (ownerUid == null) return false;
+    if (!_connectivity.isOnline) {
+      final hasNet = await _connectivity.checkRealInternet();
+      if (!hasNet) return false;
+    }
+    if (FirebaseAuth.instance.currentUser == null) {
+      await AuthService().silentReauthenticateIfNeeded();
+    }
+    final authUser = FirebaseAuth.instance.currentUser;
+    if (authUser == null || authUser.uid != ownerUid) return false;
+    try {
+      final doc = await _firestore
+          .collection('users')
+          .doc(ownerUid)
+          .collection('backups')
+          .doc(backupId)
+          .get(const GetOptions(source: Source.server))
+          .timeout(const Duration(seconds: 6));
+      return doc.exists;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Tạo một bản sao lưu toàn diện (Cloud Backup Snapshot) từ thiết bị hiện tại lên Firebase
+  /// Bao gồm toàn bộ ví tiền, số dư, giao dịch (inline hoặc chia chunk `tx_chunks`), ngân sách và mục tiêu.
+  /// Hỗ trợ `backupId` cố định (ví dụ `daily_YYYY-MM-DD` cho sao lưu cuối ngày) để chống trùng lặp đa thiết bị.
+  @override
+  Future<bool> createCloudBackupSnapshot({
+    String? label,
+    String? backupId,
+    CloudBackupType backupType = CloudBackupType.manual,
+    String? dateKey,
+    bool updateLatestPointer = true,
+  }) async {
     if (!_accepting) return false;
     final session = SessionManager.instance;
     final ownerUid = session.uidOrNull;
@@ -662,145 +906,16 @@ class SyncService implements ISyncService {
 
     _isSyncing = true;
     try {
-      final db = await _dbHelper.database;
-      final now = DateTime.now();
-      final nowMs = now.millisecondsSinceEpoch;
-
-      // 1. Đẩy hết các thay đổi đang chờ trong sync_queue lên trước
-      await _uploadPendingChanges();
-
-      // 2. Lấy toàn bộ ví đang có trên máy hiện tại (local source of truth)
-      final localWalletRows = await db.query(
-        'wallets',
-        where: 'uid = ?',
-        whereArgs: [ownerUid],
+      final ok = await _createCloudBackupSnapshotLocked(
+        ownerUid: ownerUid,
+        label: label,
+        backupId: backupId,
+        backupType: backupType,
+        dateKey: dateKey,
+        updateLatestPointer: updateLatestPointer,
+        downloadAfterBackup: true,
       );
-      final activeLocalWallets = <Map<String, dynamic>>[];
-      final localWalletIds = <String>{};
-
-      for (final row in localWalletRows) {
-        final wId = row['id'] as String? ?? '';
-        if (wId.isEmpty) continue;
-        localWalletIds.add(wId);
-        final isDel = (row['isDeleted'] as int? ?? 0) == 1;
-
-        final updatedRow = Map<String, dynamic>.from(row);
-        updatedRow['uid'] = ownerUid;
-        updatedRow['updatedAt'] = nowMs;
-
-        final fsData = _convertToFirestoreFormat(updatedRow, 'wallets');
-        fsData['uid'] = ownerUid;
-        await _firestore
-            .collection('wallets')
-            .doc(wId)
-            .set(fsData, SetOptions(merge: true));
-
-        await db.update(
-          'wallets',
-          {'syncStatus': 'synced', 'updatedAt': nowMs},
-          where: 'id = ? AND uid = ?',
-          whereArgs: [wId, ownerUid],
-        );
-
-        if (!isDel) {
-          activeLocalWallets.add(updatedRow);
-        }
-      }
-
-      // 3. Đánh dấu xóa mềm (isDeleted: true) các ví dư thừa trên Firestore không còn tồn tại hoặc đã xóa trên máy này
-      try {
-        final remoteWalletsSnap = await _firestore
-            .collection('wallets')
-            .where('uid', isEqualTo: ownerUid)
-            .get(const GetOptions(source: Source.server))
-            .timeout(const Duration(seconds: 8));
-
-        final activeLocalIds = activeLocalWallets
-            .map((w) => w['id'] as String)
-            .toSet();
-        for (final doc in remoteWalletsSnap.docs) {
-          if (!activeLocalIds.contains(doc.id)) {
-            await doc.reference.set({
-              'uid': ownerUid,
-              'isDeleted': true,
-              'isDefault': false,
-              'deletedAt': Timestamp.fromMillisecondsSinceEpoch(nowMs),
-              'updatedAt': Timestamp.fromMillisecondsSinceEpoch(nowMs),
-            }, SetOptions(merge: true));
-          }
-        }
-      } catch (e) {
-        debugPrint('SyncService: Clean remote extra wallets error: $e');
-      }
-
-      // 4. Đồng bộ toàn bộ giao dịch, ngân sách, mục tiêu cục bộ lên Firestore
-      final localTxRows = await db.query(
-        'transactions',
-        where: 'uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
-        whereArgs: [ownerUid],
-      );
-      final localBudgetRows = await db.query(
-        'budgets',
-        where: 'uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
-        whereArgs: [ownerUid],
-      );
-      final localGoalRows = await db.query(
-        'goals',
-        where: 'uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
-        whereArgs: [ownerUid],
-      );
-
-      // Ghi snapshot bản sao lưu mới nhất vào users/{uid}/backups/latest
-      // để khi đăng nhập trên bất kỳ thiết bị nào cũng khôi phục tức thì 100%
-      final sanitizedWallets = activeLocalWallets
-          .map(
-            (w) => SyncQueueWriter.sanitizeMap(Map<String, dynamic>.from(w))!,
-          )
-          .toList();
-      final sanitizedBudgets = localBudgetRows
-          .map(
-            (b) => SyncQueueWriter.sanitizeMap(Map<String, dynamic>.from(b))!,
-          )
-          .toList();
-      final sanitizedGoals = localGoalRows
-          .map(
-            (g) => SyncQueueWriter.sanitizeMap(Map<String, dynamic>.from(g))!,
-          )
-          .toList();
-
-      await _firestore
-          .collection('users')
-          .doc(ownerUid)
-          .collection('backups')
-          .doc('latest')
-          .set({
-            'uid': ownerUid,
-            'backedUpAt': Timestamp.fromMillisecondsSinceEpoch(nowMs),
-            'backedUpAtMs': nowMs,
-            'walletCount': sanitizedWallets.length,
-            'transactionCount': localTxRows.length,
-            'wallets': sanitizedWallets,
-            'budgets': sanitizedBudgets,
-            'goals': sanitizedGoals,
-          });
-
-      // Xóa các mục wallets cũ còn sót trong sync_queue vì đã được đồng bộ đầy đủ
-      await db.delete(
-        'sync_queue',
-        where: "tableName = 'wallets' AND (ownerUid = ? OR uid = ?)",
-        whereArgs: [ownerUid, ownerUid],
-      );
-
-      // 5. Tải bổ sung các dữ liệu khác nếu có
-      final rep = SyncExecutionReport();
-      await _downloadFromFirestore(rep);
-
-      _lastSyncTime = DateTime.now();
-      _walletRepo?.notifyChanged();
-      _transactionRepo?.notifyTransactionsChanged();
-      _budgetRepo?.notifyChanged();
-      _goalRepo?.notifyChanged();
-      return true;
+      return ok;
     } catch (e, st) {
       AppLogger.error(
         'Lỗi createCloudBackupSnapshot',
@@ -812,11 +927,1005 @@ class SyncService implements ISyncService {
     } finally {
       _isSyncing = false;
       _syncLock.release();
+      if (_pendingResync &&
+          _accepting &&
+          SessionManager.instance.uidOrNull != null) {
+        _pendingResync = false;
+        unawaited(syncAll());
+      }
+    }
+  }
+
+  /// Core logic tạo bản sao lưu (yêu cầu caller đã giữ `_syncLock`)
+  Future<bool> _createCloudBackupSnapshotLocked({
+    required String ownerUid,
+    String? label,
+    String? backupId,
+    CloudBackupType backupType = CloudBackupType.manual,
+    String? dateKey,
+    bool updateLatestPointer = true,
+    bool downloadAfterBackup = false,
+  }) async {
+    final db = await _dbHelper.database;
+    final now = DateTime.now();
+    final nowMs = now.millisecondsSinceEpoch;
+    final resolvedDateKey =
+        dateKey ??
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+    // 1. Đồng bộ 2 chiều đầy đủ trước khi chụp snapshot để không bao giờ ghi đè dữ liệu máy khác
+    await _uploadPendingChanges();
+    await _downloadFromFirestore();
+    await LedgerReconciliationService().reconcileAll(ownerUid);
+
+    // Chụp mốc maxQueueId trước khi đọc dữ liệu cục bộ để bảo vệ giao dịch mới phát sinh trong lúc upload
+    final maxQueueRes = await db.rawQuery(
+      'SELECT COALESCE(MAX(id), 0) as maxId FROM sync_queue WHERE ownerUid = ? OR uid = ?',
+      [ownerUid, ownerUid],
+    );
+    final maxQueueIdBeforeUpload = (maxQueueRes.first['maxId'] as int?) ?? 0;
+
+    // 2. Lấy toàn bộ ví đang có trên máy hiện tại (giữ nguyên updatedAt gốc)
+    final localWalletRows = await db.query(
+      'wallets',
+      where: 'uid = ?',
+      whereArgs: [ownerUid],
+    );
+    final activeLocalWallets = <Map<String, dynamic>>[];
+
+    for (final row in localWalletRows) {
+      final wId = row['id'] as String? ?? '';
+      if (wId.isEmpty) continue;
+      final isDel = (row['isDeleted'] as int? ?? 0) == 1;
+      final rowUpdatedAt = (row['updatedAt'] as int?) ?? nowMs;
+
+      final updatedRow = Map<String, dynamic>.from(row);
+      updatedRow['uid'] = ownerUid;
+      updatedRow['updatedAt'] = rowUpdatedAt;
+
+      final fsData = _convertToFirestoreFormat(updatedRow, 'wallets');
+      fsData['uid'] = ownerUid;
+      await _firestore
+          .collection('wallets')
+          .doc(wId)
+          .set(fsData, SetOptions(merge: true));
+
+      await db.update(
+        'wallets',
+        {'syncStatus': 'synced'},
+        where: 'id = ? AND uid = ? AND (updatedAt IS NULL OR updatedAt <= ?)',
+        whereArgs: [wId, ownerUid, rowUpdatedAt],
+      );
+
+      if (!isDel) {
+        activeLocalWallets.add(updatedRow);
+      }
+    }
+
+    // 3. Chỉ dọn ví dư thừa khi sao lưu thủ công / pre_restore; TUYỆT ĐỐI không xóa trong autoDaily
+    if (backupType != CloudBackupType.autoDaily) {
+      try {
+        final remoteWalletsSnap = await _firestore
+            .collection('wallets')
+            .where('uid', isEqualTo: ownerUid)
+            .get(const GetOptions(source: Source.server))
+            .timeout(const Duration(seconds: 8));
+
+        final activeLocalIds = activeLocalWallets
+            .map((w) => w['id'] as String)
+            .toSet();
+        await _softDeleteExtraRemoteDocs(
+          docs: remoteWalletsSnap.docs,
+          keepIds: activeLocalIds,
+          ownerUid: ownerUid,
+          nowMs: nowMs,
+          extraFields: const {'isDefault': false},
+        );
+      } catch (e) {
+        debugPrint('SyncService: Clean remote extra wallets error: $e');
+      }
+    }
+
+    // 4. Đồng bộ ĐẦY ĐỦ toàn bộ giao dịch, ngân sách, mục tiêu cục bộ lên Firestore
+    final allLocalTxRows = await db.query(
+      'transactions',
+      where: 'uid = ?',
+      whereArgs: [ownerUid],
+    );
+    final allLocalBudgetRows = await db.query(
+      'budgets',
+      where: 'uid = ?',
+      whereArgs: [ownerUid],
+    );
+    final allLocalGoalRows = await db.query(
+      'goals',
+      where: 'uid = ?',
+      whereArgs: [ownerUid],
+    );
+
+    await _batchUploadCollectionRows(
+      collectionName: 'transactions',
+      rows: allLocalTxRows,
+      ownerUid: ownerUid,
+    );
+    await _batchUploadCollectionRows(
+      collectionName: 'budgets',
+      rows: allLocalBudgetRows,
+      ownerUid: ownerUid,
+    );
+    await _batchUploadCollectionRows(
+      collectionName: 'goals',
+      rows: allLocalGoalRows,
+      ownerUid: ownerUid,
+    );
+
+    // Chỉ đánh dấu synced cho các bản ghi đã thực sự nằm trong snapshot và chỉ xóa sync_queue <= maxQueueIdBeforeUpload
+    await db.transaction((txn) async {
+      final tablesAndRows = <String, List<Map<String, dynamic>>>{
+        'transactions': allLocalTxRows,
+        'budgets': allLocalBudgetRows,
+        'goals': allLocalGoalRows,
+      };
+      for (final entry in tablesAndRows.entries) {
+        for (final row in entry.value) {
+          final id = row['id'] as String?;
+          if (id == null || id.isEmpty) continue;
+          final rowUpdatedAt = (row['updatedAt'] as int?) ?? nowMs;
+          await txn.update(
+            entry.key,
+            {'syncStatus': 'synced'},
+            where:
+                'id = ? AND uid = ? AND (updatedAt IS NULL OR updatedAt <= ?)',
+            whereArgs: [id, ownerUid, rowUpdatedAt],
+          );
+        }
+      }
+      await txn.delete(
+        'sync_queue',
+        where:
+            "id <= ? AND tableName IN ('wallets', 'transactions', 'budgets', 'goals') AND (ownerUid = ? OR uid = ?)",
+        whereArgs: [maxQueueIdBeforeUpload, ownerUid, ownerUid],
+      );
+    });
+
+    final localTxRows = allLocalTxRows
+        .where((r) => (r['isDeleted'] as int? ?? 0) == 0)
+        .toList();
+    final localBudgetRows = allLocalBudgetRows
+        .where((r) => (r['isDeleted'] as int? ?? 0) == 0)
+        .toList();
+    final localGoalRows = allLocalGoalRows
+        .where((r) => (r['isDeleted'] as int? ?? 0) == 0)
+        .toList();
+
+    final sanitizedWallets = activeLocalWallets
+        .map((w) => SyncQueueWriter.sanitizeMap(Map<String, dynamic>.from(w))!)
+        .toList();
+    final sanitizedTxs = localTxRows.map((t) {
+      final m = SyncQueueWriter.sanitizeMap(Map<String, dynamic>.from(t))!;
+      m.remove('photoLocalPath'); // Đường dẫn local không dùng trên máy khác
+      return m;
+    }).toList();
+    final sanitizedBudgets = localBudgetRows
+        .map((b) => SyncQueueWriter.sanitizeMap(Map<String, dynamic>.from(b))!)
+        .toList();
+    final sanitizedGoals = localGoalRows
+        .map((g) => SyncQueueWriter.sanitizeMap(Map<String, dynamic>.from(g))!)
+        .toList();
+
+    final totalBalance = activeLocalWallets.fold<double>(
+      0.0,
+      (total, w) => total + ((w['balance'] as num?)?.toDouble() ?? 0.0),
+    );
+    final resolvedBackupId =
+        (backupId != null && backupId.trim().isNotEmpty && backupId != 'latest')
+        ? backupId.trim()
+        : 'backup_$nowMs';
+
+    final backupsCol = _firestore
+        .collection('users')
+        .doc(ownerUid)
+        .collection('backups');
+    final backupDocRef = backupsCol.doc(resolvedBackupId);
+
+    // Xử lý lưu transactions an toàn không vượt giới hạn 1 MiB của Firestore document
+    int txChunkCount = 0;
+    List<Map<String, dynamic>>? inlineTransactions;
+    if (sanitizedTxs.length <= _inlineBackupTxLimit) {
+      inlineTransactions = sanitizedTxs;
+      // Nếu ghi đè doc cũ (vd daily_YYYY-MM-DD) từng có tx_chunks thì dọn sạch
+      await _deleteBackupTxChunks(backupDocRef);
+    } else {
+      await _deleteBackupTxChunks(backupDocRef);
+      txChunkCount = (sanitizedTxs.length / _backupTxChunkSize).ceil();
+      for (int idx = 0; idx < txChunkCount; idx++) {
+        final start = idx * _backupTxChunkSize;
+        final end = min(start + _backupTxChunkSize, sanitizedTxs.length);
+        final chunkItems = sanitizedTxs.sublist(start, end);
+        await backupDocRef
+            .collection('tx_chunks')
+            .doc('chunk_$idx')
+            .set({
+              'index': idx,
+              'count': chunkItems.length,
+              'items': chunkItems,
+            })
+            .timeout(const Duration(seconds: 12));
+      }
+    }
+
+    final dateParts = resolvedDateKey.split('-');
+    final displayDate = dateParts.length == 3
+        ? '${dateParts[2]}/${dateParts[1]}/${dateParts[0]}'
+        : resolvedDateKey;
+    final defaultLabel = backupType == CloudBackupType.autoDaily
+        ? 'Sao lưu tự động • $displayDate'
+        : (backupType == CloudBackupType.preRestore
+              ? 'Sao lưu trước khi khôi phục'
+              : 'Sao lưu thủ công');
+
+    final backupPayload = <String, dynamic>{
+      'id': resolvedBackupId,
+      'uid': ownerUid,
+      'label': (label != null && label.trim().isNotEmpty)
+          ? label.trim()
+          : defaultLabel,
+      'backupType': backupType.wireValue,
+      'dateKey': resolvedDateKey,
+      'schemaVersion': 2,
+      'backedUpAt': Timestamp.fromMillisecondsSinceEpoch(nowMs),
+      'backedUpAtMs': nowMs,
+      'walletCount': sanitizedWallets.length,
+      'transactionCount': sanitizedTxs.length,
+      'budgetCount': sanitizedBudgets.length,
+      'goalCount': sanitizedGoals.length,
+      'totalBalance': totalBalance,
+      'hasTransactionsSnapshot': true,
+      'txChunkCount': txChunkCount,
+      'wallets': sanitizedWallets,
+      'budgets': sanitizedBudgets,
+      'goals': sanitizedGoals,
+      'transactions': ?inlineTransactions,
+    };
+
+    // Lưu bản sao lưu có lịch sử (versioned / daily)
+    await backupDocRef.set(backupPayload).timeout(const Duration(seconds: 12));
+
+    // Cập nhật con trỏ `latest` (không nhúng inline transactions để nhẹ & nhanh khi login máy mới)
+    if (updateLatestPointer) {
+      final latestPayload = Map<String, dynamic>.from(backupPayload)
+        ..remove('transactions')
+        ..['sourceBackupId'] = resolvedBackupId;
+      await backupsCol
+          .doc('latest')
+          .set(latestPayload)
+          .timeout(const Duration(seconds: 12));
+    }
+
+    // Dọn dẹp bản sao lưu cũ: giữ tối đa 30 bản cuối ngày + 10 bản thủ công/an toàn
+    unawaited(_pruneOldCloudBackups(ownerUid, keepDaily: 30, keepOther: 10));
+
+    if (downloadAfterBackup) {
+      final rep = SyncExecutionReport();
+      await _downloadFromFirestore(rep);
+    }
+
+    _lastSyncTime = DateTime.now();
+    await _walletRepo?.getWallets();
+    await _transactionRepo?.getAllTransactions();
+    _walletRepo?.notifyChanged();
+    _transactionRepo?.notifyTransactionsChanged();
+    _budgetRepo?.notifyChanged();
+    _goalRepo?.notifyChanged();
+    return true;
+  }
+
+  /// Xóa subcollection `tx_chunks` của một backup doc (nếu có)
+  Future<void> _deleteBackupTxChunks(
+    DocumentReference<Map<String, dynamic>> backupDocRef,
+  ) async {
+    try {
+      final chunksSnap = await backupDocRef
+          .collection('tx_chunks')
+          .get()
+          .timeout(const Duration(seconds: 6));
+      if (chunksSnap.docs.isEmpty) return;
+      final batch = _firestore.batch();
+      for (final c in chunksSnap.docs) {
+        batch.delete(c.reference);
+      }
+      await batch.commit().timeout(const Duration(seconds: 8));
+    } catch (e) {
+      debugPrint('SyncService: _deleteBackupTxChunks error: $e');
+    }
+  }
+
+  /// Dọn dẹp các bản sao lưu quá cũ (tách riêng quota cho `auto_daily` và `manual`/`pre_restore`, không xóa `latest`)
+  Future<void> _pruneOldCloudBackups(
+    String ownerUid, {
+    int keepDaily = 30,
+    int keepOther = 10,
+  }) async {
+    try {
+      final snap = await _firestore
+          .collection('users')
+          .doc(ownerUid)
+          .collection('backups')
+          .get()
+          .timeout(const Duration(seconds: 8));
+
+      int parseMs(QueryDocumentSnapshot<Map<String, dynamic>> d) {
+        return FirestoreParse.parseInt(d.data()['backedUpAtMs']) ??
+            FirestoreParse.parseDate(
+              d.data()['backedUpAt'],
+            )?.millisecondsSinceEpoch ??
+            0;
+      }
+
+      final dailyDocs = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+      final otherDocs = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+
+      for (final d in snap.docs) {
+        if (d.id == 'latest') continue;
+        final bType = CloudBackupTypeX.fromWire(
+          d.data()['backupType']?.toString(),
+          docId: d.id,
+          label: d.data()['label']?.toString(),
+        );
+        if (bType == CloudBackupType.autoDaily) {
+          dailyDocs.add(d);
+        } else {
+          otherDocs.add(d);
+        }
+      }
+
+      dailyDocs.sort((a, b) => parseMs(b).compareTo(parseMs(a)));
+      otherDocs.sort((a, b) => parseMs(b).compareTo(parseMs(a)));
+
+      final toDelete = <QueryDocumentSnapshot<Map<String, dynamic>>>[
+        if (dailyDocs.length > keepDaily) ...dailyDocs.skip(keepDaily),
+        if (otherDocs.length > keepOther) ...otherDocs.skip(keepOther),
+      ];
+
+      for (final oldDoc in toDelete) {
+        await _deleteBackupTxChunks(oldDoc.reference);
+        await oldDoc.reference.delete();
+      }
+    } catch (e) {
+      debugPrint('SyncService: _pruneOldCloudBackups error: $e');
+    }
+  }
+
+  /// Lấy danh sách tất cả các bản sao lưu đám mây của người dùng (mới nhất lên đầu)
+  @override
+  Future<List<CloudBackupSummary>> listCloudBackups() async {
+    final ownerUid = SessionManager.instance.uidOrNull;
+    if (ownerUid == null) return const [];
+
+    if (!_connectivity.isOnline) {
+      final hasNet = await _connectivity.checkRealInternet();
+      if (!hasNet) return const [];
+    }
+
+    if (FirebaseAuth.instance.currentUser == null) {
+      await AuthService().silentReauthenticateIfNeeded();
+    }
+    final authUser = FirebaseAuth.instance.currentUser;
+    if (authUser == null || authUser.uid != ownerUid) return const [];
+
+    try {
+      QuerySnapshot<Map<String, dynamic>> snap;
+      try {
+        snap = await _firestore
+            .collection('users')
+            .doc(ownerUid)
+            .collection('backups')
+            .get(const GetOptions(source: Source.server))
+            .timeout(const Duration(seconds: 8));
+      } catch (_) {
+        snap = await _firestore
+            .collection('users')
+            .doc(ownerUid)
+            .collection('backups')
+            .get()
+            .timeout(const Duration(seconds: 8));
+      }
+
+      final allParsed = <CloudBackupSummary>[];
+      for (final doc in snap.docs) {
+        final data = doc.data();
+        final rawWallets = data['wallets'] as List<dynamic>? ?? const [];
+        final wallets = <WalletModel>[];
+        for (final item in rawWallets) {
+          if (item is Map) {
+            final map = Map<String, dynamic>.from(item);
+            map['uid'] = ownerUid;
+            map['syncStatus'] = 'synced';
+            wallets.add(WalletModel.fromSqlite(map));
+          }
+        }
+        final backedUpAtMs =
+            FirestoreParse.parseInt(data['backedUpAtMs']) ??
+            FirestoreParse.parseDate(
+              data['backedUpAt'],
+            )?.millisecondsSinceEpoch ??
+            0;
+        final totalBal = data['totalBalance'] != null
+            ? FirestoreParse.parseDouble(data['totalBalance'])
+            : wallets.fold<double>(0.0, (total, w) => total + w.balance);
+        final rawBudgets = data['budgets'] as List<dynamic>? ?? const [];
+        final rawGoals = data['goals'] as List<dynamic>? ?? const [];
+        final label = data['label']?.toString();
+        final backupType = CloudBackupTypeX.fromWire(
+          data['backupType']?.toString(),
+          docId: doc.id,
+          label: label,
+        );
+        final txChunkCount = FirestoreParse.parseInt(data['txChunkCount']) ?? 0;
+        final hasTxSnapshot =
+            data['hasTransactionsSnapshot'] == true ||
+            data['transactions'] is List ||
+            txChunkCount > 0;
+
+        allParsed.add(
+          CloudBackupSummary(
+            id: doc.id,
+            backedUpAt: DateTime.fromMillisecondsSinceEpoch(backedUpAtMs),
+            backedUpAtMs: backedUpAtMs,
+            walletCount:
+                FirestoreParse.parseInt(data['walletCount']) ?? wallets.length,
+            transactionCount:
+                FirestoreParse.parseInt(data['transactionCount']) ?? 0,
+            budgetCount:
+                FirestoreParse.parseInt(data['budgetCount']) ??
+                rawBudgets.length,
+            goalCount:
+                FirestoreParse.parseInt(data['goalCount']) ?? rawGoals.length,
+            totalBalance: totalBal,
+            wallets: wallets,
+            label: label,
+            isLatestDoc: doc.id == 'latest',
+            backupType: backupType,
+            dateKey: data['dateKey']?.toString(),
+            hasTransactionsSnapshot: hasTxSnapshot,
+            txChunkCount: txChunkCount,
+            schemaVersion: FirestoreParse.parseInt(data['schemaVersion']) ?? 1,
+          ),
+        );
+      }
+
+      // Ẩn con trỏ `latest` nếu đã có ít nhất 1 bản sao lưu có phiên bản/theo ngày
+      final hasVersioned = allParsed.any((b) => !b.isLatestDoc);
+      final filtered =
+          allParsed.where((b) => !hasVersioned || !b.isLatestDoc).toList()
+            ..sort((a, b) => b.backedUpAtMs.compareTo(a.backedUpAtMs));
+
+      return filtered;
+    } catch (e, st) {
+      AppLogger.warn(
+        'Lỗi listCloudBackups',
+        tag: 'SyncService',
+        error: e,
+        stackTrace: st,
+      );
+      return const [];
+    }
+  }
+
+  /// Khôi phục chính xác một bản sao lưu đã chọn (`users/{uid}/backups/{backupId}`)
+  /// 1. Tự động tạo bản sao lưu an toàn trước khi khôi phục (nếu `createSafetyBackup == true`)
+  /// 2. Khôi phục nguyên tử toàn bộ ví, giao dịch (nếu có trong snapshot), ngân sách, mục tiêu vào SQLite
+  /// 3. Đồng bộ ngược toàn bộ dữ liệu đã khôi phục lên Firestore + cập nhật `backups/latest`
+  ///    để mọi thiết bị đều khớp 100% theo bản backup vừa chọn.
+  @override
+  Future<bool> restoreCloudBackupById(
+    String backupId, {
+    bool createSafetyBackup = true,
+  }) async {
+    if (!_accepting || backupId.trim().isEmpty) return false;
+    final ownerUid = SessionManager.instance.uidOrNull;
+    if (ownerUid == null) return false;
+
+    if (!_connectivity.isOnline) {
+      final hasNet = await _connectivity.checkRealInternet();
+      if (!hasNet) return false;
+    }
+
+    if (FirebaseAuth.instance.currentUser == null) {
+      await AuthService().silentReauthenticateIfNeeded();
+    }
+    final authUser = FirebaseAuth.instance.currentUser;
+    if (authUser == null || authUser.uid != ownerUid) return false;
+
+    final activeRun = _currentRun;
+    if (activeRun != null && _syncLock.isLocked) {
+      try {
+        await activeRun.timeout(const Duration(seconds: 8));
+      } catch (_) {}
+    }
+
+    final acquired = await _syncLock.tryAcquire();
+    if (!acquired) return false;
+
+    _isSyncing = true;
+    _isRestoring = true;
+    try {
+      final backupRef = _firestore
+          .collection('users')
+          .doc(ownerUid)
+          .collection('backups')
+          .doc(backupId);
+
+      DocumentSnapshot<Map<String, dynamic>> doc;
+      try {
+        doc = await backupRef
+            .get(const GetOptions(source: Source.server))
+            .timeout(const Duration(seconds: 8));
+      } catch (_) {
+        doc = await backupRef.get().timeout(const Duration(seconds: 8));
+      }
+
+      if (!doc.exists || doc.data() == null) return false;
+      final data = doc.data()!;
+
+      final rawWallets = data['wallets'] as List<dynamic>? ?? const [];
+      final restoredWallets = <WalletModel>[];
+      final nowMs = DateTime.now().toUtc().millisecondsSinceEpoch;
+      final nowDt = DateTime.fromMillisecondsSinceEpoch(nowMs);
+
+      for (final item in rawWallets) {
+        if (item is Map) {
+          final map = Map<String, dynamic>.from(item);
+          map['uid'] = ownerUid;
+          map['syncStatus'] = 'synced';
+          map['isDeleted'] = 0;
+          final parsed = WalletModel.fromSqlite(map);
+          if (parsed.id.isNotEmpty) {
+            restoredWallets.add(
+              parsed.copyWith(
+                uid: ownerUid,
+                updatedAt: nowDt,
+                syncStatus: 'synced',
+                isDeleted: false,
+              ),
+            );
+          }
+        }
+      }
+
+      if (restoredWallets.isEmpty) return false;
+
+      // Đảm bảo có đúng 1 ví mặc định
+      if (!restoredWallets.any((w) => w.isDefault)) {
+        restoredWallets[0] = restoredWallets[0].copyWith(isDefault: true);
+      }
+
+      // Đọc transactions từ snapshot (nếu bản backup schema v2 có lưu giao dịch)
+      final txChunkCount = FirestoreParse.parseInt(data['txChunkCount']) ?? 0;
+      final hasTxSnapshot =
+          data['hasTransactionsSnapshot'] == true ||
+          data['transactions'] is List ||
+          txChunkCount > 0;
+      final restoredTxRows = <Map<String, dynamic>>[];
+
+      if (hasTxSnapshot) {
+        final rawTxs = <dynamic>[];
+        if (txChunkCount > 0) {
+          final chunksSnap = await backupRef
+              .collection('tx_chunks')
+              .orderBy('index')
+              .get(const GetOptions(source: Source.server))
+              .timeout(const Duration(seconds: 12));
+          for (final cDoc in chunksSnap.docs) {
+            final items = cDoc.data()['items'] as List<dynamic>? ?? const [];
+            rawTxs.addAll(items);
+          }
+        } else if (data['transactions'] is List) {
+          rawTxs.addAll(data['transactions'] as List<dynamic>);
+        }
+
+        for (final item in rawTxs) {
+          if (item is Map) {
+            final map = Map<String, dynamic>.from(item);
+            map['uid'] = ownerUid;
+            map['syncStatus'] = 'synced';
+            map['isDeleted'] = 0;
+            map['updatedAt'] = nowMs;
+            final parsed = TransactionModel.fromSqlite(map);
+            if (parsed.id.isNotEmpty) {
+              final row = parsed
+                  .copyWith(
+                    uid: ownerUid,
+                    updatedAt: nowDt,
+                    syncStatus: 'synced',
+                    isDeleted: false,
+                  )
+                  .toSqlite();
+              row['uid'] = ownerUid;
+              restoredTxRows.add(row);
+            }
+          }
+        }
+      }
+
+      final rawBudgets = data['budgets'] as List<dynamic>?;
+      final restoredBudgetRows = <Map<String, dynamic>>[];
+      if (rawBudgets != null) {
+        for (final item in rawBudgets) {
+          if (item is Map) {
+            final map = Map<String, dynamic>.from(item);
+            map['uid'] = ownerUid;
+            map['syncStatus'] = 'synced';
+            map['isDeleted'] = 0;
+            map['updatedAt'] = nowMs;
+            final bRow = BudgetModel.fromSqlite(map).toSqlite();
+            bRow['uid'] = ownerUid;
+            if ((bRow['id'] as String? ?? '').isNotEmpty) {
+              restoredBudgetRows.add(bRow);
+            }
+          }
+        }
+      }
+
+      final rawGoals = data['goals'] as List<dynamic>?;
+      final restoredGoalRows = <Map<String, dynamic>>[];
+      if (rawGoals != null) {
+        for (final item in rawGoals) {
+          if (item is Map) {
+            final map = Map<String, dynamic>.from(item);
+            map['uid'] = ownerUid;
+            map['syncStatus'] = 'synced';
+            map['isDeleted'] = 0;
+            map['updatedAt'] = nowMs;
+            final gRow = GoalModel.fromSqlite(map).toSqlite();
+            gRow['uid'] = ownerUid;
+            if ((gRow['id'] as String? ?? '').isNotEmpty) {
+              restoredGoalRows.add(gRow);
+            }
+          }
+        }
+      }
+
+      final db = await _dbHelper.database;
+
+      // 0. Tự động tạo bản sao lưu an toàn trước khi ghi đè (chống khôi phục nhầm mất dữ liệu hiện tại)
+      if (createSafetyBackup && backupId != 'latest') {
+        try {
+          final existingWallets = await db.query(
+            'wallets',
+            columns: ['id'],
+            where: 'uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+            whereArgs: [ownerUid],
+            limit: 1,
+          );
+          if (existingWallets.isNotEmpty) {
+            await _createCloudBackupSnapshotLocked(
+              ownerUid: ownerUid,
+              label: 'Sao lưu an toàn trước khi khôi phục',
+              backupType: CloudBackupType.preRestore,
+              updateLatestPointer: false,
+              downloadAfterBackup: false,
+            );
+          }
+        } catch (e) {
+          debugPrint(
+            'SyncService: Pre-restore safety backup failed (continuing): $e',
+          );
+        }
+      }
+
+      // 1. Áp dụng nguyên tử vào SQLite cục bộ & xóa hàng chờ cũ của các bảng được khôi phục
+      await db.transaction((txn) async {
+        await txn.delete(
+          'sync_queue',
+          where: "tableName = 'wallets' AND (ownerUid = ? OR uid = ?)",
+          whereArgs: [ownerUid, ownerUid],
+        );
+        await txn.delete('wallets', where: 'uid = ?', whereArgs: [ownerUid]);
+        for (final w in restoredWallets) {
+          final row = w.toSqlite();
+          row['uid'] = ownerUid;
+          await txn.insert(
+            'wallets',
+            row,
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+
+        if (hasTxSnapshot) {
+          await txn.delete(
+            'sync_queue',
+            where: "tableName = 'transactions' AND (ownerUid = ? OR uid = ?)",
+            whereArgs: [ownerUid, ownerUid],
+          );
+          await txn.delete(
+            'transactions',
+            where: 'uid = ?',
+            whereArgs: [ownerUid],
+          );
+          for (final tRow in restoredTxRows) {
+            await txn.insert(
+              'transactions',
+              tRow,
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
+        }
+
+        if (rawBudgets != null) {
+          await txn.delete(
+            'sync_queue',
+            where: "tableName = 'budgets' AND (ownerUid = ? OR uid = ?)",
+            whereArgs: [ownerUid, ownerUid],
+          );
+          await txn.delete('budgets', where: 'uid = ?', whereArgs: [ownerUid]);
+          for (final bRow in restoredBudgetRows) {
+            await txn.insert(
+              'budgets',
+              bRow,
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
+        }
+
+        if (rawGoals != null) {
+          await txn.delete(
+            'sync_queue',
+            where: "tableName = 'goals' AND (ownerUid = ? OR uid = ?)",
+            whereArgs: [ownerUid, ownerUid],
+          );
+          await txn.delete('goals', where: 'uid = ?', whereArgs: [ownerUid]);
+          for (final gRow in restoredGoalRows) {
+            await txn.insert(
+              'goals',
+              gRow,
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+          }
+        }
+      });
+
+      // 2. Đồng bộ trạng thái vừa khôi phục lên Firestore cho TẤT CẢ các bảng đã khôi phục
+      final restoredWalletRows = restoredWallets.map((w) {
+        final r = w.toSqlite();
+        r['uid'] = ownerUid;
+        return r;
+      }).toList();
+      await _batchUploadCollectionRows(
+        collectionName: 'wallets',
+        rows: restoredWalletRows,
+        ownerUid: ownerUid,
+      );
+      await _softDeleteExtraRemoteCollection(
+        collectionName: 'wallets',
+        keepIds: restoredWallets.map((w) => w.id).toSet(),
+        ownerUid: ownerUid,
+        nowMs: nowMs,
+        extraFields: const {'isDefault': false},
+      );
+
+      if (hasTxSnapshot) {
+        await _batchUploadCollectionRows(
+          collectionName: 'transactions',
+          rows: restoredTxRows,
+          ownerUid: ownerUid,
+        );
+        await _softDeleteExtraRemoteCollection(
+          collectionName: 'transactions',
+          keepIds: restoredTxRows.map((r) => r['id'] as String).toSet(),
+          ownerUid: ownerUid,
+          nowMs: nowMs,
+        );
+      }
+
+      if (rawBudgets != null) {
+        await _batchUploadCollectionRows(
+          collectionName: 'budgets',
+          rows: restoredBudgetRows,
+          ownerUid: ownerUid,
+        );
+        await _softDeleteExtraRemoteCollection(
+          collectionName: 'budgets',
+          keepIds: restoredBudgetRows.map((r) => r['id'] as String).toSet(),
+          ownerUid: ownerUid,
+          nowMs: nowMs,
+        );
+      }
+
+      if (rawGoals != null) {
+        await _batchUploadCollectionRows(
+          collectionName: 'goals',
+          rows: restoredGoalRows,
+          ownerUid: ownerUid,
+        );
+        await _softDeleteExtraRemoteCollection(
+          collectionName: 'goals',
+          keepIds: restoredGoalRows.map((r) => r['id'] as String).toSet(),
+          ownerUid: ownerUid,
+          nowMs: nowMs,
+        );
+      }
+
+      // 3. Cập nhật con trỏ `users/{uid}/backups/latest` khớp với bản vừa khôi phục
+      final sanitizedWallets = restoredWallets
+          .map((w) => SyncQueueWriter.sanitizeMap(w.toSqlite())!)
+          .toList();
+      final totalBalance = restoredWallets.fold<double>(
+        0.0,
+        (total, w) => total + w.balance,
+      );
+      final latestData = Map<String, dynamic>.from(data)
+        ..remove('transactions')
+        ..['uid'] = ownerUid
+        ..['sourceBackupId'] = backupId
+        ..['backedUpAt'] = Timestamp.fromMillisecondsSinceEpoch(nowMs)
+        ..['backedUpAtMs'] = nowMs
+        ..['walletCount'] = sanitizedWallets.length
+        ..['totalBalance'] = totalBalance
+        ..['wallets'] = sanitizedWallets;
+      await _firestore
+          .collection('users')
+          .doc(ownerUid)
+          .collection('backups')
+          .doc('latest')
+          .set(latestData)
+          .timeout(const Duration(seconds: 10));
+
+      // 4. Làm mới cache & thông báo toàn bộ UI + App Widget
+      _lastSyncTime = DateTime.now();
+      await _walletRepo?.getWallets();
+      await _transactionRepo?.getAllTransactions();
+      _walletRepo?.notifyChanged();
+      _transactionRepo?.notifyTransactionsChanged();
+      _budgetRepo?.notifyChanged();
+      _goalRepo?.notifyChanged();
+      unawaited(AppWidgetService.instance.updateWidgetBalance());
+
+      return true;
+    } catch (e, st) {
+      AppLogger.error(
+        'Lỗi restoreCloudBackupById($backupId)',
+        tag: 'SyncService',
+        error: e,
+        stackTrace: st,
+      );
+      return false;
+    } finally {
+      _isRestoring = false;
+      _isSyncing = false;
+      _syncLock.release();
+      if (_pendingResync &&
+          _accepting &&
+          SessionManager.instance.uidOrNull != null) {
+        _pendingResync = false;
+        unawaited(syncAll());
+      }
+    }
+  }
+
+  /// Soft-delete các doc dư thừa trên Firestore không nằm trong `keepIds` theo từng WriteBatch (tối đa 400 ops/batch)
+  Future<void> _softDeleteExtraRemoteCollection({
+    required String collectionName,
+    required Set<String> keepIds,
+    required String ownerUid,
+    required int nowMs,
+    Map<String, dynamic> extraFields = const {},
+  }) async {
+    try {
+      final snap = await _firestore
+          .collection(collectionName)
+          .where('uid', isEqualTo: ownerUid)
+          .get(const GetOptions(source: Source.server))
+          .timeout(const Duration(seconds: 10));
+      await _softDeleteExtraRemoteDocs(
+        docs: snap.docs,
+        keepIds: keepIds,
+        ownerUid: ownerUid,
+        nowMs: nowMs,
+        extraFields: extraFields,
+      );
+    } catch (e) {
+      debugPrint(
+        'SyncService: _softDeleteExtraRemoteCollection($collectionName) error: $e',
+      );
+    }
+  }
+
+  Future<void> _softDeleteExtraRemoteDocs({
+    required List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+    required Set<String> keepIds,
+    required String ownerUid,
+    required int nowMs,
+    Map<String, dynamic> extraFields = const {},
+  }) async {
+    final extras = docs
+        .where((d) => !keepIds.contains(d.id) && d.data()['isDeleted'] != true)
+        .toList();
+    if (extras.isEmpty) return;
+
+    const maxBatchOps = 400;
+    for (var i = 0; i < extras.length; i += maxBatchOps) {
+      final end = min(i + maxBatchOps, extras.length);
+      final batch = _firestore.batch();
+      for (var j = i; j < end; j++) {
+        batch.set(extras[j].reference, {
+          'uid': ownerUid,
+          'isDeleted': true,
+          'deletedAt': Timestamp.fromMillisecondsSinceEpoch(nowMs),
+          'updatedAt': Timestamp.fromMillisecondsSinceEpoch(nowMs),
+          ...extraFields,
+        }, SetOptions(merge: true));
+      }
+      await batch.commit().timeout(const Duration(seconds: 15));
+    }
+  }
+
+  /// Xóa một bản sao lưu cũ trong `users/{uid}/backups/{backupId}` (không xóa `latest`)
+  @override
+  Future<bool> deleteCloudBackup(String backupId) async {
+    if (backupId.trim().isEmpty || backupId == 'latest') return false;
+    final ownerUid = SessionManager.instance.uidOrNull;
+    if (ownerUid == null) return false;
+    if (FirebaseAuth.instance.currentUser?.uid != ownerUid) return false;
+
+    try {
+      final docRef = _firestore
+          .collection('users')
+          .doc(ownerUid)
+          .collection('backups')
+          .doc(backupId);
+      await _deleteBackupTxChunks(docRef);
+      await docRef.delete().timeout(const Duration(seconds: 8));
+      return true;
+    } catch (e, st) {
+      AppLogger.warn(
+        'Lỗi deleteCloudBackup($backupId)',
+        tag: 'SyncService',
+        error: e,
+        stackTrace: st,
+      );
+      return false;
+    }
+  }
+
+  /// Đẩy hàng loạt bản ghi SQLite của 1 bảng lên Firestore theo từng WriteBatch (tối đa 400 ops/batch)
+  Future<void> _batchUploadCollectionRows({
+    required String collectionName,
+    required List<Map<String, Object?>> rows,
+    required String ownerUid,
+  }) async {
+    if (rows.isEmpty) return;
+    const maxBatchOps = 400;
+    for (var i = 0; i < rows.length; i += maxBatchOps) {
+      final end = min(i + maxBatchOps, rows.length);
+      final batch = _firestore.batch();
+      var opsInBatch = 0;
+      for (var j = i; j < end; j++) {
+        final row = Map<String, dynamic>.from(rows[j]);
+        final recordId = row['id'] as String? ?? '';
+        if (recordId.isEmpty) continue;
+        row['uid'] = ownerUid;
+        final fsData = _convertToFirestoreFormat(row, collectionName);
+        fsData['uid'] = ownerUid;
+        fsData.remove('id');
+        batch.set(
+          _firestore.collection(collectionName).doc(recordId),
+          fsData,
+          SetOptions(merge: true),
+        );
+        opsInBatch++;
+      }
+      if (opsInBatch > 0) {
+        await batch.commit().timeout(const Duration(seconds: 15));
+      }
     }
   }
 
   /// Tự động lấy và khôi phục bản sao lưu mới nhất (`users/{uid}/backups/latest` và `wallets` trên Firebase)
-  /// ngay khi đăng nhập để đảm bảo thiết bị mới (như Redmi K70E) hiển thị khớp 100% ví tiền và số tiền với máy đã sao lưu (Pixel 7a).
+  /// AN TOÀN:
+  /// 1. KHÔNG BAO GIỜ ghi đè ví cục bộ hoặc xóa `sync_queue` nếu máy hiện tại đang có thay đổi chưa đồng bộ.
+  /// 2. Luôn so sánh giữa `backups/latest` và collection `wallets` trực tiếp trên Firestore để lấy bản MỚI NHẤT
+  ///    (tránh bản sao lưu thủ công cũ ghi đè lại số dư đã trừ/cộng sau các giao dịch gần đây).
   @override
   Future<bool> restoreLatestCloudBackup([String? uid]) async {
     final targetUid = uid ?? SessionManager.instance.uidOrNull;
@@ -836,7 +1945,45 @@ class SyncService implements ISyncService {
     try {
       final db = await _dbHelper.database;
 
-      // 1. Kiểm tra bản sao lưu mới nhất tại users/{uid}/backups/latest
+      // Bảo vệ tuyệt đối: nếu máy hiện tại có giao dịch/ví đang chờ đẩy lên Cloud,
+      // bỏ qua bước ghi đè snapshot để luồng syncAll() đẩy thay đổi cục bộ lên trước.
+      final pendingLocalQueue = await db.query(
+        'sync_queue',
+        columns: ['id'],
+        where:
+            "tableName IN ('wallets', 'transactions') AND (ownerUid = ? OR uid = ?) AND status IN ('pending', 'processing')",
+        whereArgs: [targetUid, targetUid],
+        limit: 1,
+      );
+      final pendingLocalWallets = await db.query(
+        'wallets',
+        columns: ['id'],
+        where: "uid = ? AND syncStatus = 'pending'",
+        whereArgs: [targetUid],
+        limit: 1,
+      );
+      if (pendingLocalQueue.isNotEmpty || pendingLocalWallets.isNotEmpty) {
+        debugPrint(
+          'SyncService: Local pending wallet/tx changes detected, skipping backup overwrite for $targetUid',
+        );
+        return false;
+      }
+
+      // Kiểm tra máy hiện tại đã có ví thực hay là thiết bị mới/rỗng
+      final existingActiveLocalWallets = await db.query(
+        'wallets',
+        where:
+            "uid = ? AND (isDeleted IS NULL OR isDeleted = 0) AND syncStatus != 'local_only'",
+        whereArgs: [targetUid],
+      );
+      final hasLocalSyncedWallets = existingActiveLocalWallets.any((r) {
+        final id = r['id'] as String? ?? '';
+        final bal = (r['balance'] as num?)?.toDouble() ?? 0.0;
+        final initBal = (r['initialBalance'] as num?)?.toDouble() ?? 0.0;
+        return id != 'wlt_default_$targetUid' || bal != 0 || initBal != 0;
+      });
+
+      // 1. Đọc bản sao lưu thủ công `users/{uid}/backups/latest` (nếu có)
       DocumentSnapshot<Map<String, dynamic>>? backupDoc;
       try {
         backupDoc = await _firestore
@@ -847,18 +1994,19 @@ class SyncService implements ISyncService {
             .get(const GetOptions(source: Source.server))
             .timeout(const Duration(seconds: 8));
       } catch (_) {
-        backupDoc = await _firestore
-            .collection('users')
-            .doc(targetUid)
-            .collection('backups')
-            .doc('latest')
-            .get()
-            .timeout(const Duration(seconds: 8));
+        try {
+          backupDoc = await _firestore
+              .collection('users')
+              .doc(targetUid)
+              .collection('backups')
+              .doc('latest')
+              .get()
+              .timeout(const Duration(seconds: 8));
+        } catch (_) {}
       }
 
-      List<WalletModel> authoritativeWallets = [];
-
-      if (backupDoc.exists && backupDoc.data() != null) {
+      final backupWalletsById = <String, WalletModel>{};
+      if (backupDoc != null && backupDoc.exists && backupDoc.data() != null) {
         final data = backupDoc.data()!;
         final rawWallets = data['wallets'] as List<dynamic>?;
         if (rawWallets != null && rawWallets.isNotEmpty) {
@@ -867,14 +2015,18 @@ class SyncService implements ISyncService {
               final map = Map<String, dynamic>.from(item);
               map['uid'] = targetUid;
               map['syncStatus'] = 'synced';
-              authoritativeWallets.add(WalletModel.fromSqlite(map));
+              final w = WalletModel.fromSqlite(map);
+              if (w.id.isNotEmpty) {
+                backupWalletsById[w.id] = w;
+              }
             }
           }
         }
       }
 
-      // 2. Nếu chưa từng bấm tạo snapshot `backups/latest`, lấy danh sách ví trực tiếp từ collection `wallets` trên server
-      if (authoritativeWallets.isEmpty) {
+      // 2. Luôn đọc thêm collection `wallets` trực tiếp trên Firestore (luôn cập nhật theo mỗi giao dịch)
+      final liveWalletsById = <String, WalletModel>{};
+      try {
         QuerySnapshot<Map<String, dynamic>> walletSnap;
         try {
           walletSnap = await _firestore
@@ -893,44 +2045,79 @@ class SyncService implements ISyncService {
           walletSnap.docs,
           WalletModel.fromFirestore,
           tag: 'SyncService.restoreBackup',
-        ).where((w) => !w.isDeleted && w.uid == targetUid).toList();
-
-        // Lọc bỏ ví mặc định 0đ tự sinh (wlt_default_*) nếu đã có ví thật khác
-        final defaultWid = 'wlt_default_$targetUid';
-        final hasRealWallets = parsed.any((w) => w.id != defaultWid);
-        if (hasRealWallets) {
-          authoritativeWallets = parsed
-              .where(
-                (w) =>
-                    w.id != defaultWid ||
-                    w.balance != 0 ||
-                    w.initialBalance != 0,
-              )
-              .toList();
-        } else {
-          authoritativeWallets = parsed;
+        ).where((w) => w.uid == targetUid);
+        for (final w in parsed) {
+          liveWalletsById[w.id] = w;
         }
+      } catch (e) {
+        debugPrint('SyncService: restoreBackup live wallets fetch error: $e');
+      }
+
+      // 3. Hợp nhất theo từng ví: bản nào có updatedAt mới hơn thì thắng
+      // (tránh snapshot `backups/latest` cũ đè mất các giao dịch mới trên `wallets`)
+      final mergedById = <String, WalletModel>{...backupWalletsById};
+      for (final entry in liveWalletsById.entries) {
+        final id = entry.key;
+        final liveW = entry.value;
+        final backupW = mergedById[id];
+        if (backupW == null || !backupW.updatedAt.isAfter(liveW.updatedAt)) {
+          mergedById[id] = liveW;
+        }
+      }
+
+      var authoritativeWallets = mergedById.values
+          .where((w) => !w.isDeleted && w.uid == targetUid)
+          .toList();
+
+      // Lọc bỏ ví mặc định 0đ tự sinh (wlt_default_*) nếu đã có ví thật khác
+      final defaultWid = 'wlt_default_$targetUid';
+      final hasRealWallets = authoritativeWallets.any(
+        (w) => w.id != defaultWid,
+      );
+      if (hasRealWallets) {
+        authoritativeWallets = authoritativeWallets
+            .where(
+              (w) =>
+                  w.id != defaultWid || w.balance != 0 || w.initialBalance != 0,
+            )
+            .toList();
       }
 
       if (authoritativeWallets.isEmpty) return false;
 
-      // 3. Áp dụng bản sao lưu chuẩn vào SQLite của thiết bị đăng nhập (xóa sạch ví rác/sai lệch cục bộ)
-      final rawBudgets = backupDoc.exists && backupDoc.data() != null
+      // Nếu máy hiện tại đã có ví synced cục bộ, hợp nhất an toàn qua upsertFromFirestore (LWW + Dirty Shield)
+      // thay vì xóa trắng và ghi đè mù quáng.
+      if (hasLocalSyncedWallets) {
+        await _walletRepo?.upsertFromFirestore(authoritativeWallets);
+        debugPrint(
+          'SyncService: Merged ${authoritativeWallets.length} cloud wallets via LWW for $targetUid',
+        );
+        return true;
+      }
+
+      // Thiết bị mới / chưa có ví thật: khôi phục toàn bộ từ bản hợp nhất mới nhất
+      final rawBudgets =
+          backupDoc != null && backupDoc.exists && backupDoc.data() != null
           ? (backupDoc.data()!['budgets'] as List<dynamic>?)
           : null;
-      final rawGoals = backupDoc.exists && backupDoc.data() != null
+      final rawGoals =
+          backupDoc != null && backupDoc.exists && backupDoc.data() != null
           ? (backupDoc.data()!['goals'] as List<dynamic>?)
           : null;
 
       await db.transaction((txn) async {
-        // Xóa các tác vụ sync_queue cũ của wallets trên máy đang đăng nhập để tránh đẩy ngược ví sai lên cloud
-        await txn.delete(
+        // Kiểm tra lại trong transaction đề phòng user vừa thao tác trong lúc chờ mạng
+        final racePending = await txn.query(
           'sync_queue',
-          where: "tableName = 'wallets' AND (ownerUid = ? OR uid = ?)",
+          columns: ['id'],
+          where:
+              "tableName IN ('wallets', 'transactions') AND (ownerUid = ? OR uid = ?) AND status IN ('pending', 'processing')",
           whereArgs: [targetUid, targetUid],
+          limit: 1,
         );
+        if (racePending.isNotEmpty) return;
 
-        // Xóa các ví cục bộ không nằm trong bản sao lưu mới nhất
+        // Xóa các ví cục bộ tạm/không nằm trong bản sao lưu mới nhất
         final validIds = authoritativeWallets.map((w) => w.id).toSet();
         final existingRows = await txn.query(
           'wallets',
@@ -949,9 +2136,11 @@ class SyncService implements ISyncService {
           }
         }
 
-        // Ghi đè toàn bộ ví chuẩn từ bản sao lưu
+        // Ghi đè toàn bộ ví chuẩn từ bản sao lưu mới nhất
         for (final w in authoritativeWallets) {
-          final row = w.copyWith(syncStatus: 'synced', isDeleted: false).toSqlite();
+          final row = w
+              .copyWith(syncStatus: 'synced', isDeleted: false)
+              .toSqlite();
           row['uid'] = targetUid;
           await txn.insert(
             'wallets',
@@ -1003,7 +2192,7 @@ class SyncService implements ISyncService {
         _goalRepo?.notifyChanged();
       }
       debugPrint(
-        'SyncService: Restored ${authoritativeWallets.length} wallets from latest cloud backup for $targetUid',
+        'SyncService: Restored ${authoritativeWallets.length} wallets from latest cloud state for $targetUid',
       );
       return true;
     } catch (e, st) {
@@ -1181,9 +2370,13 @@ class SyncService implements ISyncService {
   }
 
   /// Khôi phục các item bị kẹt ở trạng thái 'processing' do app crash hoặc timeout trước đó
-  Future<void> _recoverStaleProcessingItems(Database db, String ownerUid) async {
+  Future<void> _recoverStaleProcessingItems(
+    Database db,
+    String ownerUid,
+  ) async {
     const leaseTimeoutMs = 120000; // 2 phút lease timeout
-    final staleThreshold = DateTime.now().millisecondsSinceEpoch - leaseTimeoutMs;
+    final staleThreshold =
+        DateTime.now().millisecondsSinceEpoch - leaseTimeoutMs;
     try {
       await db.rawUpdate(
         "UPDATE sync_queue SET status = 'pending' WHERE (ownerUid = ? OR uid = ?) AND status = 'processing' AND updatedAt < ?",
@@ -1200,7 +2393,12 @@ class SyncService implements ISyncService {
       final nowMs = DateTime.now().millisecondsSinceEpoch;
       await db.transaction((txn) async {
         // 1. Gán lại ownerUid/uid cho các dòng sync_queue cũ bị rỗng nếu bản ghi thuộc ownerUid
-        for (final table in const ['wallets', 'transactions', 'budgets', 'goals']) {
+        for (final table in const [
+          'wallets',
+          'transactions',
+          'budgets',
+          'goals',
+        ]) {
           await txn.rawUpdate(
             '''
             UPDATE sync_queue
@@ -1220,63 +2418,84 @@ class SyncService implements ISyncService {
           [nowMs, ownerUid, ownerUid],
         );
 
-        // 3. Đảm bảo mọi ví cục bộ có syncStatus == 'pending' đều có bản ghi INSERT đầy đủ trong sync_queue
-        final dirtyWallets = await txn.query(
-          'wallets',
-          where: "uid = ? AND (isDeleted IS NULL OR isDeleted = 0) AND syncStatus = 'pending'",
-          whereArgs: [ownerUid],
-        );
-        for (final wRow in dirtyWallets) {
-          final wId = wRow['id'] as String? ?? '';
-          if (wId.isEmpty) continue;
-
-          final existingQueue = await txn.query(
-            'sync_queue',
-            where:
-                "tableName = 'wallets' AND recordId = ? AND (ownerUid = ? OR uid = ?) AND status IN ('pending', 'processing')",
-            whereArgs: [wId, ownerUid, ownerUid],
-            limit: 1,
+        // 3. Đảm bảo mọi bản ghi có syncStatus == 'pending' trên 4 bảng tài chính đều có item đầy đủ trong sync_queue
+        const tablePriorities = <String, int>{
+          'wallets': 1,
+          'budgets': 2,
+          'goals': 2,
+          'transactions': 3,
+        };
+        for (final entry in tablePriorities.entries) {
+          final table = entry.key;
+          final priority = entry.value;
+          final dirtyRows = await txn.query(
+            table,
+            where: "uid = ? AND syncStatus = 'pending'",
+            whereArgs: [ownerUid],
           );
+          for (final row in dirtyRows) {
+            final recordId = row['id'] as String? ?? '';
+            if (recordId.isEmpty) continue;
+            final isDel = (row['isDeleted'] as int? ?? 0) == 1;
 
-          bool hasCompletePayload = false;
-          if (existingQueue.isNotEmpty) {
-            final raw = existingQueue.first['data'] as String?;
-            if (raw != null) {
-              try {
-                final parsed = json.decode(raw) as Map<String, dynamic>;
-                hasCompletePayload =
-                    (parsed['name'] as String?)?.trim().isNotEmpty == true &&
-                    parsed.containsKey('balance') &&
-                    parsed.containsKey('initialBalance');
-              } catch (_) {}
-            }
-          }
-
-          if (!hasCompletePayload) {
-            final payload = Map<String, Object?>.from(wRow);
-            payload['uid'] = ownerUid;
-            payload['syncStatus'] = 'pending';
-
-            await txn.delete(
+            final existingQueue = await txn.query(
               'sync_queue',
               where:
-                  "tableName = 'wallets' AND recordId = ? AND (ownerUid = ? OR uid = ?) AND status = 'pending'",
-              whereArgs: [wId, ownerUid, ownerUid],
+                  "tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?) AND status IN ('pending', 'processing')",
+              whereArgs: [table, recordId, ownerUid, ownerUid],
+              limit: 1,
             );
-            await txn.insert('sync_queue', {
-              'uid': ownerUid,
-              'ownerUid': ownerUid,
-              'tableName': 'wallets',
-              'recordId': wId,
-              'action': 'INSERT',
-              'data': json.encode(payload),
-              'createdAt': nowMs,
-              'updatedAt': nowMs,
-              'retryCount': 0,
-              'nextRetryAt': 0,
-              'status': 'pending',
-              'priority': 1,
-            });
+
+            bool hasCompletePayload = false;
+            if (existingQueue.isNotEmpty) {
+              final raw = existingQueue.first['data'] as String?;
+              if (raw != null) {
+                try {
+                  final parsed = json.decode(raw) as Map<String, dynamic>;
+                  if (table == 'wallets') {
+                    hasCompletePayload =
+                        (parsed['name'] as String?)?.trim().isNotEmpty ==
+                            true &&
+                        parsed.containsKey('balance') &&
+                        parsed.containsKey('initialBalance');
+                  } else if (table == 'transactions') {
+                    hasCompletePayload =
+                        parsed.containsKey('amount') &&
+                        parsed.containsKey('walletId') &&
+                        parsed.containsKey('type');
+                  } else {
+                    hasCompletePayload = parsed.containsKey('id');
+                  }
+                } catch (_) {}
+              }
+            }
+
+            if (!hasCompletePayload) {
+              final payload = Map<String, Object?>.from(row);
+              payload['uid'] = ownerUid;
+              payload['syncStatus'] = 'pending';
+
+              await txn.delete(
+                'sync_queue',
+                where:
+                    "tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?) AND status = 'pending'",
+                whereArgs: [table, recordId, ownerUid, ownerUid],
+              );
+              await txn.insert('sync_queue', {
+                'uid': ownerUid,
+                'ownerUid': ownerUid,
+                'tableName': table,
+                'recordId': recordId,
+                'action': isDel ? 'SOFT_DELETE' : 'INSERT',
+                'data': json.encode(payload),
+                'createdAt': nowMs,
+                'updatedAt': nowMs,
+                'retryCount': 0,
+                'nextRetryAt': 0,
+                'status': 'pending',
+                'priority': priority,
+              });
+            }
           }
         }
       });
@@ -1384,38 +2603,50 @@ class SyncService implements ISyncService {
           if (!stillMine()) break;
 
           await db.transaction((txn) async {
-            if (action != 'DELETE' &&
-                action != 'SOFT_DELETE' &&
-                action != 'UPDATE_ALL_READ') {
-              final keyCol = table == 'users' ? 'uid' : 'id';
-              if (_tablesWithoutUid.contains(table)) {
-                await txn.update(
-                  table,
-                  {'syncStatus': 'synced'},
-                  where: '$keyCol = ?',
-                  whereArgs: [recordId],
-                );
-              } else {
-                await txn.update(
-                  table,
-                  {'syncStatus': 'synced'},
-                  where: '$keyCol = ? AND uid = ?',
-                  whereArgs: [recordId, ownerUid],
-                );
-              }
-            }
             await txn.delete(
               'sync_queue',
               where: 'id = ? AND (ownerUid = ? OR uid = ?)',
               whereArgs: [qid, ownerUid, ownerUid],
             );
+            if (action != 'DELETE' &&
+                action != 'SOFT_DELETE' &&
+                action != 'UPDATE_ALL_READ') {
+              // Chỉ đánh dấu 'synced' khi không còn thay đổi mới hơn đang nằm trong sync_queue cho cùng bản ghi
+              final remaining = await txn.query(
+                'sync_queue',
+                columns: ['id'],
+                where:
+                    "tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?) AND status IN ('pending', 'processing')",
+                whereArgs: [table, recordId, ownerUid, ownerUid],
+                limit: 1,
+              );
+              if (remaining.isEmpty) {
+                final keyCol = table == 'users' ? 'uid' : 'id';
+                if (_tablesWithoutUid.contains(table)) {
+                  await txn.update(
+                    table,
+                    {'syncStatus': 'synced'},
+                    where: '$keyCol = ?',
+                    whereArgs: [recordId],
+                  );
+                } else {
+                  await txn.update(
+                    table,
+                    {'syncStatus': 'synced'},
+                    where: '$keyCol = ? AND uid = ?',
+                    whereArgs: [recordId, ownerUid],
+                  );
+                }
+              }
+            }
           });
           count++;
           batchSucceeded++;
         } on FirebaseException catch (e) {
           final retry = (item['retryCount'] as int? ?? 0) + 1;
           final isAuthError = e.code == 'unauthenticated';
-          final terminal = e.code == 'permission-denied' ||
+          final terminal =
+              e.code == 'permission-denied' ||
               e.code == 'not-found' ||
               e.code == 'invalid-argument' ||
               retry >= _maxRetry;
@@ -1432,7 +2663,9 @@ class SyncService implements ISyncService {
               error: '${e.code}: ${e.message}',
             );
           } else {
-            final nextRetry = terminal ? 0 : batchNowMs + _calculateBackoff(retry);
+            final nextRetry = terminal
+                ? 0
+                : batchNowMs + _calculateBackoff(retry);
             await _markQueue(
               db,
               qid,
@@ -1446,7 +2679,9 @@ class SyncService implements ISyncService {
         } catch (e) {
           final retry = (item['retryCount'] as int? ?? 0) + 1;
           final terminal = retry >= _maxRetry;
-          final nextRetry = terminal ? 0 : batchNowMs + _calculateBackoff(retry);
+          final nextRetry = terminal
+              ? 0
+              : batchNowMs + _calculateBackoff(retry);
           await _markQueue(
             db,
             qid,
@@ -1517,18 +2752,23 @@ class SyncService implements ISyncService {
   }) async {
     // 1. Đồng bộ thành viên nhóm trực tiếp vào document nhóm
     if (table == 'group_members') {
-      final groupId = data?['groupId'] as String? ??
+      final groupId =
+          data?['groupId'] as String? ??
           (recordId.contains('_') ? recordId.split('_').first : '');
-      final memberUid = data?['userId'] as String? ??
+      final memberUid =
+          data?['userId'] as String? ??
           (recordId.contains('_') ? recordId.split('_').last : ownerUid);
       if (groupId.isNotEmpty && memberUid.isNotEmpty) {
         final groupDoc = _firestore.collection('groups').doc(groupId);
-        if (action == 'INSERT' || (action == 'UPDATE' && data?['status'] == 'active')) {
+        if (action == 'INSERT' ||
+            (action == 'UPDATE' && data?['status'] == 'active')) {
           await groupDoc.set({
             'memberIds': FieldValue.arrayUnion([memberUid]),
             'updatedAt': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true));
-        } else if (action == 'DELETE' || action == 'SOFT_DELETE' || (action == 'UPDATE' && data?['status'] == 'left')) {
+        } else if (action == 'DELETE' ||
+            action == 'SOFT_DELETE' ||
+            (action == 'UPDATE' && data?['status'] == 'left')) {
           await groupDoc.set({
             'memberIds': FieldValue.arrayRemove([memberUid]),
             'updatedAt': FieldValue.serverTimestamp(),
@@ -1594,13 +2834,17 @@ class SyncService implements ISyncService {
           'isDeleted': true,
           'deletedAt': data?['deletedAt'] != null
               ? (data!['deletedAt'] is int
-                  ? Timestamp.fromMillisecondsSinceEpoch(data['deletedAt'] as int)
-                  : FieldValue.serverTimestamp())
+                    ? Timestamp.fromMillisecondsSinceEpoch(
+                        data['deletedAt'] as int,
+                      )
+                    : FieldValue.serverTimestamp())
               : FieldValue.serverTimestamp(),
           'updatedAt': data?['updatedAt'] != null
               ? (data!['updatedAt'] is int
-                  ? Timestamp.fromMillisecondsSinceEpoch(data['updatedAt'] as int)
-                  : FieldValue.serverTimestamp())
+                    ? Timestamp.fromMillisecondsSinceEpoch(
+                        data['updatedAt'] as int,
+                      )
+                    : FieldValue.serverTimestamp())
               : FieldValue.serverTimestamp(),
         };
 
@@ -1683,8 +2927,13 @@ class SyncService implements ISyncService {
         try {
           result[field] = json.decode(result[field] as String);
         } catch (e, st) {
-        AppLogger.warn('Không thể decode JSON sync_queue data', tag: 'SyncService', error: e, stackTrace: st);
-      }
+          AppLogger.warn(
+            'Không thể decode JSON sync_queue data',
+            tag: 'SyncService',
+            error: e,
+            stackTrace: st,
+          );
+        }
       }
     }
 
@@ -1794,14 +3043,21 @@ class SyncService implements ISyncService {
             columns: ['id'],
             where:
                 'tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
-            whereArgs: ['wallets', id, ownerUid, ownerUid, 'pending', 'processing'],
+            whereArgs: [
+              'wallets',
+              id,
+              ownerUid,
+              ownerUid,
+              'pending',
+              'processing',
+            ],
             limit: 1,
           );
           if (pending.isNotEmpty) continue;
 
           final nowMs = DateTime.now().millisecondsSinceEpoch;
-          final effectiveUpdatedAt = remote != null &&
-                  remote.updatedAt.millisecondsSinceEpoch >= nowMs
+          final effectiveUpdatedAt =
+              remote != null && remote.updatedAt.millisecondsSinceEpoch >= nowMs
               ? remote.updatedAt.millisecondsSinceEpoch + 1
               : nowMs;
           final payload = Map<String, Object?>.from(row);
@@ -1864,6 +3120,17 @@ class SyncService implements ISyncService {
       );
       if (localRows.isEmpty) return;
 
+      final metaRows = await db.query(
+        'sync_metadata',
+        columns: ['lastSyncTimestamp'],
+        where: 'uid = ? AND tableName = ?',
+        whereArgs: [ownerUid, 'transactions'],
+        limit: 1,
+      );
+      final lastTxSyncTs = metaRows.isNotEmpty
+          ? (metaRows.first['lastSyncTimestamp'] as int?) ?? 0
+          : 0;
+
       var enqueued = 0;
       await db.transaction((txn) async {
         for (final row in localRows) {
@@ -1871,16 +3138,31 @@ class SyncService implements ISyncService {
           if (id.isEmpty) continue;
 
           final remote = remoteTxsById[id];
-          final needsBackfill = remote == null;
+          if (remote != null) continue;
 
-          if (!needsBackfill) continue;
+          final syncStatus = row['syncStatus'] as String? ?? 'synced';
+          final createdAt = (row['createdAt'] as int?) ?? 0;
+          final isNewlyCreatedLocal =
+              syncStatus == 'pending' ||
+              lastTxSyncTs == 0 ||
+              createdAt > lastTxSyncTs;
+          if (!isNewlyCreatedLocal) {
+            continue; // Không hồi sinh giao dịch cũ đã bị xóa cứng trên server
+          }
 
           final pending = await txn.query(
             'sync_queue',
             columns: ['id'],
             where:
                 'tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
-            whereArgs: ['transactions', id, ownerUid, ownerUid, 'pending', 'processing'],
+            whereArgs: [
+              'transactions',
+              id,
+              ownerUid,
+              ownerUid,
+              'pending',
+              'processing',
+            ],
             limit: 1,
           );
           if (pending.isNotEmpty) continue;
@@ -2214,17 +3496,13 @@ class SyncService implements ISyncService {
             .get()
             .timeout(const Duration(seconds: 8));
         if (stillValid() && groupSnapshot.docs.isNotEmpty) {
-          final groups = FirestoreParse.parseList(
-            groupSnapshot.docs,
-            (doc) {
-              final d = Map<String, dynamic>.from(
-                doc.data() as Map<String, dynamic>? ?? {},
-              );
-              d['id'] = doc.id;
-              return GroupModel.fromJson(d);
-            },
-            tag: 'SyncService.groups',
-          );
+          final groups = FirestoreParse.parseList(groupSnapshot.docs, (doc) {
+            final d = Map<String, dynamic>.from(
+              doc.data() as Map<String, dynamic>? ?? {},
+            );
+            d['id'] = doc.id;
+            return GroupModel.fromJson(d);
+          }, tag: 'SyncService.groups');
           await _groupRepo?.upsertFromFirestore(groups);
           userGroupIds.addAll(
             groups.where((g) => !g.isDeleted).map((g) => g.id),
@@ -2259,17 +3537,15 @@ class SyncService implements ISyncService {
               .get()
               .timeout(const Duration(seconds: 8));
           if (stillValid() && expenseSnapshot.docs.isNotEmpty) {
-            final expenses = FirestoreParse.parseList(
-              expenseSnapshot.docs,
-              (doc) {
-                final d = Map<String, dynamic>.from(
-                  doc.data() as Map<String, dynamic>? ?? {},
-                );
-                d['id'] = doc.id;
-                return ExpenseModel.fromJson(d);
-              },
-              tag: 'SyncService.group_expenses',
-            );
+            final expenses = FirestoreParse.parseList(expenseSnapshot.docs, (
+              doc,
+            ) {
+              final d = Map<String, dynamic>.from(
+                doc.data() as Map<String, dynamic>? ?? {},
+              );
+              d['id'] = doc.id;
+              return ExpenseModel.fromJson(d);
+            }, tag: 'SyncService.group_expenses');
             await _expenseRepo?.upsertFromFirestore(expenses);
             report?.downloadSuccess['group_expenses'] =
                 (report.downloadSuccess['group_expenses'] ?? 0) +
@@ -2314,7 +3590,9 @@ class SyncService implements ISyncService {
     if (stillValid() && walletsDownloadOk && transactionsDownloadOk) {
       try {
         await LedgerReconciliationService().reconcileAll(ownerUid);
-        debugPrint('SyncService: Ledger reconciliation completed for $ownerUid');
+        debugPrint(
+          'SyncService: Ledger reconciliation completed for $ownerUid',
+        );
       } catch (e) {
         debugPrint('SyncService: Ledger reconciliation error: $e');
       }
@@ -2322,6 +3600,91 @@ class SyncService implements ISyncService {
   }
 
   // ════════ REALTIME LISTENERS ════════
+
+  /// Đảm bảo realtime listeners đang hoạt động cho phiên & epoch hiện tại.
+  @override
+  void ensureRealtimeListenersActive() {
+    final session = SessionManager.instance;
+    final ownerUid = session.uidOrNull;
+    final authUid = FirebaseAuth.instance.currentUser?.uid;
+    if (!_accepting ||
+        ownerUid == null ||
+        authUid == null ||
+        authUid != ownerUid) {
+      return;
+    }
+    if (_firestoreSubscriptions.length >= _expectedListenerCount &&
+        _listenersUid == ownerUid &&
+        _listenersEpoch == session.epoch) {
+      return;
+    }
+    startRealtimeListeners();
+  }
+
+  void _scheduleRealtimeReconcile(String ownerUid, bool Function() stillValid) {
+    _rtReconcileDebounce?.cancel();
+    _rtReconcileDebounce = Timer(const Duration(milliseconds: 150), () async {
+      if (!stillValid() || _isRestoring) return;
+      await LedgerReconciliationService().reconcileAll(ownerUid);
+    });
+  }
+
+  Future<void> _softDeleteRemovedFromRealtime(
+    String table,
+    String ownerUid,
+    List<String> removedIds, {
+    bool hasUidColumn = true,
+    VoidCallback? onChanged,
+  }) async {
+    if (removedIds.isEmpty) return;
+    try {
+      final db = await _dbHelper.database;
+      final nowMs = DateTime.now().toUtc().millisecondsSinceEpoch;
+      final placeholders = List.filled(removedIds.length, '?').join(',');
+      final where = hasUidColumn
+          ? 'id IN ($placeholders) AND uid = ? AND syncStatus = ? AND (isDeleted IS NULL OR isDeleted = 0)'
+          : 'id IN ($placeholders) AND syncStatus = ? AND (isDeleted IS NULL OR isDeleted = 0)';
+      final args = hasUidColumn
+          ? [...removedIds, ownerUid, 'synced']
+          : [...removedIds, 'synced'];
+      final updated = await db.update(
+        table,
+        {
+          'isDeleted': 1,
+          'deletedAt': nowMs,
+          'updatedAt': nowMs,
+          'syncStatus': 'synced',
+        },
+        where: where,
+        whereArgs: args,
+      );
+      if (updated > 0) {
+        onChanged?.call();
+      }
+    } catch (e) {
+      debugPrint('SyncService: Realtime softDelete ($table) error: $e');
+    }
+  }
+
+  List<DocumentSnapshot<Map<String, dynamic>>> _changedDocs(
+    QuerySnapshot<Map<String, dynamic>> snapshot,
+  ) {
+    return snapshot.docChanges
+        .where(
+          (c) =>
+              c.type == DocumentChangeType.added ||
+              c.type == DocumentChangeType.modified,
+        )
+        .map((c) => c.doc)
+        .toList();
+  }
+
+  List<String> _removedDocIds(QuerySnapshot<Map<String, dynamic>> snapshot) {
+    return snapshot.docChanges
+        .where((c) => c.type == DocumentChangeType.removed)
+        .map((c) => c.doc.id)
+        .toList();
+  }
 
   /// Bắt đầu lắng nghe realtime từ Firestore (chạy background)
   @override
@@ -2335,6 +3698,7 @@ class SyncService implements ISyncService {
 
     _listenersUid = ownerUid;
     final epoch = session.epoch;
+    _listenersEpoch = epoch;
     bool stillValid() => session.isStillValid(epoch, ownerUid);
 
     // Lắng nghe thay đổi transactions
@@ -2345,16 +3709,29 @@ class SyncService implements ISyncService {
           .snapshots()
           .listen(
             (snapshot) async {
-              if (!stillValid()) return;
+              if (!stillValid() || _isRestoring) return;
               if (snapshot.docChanges.isNotEmpty) {
-                final transactions = FirestoreParse.parseList(
-                  snapshot.docs,
-                  TransactionModel.fromFirestore,
-                  tag: 'SyncService.rt.transactions',
-                );
-                await _transactionRepo?.upsertFromFirestore(transactions);
-                if (stillValid()) {
-                  await LedgerReconciliationService().reconcileAll(ownerUid);
+                final changedDocs = _changedDocs(snapshot);
+                final removedIds = _removedDocIds(snapshot);
+                if (changedDocs.isNotEmpty) {
+                  final transactions = FirestoreParse.parseList(
+                    changedDocs,
+                    TransactionModel.fromFirestore,
+                    tag: 'SyncService.rt.transactions',
+                  );
+                  await _transactionRepo?.upsertFromFirestore(transactions);
+                }
+                if (removedIds.isNotEmpty) {
+                  await _softDeleteRemovedFromRealtime(
+                    'transactions',
+                    ownerUid,
+                    removedIds,
+                    onChanged: () =>
+                        _transactionRepo?.notifyTransactionsChanged(),
+                  );
+                }
+                if (stillValid() && !_isRestoring) {
+                  _scheduleRealtimeReconcile(ownerUid, stillValid);
                 }
               }
             },
@@ -2372,16 +3749,28 @@ class SyncService implements ISyncService {
           .snapshots()
           .listen(
             (snapshot) async {
-              if (!stillValid()) return;
+              if (!stillValid() || _isRestoring) return;
               if (snapshot.docChanges.isNotEmpty) {
-                final wallets = FirestoreParse.parseList(
-                  snapshot.docs,
-                  WalletModel.fromFirestore,
-                  tag: 'SyncService.rt.wallets',
-                );
-                await _walletRepo?.upsertFromFirestore(wallets);
-                if (stillValid()) {
-                  await LedgerReconciliationService().reconcileAll(ownerUid);
+                final changedDocs = _changedDocs(snapshot);
+                final removedIds = _removedDocIds(snapshot);
+                if (changedDocs.isNotEmpty) {
+                  final wallets = FirestoreParse.parseList(
+                    changedDocs,
+                    WalletModel.fromFirestore,
+                    tag: 'SyncService.rt.wallets',
+                  );
+                  await _walletRepo?.upsertFromFirestore(wallets);
+                }
+                if (removedIds.isNotEmpty) {
+                  await _softDeleteRemovedFromRealtime(
+                    'wallets',
+                    ownerUid,
+                    removedIds,
+                    onChanged: () => _walletRepo?.notifyChanged(),
+                  );
+                }
+                if (stillValid() && !_isRestoring) {
+                  _scheduleRealtimeReconcile(ownerUid, stillValid);
                 }
               }
             },
@@ -2398,21 +3787,29 @@ class SyncService implements ISyncService {
           .where('memberIds', arrayContains: ownerUid)
           .snapshots()
           .listen(
-            (snapshot) {
+            (snapshot) async {
               if (!stillValid()) return;
               if (snapshot.docChanges.isNotEmpty) {
-                final groups = FirestoreParse.parseList(
-                  snapshot.docs,
-                  (doc) {
+                final changedDocs = _changedDocs(snapshot);
+                final removedIds = _removedDocIds(snapshot);
+                if (changedDocs.isNotEmpty) {
+                  final groups = FirestoreParse.parseList(changedDocs, (doc) {
                     final d = Map<String, dynamic>.from(
                       doc.data() as Map<String, dynamic>? ?? {},
                     );
                     d['id'] = doc.id;
                     return GroupModel.fromJson(d);
-                  },
-                  tag: 'SyncService.rt.groups',
-                );
-                _groupRepo?.upsertFromFirestore(groups);
+                  }, tag: 'SyncService.rt.groups');
+                  await _groupRepo?.upsertFromFirestore(groups);
+                }
+                if (removedIds.isNotEmpty) {
+                  await _softDeleteRemovedFromRealtime(
+                    'groups',
+                    ownerUid,
+                    removedIds,
+                    hasUidColumn: false,
+                  );
+                }
               }
             },
             onError: (e) {
@@ -2428,15 +3825,27 @@ class SyncService implements ISyncService {
           .where('uid', isEqualTo: ownerUid)
           .snapshots()
           .listen(
-            (snapshot) {
+            (snapshot) async {
               if (!stillValid()) return;
               if (snapshot.docChanges.isNotEmpty) {
-                final budgets = FirestoreParse.parseList(
-                  snapshot.docs,
-                  BudgetModel.fromFirestore,
-                  tag: 'SyncService.rt.budgets',
-                );
-                _budgetRepo?.upsertFromFirestore(budgets);
+                final changedDocs = _changedDocs(snapshot);
+                final removedIds = _removedDocIds(snapshot);
+                if (changedDocs.isNotEmpty) {
+                  final budgets = FirestoreParse.parseList(
+                    changedDocs,
+                    BudgetModel.fromFirestore,
+                    tag: 'SyncService.rt.budgets',
+                  );
+                  await _budgetRepo?.upsertFromFirestore(budgets);
+                }
+                if (removedIds.isNotEmpty) {
+                  await _softDeleteRemovedFromRealtime(
+                    'budgets',
+                    ownerUid,
+                    removedIds,
+                    onChanged: () => _budgetRepo?.notifyChanged(),
+                  );
+                }
               }
             },
             onError: (e) {
@@ -2452,15 +3861,27 @@ class SyncService implements ISyncService {
           .where('uid', isEqualTo: ownerUid)
           .snapshots()
           .listen(
-            (snapshot) {
+            (snapshot) async {
               if (!stillValid()) return;
               if (snapshot.docChanges.isNotEmpty) {
-                final goals = FirestoreParse.parseList(
-                  snapshot.docs,
-                  GoalModel.fromFirestore,
-                  tag: 'SyncService.rt.goals',
-                );
-                _goalRepo?.upsertFromFirestore(goals);
+                final changedDocs = _changedDocs(snapshot);
+                final removedIds = _removedDocIds(snapshot);
+                if (changedDocs.isNotEmpty) {
+                  final goals = FirestoreParse.parseList(
+                    changedDocs,
+                    GoalModel.fromFirestore,
+                    tag: 'SyncService.rt.goals',
+                  );
+                  await _goalRepo?.upsertFromFirestore(goals);
+                }
+                if (removedIds.isNotEmpty) {
+                  await _softDeleteRemovedFromRealtime(
+                    'goals',
+                    ownerUid,
+                    removedIds,
+                    onChanged: () => _goalRepo?.notifyChanged(),
+                  );
+                }
               }
             },
             onError: (e) {
@@ -2496,15 +3917,26 @@ class SyncService implements ISyncService {
           .where('uid', isEqualTo: ownerUid)
           .snapshots()
           .listen(
-            (snapshot) {
+            (snapshot) async {
               if (!stillValid()) return;
               if (snapshot.docChanges.isNotEmpty) {
-                final notifications = FirestoreParse.parseList(
-                  snapshot.docs,
-                  NotificationModel.fromFirestore,
-                  tag: 'SyncService.rt.notifications',
-                );
-                _notificationRepo?.upsertFromFirestore(notifications);
+                final changedDocs = _changedDocs(snapshot);
+                final removedIds = _removedDocIds(snapshot);
+                if (changedDocs.isNotEmpty) {
+                  final notifications = FirestoreParse.parseList(
+                    changedDocs,
+                    NotificationModel.fromFirestore,
+                    tag: 'SyncService.rt.notifications',
+                  );
+                  await _notificationRepo?.upsertFromFirestore(notifications);
+                }
+                if (removedIds.isNotEmpty) {
+                  await _softDeleteRemovedFromRealtime(
+                    'notifications',
+                    ownerUid,
+                    removedIds,
+                  );
+                }
               }
             },
             onError: (e) {
@@ -2519,11 +3951,14 @@ class SyncService implements ISyncService {
   /// Dừng lắng nghe realtime
   @override
   void stopRealtimeListeners() {
+    _rtReconcileDebounce?.cancel();
+    _rtReconcileDebounce = null;
     for (final sub in _firestoreSubscriptions) {
       sub.cancel();
     }
     _firestoreSubscriptions.clear();
     _listenersUid = null;
+    _listenersEpoch = null;
     debugPrint('SyncService: Realtime listeners stopped');
   }
 
@@ -2531,5 +3966,6 @@ class SyncService implements ISyncService {
   void dispose() {
     stopRealtimeListeners();
     _connectivitySubscription?.cancel();
+    _authStateSubscription?.cancel();
   }
 }

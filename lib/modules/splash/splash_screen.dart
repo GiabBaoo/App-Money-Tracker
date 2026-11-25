@@ -131,6 +131,9 @@ class _SplashScreenState extends State<SplashScreen>
           effectiveUid = lastUid;
           if (ConnectivityService().isOnline) {
             AuthService().setOnlineUid(lastUid);
+            unawaited(
+              AuthService().silentReauthenticateIfNeeded().catchError((_) => false),
+            );
           } else {
             AuthService().setOfflineUid(lastUid);
           }

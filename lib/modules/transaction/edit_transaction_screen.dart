@@ -7,9 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/transaction_model.dart';
 import '../../models/wallet_model.dart';
-import '../../services/sync_service.dart';
 import '../../services/auth_service.dart';
-import '../../services/connectivity_service.dart';
 import '../../services/receipt_storage_service.dart';
 import '../../services/biometric_service.dart';
 import '../../data/repositories/wallet_repository.dart';
@@ -536,14 +534,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         );
       }
 
-      // Kích hoạt sync đồng bộ lên Firestore trong nền nếu có mạng
-      final isOnline = ConnectivityService().isOnline;
-      if (isOnline) {
-        try {
-          SyncService().syncNow();
-        } catch (_) {}
-      }
-
+      // SyncService().syncAll() đã được kích hoạt nguyên tử trong TransactionBalanceService.editTransactionAtomic
       if (!mounted) return;
       // Đã bỏ thông báo thành công theo yêu cầu của người dùng
       Navigator.pop(context, true);
@@ -577,11 +568,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         widget.transaction,
       );
 
-      // Đồng bộ ngay lên Firestore nếu có mạng
-      try {
-        SyncService().syncNow();
-      } catch (_) {}
-
+      // SyncService().syncAll() đã được kích hoạt nguyên tử trong deleteTransactionAtomic
       if (!mounted) return;
       TopToast.show(context, 'Đã xóa giao dịch!');
       Navigator.pop(context, true);

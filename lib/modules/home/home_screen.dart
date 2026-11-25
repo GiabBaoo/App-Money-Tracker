@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/connectivity_service.dart';
 import '../../models/user_model.dart';
 import '../../models/transaction_model.dart';
+import '../../models/wallet_model.dart';
 import '../../models/notification_model.dart';
 import 'statistics_screen.dart';
 import '../settings/profile_screen.dart';
@@ -37,6 +38,7 @@ import '../../data/repositories/notification_repository.dart';
 import '../../services/language_service.dart';
 import '../../services/smart_notification_service.dart';
 import '../../services/local_notification_service.dart';
+import '../../services/sync_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -698,9 +700,7 @@ class _HomeBodyState extends State<HomeBody>
                         initialData: TransactionRepository().latestTransactions,
                         stream: TransactionRepository().getTransactionsStream(),
                         builder: (context, snapshot) {
-                          final txList =
-                              (snapshot.data != null &&
-                                  snapshot.data!.isNotEmpty)
+                          final txList = snapshot.hasData
                               ? snapshot.data!
                               : TransactionRepository().latestTransactions;
                           final now = DateTime.now();
@@ -804,83 +804,119 @@ class _HomeBodyState extends State<HomeBody>
           ),
         ),
 
-        // PHẦN CUỘN ĐỘC LẬP: DANH SÁCH GIAO DỊCH
+        // PHẦN CUỘN ĐỘC LẬP: DANH SÁCH GIAO DỊCH (lắng nghe đồng thời Ví + Giao dịch)
         Expanded(
-          child: StreamBuilder<List<TransactionModel>>(
-            initialData: TransactionRepository().latestTransactions,
-            stream: TransactionRepository().getTransactionsStream(),
-            builder: (context, snapshot) {
-              final allTx = List<TransactionModel>.from(
-                (snapshot.data != null && snapshot.data!.isNotEmpty)
-                    ? snapshot.data!
-                    : TransactionRepository().latestTransactions,
-              );
-
-              if (snapshot.connectionState == ConnectionState.waiting &&
-                  allTx.isEmpty) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF438883)),
-                );
-              }
-
-              allTx.sort(CurrencyUtils.compareTransactionsChronological);
-
-              if (allTx.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 20),
-                    child: Text(
-                      context.tr('no_tx_month'),
-                      style: TextStyle(
-                        color: isDark ? Colors.white60 : Colors.grey.shade600,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                );
-              }
-
-              final effectiveWallets = _walletRepo.latestWallets;
-              final walletMap = {for (final w in effectiveWallets) w.id: w};
-              final reverseBalances =
-                  CurrencyUtils.calculateReverseWalletBalances(
-                    allTransactions: allTx,
-                    wallets: effectiveWallets,
+          child: StreamBuilder<List<WalletModel>>(
+            initialData: _walletRepo.latestWallets,
+            stream: _walletRepo.getWalletsStream(),
+            builder: (context, walletSnap) {
+              final effectiveWallets =
+                  walletSnap.data ?? _walletRepo.latestWallets;
+              return StreamBuilder<List<TransactionModel>>(
+                initialData: TransactionRepository().latestTransactions,
+                stream: TransactionRepository().getTransactionsStream(),
+                builder: (context, snapshot) {
+                  final allTx = List<TransactionModel>.from(
+                    snapshot.hasData
+                        ? snapshot.data!
+                        : TransactionRepository().latestTransactions,
                   );
 
-              if (_groupByDay) {
-                final dayGroups = TimeUtils.groupTransactionsByDay(
-                  allTx,
-                  maxDays: 3,
-                );
-                return DayGroupedTransactionList(
-                  listKey: const PageStorageKey('home_tx_day_groups'),
-                  groups: dayGroups,
-                  reverseBalances: reverseBalances,
-                  walletMap: walletMap,
-                  animateItems: true,
-                );
-              }
+                  if (snapshot.connectionState == ConnectionState.waiting &&
+                      allTx.isEmpty) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF438883),
+                      ),
+                    );
+                  }
 
-              // Hiển thị danh sách các giao dịch gần đây nhất (tối đa 10 giao dịch)
-              final displayTransactions = allTx.take(10).toList();
+                  allTx.sort(CurrencyUtils.compareTransactionsChronological);
 
-              return ListView.builder(
-                key: const PageStorageKey('home_tx_list'),
-                physics: const BouncingScrollPhysics(),
-                cacheExtent: 400,
-                padding: const EdgeInsets.fromLTRB(24, 4, 24, 100),
-                itemCount: displayTransactions.length,
-                itemBuilder: (context, index) {
-                  final tx = displayTransactions[index];
-                  return StaggeredListItem(
-                    index: index,
-                    child: TransactionItem(
-                      transaction: tx,
-                      showDate: true,
-                      runningTotal: reverseBalances[tx.id],
-                      wallet: walletMap[tx.walletId],
-                    ),
+                  final Widget listContent;
+                  if (allTx.isEmpty) {
+                    listContent = LayoutBuilder(
+                      builder: (context, constraints) => SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
+                        ),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 20),
+                              child: Text(
+                                context.tr('no_tx_month'),
+                                style: TextStyle(
+                                  color: isDark
+                                      ? Colors.white60
+                                      : Colors.grey.shade600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  } else {
+                    final walletMap = {
+                      for (final w in effectiveWallets) w.id: w,
+                    };
+                    final reverseBalances =
+                        CurrencyUtils.calculateReverseWalletBalances(
+                          allTransactions: allTx,
+                          wallets: effectiveWallets,
+                        );
+
+                    if (_groupByDay) {
+                      final dayGroups = TimeUtils.groupTransactionsByDay(
+                        allTx,
+                        maxDays: 3,
+                      );
+                      listContent = DayGroupedTransactionList(
+                        listKey: const PageStorageKey('home_tx_day_groups'),
+                        groups: dayGroups,
+                        reverseBalances: reverseBalances,
+                        walletMap: walletMap,
+                        animateItems: true,
+                      );
+                    } else {
+                      // Hiển thị danh sách các giao dịch gần đây nhất (tối đa 10 giao dịch)
+                      final displayTransactions = allTx.take(10).toList();
+
+                      listContent = ListView.builder(
+                        key: const PageStorageKey('home_tx_list'),
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
+                        ),
+                        cacheExtent: 400,
+                        padding: const EdgeInsets.fromLTRB(24, 4, 24, 100),
+                        itemCount: displayTransactions.length,
+                        itemBuilder: (context, index) {
+                          final tx = displayTransactions[index];
+                          return StaggeredListItem(
+                            index: index,
+                            child: TransactionItem(
+                              transaction: tx,
+                              showDate: true,
+                              runningTotal: reverseBalances[tx.id],
+                              wallet: walletMap[tx.walletId],
+                            ),
+                          );
+                        },
+                      );
+                    }
+                  }
+
+                  return RefreshIndicator(
+                    color: const Color(0xFF438883),
+                    onRefresh: () async {
+                      await SyncService().syncAll();
+                    },
+                    child: listContent,
                   );
                 },
               );

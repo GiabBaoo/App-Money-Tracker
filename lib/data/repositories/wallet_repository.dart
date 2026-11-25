@@ -374,7 +374,48 @@ class WalletRepository with OwnedTableOps {
         }
       }
 
+      final existingBalance = existingRow != null
+          ? (existingRow['balance'] as num?)?.toDouble()
+          : null;
+      final balanceChanged =
+          existingBalance == null ||
+          (existingBalance - wallet.balance).abs() > 0.001;
+
+      final countRes = await txn.rawQuery(
+        'SELECT COUNT(*) as txCount FROM transactions '
+        'WHERE uid = ? AND walletId = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+        [uid, wallet.id],
+      );
+      final txCount = (countRes.first['txCount'] as int?) ?? 0;
+
+      double effectiveInitialBalance = wallet.initialBalance;
+      if (balanceChanged || txCount > 0) {
+        final incomeRes = await txn.rawQuery(
+          "SELECT COALESCE(SUM(amount), 0) as total FROM transactions "
+          "WHERE uid = ? AND walletId = ? AND (isDeleted IS NULL OR isDeleted = 0) AND type = 'income'",
+          [uid, wallet.id],
+        );
+        final expenseRes = await txn.rawQuery(
+          "SELECT COALESCE(SUM(amount), 0) as total FROM transactions "
+          "WHERE uid = ? AND walletId = ? AND (isDeleted IS NULL OR isDeleted = 0) AND type = 'expense'",
+          [uid, wallet.id],
+        );
+        final totalIncome =
+            (incomeRes.first['total'] as num?)?.toDouble() ?? 0.0;
+        final totalExpense =
+            (expenseRes.first['total'] as num?)?.toDouble() ?? 0.0;
+        final netLedger = FinancePrecision.roundCurrency(
+          totalIncome - totalExpense,
+          currency: wallet.currency,
+        );
+        effectiveInitialBalance = FinancePrecision.roundCurrency(
+          wallet.balance - netLedger,
+          currency: wallet.currency,
+        );
+      }
+
       final updatedWallet = wallet.copyWith(
+        initialBalance: effectiveInitialBalance,
         isDefault: effectiveIsDefault,
         updatedAt: now,
         syncStatus: 'pending',
@@ -476,7 +517,10 @@ class WalletRepository with OwnedTableOps {
         currentWallet.balance + amountDelta,
         currency: currentWallet.currency,
       );
-      final now = DateTime.now();
+      final nextMs = nextMonotonicTimestamp(
+        currentWallet.updatedAt.millisecondsSinceEpoch,
+      );
+      final now = DateTime.fromMillisecondsSinceEpoch(nextMs);
       final updatedWallet = currentWallet.copyWith(
         balance: newBalance,
         updatedAt: now,
@@ -548,14 +592,17 @@ class WalletRepository with OwnedTableOps {
         );
       }
 
-      // 1. Trừ ví nguồn: amount + fee (chuẩn hóa làm tròn tiền tệ)
+      // 1. Trừ ví nguồn: amount + fee (chuẩn hóa làm tròn tiền tệ + timestamp tịnh tiến)
       final newFromBalance = FinancePrecision.roundCurrency(
         fromWallet.balance - (amount + fee),
         currency: fromWallet.currency,
       );
+      final fromNextMs = nextMonotonicTimestamp(
+        fromWallet.updatedAt.millisecondsSinceEpoch,
+      );
       final updatedFrom = fromWallet.copyWith(
         balance: newFromBalance,
-        updatedAt: now,
+        updatedAt: DateTime.fromMillisecondsSinceEpoch(fromNextMs),
         syncStatus: 'pending',
       );
       final fromMap = updatedFrom.toSqlite();
@@ -569,14 +616,17 @@ class WalletRepository with OwnedTableOps {
         data: fromMap,
       );
 
-      // 2. Cộng ví đích: amount (chuẩn hóa làm tròn tiền tệ)
+      // 2. Cộng ví đích: amount (chuẩn hóa làm tròn tiền tệ + timestamp tịnh tiến)
       final newToBalance = FinancePrecision.roundCurrency(
         toWallet.balance + amount,
         currency: toWallet.currency,
       );
+      final toNextMs = nextMonotonicTimestamp(
+        toWallet.updatedAt.millisecondsSinceEpoch,
+      );
       final updatedTo = toWallet.copyWith(
         balance: newToBalance,
-        updatedAt: now,
+        updatedAt: DateTime.fromMillisecondsSinceEpoch(toNextMs),
         syncStatus: 'pending',
       );
       final toMap = updatedTo.toSqlite();
@@ -1169,10 +1219,12 @@ class WalletRepository with OwnedTableOps {
   void notifyChanged() => _notifyChanged();
 
   void _notifyChanged() {
-    _loadAndEmitWallets();
-    if (!_changeStream.isClosed) {
-      _changeStream.add(null);
-    }
+    unawaited(() async {
+      await _loadAndEmitWallets();
+      if (!_changeStream.isClosed) {
+        _changeStream.add(null);
+      }
+    }());
   }
 
   void dispose() {

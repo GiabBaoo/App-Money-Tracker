@@ -39,7 +39,7 @@ A modern, offline-first personal and group financial management mobile applicati
 - **Firebase Auth & App Check**: Native Firebase Authentication (email verification, password reset) protected by Firebase App Check, plus Firestore and Storage security rules (`firestore.rules`, `storage.rules`).
 - **Biometric & Encrypted Storage**: Fingerprint / Face ID app lock via `local_auth` and encrypted credential storage via `flutter_secure_storage`.
 - **Per-User SQLite Isolation & Clean Session Lifecycle**: Strict multi-user data scoping (`SessionManager` & `OwnedTableOps`), uid-bound biometric unlock, complete local/cloud wipe on account deletion, and destructive-operation safeguards (`DestructiveOpsGuard`).
-- **Reliable Offline-First Sync**: Local SQLite persistence (`sqflite`) paired with a durable sync queue (`SyncQueueWriter`, `SyncTrigger` & `SyncService`), initial cloud bootstrap before default-wallet creation, defensive Firestore parsing (`firestore_parse`), and ledger reconciliation (`LedgerReconciliationService`).
+- **Reliable Offline-First Sync & Automated Daily Backup**: Local SQLite persistence (`sqflite`) paired with a durable sync queue (`SyncQueueWriter`, `SyncTrigger` & `SyncService`), multi-device sync convergence, initial cloud bootstrap before default-wallet creation, defensive Firestore parsing (`firestore_parse`), ledger reconciliation (`LedgerReconciliationService`), and scheduled midnight auto-backup (`MidnightSyncService` + Android `WorkManager` `MidnightBackupWorker`) with manual backup/restore in Privacy Settings.
 - **Structured Logging**: Centralized `AppLogger` for diagnostics without leaking sensitive user data.
 
 ---
@@ -82,9 +82,9 @@ lib/
 │   ├── splash/            # App splash & session bootstrap
 │   ├── transaction/       # Add, edit, detail, list, and categories
 │   └── wallet/            # Wallet creation & transaction history
-├── services/              # Auth, Firestore, Sync, SyncTrigger, FinancialCalculation,
-│                          # LedgerReconciliation, ReceiptStorage, Location, PlaceNameResolver,
-│                          # SmartNotification, Theme, Language, AI
+├── services/              # Auth, Firestore, Sync, SyncTrigger, MidnightSync, FinancialCalculation,
+│                          # LedgerReconciliation, TransactionBalance, ReceiptStorage, Location,
+│                          # PlaceNameResolver, SmartNotification, Theme, Language, AI
 ├── utils/                 # Finance precision arithmetic, time utils, currency/category helpers
 └── widgets/               # Reusable UI components (LocationPickerSheet, MiniLocationMap,
                            # DayGroupedTransactionList, VoiceInputBottomSheet, etc.)
@@ -93,6 +93,8 @@ test/
 ├── features/group_expense/  # Group expense & split calculation tests
 ├── finance/                 # Precision arithmetic, double-entry transfer, atomic & goal tests
 ├── regression/              # Phase 1–4 security, precision, sync, and logging regression suites
+├── sync/                    # Daily backup scheduling & multi-device sync convergence tests
+├── balance_deduction_and_backup_test.dart
 ├── location_transaction_test.dart
 ├── phase3_reliable_sync_test.dart
 ├── plan_fixes_test.dart

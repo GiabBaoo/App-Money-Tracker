@@ -30,6 +30,51 @@ class TransactionBalanceService {
   final TransactionRepository _txRepo = TransactionRepository();
   final WalletRepository _walletRepo = WalletRepository();
 
+  /// Đảm bảo timestamp luôn tịnh tiến về phía trước (chống clock skew / remote thắng nhầm LWW)
+  int _nextMonotonicMs(int? prevUpdatedAtMs) {
+    final nowMs = DateTime.now().toUtc().millisecondsSinceEpoch;
+    if (prevUpdatedAtMs != null && nowMs <= prevUpdatedAtMs) {
+      return prevUpdatedAtMs + 1;
+    }
+    return nowMs;
+  }
+
+  /// Tìm ví đang hoạt động theo [preferredWalletId]; nếu rỗng/không tồn tại/đã xóa,
+  /// tự động fallback về ví mặc định đang hoạt động của [uid] ngay trong SQLite transaction.
+  Future<Map<String, Object?>?> _resolveActiveWalletRowInTxn(
+    Transaction txn,
+    String uid,
+    String preferredWalletId,
+  ) async {
+    if (preferredWalletId.isNotEmpty) {
+      final exact = await txn.query(
+        'wallets',
+        where: 'id = ? AND uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+        whereArgs: [preferredWalletId, uid],
+        limit: 1,
+      );
+      if (exact.isNotEmpty) return exact.first;
+    }
+
+    final fallback = await txn.query(
+      'wallets',
+      where: 'uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+      whereArgs: [uid],
+      orderBy: 'isDefault DESC, createdAt ASC',
+      limit: 1,
+    );
+    if (fallback.isNotEmpty) {
+      if (preferredWalletId.isNotEmpty) {
+        AppLogger.warn(
+          'Không tìm thấy ví hoạt động [$preferredWalletId], tự động chuyển sang ví [${fallback.first['id']}]',
+          tag: 'TransactionBalanceService',
+        );
+      }
+      return fallback.first;
+    }
+    return null;
+  }
+
   /// ═══════════════════════════════════════════════
   /// 1. THÊM GIAO DỊCH + CẬP NHẬT SỐ DƯ VÍ (ATOMIC)
   /// ═══════════════════════════════════════════════
@@ -37,38 +82,44 @@ class TransactionBalanceService {
     final uid = SessionManager.instance.requireUid();
     final db = await _dbHelper.database;
 
-    // Tự động gán ví mặc định nếu giao dịch chưa được chỉ định walletId
-    String targetWalletId = transaction.walletId;
-    if (targetWalletId.isEmpty) {
-      final wallets = _walletRepo.latestWallets;
-      if (wallets.isNotEmpty) {
-        try {
-          targetWalletId = wallets.firstWhere((w) => w.isDefault).id;
-        } catch (e, st) {
-          AppLogger.warn('Không tìm thấy ví mặc định, chọn ví đầu tiên', tag: 'TransactionBalanceService', error: e, stackTrace: st);
-          targetWalletId = wallets.first.id;
-        }
-      }
-    }
-
-    final effectiveTx = targetWalletId.isNotEmpty
-        ? transaction.copyWith(walletId: targetWalletId, uid: uid)
-        : transaction.copyWith(uid: uid);
+    late TransactionModel effectiveTx;
 
     final id = await db.transaction<String>((txn) async {
-      // 1. Thêm giao dịch & sync_queue của transaction
+      // 1. Xác định ví hoạt động trực tiếp từ SQLite trong cùng transaction
+      final walletRow = await _resolveActiveWalletRowInTxn(
+        txn,
+        uid,
+        transaction.walletId,
+      );
+      final resolvedWalletId = (walletRow?['id'] as String?) ?? '';
+
+      effectiveTx = transaction.copyWith(
+        walletId: resolvedWalletId,
+        uid: uid,
+      );
+
+      // 2. Thêm giao dịch & sync_queue của transaction
       final txId = await _txRepo.addTransactionInTxn(txn, effectiveTx);
 
-      // 2. Điều chỉnh số dư ví & sync_queue của wallet
-      if (effectiveTx.walletId.isNotEmpty) {
+      // 3. Điều chỉnh số dư ví & sync_queue của wallet trong cùng transaction
+      if (resolvedWalletId.isNotEmpty) {
         final delta = effectiveTx.type == 'income'
             ? effectiveTx.amount
             : -effectiveTx.amount;
-        await _adjustWalletInTxn(txn, effectiveTx.walletId, delta, uid);
+        await _adjustWalletInTxn(txn, resolvedWalletId, delta, uid);
+      } else {
+        AppLogger.warn(
+          'Không tìm thấy ví hoạt động nào cho uid=$uid khi thêm giao dịch $txId',
+          tag: 'TransactionBalanceService',
+        );
       }
 
       return txId;
     });
+
+    // Làm mới cache trước khi phát sự kiện để StreamBuilder initialData khớp ngay lập tức
+    await _walletRepo.getWallets();
+    await _txRepo.getAllTransactions();
 
     // Thông báo cập nhật ra ngoài transaction để tránh deadlock UI stream
     _txRepo.notifyTransactionsChanged();
@@ -123,8 +174,11 @@ class TransactionBalanceService {
         await _adjustWalletInTxn(txn, newWalletId, applyDelta, uid);
       }
 
-      // Bước 3: Cập nhật giao dịch trong bảng transactions
-      final now = DateTime.now();
+      // Bước 3: Cập nhật giao dịch trong bảng transactions (dùng timestamp tịnh tiến)
+      final txUpdatedMs = _nextMonotonicMs(
+        oldTx.updatedAt.millisecondsSinceEpoch,
+      );
+      final now = DateTime.fromMillisecondsSinceEpoch(txUpdatedMs);
       final updatedTx = newTx.copyWith(
         uid: uid,
         updatedAt: now,
@@ -148,6 +202,58 @@ class TransactionBalanceService {
         action: 'UPDATE',
         data: row,
       );
+
+      // Bước 4b: Nếu là giao dịch chuyển ví (isTransfer & transferId), đồng bộ vế đối ứng
+      if (oldTx.isTransfer &&
+          oldTx.transferId != null &&
+          oldTx.transferId!.isNotEmpty) {
+        final pairedRows = await txn.query(
+          'transactions',
+          where:
+              'uid = ? AND transferId = ? AND id != ? AND (isDeleted IS NULL OR isDeleted = 0)',
+          whereArgs: [uid, oldTx.transferId, oldTx.id],
+        );
+        for (final pRow in pairedRows) {
+          final pairedOld = TransactionModel.fromSqlite(pRow);
+          if (pairedOld.walletId.isNotEmpty) {
+            final pRevert = (pairedOld.type == 'income')
+                ? -pairedOld.amount
+                : pairedOld.amount;
+            await _adjustWalletInTxn(txn, pairedOld.walletId, pRevert, uid);
+
+            final pApply = (pairedOld.type == 'income')
+                ? newAmount
+                : -newAmount;
+            await _adjustWalletInTxn(txn, pairedOld.walletId, pApply, uid);
+          }
+
+          final pairedUpdatedMs = _nextMonotonicMs(
+            pairedOld.updatedAt.millisecondsSinceEpoch,
+          );
+          final pairedNew = pairedOld.copyWith(
+            amount: newAmount,
+            date: newTx.date,
+            time: newTx.time,
+            updatedAt: DateTime.fromMillisecondsSinceEpoch(pairedUpdatedMs),
+            syncStatus: 'pending',
+          );
+          final pairedMap = pairedNew.toSqlite();
+          await txn.update(
+            'transactions',
+            pairedMap,
+            where: 'id = ? AND uid = ?',
+            whereArgs: [pairedOld.id, uid],
+          );
+          await SyncQueueWriter.enqueue(
+            txn,
+            ownerUid: uid,
+            table: 'transactions',
+            recordId: pairedOld.id,
+            action: 'UPDATE',
+            data: pairedMap,
+          );
+        }
+      }
 
       // Bước 5: Nếu là giao dịch mục tiêu tiết kiệm, cập nhật chênh lệch goals.currentAmount
       final goalId = newTx.goalId ?? oldTx.goalId;
@@ -191,6 +297,9 @@ class TransactionBalanceService {
         }
       }
     });
+
+    await _walletRepo.getWallets();
+    await _txRepo.getAllTransactions();
 
     _txRepo.notifyTransactionsChanged();
     _walletRepo.notifyChanged();
@@ -238,7 +347,7 @@ class TransactionBalanceService {
 
     final rows = await txn.query(
       'wallets',
-      where: 'id = ? AND uid = ?',
+      where: 'id = ? AND uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
       whereArgs: [walletId, uid],
       limit: 1,
     );
@@ -249,7 +358,10 @@ class TransactionBalanceService {
         currentWallet.balance + amountDelta,
         currency: currentWallet.currency,
       );
-      final now = DateTime.now();
+      final nextUpdatedMs = _nextMonotonicMs(
+        currentWallet.updatedAt.millisecondsSinceEpoch,
+      );
+      final now = DateTime.fromMillisecondsSinceEpoch(nextUpdatedMs);
 
       final updatedWallet = currentWallet.copyWith(
         balance: newBalance,
@@ -272,6 +384,11 @@ class TransactionBalanceService {
         recordId: walletId,
         action: 'UPDATE',
         data: row,
+      );
+    } else {
+      AppLogger.warn(
+        '_adjustWalletInTxn: Không tìm thấy ví hoạt động [$walletId] cho uid=$uid (delta=$amountDelta)',
+        tag: 'TransactionBalanceService',
       );
     }
   }

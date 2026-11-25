@@ -14,6 +14,7 @@ import '../../utils/page_transitions.dart';
 import '../calendar/calendar_tracking_screen.dart';
 import '../../services/language_service.dart';
 import '../../services/financial_calculation_service.dart';
+import '../../services/sync_service.dart';
 
 class AllTransactionsScreen extends StatefulWidget {
   const AllTransactionsScreen({super.key});
@@ -647,10 +648,17 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                         }
                       }
 
-                      return CustomScrollView(
-                        key: const PageStorageKey('all_transactions_scroll'),
-                        physics: const BouncingScrollPhysics(),
-                        cacheExtent: 600,
+                      return RefreshIndicator(
+                        color: const Color(0xFF438883),
+                        onRefresh: () async {
+                          await SyncService().syncAll();
+                        },
+                        child: CustomScrollView(
+                          key: const PageStorageKey('all_transactions_scroll'),
+                          physics: const AlwaysScrollableScrollPhysics(
+                            parent: BouncingScrollPhysics(),
+                          ),
+                          cacheExtent: 600,
                         slivers: [
                           // ════════ ALL-TIME SEARCH INDICATOR BADGE ════════
                           if (_searchQuery.isNotEmpty)
@@ -715,7 +723,8 @@ class _AllTransactionsScreenState extends State<AllTransactionsScreen> {
                             ),
                           ),
                         ],
-                      );
+                      ),
+                    );
                     },
                   ),
                 ),

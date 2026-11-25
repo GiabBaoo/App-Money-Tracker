@@ -276,12 +276,9 @@ class LedgerReconciliationService {
     return reconstructedCount;
   }
 
-  /// Đối soát số dư toàn bộ các ví của user dựa trên các giao dịch thực tế.
-  /// - Khi [forceLedgerOverwrite] == false (chạy tự động sau mỗi lần sync):
-  ///   Chỉ phục hồi số dư từ sổ cái cho các ví đang bị 0đ (balance == 0 && initialBalance == 0)
-  ///   mà có giao dịch dương; tuyệt đối KHÔNG ghi đè số dư thực tế khác 0 đã được đồng bộ từ máy gốc.
-  /// - Khi [forceLedgerOverwrite] == true (người dùng chủ động yêu cầu tính lại từ sổ cái):
-  ///   Cập nhật balance = initialBalance + totalIncome - totalExpense với đầy đủ toàn bộ trường của WalletModel.
+  /// Đối soát số dư toàn bộ các ví của user dựa trên công thức Sổ cái SSOT:
+  /// `expectedBalance = initialBalance + totalIncome - totalExpense`.
+  /// Tuyệt đối không sửa ngầm `initialBalance` cục bộ khi phát hiện lệch.
   Future<int> reconcileWallets(
     String uid, {
     bool forceLedgerOverwrite = true,
@@ -293,12 +290,46 @@ class LedgerReconciliationService {
       whereArgs: [uid],
     );
 
+    // Kiểm tra xem transactions đã từng hoàn tất ít nhất 1 lần tải từ server chưa
+    bool hasTxSyncMetadata = false;
+    if (!forceLedgerOverwrite) {
+      final metaRows = await db.query(
+        'sync_metadata',
+        columns: ['lastSyncTimestamp'],
+        where: 'uid = ? AND tableName = ?',
+        whereArgs: [uid, 'transactions'],
+        limit: 1,
+      );
+      hasTxSyncMetadata = metaRows.isNotEmpty;
+    }
+
     int updatedCount = 0;
     for (final wRow in walletRows) {
       final wallet = WalletModel.fromSqlite(wRow);
 
       // Chỉ đối soát các ví đang ở trạng thái 'synced' hoặc 'local_only' để không ghi đè thay đổi local đang chờ đẩy
       if (wallet.syncStatus != 'synced' && wallet.syncStatus != 'local_only') {
+        continue;
+      }
+
+      // Không đối soát nếu ví hoặc bảng transactions đang có item pending/processing trong sync_queue
+      final pendingQueue = await db.rawQuery(
+        'SELECT 1 FROM sync_queue '
+        'WHERE (ownerUid = ? OR uid = ?) '
+        'AND status IN (?, ?) '
+        'AND ((tableName = ? AND recordId = ?) OR tableName = ?) '
+        'LIMIT 1',
+        [
+          uid,
+          uid,
+          'pending',
+          'processing',
+          'wallets',
+          wallet.id,
+          'transactions',
+        ],
+      );
+      if (pendingQueue.isNotEmpty) {
         continue;
       }
 
@@ -311,11 +342,13 @@ class LedgerReconciliationService {
       final txCount = (countRes.first['txCount'] as int?) ?? 0;
 
       // Bảo vệ: nếu ví có balance != initialBalance nhưng chưa có giao dịch local nào
-      // (dấu hiệu transactions chưa tải đủ), bỏ qua để tránh ghi đè số dư về initialBalance.
-      if (txCount == 0 &&
+      // và chưa từng hoàn tất tải transactions từ server, bỏ qua để tránh ghi đè sớm.
+      if (!forceLedgerOverwrite &&
+          txCount == 0 &&
+          !hasTxSyncMetadata &&
           (wallet.balance - wallet.initialBalance).abs() > 0.001) {
         AppLogger.warn(
-          'LedgerReconciliation: Bỏ qua ví [${wallet.name}] vì chưa có giao dịch local (balance=${wallet.balance}, initial=${wallet.initialBalance})',
+          'LedgerReconciliation: Bỏ qua ví [${wallet.name}] vì chưa hoàn tất tải transactions (balance=${wallet.balance}, initial=${wallet.initialBalance})',
           tag: 'LedgerReconciliation',
         );
         continue;
@@ -339,28 +372,6 @@ class LedgerReconciliationService {
         totalIncome - totalExpense,
         currency: wallet.currency,
       );
-
-      if (!forceLedgerOverwrite) {
-        // Khi chạy tự động sau mỗi chu kỳ đồng bộ: tuyệt đối bảo toàn số dư (wallet.balance)
-        // do người dùng chỉnh sửa và đồng bộ từ Firebase, chỉ đồng bộ lại initialBalance cục bộ.
-        if ((wallet.balance != 0 || wallet.initialBalance != 0) &&
-            txCount > 0) {
-          final expectedInitial = FinancePrecision.roundCurrency(
-            wallet.balance - netLedger,
-            currency: wallet.currency,
-          );
-          if ((wallet.initialBalance - expectedInitial).abs() > 0.001 &&
-              wallet.syncStatus != 'local_only') {
-            await db.update(
-              'wallets',
-              {'initialBalance': expectedInitial.round()},
-              where: 'id = ? AND uid = ?',
-              whereArgs: [wallet.id, uid],
-            );
-          }
-        }
-        continue;
-      }
 
       final expectedBalance = FinancePrecision.roundCurrency(
         wallet.initialBalance + netLedger,
@@ -390,7 +401,7 @@ class LedgerReconciliationService {
             ownerUid: uid,
             table: 'wallets',
             recordId: wallet.id,
-            action: 'INSERT',
+            action: 'UPDATE',
             data: fullRow,
           );
         });
