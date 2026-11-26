@@ -105,39 +105,55 @@ class MessageRepository with OwnedTableOps {
     final currentUid = session.uidOrNull;
     if (currentUid == null || messages.isEmpty) return;
 
+    final ownedMsgs = messages
+        .where((m) => m.uid == currentUid && m.id.isNotEmpty)
+        .toList();
+    if (ownedMsgs.isEmpty) return;
+
     final db = await _dbHelper.database;
+    var hasChanges = false;
+
     await db.transaction((txn) async {
-      for (final msg in messages) {
-        if (msg.uid != currentUid) continue; // Bỏ qua doc khác uid
+      final queueRows = await txn.query(
+        'sync_queue',
+        columns: ['recordId'],
+        where:
+            'tableName = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
+        whereArgs: ['messages', currentUid, currentUid, 'pending', 'processing'],
+      );
+      final pendingIds = <String>{
+        for (final r in queueRows)
+          if (r['recordId'] is String) r['recordId'] as String,
+      };
 
-        // Kiểm tra Dirty Shield
-        final queuePending = await txn.query(
-          'sync_queue',
-          columns: ['id'],
-          where:
-              'tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
-          whereArgs: [
-            'messages',
-            msg.id,
-            currentUid,
-            currentUid,
-            'pending',
-            'processing',
-          ],
-          limit: 1,
+      final existingById = <String, Map<String, Object?>>{};
+      final ids = ownedMsgs.map((m) => m.id).toSet().toList();
+      const chunkSize = 450;
+      for (var i = 0; i < ids.length; i += chunkSize) {
+        final chunk = ids.sublist(
+          i,
+          i + chunkSize > ids.length ? ids.length : i + chunkSize,
         );
-        if (queuePending.isNotEmpty) continue;
-
-        final existing = await txn.query(
+        final placeholders = List.filled(chunk.length, '?').join(',');
+        final rows = await txn.query(
           'messages',
-          where: 'id = ? AND uid = ?',
-          whereArgs: [msg.id, currentUid],
-          limit: 1,
+          where: 'uid = ? AND id IN ($placeholders)',
+          whereArgs: [currentUid, ...chunk],
         );
+        for (final row in rows) {
+          final id = row['id'] as String?;
+          if (id != null) existingById[id] = row;
+        }
+      }
 
-        if (existing.isEmpty) {
+      final batch = txn.batch();
+      for (final msg in ownedMsgs) {
+        if (pendingIds.contains(msg.id)) continue;
+
+        final existingRow = existingById[msg.id];
+        if (existingRow == null) {
           if (!msg.isDeleted) {
-            await txn.insert(
+            batch.insert(
               'messages',
               MessageModel(
                 id: msg.id,
@@ -155,16 +171,18 @@ class MessageRepository with OwnedTableOps {
               ).toSqlite(),
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
+            hasChanges = true;
           }
         } else {
-          final local = MessageModel.fromSqlite(existing.first);
+          final local = MessageModel.fromSqlite(existingRow);
           if (local.syncStatus == 'pending') continue;
 
           // Monotonic Delete Rule
           if (local.isDeleted && !msg.isDeleted) {
             final localDeletedMs = local.deletedAt?.millisecondsSinceEpoch ??
                 (local.updatedAt ?? local.createdAt).millisecondsSinceEpoch;
-            final remoteUpdatedMs = (msg.updatedAt ?? msg.createdAt).millisecondsSinceEpoch;
+            final remoteUpdatedMs =
+                (msg.updatedAt ?? msg.createdAt).millisecondsSinceEpoch;
             if (remoteUpdatedMs <= localDeletedMs) {
               continue;
             }
@@ -173,7 +191,7 @@ class MessageRepository with OwnedTableOps {
           if (msg.isDeleted) {
             final remoteDeletedMs = msg.deletedAt?.millisecondsSinceEpoch ??
                 (msg.updatedAt ?? msg.createdAt).millisecondsSinceEpoch;
-            await txn.update(
+            batch.update(
               'messages',
               {
                 'isDeleted': 1,
@@ -185,7 +203,7 @@ class MessageRepository with OwnedTableOps {
               whereArgs: [msg.id, currentUid],
             );
           } else {
-            await txn.update(
+            batch.update(
               'messages',
               MessageModel(
                 id: msg.id,
@@ -205,11 +223,18 @@ class MessageRepository with OwnedTableOps {
               whereArgs: [msg.id, currentUid],
             );
           }
+          hasChanges = true;
         }
+      }
+
+      if (hasChanges) {
+        await batch.commit(noResult: true);
       }
     });
 
-    _notifyChanged();
+    if (hasChanges) {
+      await _loadAndEmit();
+    }
   }
 
   // ════════ INTERNAL ════════

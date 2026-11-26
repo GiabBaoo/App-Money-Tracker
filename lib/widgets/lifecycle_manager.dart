@@ -5,8 +5,6 @@ import '../core/session/session_manager.dart';
 import '../services/biometric_service.dart';
 import '../services/auth_service.dart';
 import '../services/app_widget_service.dart';
-import '../services/connectivity_service.dart';
-import '../services/sync_service.dart';
 import '../modules/auth/fingerprint_unlock_screen.dart';
 import '../utils/page_transitions.dart';
 
@@ -78,15 +76,6 @@ class _LifecycleManagerState extends State<LifecycleManager>
       }
     } else if (state == AppLifecycleState.resumed) {
       unawaited(AppWidgetService.instance.syncAll());
-      if (SessionManager.instance.uidOrNull != null) {
-        unawaited(() async {
-          final isOnline = await ConnectivityService().checkRealInternet();
-          if (isOnline && SessionManager.instance.uidOrNull != null) {
-            SyncService().ensureRealtimeListenersActive();
-            await SyncService().syncAll();
-          }
-        }());
-      }
 
       if (_wasInBackground &&
           !_isLocked &&

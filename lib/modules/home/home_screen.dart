@@ -357,6 +357,11 @@ class _HomeBodyState extends State<HomeBody>
   bool get wantKeepAlive => true;
   final WalletRepository _walletRepo = WalletRepository();
   final NotificationRepository _notiRepo = NotificationRepository();
+  late final Stream<UserModel?> _userStream;
+  late final Stream<List<NotificationModel>> _notificationsStream;
+  late final Stream<double> _totalBalanceStream;
+  late final Stream<List<WalletModel>> _walletsStream;
+  late final Stream<List<TransactionModel>> _transactionsStream;
 
   bool _showOfflineBanner = false;
   bool _isBalanceVisible = true;
@@ -366,6 +371,11 @@ class _HomeBodyState extends State<HomeBody>
   @override
   void initState() {
     super.initState();
+    _userStream = UserRepository().getUserStream();
+    _notificationsStream = _notiRepo.getNotificationsStream();
+    _totalBalanceStream = _walletRepo.getTotalBalanceStream();
+    _walletsStream = _walletRepo.getWalletsStream();
+    _transactionsStream = TransactionRepository().getTransactionsStream();
     _walletRepo.getWallets().then((_) {
       if (mounted) setState(() {});
     });
@@ -466,7 +476,7 @@ class _HomeBodyState extends State<HomeBody>
                       Expanded(
                         child: StreamBuilder<UserModel?>(
                           initialData: UserRepository().currentUser,
-                          stream: UserRepository().getUserStream(),
+                          stream: _userStream,
                           builder: (context, userSnapshot) {
                             final user = userSnapshot.data;
                             final fallbackName = context.tr('user_fallback');
@@ -633,7 +643,7 @@ class _HomeBodyState extends State<HomeBody>
                                   ),
                                   // Badge hiển thị số thông báo chưa đọc
                                   StreamBuilder<List<NotificationModel>>(
-                                    stream: _notiRepo.getNotificationsStream(),
+                                    stream: _notificationsStream,
                                     builder: (context, snapshot) {
                                       if (!snapshot.hasData)
                                         return const SizedBox.shrink();
@@ -688,7 +698,7 @@ class _HomeBodyState extends State<HomeBody>
                       0.0,
                       (double prev, w) => prev + w.balance,
                     ),
-                    stream: _walletRepo.getTotalBalanceStream(),
+                    stream: _totalBalanceStream,
                     builder: (context, walletSnapshot) {
                       final double totalBalance =
                           walletSnapshot.data ??
@@ -698,7 +708,7 @@ class _HomeBodyState extends State<HomeBody>
                           );
                       return StreamBuilder<List<TransactionModel>>(
                         initialData: TransactionRepository().latestTransactions,
-                        stream: TransactionRepository().getTransactionsStream(),
+                        stream: _transactionsStream,
                         builder: (context, snapshot) {
                           final txList = snapshot.hasData
                               ? snapshot.data!
@@ -808,13 +818,13 @@ class _HomeBodyState extends State<HomeBody>
         Expanded(
           child: StreamBuilder<List<WalletModel>>(
             initialData: _walletRepo.latestWallets,
-            stream: _walletRepo.getWalletsStream(),
+            stream: _walletsStream,
             builder: (context, walletSnap) {
               final effectiveWallets =
                   walletSnap.data ?? _walletRepo.latestWallets;
               return StreamBuilder<List<TransactionModel>>(
                 initialData: TransactionRepository().latestTransactions,
-                stream: TransactionRepository().getTransactionsStream(),
+                stream: _transactionsStream,
                 builder: (context, snapshot) {
                   final allTx = List<TransactionModel>.from(
                     snapshot.hasData

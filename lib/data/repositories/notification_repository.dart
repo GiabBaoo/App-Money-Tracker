@@ -165,7 +165,13 @@ class NotificationRepository with OwnedTableOps {
     final currentUid = session.uidOrNull;
     if (currentUid == null || notifications.isEmpty) return;
 
+    final ownedNotis = notifications
+        .where((n) => n.uid == currentUid && n.id.isNotEmpty)
+        .toList();
+    if (ownedNotis.isEmpty) return;
+
     final db = await _dbHelper.database;
+    var hasChanges = false;
 
     // Lấy tập hợp id các thông báo đã được đọc ở local để bảo toàn trạng thái offline-first
     final existingReadRows = await db.query(
@@ -177,39 +183,54 @@ class NotificationRepository with OwnedTableOps {
     final readIds = existingReadRows.map((r) => r['id'] as String).toSet();
 
     await db.transaction((txn) async {
-      for (final noti in notifications) {
-        if (noti.uid != currentUid) continue; // Bỏ qua doc khác uid
-
-        // Kiểm tra Dirty Shield
-        final queuePending = await txn.query(
-          'sync_queue',
-          columns: ['id'],
-          where:
-              'tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
-          whereArgs: [
-            'notifications',
-            noti.id,
-            currentUid,
-            currentUid,
-            'pending',
-            'processing',
-          ],
-          limit: 1,
-        );
-        if (queuePending.isNotEmpty) continue;
-
-        final existing = await txn.query(
+      final queueRows = await txn.query(
+        'sync_queue',
+        columns: ['recordId'],
+        where:
+            'tableName = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
+        whereArgs: [
           'notifications',
-          where: 'id = ? AND uid = ?',
-          whereArgs: [noti.id, currentUid],
-          limit: 1,
-        );
+          currentUid,
+          currentUid,
+          'pending',
+          'processing',
+        ],
+      );
+      final pendingIds = <String>{
+        for (final r in queueRows)
+          if (r['recordId'] is String) r['recordId'] as String,
+      };
 
+      final existingById = <String, Map<String, Object?>>{};
+      final ids = ownedNotis.map((n) => n.id).toSet().toList();
+      const chunkSize = 450;
+      for (var i = 0; i < ids.length; i += chunkSize) {
+        final chunk = ids.sublist(
+          i,
+          i + chunkSize > ids.length ? ids.length : i + chunkSize,
+        );
+        final placeholders = List.filled(chunk.length, '?').join(',');
+        final rows = await txn.query(
+          'notifications',
+          where: 'uid = ? AND id IN ($placeholders)',
+          whereArgs: [currentUid, ...chunk],
+        );
+        for (final row in rows) {
+          final id = row['id'] as String?;
+          if (id != null) existingById[id] = row;
+        }
+      }
+
+      final batch = txn.batch();
+      for (final noti in ownedNotis) {
+        if (pendingIds.contains(noti.id)) continue;
+
+        final existingRow = existingById[noti.id];
         final bool effectivelyRead = noti.isRead || readIds.contains(noti.id);
 
-        if (existing.isEmpty) {
+        if (existingRow == null) {
           if (!noti.isDeleted) {
-            await txn.insert(
+            batch.insert(
               'notifications',
               NotificationModel(
                 id: noti.id,
@@ -229,16 +250,18 @@ class NotificationRepository with OwnedTableOps {
               ).toSqlite(),
               conflictAlgorithm: ConflictAlgorithm.replace,
             );
+            hasChanges = true;
           }
         } else {
-          final local = NotificationModel.fromSqlite(existing.first);
+          final local = NotificationModel.fromSqlite(existingRow);
           if (local.syncStatus == 'pending') continue;
 
           // Monotonic Delete Rule
           if (local.isDeleted && !noti.isDeleted) {
             final localDeletedMs = local.deletedAt?.millisecondsSinceEpoch ??
                 (local.updatedAt ?? local.createdAt).millisecondsSinceEpoch;
-            final remoteUpdatedMs = (noti.updatedAt ?? noti.createdAt).millisecondsSinceEpoch;
+            final remoteUpdatedMs =
+                (noti.updatedAt ?? noti.createdAt).millisecondsSinceEpoch;
             if (remoteUpdatedMs <= localDeletedMs) {
               continue;
             }
@@ -247,7 +270,7 @@ class NotificationRepository with OwnedTableOps {
           if (noti.isDeleted) {
             final remoteDeletedMs = noti.deletedAt?.millisecondsSinceEpoch ??
                 (noti.updatedAt ?? noti.createdAt).millisecondsSinceEpoch;
-            await txn.update(
+            batch.update(
               'notifications',
               {
                 'isDeleted': 1,
@@ -259,7 +282,7 @@ class NotificationRepository with OwnedTableOps {
               whereArgs: [noti.id, currentUid],
             );
           } else {
-            await txn.update(
+            batch.update(
               'notifications',
               NotificationModel(
                 id: noti.id,
@@ -281,11 +304,18 @@ class NotificationRepository with OwnedTableOps {
               whereArgs: [noti.id, currentUid],
             );
           }
+          hasChanges = true;
         }
+      }
+
+      if (hasChanges) {
+        await batch.commit(noResult: true);
       }
     });
 
-    _notifyChanged();
+    if (hasChanges) {
+      await _loadAndEmit();
+    }
   }
 
   // ════════ INTERNAL ════════

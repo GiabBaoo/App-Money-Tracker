@@ -111,12 +111,14 @@ class UserRepository with OwnedTableOps {
   }
 
   /// Stream thông tin user
-  Stream<UserModel?> getUserStream() async* {
-    if (_cachedUser != null) {
-      yield _cachedUser;
-    }
-    yield await getUser();
-    yield* _changeStream.stream.asyncMap((_) => getUser());
+  Stream<UserModel?> getUserStream() {
+    return (() async* {
+      if (_cachedUser != null) {
+        yield _cachedUser;
+      }
+      yield await getUser();
+      yield* _changeStream.stream.asyncMap((_) => getUser());
+    })().asBroadcastStream(onCancel: (sub) => sub.cancel());
   }
 
   /// Lấy thông tin user một lần

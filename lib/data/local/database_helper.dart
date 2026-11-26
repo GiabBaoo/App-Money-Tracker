@@ -62,6 +62,12 @@ class DatabaseHelper {
           await db.execute(
             'CREATE INDEX IF NOT EXISTS idx_transactions_goal ON transactions(uid, goalId)',
           );
+          await db.execute(
+            'CREATE INDEX IF NOT EXISTS idx_transactions_uid_updated ON transactions(uid, updatedAt DESC)',
+          );
+          await db.execute(
+            'CREATE INDEX IF NOT EXISTS idx_wallets_uid_updated ON wallets(uid, updatedAt DESC)',
+          );
         } catch (e) {
           debugPrint('SQLite onOpen index error: $e');
         }
@@ -123,6 +129,9 @@ class DatabaseHelper {
       'CREATE INDEX idx_transactions_goal ON transactions(uid, goalId)',
     );
     await db.execute(
+      'CREATE INDEX idx_transactions_uid_updated ON transactions(uid, updatedAt DESC)',
+    );
+    await db.execute(
       'CREATE INDEX idx_transactions_group ON transactions(groupId) WHERE groupId IS NOT NULL AND groupId <> ""',
     );
 
@@ -151,6 +160,9 @@ class DatabaseHelper {
     ''');
 
     await db.execute('CREATE INDEX idx_wallets_uid ON wallets(uid)');
+    await db.execute(
+      'CREATE INDEX idx_wallets_uid_updated ON wallets(uid, updatedAt DESC)',
+    );
 
     // ─── Bảng USERS ───
     await db.execute('''

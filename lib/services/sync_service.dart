@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../core/session/session_manager.dart';
@@ -647,31 +648,34 @@ class SyncService implements ISyncService {
       }
     });
 
-    // Lắng nghe trạng thái FirebaseAuth để tự động khôi phục listener khi phiên auth sẵn sàng
+    // Lắng nghe trạng thái FirebaseAuth để tự động kích hoạt Sync Engine ngay khi user hợp lệ
     _authStateSubscription?.cancel();
     _authStateSubscription = FirebaseAuth.instance.authStateChanges().listen((
       user,
     ) {
-      if (user != null &&
-          _isInitialized &&
-          _accepting &&
-          user.uid == SessionManager.instance.uidOrNull) {
-        ensureRealtimeListenersActive();
-        if (_initialDownloadDone[user.uid] != true) {
-          unawaited(initialDownload(user.uid));
-        } else {
-          unawaited(syncAll());
+      if (user != null && _isInitialized && _accepting) {
+        if (SessionManager.instance.uidOrNull == null) {
+          SessionManager.instance.activate(user.uid);
+        }
+        if (user.uid == SessionManager.instance.uidOrNull) {
+          ensureRealtimeListenersActive();
+          if (_initialDownloadDone[user.uid] != true) {
+            unawaited(initialDownload(user.uid));
+          } else {
+            unawaited(syncAll());
+          }
         }
       }
     });
   }
 
-  /// Buộc tải lại toàn bộ dữ liệu từ cloud, bỏ qua mốc sync_metadata cũ
+  /// Buộc tải lại toàn bộ dữ liệu từ cloud, bỏ qua mốc Delta Sync & sync_metadata cũ
   @override
   Future<SyncExecutionReport> forceFullResync() async {
     final session = SessionManager.instance;
     final ownerUid = session.uidOrNull;
     if (ownerUid != null) {
+      await _clearDeltaSyncTimestamps(ownerUid);
       try {
         final db = await _dbHelper.database;
         await db.delete(
@@ -681,7 +685,7 @@ class SyncService implements ISyncService {
         );
       } catch (e, st) {
         AppLogger.warn(
-          'Không thể decode JSON sync_queue data',
+          'Không thể xóa sync_metadata khi forceFullResync',
           tag: 'SyncService',
           error: e,
           stackTrace: st,
@@ -786,7 +790,8 @@ class SyncService implements ISyncService {
   }
 
   /// Tải dữ liệu ban đầu khi mở app hoặc đăng nhập mới (chống chạy trùng theo UID).
-  /// Tự động ưu tiên khôi phục bản sao lưu mới nhất trên Firebase (`users/{uid}/backups/latest`) trước.
+  /// - Thiết bị đã từng sync (có mốc Delta Sync hoặc có ví synced cục bộ): chạy ngay Delta Sync + Realtime Listener (không tốn 2 round-trip restoreLatestCloudBackup).
+  /// - Thiết bị mới / rỗng: khôi phục snapshot mới nhất từ Firebase trước, sau đó chạy full sync.
   Future<void> initialDownload([String? uid]) async {
     final targetUid = uid ?? SessionManager.instance.uidOrNull;
     if (targetUid == null) return;
@@ -802,14 +807,40 @@ class SyncService implements ISyncService {
       if (SessionManager.instance.uidOrNull != targetUid) return;
     }
 
-    // 1. Ưu tiên lấy bản sao lưu mới nhất trên Firebase (nếu có) để đồng bộ chuẩn 100% ví tiền & số dư
-    try {
-      await restoreLatestCloudBackup(targetUid);
-    } catch (e) {
-      debugPrint('SyncService: restoreLatestCloudBackup error: $e');
+    ensureRealtimeListenersActive();
+
+    // Kiểm tra thiết bị đã có trạng thái đồng bộ trước đó hay chưa
+    var hasLocalSyncedState =
+        await _getLastSyncTimestamp(targetUid, 'transactions') > 0;
+    if (!hasLocalSyncedState) {
+      try {
+        final db = await _dbHelper.database;
+        final walletRows = await db.query(
+          'wallets',
+          columns: ['id', 'balance', 'initialBalance', 'syncStatus'],
+          where:
+              "uid = ? AND (isDeleted IS NULL OR isDeleted = 0) AND syncStatus != 'local_only'",
+          whereArgs: [targetUid],
+        );
+        hasLocalSyncedState = walletRows.any((r) {
+          final id = r['id'] as String? ?? '';
+          final bal = (r['balance'] as num?)?.toDouble() ?? 0.0;
+          final initBal = (r['initialBalance'] as num?)?.toDouble() ?? 0.0;
+          return id != 'wlt_default_$targetUid' || bal != 0 || initBal != 0;
+        });
+      } catch (_) {}
     }
 
-    // 2. Chạy chu kỳ sync tiêu chuẩn để cập nhật các giao dịch/nhóm phát sinh sau bản sao lưu
+    // 1. Chỉ tải restoreLatestCloudBackup cho thiết bị mới/rỗng để không làm trễ lần mở app hôm sau
+    if (!hasLocalSyncedState) {
+      try {
+        await restoreLatestCloudBackup(targetUid);
+      } catch (e) {
+        debugPrint('SyncService: restoreLatestCloudBackup error: $e');
+      }
+    }
+
+    // 2. Chạy chu kỳ sync (Delta Sync nếu đã có lastSyncTimestamp, hoặc Full Sync nếu mới)
     final report = await syncAllDetailed();
     final downloadFailed =
         report.downloadErrors.containsKey('wallets') ||
@@ -2941,7 +2972,129 @@ class SyncService implements ISyncService {
   }
 
   // ════════ DOWNLOAD (Cloud → Local) ════════
-  // Bulkhead Pattern: Cô lập luồng download cho từng entity riêng biệt
+  // Bulkhead Pattern + Delta Sync (SharedPreferences theo userId) + Song song hóa (Future.wait)
+
+  static const int _deltaSkewBufferMs = 5000;
+  static const List<String> _deltaEntities = [
+    'wallets',
+    'transactions',
+    'budgets',
+    'goals',
+    'notifications',
+    'messages',
+    'groups',
+    'group_expenses',
+    'group_settlements',
+    'users',
+  ];
+
+  static String _deltaPrefKey(String uid, String entityName) =>
+      'delta_sync_ts_${uid}_$entityName';
+
+  static String _userLastSyncPrefKey(String uid) => 'last_sync_ts_$uid';
+
+  Future<int> _getLastSyncTimestamp(String uid, String entityName) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getInt(_deltaPrefKey(uid, entityName)) ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  Future<void> _setLastSyncTimestamp(
+    Database? db,
+    String uid,
+    String entityName,
+    int timestampMs,
+  ) async {
+    if (timestampMs <= 0) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = _deltaPrefKey(uid, entityName);
+      final prev = prefs.getInt(key) ?? 0;
+      final next = timestampMs > prev ? timestampMs : prev;
+      await prefs.setInt(key, next);
+
+      final userKey = _userLastSyncPrefKey(uid);
+      final prevUserTs = prefs.getInt(userKey) ?? 0;
+      if (next > prevUserTs) {
+        await prefs.setInt(userKey, next);
+      }
+    } catch (_) {}
+
+    if (db != null) {
+      await _recordSyncTimestamp(db, entityName, uid, timestampMs);
+    }
+  }
+
+  Future<void> _clearDeltaSyncTimestamps(String uid) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (final entity in _deltaEntities) {
+        await prefs.remove(_deltaPrefKey(uid, entity));
+      }
+      await prefs.remove(_userLastSyncPrefKey(uid));
+    } catch (_) {}
+  }
+
+  static int _computeNextSyncCursor(
+    Iterable<DateTime?> docUpdatedAts,
+    int fallbackNowMs,
+  ) {
+    var maxMs = fallbackNowMs;
+    for (final dt in docUpdatedAts) {
+      if (dt != null && dt.millisecondsSinceEpoch > maxMs) {
+        maxMs = dt.millisecondsSinceEpoch;
+      }
+    }
+    return maxMs;
+  }
+
+  Future<QuerySnapshot<Map<String, dynamic>>> _executeDeltaQuery({
+    required Query<Map<String, dynamic>> baseQuery,
+    required int lastSyncMs,
+    required String entityName,
+    bool preferServer = false,
+  }) async {
+    final effectiveQuery = lastSyncMs > 0
+        ? baseQuery.where(
+            'updatedAt',
+            isGreaterThan: Timestamp.fromMillisecondsSinceEpoch(
+              max(0, lastSyncMs - _deltaSkewBufferMs),
+            ),
+          )
+        : baseQuery;
+
+    Future<QuerySnapshot<Map<String, dynamic>>> run(
+      Query<Map<String, dynamic>> q,
+    ) async {
+      if (preferServer) {
+        try {
+          return await q
+              .get(const GetOptions(source: Source.server))
+              .timeout(const Duration(seconds: 8));
+        } on FirebaseException catch (fe) {
+          if (fe.code == 'failed-precondition') rethrow;
+        } catch (_) {}
+      }
+      return await q.get().timeout(const Duration(seconds: 8));
+    }
+
+    try {
+      return await run(effectiveQuery);
+    } on FirebaseException catch (fe) {
+      if (fe.code == 'failed-precondition' && lastSyncMs > 0) {
+        AppLogger.warn(
+          'Thiếu Composite Index trên Firestore cho $entityName (updatedAt > cursor), fallback về query gốc.',
+          tag: 'SyncService',
+          error: fe,
+        );
+        return await run(baseQuery);
+      }
+      rethrow;
+    }
+  }
 
   Future<void> _recordSyncTimestamp(
     Database db,
@@ -3123,7 +3276,7 @@ class SyncService implements ISyncService {
       final metaRows = await db.query(
         'sync_metadata',
         columns: ['lastSyncTimestamp'],
-        where: 'uid = ? AND tableName = ?',
+        where: 'uid = ? AND entityName = ?',
         whereArgs: [ownerUid, 'transactions'],
         limit: 1,
       );
@@ -3228,117 +3381,362 @@ class SyncService implements ISyncService {
 
     bool walletsDownloadOk = false;
     bool transactionsDownloadOk = false;
+    final userGroupIds = <String>{};
 
-    // 1. Wallets (ưu tiên tải từ server, fallback về default source nếu mạng chập chờn nhưng có dữ liệu)
-    if (stillValid()) {
-      try {
-        QuerySnapshot<Map<String, dynamic>> walletSnapshot;
+    // Đọc song song các mốc lastSyncTimestamp theo từng userId trong SharedPreferences
+    final tsResults = await Future.wait([
+      _getLastSyncTimestamp(ownerUid, 'wallets'),
+      _getLastSyncTimestamp(ownerUid, 'transactions'),
+      _getLastSyncTimestamp(ownerUid, 'budgets'),
+      _getLastSyncTimestamp(ownerUid, 'goals'),
+      _getLastSyncTimestamp(ownerUid, 'notifications'),
+      _getLastSyncTimestamp(ownerUid, 'messages'),
+      _getLastSyncTimestamp(ownerUid, 'groups'),
+      _getLastSyncTimestamp(ownerUid, 'group_expenses'),
+      _getLastSyncTimestamp(ownerUid, 'group_settlements'),
+    ]);
+    final lastWalletsTs = tsResults[0];
+    final lastTxTs = tsResults[1];
+    final lastBudgetsTs = tsResults[2];
+    final lastGoalsTs = tsResults[3];
+    final lastNotiTs = tsResults[4];
+    final lastMsgTs = tsResults[5];
+    final lastGroupsTs = tsResults[6];
+    final lastExpensesTs = tsResults[7];
+    final lastSettlementsTs = tsResults[8];
+
+    // Giai đoạn 1: Tải song song (Future.wait) tất cả các bảng độc lập bằng Delta Sync
+    await Future.wait([
+      // 1. Wallets
+      () async {
+        if (!stillValid()) return;
         try {
-          walletSnapshot = await _firestore
-              .collection('wallets')
-              .where('uid', isEqualTo: ownerUid)
-              .get(const GetOptions(source: Source.server))
-              .timeout(const Duration(seconds: 8));
-        } catch (_) {
-          walletSnapshot = await _firestore
-              .collection('wallets')
-              .where('uid', isEqualTo: ownerUid)
-              .get()
-              .timeout(const Duration(seconds: 8));
-        }
-
-        final remoteWallets = FirestoreParse.parseList(
-          walletSnapshot.docs,
-          WalletModel.fromFirestore,
-          tag: 'SyncService.wallets',
-        );
-
-        if (stillValid() && remoteWallets.isNotEmpty) {
-          await _walletRepo?.upsertFromFirestore(remoteWallets);
-          report?.downloadSuccess['wallets'] = remoteWallets.length;
-          await _recordSyncTimestamp(db, 'wallets', ownerUid, nowMs);
-          debugPrint('SyncService: Downloaded ${remoteWallets.length} wallets');
-          walletsDownloadOk = true;
-        } else if (!walletSnapshot.metadata.isFromCache) {
-          report?.downloadSuccess['wallets'] = 0;
-          walletsDownloadOk = true;
-        } else {
-          report?.downloadErrors['wallets'] =
-              'Wallets snapshot served from cache.';
-        }
-
-        // Self-healing backfill: nếu máy hiện tại có ví cục bộ chưa từng lên Firestore
-        // hoặc trên Firestore bị thiếu/0đ, tự động đưa lại vào sync_queue để đẩy lên cloud.
-        if (stillValid() && !walletSnapshot.metadata.isFromCache) {
-          final remoteById = {for (final w in remoteWallets) w.id: w};
-          await _backfillMissingLocalWallets(db, ownerUid, remoteById);
-        }
-      } catch (e) {
-        report?.downloadErrors['wallets'] = e.toString();
-        debugPrint('SyncService: Error downloading wallets: $e');
-      }
-    }
-
-    // 2. Transactions (ưu tiên tải từ server, fallback về default source nếu mạng chập chờn)
-    if (stillValid()) {
-      try {
-        QuerySnapshot<Map<String, dynamic>> txSnapshot;
-        try {
-          txSnapshot = await _firestore
-              .collection('transactions')
-              .where('uid', isEqualTo: ownerUid)
-              .get(const GetOptions(source: Source.server))
-              .timeout(const Duration(seconds: 8));
-        } catch (_) {
-          txSnapshot = await _firestore
-              .collection('transactions')
-              .where('uid', isEqualTo: ownerUid)
-              .get()
-              .timeout(const Duration(seconds: 8));
-        }
-
-        final transactions = FirestoreParse.parseList(
-          txSnapshot.docs,
-          TransactionModel.fromFirestore,
-          tag: 'SyncService.transactions',
-        );
-
-        if (stillValid() && transactions.isNotEmpty) {
-          await _transactionRepo?.upsertFromFirestore(transactions);
-          report?.downloadSuccess['transactions'] = transactions.length;
-          await _recordSyncTimestamp(db, 'transactions', ownerUid, nowMs);
-          debugPrint(
-            'SyncService: Downloaded ${transactions.length} transactions',
+          final walletSnapshot = await _executeDeltaQuery(
+            baseQuery: _firestore
+                .collection('wallets')
+                .where('uid', isEqualTo: ownerUid),
+            lastSyncMs: lastWalletsTs,
+            entityName: 'wallets',
+            preferServer: true,
           );
-          transactionsDownloadOk = true;
-        } else if (!txSnapshot.metadata.isFromCache) {
-          report?.downloadSuccess['transactions'] = 0;
-          transactionsDownloadOk = true;
-        } else {
-          report?.downloadErrors['transactions'] =
-              'Transactions snapshot served from cache.';
-        }
 
-        // Self-healing backfill: tự động đẩy các giao dịch cục bộ bị thiếu trên Firestore
-        if (stillValid() && !txSnapshot.metadata.isFromCache) {
-          final remoteTxsById = {for (final t in transactions) t.id: t};
-          await _backfillMissingLocalTransactions(db, ownerUid, remoteTxsById);
-        }
-      } catch (e) {
-        report?.downloadErrors['transactions'] = e.toString();
-        debugPrint('SyncService: Error downloading transactions: $e');
-      }
-    }
+          final remoteWallets = FirestoreParse.parseList(
+            walletSnapshot.docs,
+            WalletModel.fromFirestore,
+            tag: 'SyncService.wallets',
+          );
 
-    // Đối soát và tái tạo ví bị thiếu ngay sau khi tải xong Wallets + Transactions
-    // để giao diện Home / Ví hiển thị đầy đủ ví & số dư lập tức mà không phải chờ các bảng phụ
-    if (stillValid() && (walletsDownloadOk || transactionsDownloadOk)) {
-      try {
-        await LedgerReconciliationService().reconcileAll(ownerUid);
-      } catch (e) {
-        debugPrint('SyncService: Early ledger reconciliation error: $e');
-      }
-    }
+          if (stillValid() && remoteWallets.isNotEmpty) {
+            await _walletRepo?.upsertFromFirestore(remoteWallets);
+            report?.downloadSuccess['wallets'] = remoteWallets.length;
+            final cursor = _computeNextSyncCursor(
+              remoteWallets.map((w) => w.updatedAt),
+              nowMs,
+            );
+            await _setLastSyncTimestamp(db, ownerUid, 'wallets', cursor);
+            walletsDownloadOk = true;
+          } else if (!walletSnapshot.metadata.isFromCache) {
+            report?.downloadSuccess['wallets'] = 0;
+            await _setLastSyncTimestamp(db, ownerUid, 'wallets', nowMs);
+            walletsDownloadOk = true;
+          } else {
+            report?.downloadErrors['wallets'] =
+                'Wallets snapshot served from cache.';
+          }
+
+          // Self-healing backfill chỉ chạy khi full sync (lastWalletsTs == 0)
+          if (stillValid() &&
+              lastWalletsTs == 0 &&
+              !walletSnapshot.metadata.isFromCache) {
+            final remoteById = {for (final w in remoteWallets) w.id: w};
+            await _backfillMissingLocalWallets(db, ownerUid, remoteById);
+          }
+        } catch (e) {
+          report?.downloadErrors['wallets'] = e.toString();
+          debugPrint('SyncService: Error downloading wallets: $e');
+        }
+      }(),
+
+      // 2. Transactions
+      () async {
+        if (!stillValid()) return;
+        try {
+          final txSnapshot = await _executeDeltaQuery(
+            baseQuery: _firestore
+                .collection('transactions')
+                .where('uid', isEqualTo: ownerUid),
+            lastSyncMs: lastTxTs,
+            entityName: 'transactions',
+            preferServer: true,
+          );
+
+          final transactions = FirestoreParse.parseList(
+            txSnapshot.docs,
+            TransactionModel.fromFirestore,
+            tag: 'SyncService.transactions',
+          );
+
+          if (stillValid() && transactions.isNotEmpty) {
+            await _transactionRepo?.upsertFromFirestore(transactions);
+            report?.downloadSuccess['transactions'] = transactions.length;
+            final cursor = _computeNextSyncCursor(
+              transactions.map((t) => t.updatedAt),
+              nowMs,
+            );
+            await _setLastSyncTimestamp(db, ownerUid, 'transactions', cursor);
+            transactionsDownloadOk = true;
+          } else if (!txSnapshot.metadata.isFromCache) {
+            report?.downloadSuccess['transactions'] = 0;
+            await _setLastSyncTimestamp(db, ownerUid, 'transactions', nowMs);
+            transactionsDownloadOk = true;
+          } else {
+            report?.downloadErrors['transactions'] =
+                'Transactions snapshot served from cache.';
+          }
+
+          // Self-healing backfill chỉ chạy khi full sync (lastTxTs == 0)
+          if (stillValid() &&
+              lastTxTs == 0 &&
+              !txSnapshot.metadata.isFromCache) {
+            final remoteTxsById = {for (final t in transactions) t.id: t};
+            await _backfillMissingLocalTransactions(
+              db,
+              ownerUid,
+              remoteTxsById,
+            );
+          }
+        } catch (e) {
+          report?.downloadErrors['transactions'] = e.toString();
+          debugPrint('SyncService: Error downloading transactions: $e');
+        }
+      }(),
+
+      // 3. Budgets
+      () async {
+        if (!stillValid()) return;
+        try {
+          final budgetSnapshot = await _executeDeltaQuery(
+            baseQuery: _firestore
+                .collection('budgets')
+                .where('uid', isEqualTo: ownerUid),
+            lastSyncMs: lastBudgetsTs,
+            entityName: 'budgets',
+          );
+          if (stillValid() && budgetSnapshot.docs.isNotEmpty) {
+            final budgets = FirestoreParse.parseList(
+              budgetSnapshot.docs,
+              BudgetModel.fromFirestore,
+              tag: 'SyncService.budgets',
+            );
+            await _budgetRepo?.upsertFromFirestore(budgets);
+            report?.downloadSuccess['budgets'] = budgets.length;
+            final cursor = _computeNextSyncCursor(
+              budgets.map((b) => b.updatedAt),
+              nowMs,
+            );
+            await _setLastSyncTimestamp(db, ownerUid, 'budgets', cursor);
+          } else {
+            report?.downloadSuccess['budgets'] = 0;
+            if (!budgetSnapshot.metadata.isFromCache) {
+              await _setLastSyncTimestamp(db, ownerUid, 'budgets', nowMs);
+            }
+          }
+        } catch (e) {
+          report?.downloadErrors['budgets'] = e.toString();
+          debugPrint('SyncService: Error downloading budgets: $e');
+        }
+      }(),
+
+      // 4. Goals
+      () async {
+        if (!stillValid()) return;
+        try {
+          final goalSnapshot = await _executeDeltaQuery(
+            baseQuery: _firestore
+                .collection('goals')
+                .where('uid', isEqualTo: ownerUid),
+            lastSyncMs: lastGoalsTs,
+            entityName: 'goals',
+          );
+          if (stillValid() && goalSnapshot.docs.isNotEmpty) {
+            final goals = FirestoreParse.parseList(
+              goalSnapshot.docs,
+              GoalModel.fromFirestore,
+              tag: 'SyncService.goals',
+            );
+            await _goalRepo?.upsertFromFirestore(goals);
+            report?.downloadSuccess['goals'] = goals.length;
+            final cursor = _computeNextSyncCursor(
+              goals.map((g) => g.updatedAt),
+              nowMs,
+            );
+            await _setLastSyncTimestamp(db, ownerUid, 'goals', cursor);
+          } else {
+            report?.downloadSuccess['goals'] = 0;
+            if (!goalSnapshot.metadata.isFromCache) {
+              await _setLastSyncTimestamp(db, ownerUid, 'goals', nowMs);
+            }
+          }
+        } catch (e) {
+          report?.downloadErrors['goals'] = e.toString();
+          debugPrint('SyncService: Error downloading goals: $e');
+        }
+      }(),
+
+      // 5. User profile
+      () async {
+        if (!stillValid()) return;
+        try {
+          final userDoc = await _firestore
+              .collection('users')
+              .doc(ownerUid)
+              .get()
+              .timeout(const Duration(seconds: 8));
+          if (stillValid() && userDoc.exists) {
+            final user = UserModel.fromFirestore(userDoc);
+            await _userRepo?.upsertFromFirestore(user);
+            report?.downloadSuccess['users'] = 1;
+            await _setLastSyncTimestamp(db, ownerUid, 'users', nowMs);
+          } else {
+            report?.downloadSuccess['users'] = 0;
+          }
+        } catch (e) {
+          report?.downloadErrors['users'] = e.toString();
+          debugPrint('SyncService: Error downloading user profile: $e');
+        }
+      }(),
+
+      // 6. Notifications
+      () async {
+        if (!stillValid()) return;
+        try {
+          final notiSnapshot = await _executeDeltaQuery(
+            baseQuery: _firestore
+                .collection('notifications')
+                .where('uid', isEqualTo: ownerUid),
+            lastSyncMs: lastNotiTs,
+            entityName: 'notifications',
+          );
+          if (stillValid() && notiSnapshot.docs.isNotEmpty) {
+            final notifications = FirestoreParse.parseList(
+              notiSnapshot.docs,
+              NotificationModel.fromFirestore,
+              tag: 'SyncService.notifications',
+            );
+            await _notificationRepo?.upsertFromFirestore(notifications);
+            report?.downloadSuccess['notifications'] = notifications.length;
+            final cursor = _computeNextSyncCursor(
+              notifications.map((n) => n.updatedAt ?? n.createdAt),
+              nowMs,
+            );
+            await _setLastSyncTimestamp(db, ownerUid, 'notifications', cursor);
+          } else {
+            report?.downloadSuccess['notifications'] = 0;
+            if (!notiSnapshot.metadata.isFromCache) {
+              await _setLastSyncTimestamp(
+                db,
+                ownerUid,
+                'notifications',
+                nowMs,
+              );
+            }
+          }
+        } catch (e) {
+          report?.downloadErrors['notifications'] = e.toString();
+          debugPrint('SyncService: Error downloading notifications: $e');
+        }
+      }(),
+
+      // 7. Messages
+      () async {
+        if (!stillValid()) return;
+        try {
+          final msgSnapshot = await _executeDeltaQuery(
+            baseQuery: _firestore
+                .collection('messages')
+                .where('uid', isEqualTo: ownerUid),
+            lastSyncMs: lastMsgTs,
+            entityName: 'messages',
+          );
+          if (stillValid() && msgSnapshot.docs.isNotEmpty) {
+            final messages = FirestoreParse.parseList(
+              msgSnapshot.docs,
+              MessageModel.fromFirestore,
+              tag: 'SyncService.messages',
+            );
+            await _messageRepo?.upsertFromFirestore(messages);
+            report?.downloadSuccess['messages'] = messages.length;
+            final cursor = _computeNextSyncCursor(
+              messages.map((m) => m.updatedAt ?? m.createdAt),
+              nowMs,
+            );
+            await _setLastSyncTimestamp(db, ownerUid, 'messages', cursor);
+          } else {
+            report?.downloadSuccess['messages'] = 0;
+            if (!msgSnapshot.metadata.isFromCache) {
+              await _setLastSyncTimestamp(db, ownerUid, 'messages', nowMs);
+            }
+          }
+        } catch (e) {
+          report?.downloadErrors['messages'] = e.toString();
+          debugPrint('SyncService: Error downloading messages: $e');
+        }
+      }(),
+
+      // 8. Groups (Quỹ nhóm mà user là thành viên)
+      () async {
+        if (!stillValid()) return;
+        try {
+          final groupSnapshot = await _executeDeltaQuery(
+            baseQuery: _firestore
+                .collection('groups')
+                .where('memberIds', arrayContains: ownerUid),
+            lastSyncMs: lastGroupsTs,
+            entityName: 'groups',
+          );
+          if (stillValid() && groupSnapshot.docs.isNotEmpty) {
+            final groups = FirestoreParse.parseList(groupSnapshot.docs, (doc) {
+              final d = Map<String, dynamic>.from(
+                doc.data() as Map<String, dynamic>? ?? {},
+              );
+              d['id'] = doc.id;
+              return GroupModel.fromJson(d);
+            }, tag: 'SyncService.groups');
+            await _groupRepo?.upsertFromFirestore(groups);
+            userGroupIds.addAll(
+              groups.where((g) => !g.isDeleted).map((g) => g.id),
+            );
+            report?.downloadSuccess['groups'] = groups.length;
+            final cursor = _computeNextSyncCursor(
+              groups.map((g) => g.updatedAt),
+              nowMs,
+            );
+            await _setLastSyncTimestamp(db, ownerUid, 'groups', cursor);
+          } else {
+            report?.downloadSuccess['groups'] = 0;
+            if (!groupSnapshot.metadata.isFromCache) {
+              await _setLastSyncTimestamp(db, ownerUid, 'groups', nowMs);
+            }
+          }
+
+          // Nếu là Delta Sync, lấy thêm danh sách nhóm đang hoạt động từ SQLite cục bộ để sync expenses/settlements mới
+          if (lastGroupsTs > 0 || userGroupIds.isEmpty) {
+            final localGroups = await db.query(
+              'groups',
+              columns: ['id'],
+              where: 'isDeleted = 0',
+            );
+            for (final r in localGroups) {
+              final gid = r['id'] as String?;
+              if (gid != null && gid.isNotEmpty) userGroupIds.add(gid);
+            }
+          }
+        } catch (e) {
+          report?.downloadErrors['groups'] = e.toString();
+          debugPrint('SyncService: Error downloading groups: $e');
+        }
+      }(),
+    ]);
 
     // Nếu quá trình backfill/healing vừa thêm ví hoặc giao dịch vào sync_queue, đẩy lên Firestore ngay
     if (stillValid() && _pendingResync) {
@@ -3353,241 +3751,115 @@ class SyncService implements ISyncService {
       }
     }
 
-    // 3. Budgets
-    if (stillValid()) {
-      try {
-        final budgetSnapshot = await _firestore
-            .collection('budgets')
-            .where('uid', isEqualTo: ownerUid)
-            .get()
-            .timeout(const Duration(seconds: 8));
-        if (stillValid() && budgetSnapshot.docs.isNotEmpty) {
-          final budgets = FirestoreParse.parseList(
-            budgetSnapshot.docs,
-            BudgetModel.fromFirestore,
-            tag: 'SyncService.budgets',
-          );
-          await _budgetRepo?.upsertFromFirestore(budgets);
-          report?.downloadSuccess['budgets'] = budgets.length;
-          await _recordSyncTimestamp(db, 'budgets', ownerUid, nowMs);
-          debugPrint('SyncService: Downloaded ${budgets.length} budgets');
-        } else {
-          report?.downloadSuccess['budgets'] = 0;
-        }
-      } catch (e) {
-        report?.downloadErrors['budgets'] = e.toString();
-        debugPrint('SyncService: Error downloading budgets: $e');
-      }
-    }
-
-    // 4. Goals
-    if (stillValid()) {
-      try {
-        final goalSnapshot = await _firestore
-            .collection('goals')
-            .where('uid', isEqualTo: ownerUid)
-            .get()
-            .timeout(const Duration(seconds: 8));
-        if (stillValid() && goalSnapshot.docs.isNotEmpty) {
-          final goals = FirestoreParse.parseList(
-            goalSnapshot.docs,
-            GoalModel.fromFirestore,
-            tag: 'SyncService.goals',
-          );
-          await _goalRepo?.upsertFromFirestore(goals);
-          report?.downloadSuccess['goals'] = goals.length;
-          await _recordSyncTimestamp(db, 'goals', ownerUid, nowMs);
-          debugPrint('SyncService: Downloaded ${goals.length} goals');
-        } else {
-          report?.downloadSuccess['goals'] = 0;
-        }
-      } catch (e) {
-        report?.downloadErrors['goals'] = e.toString();
-        debugPrint('SyncService: Error downloading goals: $e');
-      }
-    }
-
-    // 5. User profile
-    if (stillValid()) {
-      try {
-        final userDoc = await _firestore
-            .collection('users')
-            .doc(ownerUid)
-            .get()
-            .timeout(const Duration(seconds: 8));
-        if (stillValid() && userDoc.exists) {
-          final user = UserModel.fromFirestore(userDoc);
-          await _userRepo?.upsertFromFirestore(user);
-          report?.downloadSuccess['users'] = 1;
-          await _recordSyncTimestamp(db, 'users', ownerUid, nowMs);
-          debugPrint('SyncService: Downloaded user profile');
-        } else {
-          report?.downloadSuccess['users'] = 0;
-        }
-      } catch (e) {
-        report?.downloadErrors['users'] = e.toString();
-        debugPrint('SyncService: Error downloading user profile: $e');
-      }
-    }
-
-    // 6. Notifications
-    if (stillValid()) {
-      try {
-        final notiSnapshot = await _firestore
-            .collection('notifications')
-            .where('uid', isEqualTo: ownerUid)
-            .get()
-            .timeout(const Duration(seconds: 8));
-        if (stillValid() && notiSnapshot.docs.isNotEmpty) {
-          final notifications = FirestoreParse.parseList(
-            notiSnapshot.docs,
-            NotificationModel.fromFirestore,
-            tag: 'SyncService.notifications',
-          );
-          await _notificationRepo?.upsertFromFirestore(notifications);
-          report?.downloadSuccess['notifications'] = notifications.length;
-          await _recordSyncTimestamp(db, 'notifications', ownerUid, nowMs);
-          debugPrint(
-            'SyncService: Downloaded ${notifications.length} notifications',
-          );
-        } else {
-          report?.downloadSuccess['notifications'] = 0;
-        }
-      } catch (e) {
-        report?.downloadErrors['notifications'] = e.toString();
-        debugPrint('SyncService: Error downloading notifications: $e');
-      }
-    }
-
-    // 7. Messages
-    if (stillValid()) {
-      try {
-        final msgSnapshot = await _firestore
-            .collection('messages')
-            .where('uid', isEqualTo: ownerUid)
-            .get()
-            .timeout(const Duration(seconds: 8));
-        if (stillValid() && msgSnapshot.docs.isNotEmpty) {
-          final messages = FirestoreParse.parseList(
-            msgSnapshot.docs,
-            MessageModel.fromFirestore,
-            tag: 'SyncService.messages',
-          );
-          await _messageRepo?.upsertFromFirestore(messages);
-          report?.downloadSuccess['messages'] = messages.length;
-          await _recordSyncTimestamp(db, 'messages', ownerUid, nowMs);
-          debugPrint('SyncService: Downloaded ${messages.length} messages');
-        } else {
-          report?.downloadSuccess['messages'] = 0;
-        }
-      } catch (e) {
-        report?.downloadErrors['messages'] = e.toString();
-        debugPrint('SyncService: Error downloading messages: $e');
-      }
-    }
-
-    // 8. Groups (Quỹ nhóm mà user là thành viên)
-    final userGroupIds = <String>[];
-    if (stillValid()) {
-      try {
-        final groupSnapshot = await _firestore
-            .collection('groups')
-            .where('memberIds', arrayContains: ownerUid)
-            .get()
-            .timeout(const Duration(seconds: 8));
-        if (stillValid() && groupSnapshot.docs.isNotEmpty) {
-          final groups = FirestoreParse.parseList(groupSnapshot.docs, (doc) {
-            final d = Map<String, dynamic>.from(
-              doc.data() as Map<String, dynamic>? ?? {},
-            );
-            d['id'] = doc.id;
-            return GroupModel.fromJson(d);
-          }, tag: 'SyncService.groups');
-          await _groupRepo?.upsertFromFirestore(groups);
-          userGroupIds.addAll(
-            groups.where((g) => !g.isDeleted).map((g) => g.id),
-          );
-          report?.downloadSuccess['groups'] = groups.length;
-          await _recordSyncTimestamp(db, 'groups', ownerUid, nowMs);
-          debugPrint('SyncService: Downloaded ${groups.length} groups');
-        } else {
-          report?.downloadSuccess['groups'] = 0;
-        }
-      } catch (e) {
-        report?.downloadErrors['groups'] = e.toString();
-        debugPrint('SyncService: Error downloading groups: $e');
-      }
-    }
-
-    // 9. Group Expenses & Settlements (Theo từng nhóm đã tham gia, chia chunk 10)
+    // Giai đoạn 2: Group Expenses & Settlements (chạy song song các chunk 10 nhóm bằng Future.wait)
     if (stillValid() && userGroupIds.isNotEmpty) {
+      final groupIdList = userGroupIds.toList();
       const chunkSize = 10;
-      for (var i = 0; i < userGroupIds.length; i += chunkSize) {
-        if (!stillValid()) break;
-        final chunk = userGroupIds.sublist(
+      final chunkFutures = <Future<void>>[];
+      var maxExpenseCursor = nowMs;
+      var maxSettlementCursor = nowMs;
+
+      for (var i = 0; i < groupIdList.length; i += chunkSize) {
+        final chunkIndex = i;
+        final chunk = groupIdList.sublist(
           i,
-          min(i + chunkSize, userGroupIds.length),
+          min(i + chunkSize, groupIdList.length),
         );
-
-        try {
-          // Expenses
-          final expenseSnapshot = await _firestore
-              .collection('expenses')
-              .where('groupId', whereIn: chunk)
-              .get()
-              .timeout(const Duration(seconds: 8));
-          if (stillValid() && expenseSnapshot.docs.isNotEmpty) {
-            final expenses = FirestoreParse.parseList(expenseSnapshot.docs, (
-              doc,
-            ) {
-              final d = Map<String, dynamic>.from(
-                doc.data() as Map<String, dynamic>? ?? {},
-              );
-              d['id'] = doc.id;
-              return ExpenseModel.fromJson(d);
-            }, tag: 'SyncService.group_expenses');
-            await _expenseRepo?.upsertFromFirestore(expenses);
-            report?.downloadSuccess['group_expenses'] =
-                (report.downloadSuccess['group_expenses'] ?? 0) +
-                expenses.length;
-          }
-
-          // Settlements
-          final settlementSnapshot = await _firestore
-              .collection('settlements')
-              .where('groupId', whereIn: chunk)
-              .get()
-              .timeout(const Duration(seconds: 8));
-          if (stillValid() && settlementSnapshot.docs.isNotEmpty) {
-            final settlements = FirestoreParse.parseList(
-              settlementSnapshot.docs,
-              (doc) {
-                final d = Map<String, dynamic>.from(
-                  doc.data() as Map<String, dynamic>? ?? {},
+        chunkFutures.add(() async {
+          if (!stillValid()) return;
+          try {
+            await Future.wait([
+              () async {
+                final expenseSnapshot = await _executeDeltaQuery(
+                  baseQuery: _firestore
+                      .collection('expenses')
+                      .where('groupId', whereIn: chunk),
+                  lastSyncMs: lastExpensesTs,
+                  entityName: 'expenses',
                 );
-                d['id'] = doc.id;
-                return SettlementModel.fromJson(d);
-              },
-              tag: 'SyncService.group_settlements',
+                if (stillValid() && expenseSnapshot.docs.isNotEmpty) {
+                  final expenses = FirestoreParse.parseList(
+                    expenseSnapshot.docs,
+                    (doc) {
+                      final d = Map<String, dynamic>.from(
+                        doc.data() as Map<String, dynamic>? ?? {},
+                      );
+                      d['id'] = doc.id;
+                      return ExpenseModel.fromJson(d);
+                    },
+                    tag: 'SyncService.group_expenses',
+                  );
+                  await _expenseRepo?.upsertFromFirestore(expenses);
+                  report?.downloadSuccess['group_expenses'] =
+                      (report.downloadSuccess['group_expenses'] ?? 0) +
+                      expenses.length;
+                  maxExpenseCursor = max(
+                    maxExpenseCursor,
+                    _computeNextSyncCursor(
+                      expenses.map((e) => e.updatedAt),
+                      nowMs,
+                    ),
+                  );
+                }
+              }(),
+              () async {
+                final settlementSnapshot = await _executeDeltaQuery(
+                  baseQuery: _firestore
+                      .collection('settlements')
+                      .where('groupId', whereIn: chunk),
+                  lastSyncMs: lastSettlementsTs,
+                  entityName: 'settlements',
+                );
+                if (stillValid() && settlementSnapshot.docs.isNotEmpty) {
+                  final settlements = FirestoreParse.parseList(
+                    settlementSnapshot.docs,
+                    (doc) {
+                      final d = Map<String, dynamic>.from(
+                        doc.data() as Map<String, dynamic>? ?? {},
+                      );
+                      d['id'] = doc.id;
+                      return SettlementModel.fromJson(d);
+                    },
+                    tag: 'SyncService.group_settlements',
+                  );
+                  await _settlementRepo?.upsertFromFirestore(settlements);
+                  report?.downloadSuccess['group_settlements'] =
+                      (report.downloadSuccess['group_settlements'] ?? 0) +
+                      settlements.length;
+                  maxSettlementCursor = max(
+                    maxSettlementCursor,
+                    _computeNextSyncCursor(
+                      settlements.map((s) => s.updatedAt),
+                      nowMs,
+                    ),
+                  );
+                }
+              }(),
+            ]);
+          } catch (e) {
+            report?.downloadErrors['group_expenses_chunk_$chunkIndex'] = e
+                .toString();
+            debugPrint(
+              'SyncService: Error downloading group expenses/settlements chunk $chunkIndex: $e',
             );
-            await _settlementRepo?.upsertFromFirestore(settlements);
-            report?.downloadSuccess['group_settlements'] =
-                (report.downloadSuccess['group_settlements'] ?? 0) +
-                settlements.length;
           }
-        } catch (e) {
-          report?.downloadErrors['group_expenses_chunk_$i'] = e.toString();
-          debugPrint(
-            'SyncService: Error downloading group expenses/settlements chunk $i: $e',
-          );
-        }
+        }());
       }
-      await _recordSyncTimestamp(db, 'group_expenses', ownerUid, nowMs);
-      await _recordSyncTimestamp(db, 'group_settlements', ownerUid, nowMs);
+
+      await Future.wait(chunkFutures);
+      await Future.wait([
+        _setLastSyncTimestamp(db, ownerUid, 'group_expenses', maxExpenseCursor),
+        _setLastSyncTimestamp(
+          db,
+          ownerUid,
+          'group_settlements',
+          maxSettlementCursor,
+        ),
+      ]);
     }
 
-    // 10. Ledger Reconciliation: Chỉ đối soát khi CẢ wallets và transactions tải thành công
-    if (stillValid() && walletsDownloadOk && transactionsDownloadOk) {
+    // 10. Ledger Reconciliation: Chỉ đối soát khi wallets hoặc transactions vừa tải thành công
+    if (stillValid() && (walletsDownloadOk || transactionsDownloadOk)) {
       try {
         await LedgerReconciliationService().reconcileAll(ownerUid);
         debugPrint(
@@ -3720,6 +3992,20 @@ class SyncService implements ISyncService {
                     tag: 'SyncService.rt.transactions',
                   );
                   await _transactionRepo?.upsertFromFirestore(transactions);
+                  if (!snapshot.metadata.isFromCache && transactions.isNotEmpty) {
+                    final cursor = _computeNextSyncCursor(
+                      transactions.map((t) => t.updatedAt),
+                      DateTime.now().millisecondsSinceEpoch,
+                    );
+                    unawaited(
+                      _setLastSyncTimestamp(
+                        null,
+                        ownerUid,
+                        'transactions',
+                        cursor,
+                      ),
+                    );
+                  }
                 }
                 if (removedIds.isNotEmpty) {
                   await _softDeleteRemovedFromRealtime(
@@ -3760,6 +4046,15 @@ class SyncService implements ISyncService {
                     tag: 'SyncService.rt.wallets',
                   );
                   await _walletRepo?.upsertFromFirestore(wallets);
+                  if (!snapshot.metadata.isFromCache && wallets.isNotEmpty) {
+                    final cursor = _computeNextSyncCursor(
+                      wallets.map((w) => w.updatedAt),
+                      DateTime.now().millisecondsSinceEpoch,
+                    );
+                    unawaited(
+                      _setLastSyncTimestamp(null, ownerUid, 'wallets', cursor),
+                    );
+                  }
                 }
                 if (removedIds.isNotEmpty) {
                   await _softDeleteRemovedFromRealtime(

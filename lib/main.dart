@@ -104,7 +104,21 @@ void main() async {
   // Đợi các dịch vụ cục bộ hoàn tất song song
   await localInitFutures;
 
-  // ═══ 3. Khởi tạo Repositories & Sync Service ═══
+  // ═══ 3. Khởi tạo Session & Auth trước SyncService để authStateChanges() khớp phiên ngay ═══
+  final authService = AuthService();
+  final currentUser = FirebaseAuth.instance.currentUser;
+  String? activeUid = currentUser?.uid;
+  if (activeUid != null) {
+    SessionManager.instance.activate(activeUid);
+    authService.setOnlineUid(activeUid);
+  } else {
+    activeUid = await authService.initOfflineSession();
+    if (activeUid != null && SessionManager.instance.uidOrNull != activeUid) {
+      SessionManager.instance.activate(activeUid);
+    }
+  }
+
+  // ═══ 4. Khởi tạo Repositories & Sync Service ═══
   final transactionRepo = TransactionRepository();
   final walletRepo = WalletRepository();
   final userRepo = UserRepository();
@@ -120,42 +134,32 @@ void main() async {
     messageRepo: messageRepo,
   );
 
-  // ═══ 4. Khởi tạo Session & Auth ═══
-  final authService = AuthService();
-  final currentUser = FirebaseAuth.instance.currentUser;
-  String? activeUid = currentUser?.uid;
-  if (activeUid != null) {
-    authService.setOnlineUid(activeUid);
-  } else {
-    activeUid = await authService.initOfflineSession();
-  }
-
-  if (activeUid != null && SessionManager.instance.uidOrNull != activeUid) {
-    SessionManager.instance.activate(activeUid);
-  }
-
   // Lắng nghe màu/biểu tượng danh mục user tuỳ chỉnh (áp dụng toàn app)
   CategoryStyleService.ensureInitialized();
 
-  // Khởi động các dịch vụ chạy ngầm sau khi UI đã sẵn sàng
+  // Kích hoạt Sync Engine ngay lập tức không chờ các dịch vụ phụ
+  if (currentUser != null) {
+    syncService.startRealtimeListeners();
+    unawaited(syncService.initialDownload(currentUser.uid));
+    unawaited(FirestoreService().ensureCurrentDeviceRegistered());
+  } else if (activeUid != null) {
+    final uidToSync = activeUid;
+    unawaited(() async {
+      final reauthed = await authService.silentReauthenticateIfNeeded();
+      if (reauthed) {
+        syncService.startRealtimeListeners();
+        unawaited(syncService.initialDownload(uidToSync));
+        unawaited(FirestoreService().ensureCurrentDeviceRegistered());
+      }
+    }());
+  }
+
+  // Khởi động các dịch vụ phụ chạy ngầm sau khi UI & Sync đã sẵn sàng
   Future.microtask(() async {
     try {
       await LocalNotificationService.instance.init();
       await AppWidgetService.instance.init();
       MidnightSyncService.instance.init();
-
-      if (currentUser != null) {
-        unawaited(syncService.initialDownload(currentUser.uid));
-        syncService.startRealtimeListeners();
-        unawaited(FirestoreService().ensureCurrentDeviceRegistered());
-      } else if (activeUid != null) {
-        final reauthed = await authService.silentReauthenticateIfNeeded();
-        if (reauthed) {
-          unawaited(syncService.initialDownload(activeUid));
-          syncService.startRealtimeListeners();
-          unawaited(FirestoreService().ensureCurrentDeviceRegistered());
-        }
-      }
     } catch (e) {
       debugPrint('Background services init error: $e');
     }
@@ -173,14 +177,37 @@ class MyApp extends ConsumerStatefulWidget {
   ConsumerState<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends ConsumerState<MyApp> {
+class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
   String? _groupIdToJoin;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     AppWidgetService.instance.setNavigatorKey(widget.navigatorKey);
     _checkInitialRoute();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final uid =
+          SessionManager.instance.uidOrNull ??
+          FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        if (SessionManager.instance.uidOrNull == null) {
+          SessionManager.instance.activate(uid);
+        }
+        SyncService().ensureRealtimeListenersActive();
+        unawaited(SyncService().syncAll());
+      }
+    }
   }
 
   void _checkInitialRoute() async {

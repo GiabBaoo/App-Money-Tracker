@@ -35,6 +35,9 @@ class _WalletScreenState extends State<WalletScreen>
   bool get isVi => LanguageService.instance.isVietnamese;
   final WalletRepository _walletRepo = WalletRepository();
   final TransactionRepository _txRepo = TransactionRepository();
+  late final Stream<List<WalletModel>> _walletsStream;
+  late final Stream<double> _totalBalanceStream;
+  late final Stream<List<TransactionModel>> _transactionsStream;
 
   late final ScrollController _scrollController;
   late final ScrollController _cardScrollController;
@@ -49,6 +52,9 @@ class _WalletScreenState extends State<WalletScreen>
   @override
   void initState() {
     super.initState();
+    _walletsStream = _walletRepo.getWalletsStream();
+    _totalBalanceStream = _walletRepo.getTotalBalanceStream();
+    _transactionsStream = _txRepo.getTransactionsStream();
     _scrollController = ScrollController();
     _cardScrollController = ScrollController();
     _pillsScrollController = ScrollController();
@@ -172,7 +178,7 @@ class _WalletScreenState extends State<WalletScreen>
               children: [
                 // === 2.1. CỤM TỔNG TÀI SẢN & THAO TÁC CÔNG THÁI HỌC (THUMB ZONE) ===
                 StreamBuilder<List<WalletModel>>(
-                  stream: _walletRepo.getWalletsStream(),
+                  stream: _walletsStream,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting &&
                         !snapshot.hasData) {
@@ -386,7 +392,7 @@ class _WalletScreenState extends State<WalletScreen>
                             alignment: Alignment.centerLeft,
                             key: const ValueKey('sticky_mini_balance'),
                             child: StreamBuilder<double>(
-                              stream: _walletRepo.getTotalBalanceStream(),
+                              stream: _totalBalanceStream,
                               builder: (context, snapshot) {
                                 final totalBalance = snapshot.data ?? 0.0;
                                 return Container(
@@ -1048,7 +1054,7 @@ class _WalletScreenState extends State<WalletScreen>
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: StreamBuilder<List<TransactionModel>>(
-          stream: _txRepo.getTransactionsStream(),
+          stream: _transactionsStream,
           builder: (context, snapshot) {
             final allTx = snapshot.data ?? [];
             final thisMonthTx = allTx
@@ -1306,7 +1312,7 @@ class _WalletScreenState extends State<WalletScreen>
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: StreamBuilder<List<TransactionModel>>(
-          stream: _txRepo.getTransactionsStream(),
+          stream: _transactionsStream,
           builder: (context, snapshot) {
             final allTx = snapshot.data ?? [];
             final filteredTx = _selectedWalletId == null

@@ -408,50 +408,68 @@ class GoalRepository with OwnedTableOps {
     }
   }
 
-  /// Upsert danh sách mục tiêu từ Firestore vào SQLite (áp dụng Local Dirty Shield và Soft Delete)
+  /// Upsert danh sách mục tiêu từ Firestore vào SQLite theo batch (áp dụng Local Dirty Shield và Soft Delete)
   Future<void> upsertFromFirestore(List<GoalModel> firestoreGoals) async {
     final currentUid = session.uidOrNull;
     if (currentUid == null || firestoreGoals.isEmpty) return;
+
+    final ownedGoals = firestoreGoals
+        .where((fg) => fg.uid == currentUid && fg.id.isNotEmpty)
+        .toList();
+    if (ownedGoals.isEmpty) return;
+
     final db = await _dbHelper.database;
+    var hasChanges = false;
 
     await db.transaction((txn) async {
-      for (final fg in firestoreGoals) {
-        if (fg.uid != currentUid) continue;
+      final queueRows = await txn.query(
+        'sync_queue',
+        columns: ['recordId'],
+        where:
+            'tableName = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
+        whereArgs: ['goals', currentUid, currentUid, 'pending', 'processing'],
+      );
+      final pendingIds = <String>{
+        for (final r in queueRows)
+          if (r['recordId'] is String) r['recordId'] as String,
+      };
 
-        // 1. Dirty Shield: kiểm tra sync_queue
-        final queuePending = await txn.query(
-          'sync_queue',
-          columns: ['id'],
-          where:
-              'tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
-          whereArgs: [
-            'goals',
-            fg.id,
-            currentUid,
-            currentUid,
-            'pending',
-            'processing',
-          ],
-          limit: 1,
+      final existingById = <String, Map<String, Object?>>{};
+      final ids = ownedGoals.map((g) => g.id).toSet().toList();
+      const chunkSize = 450;
+      for (var i = 0; i < ids.length; i += chunkSize) {
+        final chunk = ids.sublist(
+          i,
+          i + chunkSize > ids.length ? ids.length : i + chunkSize,
         );
-        if (queuePending.isNotEmpty) continue;
-
-        final existing = await txn.query(
+        final placeholders = List.filled(chunk.length, '?').join(',');
+        final rows = await txn.query(
           'goals',
-          where: 'id = ? AND uid = ?',
-          whereArgs: [fg.id, currentUid],
-          limit: 1,
+          where: 'uid = ? AND id IN ($placeholders)',
+          whereArgs: [currentUid, ...chunk],
         );
+        for (final row in rows) {
+          final id = row['id'] as String?;
+          if (id != null) existingById[id] = row;
+        }
+      }
 
-        if (existing.isEmpty) {
+      final batch = txn.batch();
+      for (final fg in ownedGoals) {
+        if (pendingIds.contains(fg.id)) continue;
+
+        final existingRow = existingById[fg.id];
+        if (existingRow == null) {
           if (!fg.isDeleted) {
-            await txn.insert(
+            batch.insert(
               'goals',
               fg.copyWith(syncStatus: 'synced').toSqlite(),
+              conflictAlgorithm: ConflictAlgorithm.replace,
             );
+            hasChanges = true;
           }
         } else {
-          final local = GoalModel.fromSqlite(existing.first);
+          final local = GoalModel.fromSqlite(existingRow);
           if (local.syncStatus == 'pending') continue; // Dirty Shield
 
           // Monotonic Delete Rule
@@ -481,7 +499,7 @@ class GoalRepository with OwnedTableOps {
                       ? fg.updatedAt.millisecondsSinceEpoch
                       : remoteDeletedMs;
 
-              await txn.update(
+              batch.update(
                 'goals',
                 {
                   'isDeleted': 1,
@@ -493,19 +511,26 @@ class GoalRepository with OwnedTableOps {
                 whereArgs: [fg.id, currentUid],
               );
             } else {
-              await txn.update(
+              batch.update(
                 'goals',
                 fg.copyWith(syncStatus: 'synced').toSqlite(),
                 where: 'id = ? AND uid = ?',
                 whereArgs: [fg.id, currentUid],
               );
             }
+            hasChanges = true;
           }
         }
       }
+
+      if (hasChanges) {
+        await batch.commit(noResult: true);
+      }
     });
 
-    await _notifyChanged();
+    if (hasChanges) {
+      await _notifyChanged();
+    }
   }
 
   /// Upsert an toàn tuân thủ ISyncableRepository

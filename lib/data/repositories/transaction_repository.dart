@@ -523,30 +523,36 @@ class TransactionRepository with OwnedTableOps {
   // ════════ QUERIES ════════
 
   /// Stream danh sách giao dịch — phát dữ liệu từ cache và lắng nghe broadcast sự kiện thay đổi
-  Stream<List<TransactionModel>> getTransactionsStream({int? limit}) async* {
-    if (_cachedTransactions.isNotEmpty) {
-      yield latestTransactions;
-    }
-    yield await getAllTransactions(limit: limit);
-    await for (final _ in _changeStream.stream) {
+  Stream<List<TransactionModel>> getTransactionsStream({int? limit}) {
+    return (() async* {
+      if (_cachedTransactions.isNotEmpty) {
+        yield limit != null
+            ? _cachedTransactions.take(limit).toList()
+            : latestTransactions;
+      }
       yield await getAllTransactions(limit: limit);
-    }
+      await for (final list in _transactionsController.stream) {
+        yield limit != null ? list.take(limit).toList() : list;
+      }
+    })().asBroadcastStream(onCancel: (sub) => sub.cancel());
   }
 
   /// Stream tổng số dư, tổng thu, tổng chi
   Stream<({double balance, double totalIncome, double totalExpense})>
-  getBalanceStream() async* {
-    yield await _calculateBalance();
-    await for (final _ in _changeStream.stream) {
+  getBalanceStream() {
+    return (() async* {
       yield await _calculateBalance();
-    }
+      await for (final _ in _changeStream.stream) {
+        yield await _calculateBalance();
+      }
+    })().asBroadcastStream(onCancel: (sub) => sub.cancel());
   }
 
   /// Stream các giao dịch có ảnh (dùng cho Gallery)
   Stream<List<TransactionModel>> getTransactionsWithPhotosStream() {
-    return getTransactionsStream().map(
-      (list) => list.where((tx) => tx.hasPhoto).toList(),
-    );
+    return getTransactionsStream()
+        .map((list) => list.where((tx) => tx.hasPhoto).toList())
+        .asBroadcastStream(onCancel: (sub) => sub.cancel());
   }
 
   /// Tải danh sách giao dịch một lần (không stream)
@@ -633,50 +639,68 @@ class TransactionRepository with OwnedTableOps {
 
   // ════════ BULK OPERATIONS (dùng cho Sync) ════════
 
-  /// Upsert nhiều giao dịch từ Firestore (áp dụng Local Dirty Shield và Soft Delete)
+  /// Upsert nhiều giao dịch từ Firestore theo batch (áp dụng Local Dirty Shield và Soft Delete)
   Future<void> upsertFromFirestore(List<TransactionModel> transactions) async {
     final currentUid = session.uidOrNull;
     if (currentUid == null || transactions.isEmpty) return;
+
+    final ownedTxs = transactions
+        .where((tx) => tx.uid == currentUid && tx.id.isNotEmpty)
+        .toList();
+    if (ownedTxs.isEmpty) return;
+
     final db = await _dbHelper.database;
+    var hasChanges = false;
 
     await db.transaction((txn) async {
-      for (final tx in transactions) {
-        if (tx.uid != currentUid) continue;
+      // 1. Preload toàn bộ recordId đang pending/processing trong sync_queue (1 query thay vì N queries)
+      final queueRows = await txn.query(
+        'sync_queue',
+        columns: ['recordId'],
+        where:
+            'tableName = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
+        whereArgs: ['transactions', currentUid, currentUid, 'pending', 'processing'],
+      );
+      final pendingIds = <String>{
+        for (final r in queueRows)
+          if (r['recordId'] is String) r['recordId'] as String,
+      };
 
-        // 1. Kiểm tra Local Dirty Shield: nếu bản ghi đang chờ upload thì bỏ qua
-        final queuePending = await txn.query(
-          'sync_queue',
-          columns: ['id'],
-          where:
-              'tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
-          whereArgs: [
-            'transactions',
-            tx.id,
-            currentUid,
-            currentUid,
-            'pending',
-            'processing',
-          ],
-          limit: 1,
-        );
-        if (queuePending.isNotEmpty) continue;
-
-        final existing = await txn.query(
+      // 2. Preload bản ghi local hiện có theo từng chunk 450 ID (tránh giới hạn 999 bind params)
+      final existingById = <String, Map<String, Object?>>{};
+      final ids = ownedTxs.map((t) => t.id).toSet().toList();
+      const chunkSize = 450;
+      for (var i = 0; i < ids.length; i += chunkSize) {
+        final chunk = ids.sublist(i, i + chunkSize > ids.length ? ids.length : i + chunkSize);
+        final placeholders = List.filled(chunk.length, '?').join(',');
+        final rows = await txn.query(
           'transactions',
-          where: 'id = ? AND uid = ?',
-          whereArgs: [tx.id, currentUid],
-          limit: 1,
+          where: 'uid = ? AND id IN ($placeholders)',
+          whereArgs: [currentUid, ...chunk],
         );
+        for (final row in rows) {
+          final id = row['id'] as String?;
+          if (id != null) existingById[id] = row;
+        }
+      }
 
-        if (existing.isEmpty) {
+      final batch = txn.batch();
+      for (final tx in ownedTxs) {
+        // Local Dirty Shield
+        if (pendingIds.contains(tx.id)) continue;
+
+        final existingRow = existingById[tx.id];
+        if (existingRow == null) {
           if (!tx.isDeleted) {
-            await txn.insert(
+            batch.insert(
               'transactions',
               tx.copyWith(syncStatus: 'synced').toSqlite(),
+              conflictAlgorithm: ConflictAlgorithm.replace,
             );
+            hasChanges = true;
           }
         } else {
-          final local = TransactionModel.fromSqlite(existing.first);
+          final local = TransactionModel.fromSqlite(existingRow);
           if (local.syncStatus == 'pending') continue; // Dirty Shield
 
           // Quy tắc Monotonic Delete: Nếu local đã xóa mềm, chỉ chấp nhận khôi phục nếu remote mới hơn thời điểm xóa
@@ -706,7 +730,7 @@ class TransactionRepository with OwnedTableOps {
                       ? tx.updatedAt.millisecondsSinceEpoch
                       : remoteDeletedMs;
 
-              await txn.update(
+              batch.update(
                 'transactions',
                 {
                   'isDeleted': 1,
@@ -718,19 +742,26 @@ class TransactionRepository with OwnedTableOps {
                 whereArgs: [tx.id, currentUid],
               );
             } else {
-              await txn.update(
+              batch.update(
                 'transactions',
                 tx.copyWith(syncStatus: 'synced').toSqlite(),
                 where: 'id = ? AND uid = ?',
                 whereArgs: [tx.id, currentUid],
               );
             }
+            hasChanges = true;
           }
         }
       }
+
+      if (hasChanges) {
+        await batch.commit(noResult: true);
+      }
     });
 
-    _notifyTransactionsChanged();
+    if (hasChanges) {
+      await _refreshAndNotifyTransactions();
+    }
   }
 
   /// Upsert an toàn tuân thủ interface ISyncableRepository
@@ -824,15 +855,17 @@ class TransactionRepository with OwnedTableOps {
 
   void notifyTransactionsChanged() => _notifyTransactionsChanged();
 
-  void _notifyTransactionsChanged() {
+  Future<void> _refreshAndNotifyTransactions() async {
     AiFinancialContextService().invalidateCache();
-    unawaited(() async {
-      await _loadAndEmitTransactions();
-      await _loadAndEmitBalance();
-      if (!_changeStream.isClosed) {
-        _changeStream.add(null);
-      }
-    }());
+    await _loadAndEmitTransactions();
+    await _loadAndEmitBalance();
+    if (!_changeStream.isClosed) {
+      _changeStream.add(null);
+    }
+  }
+
+  void _notifyTransactionsChanged() {
+    unawaited(_refreshAndNotifyTransactions());
   }
 
   void dispose() {

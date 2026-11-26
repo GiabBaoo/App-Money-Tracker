@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../local/database_helper.dart';
@@ -795,30 +796,65 @@ class WalletRepository with OwnedTableOps {
     }
   }
 
-  /// Cập nhật hoặc chèn danh sách ví từ Firestore vào SQLite (áp dụng Local Dirty Shield và Soft Delete)
+  /// Upsert nhiều ví từ Firestore theo batch (áp dụng Local Dirty Shield, Soft Delete & Self-Healing)
   Future<void> upsertFromFirestore(List<WalletModel> firestoreWallets) async {
     final currentUid = session.uidOrNull;
     if (currentUid == null || firestoreWallets.isEmpty) return;
+
+    final ownedWallets = firestoreWallets
+        .where((fw) => fw.uid == currentUid && fw.id.isNotEmpty)
+        .toList();
+    if (ownedWallets.isEmpty) return;
+
     final db = await _dbHelper.database;
     bool needsUploadHealing = false;
+    bool hasChanges = false;
 
     await db.transaction((txn) async {
-      for (var fw in firestoreWallets) {
-        // Phòng thủ nhiều lớp: bỏ qua doc có uid khác phiên hiện tại
-        if (fw.uid != currentUid) continue;
+      // Preload pending/processing sync_queue IDs cho bảng wallets
+      final queueRows = await txn.query(
+        'sync_queue',
+        columns: ['recordId'],
+        where:
+            'tableName = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
+        whereArgs: ['wallets', currentUid, currentUid, 'pending', 'processing'],
+      );
+      final pendingIds = <String>{
+        for (final r in queueRows)
+          if (r['recordId'] is String) r['recordId'] as String,
+      };
 
-        final existing = await txn.query(
-          'wallets',
-          where: 'id = ? AND uid = ?',
-          whereArgs: [fw.id, currentUid],
-          limit: 1,
+      // Preload local wallets hiện có (chunk 450)
+      final existingById = <String, Map<String, Object?>>{};
+      final ids = ownedWallets.map((w) => w.id).toSet().toList();
+      const chunkSize = 450;
+      for (var i = 0; i < ids.length; i += chunkSize) {
+        final chunk = ids.sublist(
+          i,
+          i + chunkSize > ids.length ? ids.length : i + chunkSize,
         );
+        final placeholders = List.filled(chunk.length, '?').join(',');
+        final rows = await txn.query(
+          'wallets',
+          where: 'uid = ? AND id IN ($placeholders)',
+          whereArgs: [currentUid, ...chunk],
+        );
+        for (final row in rows) {
+          final id = row['id'] as String?;
+          if (id != null) existingById[id] = row;
+        }
+      }
+
+      final batch = txn.batch();
+      var batchOps = 0;
+      for (var fw in ownedWallets) {
+        final existingRow = existingById[fw.id];
 
         // Nếu doc trên Firestore bị thiếu tên (do bản ghi UPDATE bán phần cũ),
         // ưu tiên giữ tên local hoặc đặt tên mặc định hợp lệ
         if (fw.name.trim().isEmpty && !fw.isDeleted) {
-          if (existing.isNotEmpty) {
-            final local = WalletModel.fromSqlite(existing.first);
+          if (existingRow != null) {
+            final local = WalletModel.fromSqlite(existingRow);
             if (local.name.trim().isNotEmpty) {
               final healed = local.copyWith(syncStatus: 'pending');
               final rowMap = stampOwner(healed.toSqlite(), currentUid);
@@ -845,28 +881,30 @@ class WalletRepository with OwnedTableOps {
         // Kiểm tra trường hợp ví local là bản tạm (local_only) hoặc ví mặc định 0đ rỗng mới khởi tạo
         // trong khi Firestore đã có ví thật từ máy gốc: cho phép Firestore ghi đè (bỏ qua Dirty Shield)
         bool bypassDirtyShield = false;
-        if (existing.isNotEmpty && !fw.isDeleted) {
-          final local = WalletModel.fromSqlite(existing.first);
+        if (existingRow != null && !fw.isDeleted) {
+          final local = WalletModel.fromSqlite(existingRow);
 
           if (local.syncStatus == 'local_only') {
             bypassDirtyShield = true;
-            await txn.delete(
+            batch.delete(
               'sync_queue',
               where:
                   'tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?)',
               whereArgs: ['wallets', fw.id, currentUid, currentUid],
             );
+            batchOps++;
           } else if (fw.id == 'wlt_default_$currentUid' &&
               local.balance == 0 &&
               local.initialBalance == 0 &&
               (fw.balance != 0 || fw.initialBalance != 0)) {
             bypassDirtyShield = true;
-            await txn.delete(
+            batch.delete(
               'sync_queue',
               where:
                   'tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?)',
               whereArgs: ['wallets', fw.id, currentUid, currentUid],
             );
+            batchOps++;
           } else if (local.balance == 0 && local.initialBalance == 0) {
             final txCountRes = await txn.rawQuery(
               'SELECT COUNT(*) as c FROM transactions '
@@ -876,45 +914,34 @@ class WalletRepository with OwnedTableOps {
             final txCount = (txCountRes.first['c'] as int?) ?? 0;
             if (txCount == 0 && (fw.balance != 0 || fw.initialBalance != 0)) {
               bypassDirtyShield = true;
-              await txn.delete(
+              batch.delete(
                 'sync_queue',
                 where:
                     'tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?)',
                 whereArgs: ['wallets', fw.id, currentUid, currentUid],
               );
+              batchOps++;
             }
           }
         }
 
         // 1. Kiểm tra Local Dirty Shield: nếu bản ghi đang chờ upload thì bỏ qua
-        if (!bypassDirtyShield) {
-          final queuePending = await txn.query(
-            'sync_queue',
-            columns: ['id'],
-            where:
-                'tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
-            whereArgs: [
-              'wallets',
-              fw.id,
-              currentUid,
-              currentUid,
-              'pending',
-              'processing',
-            ],
-            limit: 1,
-          );
-          if (queuePending.isNotEmpty) continue;
+        if (!bypassDirtyShield && pendingIds.contains(fw.id)) {
+          continue;
         }
 
-        if (existing.isEmpty) {
+        if (existingRow == null) {
           if (!fw.isDeleted) {
-            await txn.insert(
+            batch.insert(
               'wallets',
               fw.copyWith(syncStatus: 'synced').toSqlite(),
+              conflictAlgorithm: ConflictAlgorithm.replace,
             );
+            batchOps++;
+            hasChanges = true;
           }
         } else {
-          final local = WalletModel.fromSqlite(existing.first);
+          final local = WalletModel.fromSqlite(existingRow);
           if (!bypassDirtyShield && local.syncStatus == 'pending') {
             // Nếu local đang pending nhưng không có trong sync_queue (mồ côi), tự động đưa lại vào sync_queue
             final healedRow = stampOwner(local.toSqlite(), currentUid);
@@ -931,12 +958,14 @@ class WalletRepository with OwnedTableOps {
           }
 
           if (bypassDirtyShield) {
-            await txn.update(
+            batch.update(
               'wallets',
               fw.copyWith(syncStatus: 'synced').toSqlite(),
               where: 'id = ? AND uid = ?',
               whereArgs: [fw.id, currentUid],
             );
+            batchOps++;
+            hasChanges = true;
             continue;
           }
 
@@ -967,7 +996,7 @@ class WalletRepository with OwnedTableOps {
                       ? fw.updatedAt.millisecondsSinceEpoch
                       : remoteDeletedMs;
 
-              await txn.update(
+              batch.update(
                 'wallets',
                 {
                   'isDeleted': 1,
@@ -979,13 +1008,15 @@ class WalletRepository with OwnedTableOps {
                 whereArgs: [fw.id, currentUid],
               );
             } else {
-              await txn.update(
+              batch.update(
                 'wallets',
                 fw.copyWith(syncStatus: 'synced').toSqlite(),
                 where: 'id = ? AND uid = ?',
                 whereArgs: [fw.id, currentUid],
               );
             }
+            batchOps++;
+            hasChanges = true;
           } else {
             // Local thắng xung đột (Local mới hơn Remote): Nếu dữ liệu lệch nhau, đẩy bản Local chuẩn lên Firestore
             final isDifferent =
@@ -1011,10 +1042,14 @@ class WalletRepository with OwnedTableOps {
         }
       }
 
+      if (batchOps > 0) {
+        await batch.commit(noResult: true);
+      }
+
       // Nếu từ Firestore đã tải về ít nhất 1 ví thật đang hoạt động, dọn dẹp các ví tạm local_only
       // và ví mặc định 0đ rỗng tự sinh (wlt_default_*) không có giao dịch
-      final activeRemoteWallets = firestoreWallets
-          .where((w) => w.uid == currentUid && !w.isDeleted)
+      final activeRemoteWallets = ownedWallets
+          .where((w) => !w.isDeleted)
           .toList();
       final activeRemoteIds = activeRemoteWallets.map((w) => w.id).toSet();
       if (activeRemoteIds.isNotEmpty) {
@@ -1032,6 +1067,7 @@ class WalletRepository with OwnedTableOps {
               where: 'id = ? AND uid = ?',
               whereArgs: [lid, currentUid],
             );
+            hasChanges = true;
           }
         }
 
@@ -1077,6 +1113,7 @@ class WalletRepository with OwnedTableOps {
                 action: 'SOFT_DELETE',
               );
               needsUploadHealing = true;
+              hasChanges = true;
             }
           }
         }
@@ -1090,10 +1127,13 @@ class WalletRepository with OwnedTableOps {
       );
       if (healedDefault) {
         needsUploadHealing = true;
+        hasChanges = true;
       }
     });
 
-    _notifyChanged();
+    if (hasChanges || needsUploadHealing) {
+      await _refreshAndNotify();
+    }
     if (needsUploadHealing) {
       unawaited(SyncService().syncAll());
     }
@@ -1106,14 +1146,16 @@ class WalletRepository with OwnedTableOps {
   // ════════ QUERIES ════════
 
   /// Stream danh sách ví của người dùng (phát dữ liệu tức thì cho StreamBuilder)
-  Stream<List<WalletModel>> getWalletsStream() async* {
-    if (_cachedWallets.isNotEmpty) {
-      yield latestWallets;
-    }
-    yield await getWallets();
-    await for (final _ in _changeStream.stream) {
+  Stream<List<WalletModel>> getWalletsStream() {
+    return (() async* {
+      if (_cachedWallets.isNotEmpty) {
+        yield latestWallets;
+      }
       yield await getWallets();
-    }
+      await for (final _ in _changeStream.stream) {
+        yield await getWallets();
+      }
+    })().asBroadcastStream(onCancel: (sub) => sub.cancel());
   }
 
   /// Lấy danh sách ví một lần
@@ -1193,14 +1235,16 @@ class WalletRepository with OwnedTableOps {
   }
 
   /// Lấy tổng tài sản (tổng số dư tất cả các ví - phát tức thì không bị delay)
-  Stream<double> getTotalBalanceStream() async* {
-    if (_cachedWallets.isNotEmpty) {
-      yield _cachedWallets.fold(0.0, (prev, w) => prev + w.balance);
-    }
-    yield await getTotalBalance();
-    await for (final _ in _changeStream.stream) {
+  Stream<double> getTotalBalanceStream() {
+    return (() async* {
+      if (_cachedWallets.isNotEmpty) {
+        yield _cachedWallets.fold(0.0, (prev, w) => prev + w.balance);
+      }
       yield await getTotalBalance();
-    }
+      await for (final _ in _changeStream.stream) {
+        yield await getTotalBalance();
+      }
+    })().asBroadcastStream(onCancel: (sub) => sub.cancel());
   }
 
   /// Lấy tổng số dư hiện tại một lần
@@ -1218,13 +1262,15 @@ class WalletRepository with OwnedTableOps {
   /// Phát thông báo thay đổi ví ra bên ngoài
   void notifyChanged() => _notifyChanged();
 
+  Future<void> _refreshAndNotify() async {
+    await _loadAndEmitWallets();
+    if (!_changeStream.isClosed) {
+      _changeStream.add(null);
+    }
+  }
+
   void _notifyChanged() {
-    unawaited(() async {
-      await _loadAndEmitWallets();
-      if (!_changeStream.isClosed) {
-        _changeStream.add(null);
-      }
-    }());
+    unawaited(_refreshAndNotify());
   }
 
   void dispose() {

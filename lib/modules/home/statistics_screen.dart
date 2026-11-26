@@ -1315,13 +1315,15 @@ class StatisticsScreenState extends State<StatisticsScreen>
         ? allTransactions
         : TransactionRepository().latestTransactions;
 
+    final sheetStream = TransactionRepository().getTransactionsStream();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (modalContext) {
         return StreamBuilder<List<TransactionModel>>(
-          stream: TransactionRepository().getTransactionsStream(),
+          stream: sheetStream,
           initialData: initialAll.isNotEmpty ? initialAll : null,
           builder: (context, snapshot) {
             final allTx =

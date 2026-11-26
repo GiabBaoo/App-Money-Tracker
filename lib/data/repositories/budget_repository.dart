@@ -238,50 +238,68 @@ class BudgetRepository with OwnedTableOps {
     return rows.length;
   }
 
-  /// Upsert danh sách ngân sách từ Firestore vào SQLite (áp dụng Local Dirty Shield và Soft Delete)
+  /// Upsert danh sách ngân sách từ Firestore vào SQLite theo batch (áp dụng Local Dirty Shield và Soft Delete)
   Future<void> upsertFromFirestore(List<BudgetModel> firestoreBudgets) async {
     final currentUid = session.uidOrNull;
     if (currentUid == null || firestoreBudgets.isEmpty) return;
+
+    final ownedBudgets = firestoreBudgets
+        .where((fb) => fb.uid == currentUid && fb.id.isNotEmpty)
+        .toList();
+    if (ownedBudgets.isEmpty) return;
+
     final db = await _dbHelper.database;
+    var hasChanges = false;
 
     await db.transaction((txn) async {
-      for (final fb in firestoreBudgets) {
-        if (fb.uid != currentUid) continue;
+      final queueRows = await txn.query(
+        'sync_queue',
+        columns: ['recordId'],
+        where:
+            'tableName = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
+        whereArgs: ['budgets', currentUid, currentUid, 'pending', 'processing'],
+      );
+      final pendingIds = <String>{
+        for (final r in queueRows)
+          if (r['recordId'] is String) r['recordId'] as String,
+      };
 
-        // 1. Dirty Shield: kiểm tra sync_queue
-        final queuePending = await txn.query(
-          'sync_queue',
-          columns: ['id'],
-          where:
-              'tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?) AND status IN (?, ?)',
-          whereArgs: [
-            'budgets',
-            fb.id,
-            currentUid,
-            currentUid,
-            'pending',
-            'processing',
-          ],
-          limit: 1,
+      final existingById = <String, Map<String, Object?>>{};
+      final ids = ownedBudgets.map((b) => b.id).toSet().toList();
+      const chunkSize = 450;
+      for (var i = 0; i < ids.length; i += chunkSize) {
+        final chunk = ids.sublist(
+          i,
+          i + chunkSize > ids.length ? ids.length : i + chunkSize,
         );
-        if (queuePending.isNotEmpty) continue;
-
-        final existing = await txn.query(
+        final placeholders = List.filled(chunk.length, '?').join(',');
+        final rows = await txn.query(
           'budgets',
-          where: 'id = ? AND uid = ?',
-          whereArgs: [fb.id, currentUid],
-          limit: 1,
+          where: 'uid = ? AND id IN ($placeholders)',
+          whereArgs: [currentUid, ...chunk],
         );
+        for (final row in rows) {
+          final id = row['id'] as String?;
+          if (id != null) existingById[id] = row;
+        }
+      }
 
-        if (existing.isEmpty) {
+      final batch = txn.batch();
+      for (final fb in ownedBudgets) {
+        if (pendingIds.contains(fb.id)) continue;
+
+        final existingRow = existingById[fb.id];
+        if (existingRow == null) {
           if (!fb.isDeleted) {
-            await txn.insert(
+            batch.insert(
               'budgets',
               fb.copyWith(syncStatus: 'synced').toSqlite(),
+              conflictAlgorithm: ConflictAlgorithm.replace,
             );
+            hasChanges = true;
           }
         } else {
-          final local = BudgetModel.fromSqlite(existing.first);
+          final local = BudgetModel.fromSqlite(existingRow);
           if (local.syncStatus == 'pending') continue; // Dirty Shield
 
           // Monotonic Delete Rule
@@ -311,7 +329,7 @@ class BudgetRepository with OwnedTableOps {
                       ? fb.updatedAt.millisecondsSinceEpoch
                       : remoteDeletedMs;
 
-              await txn.update(
+              batch.update(
                 'budgets',
                 {
                   'isDeleted': 1,
@@ -323,19 +341,26 @@ class BudgetRepository with OwnedTableOps {
                 whereArgs: [fb.id, currentUid],
               );
             } else {
-              await txn.update(
+              batch.update(
                 'budgets',
                 fb.copyWith(syncStatus: 'synced').toSqlite(),
                 where: 'id = ? AND uid = ?',
                 whereArgs: [fb.id, currentUid],
               );
             }
+            hasChanges = true;
           }
         }
       }
+
+      if (hasChanges) {
+        await batch.commit(noResult: true);
+      }
     });
 
-    await _notifyChanged();
+    if (hasChanges) {
+      await _notifyChanged();
+    }
   }
 
   /// Upsert an toàn tuân thủ ISyncableRepository

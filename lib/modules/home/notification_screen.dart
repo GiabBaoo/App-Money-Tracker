@@ -25,11 +25,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
   bool get isVi => LanguageService.instance.isVietnamese;
   final FirestoreService _firestoreService = FirestoreService();
   final NotificationRepository _notiRepo = NotificationRepository();
+  late final Stream<List<NotificationModel>> _notificationsStream;
   bool _isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
+    _notificationsStream = _notiRepo.getNotificationsStream();
     _autoInitAndMarkRead();
   }
 
@@ -215,7 +217,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   ),
                 ),
                 child: StreamBuilder<List<NotificationModel>>(
-                  stream: _notiRepo.getNotificationsStream(),
+                  stream: _notificationsStream,
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
                       return Center(

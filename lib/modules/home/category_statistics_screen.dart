@@ -24,6 +24,7 @@ class CategoryStatisticsScreen extends StatefulWidget {
 
 class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
   final TransactionRepository _transactionRepo = TransactionRepository();
+  late final Stream<List<TransactionModel>> _transactionsStream;
   late String _currentType;
   int touchedIndex = -1;
 
@@ -31,6 +32,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
   void initState() {
     super.initState();
     _currentType = widget.type;
+    _transactionsStream = _transactionRepo.getTransactionsStream();
     CategoryStyleService.instance.addListener(_onCategoryStyleChanged);
   }
 
@@ -162,7 +164,7 @@ class _CategoryStatisticsScreenState extends State<CategoryStatisticsScreen> {
                   ],
                 ),
                 child: StreamBuilder<List<TransactionModel>>(
-                  stream: _transactionRepo.getTransactionsStream(),
+                  stream: _transactionsStream,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return Center(
