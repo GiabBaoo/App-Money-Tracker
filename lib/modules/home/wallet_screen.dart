@@ -2118,7 +2118,7 @@ class _WalletScreenState extends State<WalletScreen>
 
   // === DIALOG CHUYỂN TIỀN GIỮA CÁC VÍ ===
   void _showTransferDialog(BuildContext context) async {
-    final wallets = await _walletRepo.getWalletsStream().first;
+    final wallets = await _walletRepo.getWallets();
     if (wallets.length < 2) {
       if (!context.mounted) return;
       TopToast.show(

@@ -113,7 +113,8 @@ class TransactionRepository with OwnedTableOps {
     final uid = session.requireUid();
     final db = await _dbHelper.database;
     final id = transaction.id.isEmpty ? _uuid.v4() : transaction.id;
-    final now = DateTime.now();
+    final nowMs = nextMonotonicTimestamp(null);
+    final now = DateTime.fromMillisecondsSinceEpoch(nowMs);
 
     await db.transaction((txn) async {
       String resolvedWalletId = transaction.walletId;
@@ -183,7 +184,8 @@ class TransactionRepository with OwnedTableOps {
   ) async {
     final uid = session.requireUid();
     final id = transaction.id.isEmpty ? _uuid.v4() : transaction.id;
-    final now = DateTime.now();
+    final nowMs = nextMonotonicTimestamp(null);
+    final now = DateTime.fromMillisecondsSinceEpoch(nowMs);
 
     final tx = transaction.copyWith(
       id: id,
@@ -271,7 +273,6 @@ class TransactionRepository with OwnedTableOps {
   Future<void> deleteTransaction(String transactionId) async {
     final uid = session.requireUid();
     final db = await _dbHelper.database;
-    final nowMs = DateTime.now().millisecondsSinceEpoch;
     bool goalUpdated = false;
 
     await db.transaction((txn) async {
@@ -354,12 +355,23 @@ class TransactionRepository with OwnedTableOps {
                 uid,
               );
             }
+            final pairedNowMs = nextMonotonicTimestamp(
+              pairedTx.updatedAt.millisecondsSinceEpoch,
+            );
+            final pairedTombstone = <String, Object?>{
+              'id': pairedTx.id,
+              'uid': uid,
+              'isDeleted': 1,
+              'deletedAt': pairedNowMs,
+              'updatedAt': pairedNowMs,
+              'syncStatus': 'pending',
+            };
             await txn.update(
               'transactions',
               {
                 'isDeleted': 1,
-                'deletedAt': nowMs,
-                'updatedAt': nowMs,
+                'deletedAt': pairedNowMs,
+                'updatedAt': pairedNowMs,
                 'syncStatus': 'pending',
               },
               where: 'id = ? AND uid = ?',
@@ -371,18 +383,21 @@ class TransactionRepository with OwnedTableOps {
               table: 'transactions',
               recordId: pairedTx.id,
               action: 'SOFT_DELETE',
+              data: pairedTombstone,
             );
           }
         }
       }
 
       await softDeleteOwned(txn, 'transactions', transactionId, uid);
+      final deletedRow = await findOwned(txn, 'transactions', transactionId, uid);
       await SyncQueueWriter.enqueue(
         txn,
         ownerUid: uid,
         table: 'transactions',
         recordId: transactionId,
         action: 'SOFT_DELETE',
+        data: deletedRow != null ? Map<String, Object?>.from(deletedRow) : null,
       );
     });
 
@@ -494,12 +509,17 @@ class TransactionRepository with OwnedTableOps {
     );
     if (rows.isEmpty) return 0;
 
-    final now = DateTime.now();
     await db.transaction((txn) async {
       for (final row in rows) {
-        final updated = TransactionModel.fromSqlite(
-          row,
-        ).copyWith(category: newName, updatedAt: now, syncStatus: 'pending');
+        final existingTx = TransactionModel.fromSqlite(row);
+        final nextMs = nextMonotonicTimestamp(
+          existingTx.updatedAt.millisecondsSinceEpoch,
+        );
+        final updated = existingTx.copyWith(
+          category: newName,
+          updatedAt: DateTime.fromMillisecondsSinceEpoch(nextMs),
+          syncStatus: 'pending',
+        );
         final values = updated.toSqlite();
         await updateOwned(txn, 'transactions', updated.id, values, uid);
         await SyncQueueWriter.enqueue(
@@ -760,7 +780,13 @@ class TransactionRepository with OwnedTableOps {
     });
 
     if (hasChanges) {
+      await WalletRepository().recalculateWalletBalances(
+        uid: currentUid,
+        enqueueSync: false,
+        notify: true,
+      );
       await _refreshAndNotifyTransactions();
+      WalletRepository().notifyChanged();
     }
   }
 

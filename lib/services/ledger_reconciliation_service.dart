@@ -2,19 +2,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/logging/app_logger.dart';
 import '../data/local/database_helper.dart';
+import '../data/local/owned_table_ops.dart';
 import '../data/local/sync_queue_writer.dart';
 import '../data/repositories/wallet_repository.dart';
 import '../data/repositories/goal_repository.dart';
 import '../models/wallet_model.dart';
 import '../models/goal_model.dart';
 import '../utils/finance_precision.dart';
+import 'app_widget_service.dart';
 import 'sync_service.dart';
 
 /// Dịch vụ đối soát số dư sổ cái (Ledger-Derived Balance Reconciliation)
 /// Đảm bảo số dư Ví (wallets.balance) và Mục tiêu (goals.currentAmount)
 /// luôn hội tụ chính xác tuyệt đối sau các chu kỳ đồng bộ đa thiết bị (Strong Eventual Consistency),
 /// đồng thời tái tạo ví bị thiếu từ lịch sử giao dịch khi thiết bị mới chưa nhận được bảng wallets.
-class LedgerReconciliationService {
+class LedgerReconciliationService with OwnedTableOps {
   static final LedgerReconciliationService _instance =
       LedgerReconciliationService._internal();
   factory LedgerReconciliationService() => _instance;
@@ -45,7 +47,9 @@ class LedgerReconciliationService {
       final goalsUpdated = await reconcileGoals(uid);
 
       if (reconstructed > 0 || walletsUpdated > 0) {
+        await WalletRepository().getWallets();
         WalletRepository().notifyChanged();
+        unawaited(AppWidgetService.instance.updateWidgetBalance());
       }
       if (goalsUpdated > 0) {
         GoalRepository().notifyChanged();
@@ -282,6 +286,7 @@ class LedgerReconciliationService {
   Future<int> reconcileWallets(
     String uid, {
     bool forceLedgerOverwrite = true,
+    bool syncToCloud = true,
   }) async {
     final db = await _dbHelper.database;
     final walletRows = await db.query(
@@ -296,7 +301,7 @@ class LedgerReconciliationService {
       final metaRows = await db.query(
         'sync_metadata',
         columns: ['lastSyncTimestamp'],
-        where: 'uid = ? AND tableName = ?',
+        where: 'uid = ? AND entityName = ?',
         whereArgs: [uid, 'transactions'],
         limit: 1,
       );
@@ -312,12 +317,12 @@ class LedgerReconciliationService {
         continue;
       }
 
-      // Không đối soát nếu ví hoặc bảng transactions đang có item pending/processing trong sync_queue
+      // Không đối soát nếu chính ví này đang có bản ghi sửa thủ công pending/processing trong sync_queue
       final pendingQueue = await db.rawQuery(
         'SELECT 1 FROM sync_queue '
         'WHERE (ownerUid = ? OR uid = ?) '
         'AND status IN (?, ?) '
-        'AND ((tableName = ? AND recordId = ?) OR tableName = ?) '
+        'AND tableName = ? AND recordId = ? '
         'LIMIT 1',
         [
           uid,
@@ -326,7 +331,6 @@ class LedgerReconciliationService {
           'processing',
           'wallets',
           wallet.id,
-          'transactions',
         ],
       );
       if (pendingQueue.isNotEmpty) {
@@ -341,16 +345,14 @@ class LedgerReconciliationService {
       );
       final txCount = (countRes.first['txCount'] as int?) ?? 0;
 
-      // Bảo vệ: nếu ví có balance != initialBalance nhưng chưa có giao dịch local nào
-      // và chưa từng hoàn tất tải transactions từ server, bỏ qua để tránh ghi đè sớm.
-      if (!forceLedgerOverwrite &&
-          txCount == 0 &&
-          !hasTxSyncMetadata &&
-          (wallet.balance - wallet.initialBalance).abs() > 0.001) {
-        AppLogger.warn(
-          'LedgerReconciliation: Bỏ qua ví [${wallet.name}] vì chưa hoàn tất tải transactions (balance=${wallet.balance}, initial=${wallet.initialBalance})',
-          tag: 'LedgerReconciliation',
-        );
+      // Chỉ đối soát khi có ít nhất 1 giao dịch cục bộ, đã hoàn tất sync transactions, hoặc forceLedgerOverwrite
+      if (!forceLedgerOverwrite && txCount == 0 && !hasTxSyncMetadata) {
+        if ((wallet.balance - wallet.initialBalance).abs() > 0.001) {
+          AppLogger.warn(
+            'LedgerReconciliation: Bỏ qua ví [${wallet.name}] vì chưa hoàn tất tải transactions (balance=${wallet.balance}, initial=${wallet.initialBalance})',
+            tag: 'LedgerReconciliation',
+          );
+        }
         continue;
       }
 
@@ -383,10 +385,13 @@ class LedgerReconciliationService {
           'LedgerReconciliation: Lệch số dư ví [${wallet.name}] (Hiện tại: ${wallet.balance}, Sổ cái: $expectedBalance). Tự động cân bằng...',
           tag: 'LedgerReconciliation',
         );
+        final nextMs = nextMonotonicTimestamp(
+          wallet.updatedAt.millisecondsSinceEpoch,
+        );
         final updatedWallet = wallet.copyWith(
           balance: expectedBalance,
-          updatedAt: DateTime.now().toUtc(),
-          syncStatus: 'pending',
+          updatedAt: DateTime.fromMillisecondsSinceEpoch(nextMs),
+          syncStatus: syncToCloud ? 'pending' : wallet.syncStatus,
         );
         final fullRow = updatedWallet.toSqlite();
         await db.transaction((txn) async {
@@ -396,14 +401,16 @@ class LedgerReconciliationService {
             where: 'id = ? AND uid = ?',
             whereArgs: [wallet.id, uid],
           );
-          await SyncQueueWriter.enqueue(
-            txn,
-            ownerUid: uid,
-            table: 'wallets',
-            recordId: wallet.id,
-            action: 'UPDATE',
-            data: fullRow,
-          );
+          if (syncToCloud) {
+            await SyncQueueWriter.enqueue(
+              txn,
+              ownerUid: uid,
+              table: 'wallets',
+              recordId: wallet.id,
+              action: 'UPDATE',
+              data: fullRow,
+            );
+          }
         });
         updatedCount++;
       }
@@ -453,9 +460,12 @@ class LedgerReconciliationService {
           'LedgerReconciliation: Lệch số dư mục tiêu [${goal.title}] (Hiện tại: ${goal.currentAmount}, Sổ cái: $expectedCurrent). Tự động cân bằng...',
           tag: 'LedgerReconciliation',
         );
+        final nextGoalMs = nextMonotonicTimestamp(
+          goal.updatedAt.millisecondsSinceEpoch,
+        );
         final updatedGoal = goal.copyWith(
           currentAmount: expectedCurrent,
-          updatedAt: DateTime.now().toUtc(),
+          updatedAt: DateTime.fromMillisecondsSinceEpoch(nextGoalMs),
           syncStatus: 'pending',
         );
         final fullRow = updatedGoal.toSqlite();
@@ -471,7 +481,7 @@ class LedgerReconciliationService {
             ownerUid: uid,
             table: 'goals',
             recordId: goal.id,
-            action: 'INSERT',
+            action: 'UPDATE',
             data: fullRow,
           );
         });

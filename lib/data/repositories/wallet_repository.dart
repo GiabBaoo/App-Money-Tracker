@@ -90,9 +90,16 @@ class WalletRepository with OwnedTableOps {
     );
 
     for (final r in otherDefaults) {
-      final w = WalletModel.fromSqlite(r).copyWith(
+      final existingWallet = WalletModel.fromSqlite(r);
+      final nextMs = nextMonotonicTimestamp(
+        existingWallet.updatedAt.millisecondsSinceEpoch,
+      );
+      final effectiveNow = nextMs > now.millisecondsSinceEpoch
+          ? DateTime.fromMillisecondsSinceEpoch(nextMs)
+          : now;
+      final w = existingWallet.copyWith(
         isDefault: false,
-        updatedAt: now,
+        updatedAt: effectiveNow,
         syncStatus: 'pending',
       );
       final updatedRow = stampOwner(w.toSqlite(), uid);
@@ -201,7 +208,6 @@ class WalletRepository with OwnedTableOps {
   Future<void> setDefaultWallet(String walletId) async {
     final uid = session.requireUid();
     final db = await _dbHelper.database;
-    final now = DateTime.now();
 
     await db.transaction((txn) async {
       final existing = await findOwned(txn, 'wallets', walletId, uid);
@@ -218,6 +224,11 @@ class WalletRepository with OwnedTableOps {
           'wallets/$walletId đã bị xóa',
         );
       }
+
+      final nowMs = nextMonotonicTimestamp(
+        wallet.updatedAt.millisecondsSinceEpoch,
+      );
+      final now = DateTime.fromMillisecondsSinceEpoch(nowMs);
 
       await _clearOtherDefaultsInTxn(
         txn,
@@ -253,7 +264,8 @@ class WalletRepository with OwnedTableOps {
     final uid = session.requireUid();
     final db = await _dbHelper.database;
     final id = wallet.id.isEmpty ? _uuid.v4() : wallet.id;
-    final now = DateTime.now();
+    final nowMs = nextMonotonicTimestamp(null);
+    final now = DateTime.fromMillisecondsSinceEpoch(nowMs);
 
     await db.transaction((txn) async {
       bool effectiveIsDefault = wallet.isDefault;
@@ -443,34 +455,55 @@ class WalletRepository with OwnedTableOps {
   Future<void> deleteWallet(String walletId) async {
     final uid = session.requireUid();
     final db = await _dbHelper.database;
-    final nowMs = DateTime.now().millisecondsSinceEpoch;
 
     await db.transaction((txn) async {
+      final existingWallet = await findOwned(txn, 'wallets', walletId, uid);
+      final walletNowMs = nextMonotonicTimestamp(
+        existingWallet?['updatedAt'] as int?,
+      );
       await softDeleteOwned(txn, 'wallets', walletId, uid);
+      final deletedWalletRow = await findOwned(txn, 'wallets', walletId, uid);
       await SyncQueueWriter.enqueue(
         txn,
         ownerUid: uid,
         table: 'wallets',
         recordId: walletId,
         action: 'SOFT_DELETE',
+        data: deletedWalletRow != null
+            ? Map<String, Object?>.from(deletedWalletRow)
+            : {
+                'id': walletId,
+                'uid': uid,
+                'isDeleted': 1,
+                'deletedAt': walletNowMs,
+                'updatedAt': walletNowMs,
+              },
       );
 
       // Cascade soft delete các giao dịch đang hoạt động thuộc về ví bị xóa
       final txRows = await txn.query(
         'transactions',
-        columns: ['id'],
         where:
             'walletId = ? AND uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
         whereArgs: [walletId, uid],
       );
       for (final r in txRows) {
         final txId = r['id'] as String;
+        final txNowMs = nextMonotonicTimestamp(r['updatedAt'] as int?);
+        final tombstone = <String, Object?>{
+          'id': txId,
+          'uid': uid,
+          'isDeleted': 1,
+          'deletedAt': txNowMs,
+          'updatedAt': txNowMs,
+          'syncStatus': 'pending',
+        };
         await txn.update(
           'transactions',
           {
             'isDeleted': 1,
-            'deletedAt': nowMs,
-            'updatedAt': nowMs,
+            'deletedAt': txNowMs,
+            'updatedAt': txNowMs,
             'syncStatus': 'pending',
           },
           where: 'id = ? AND uid = ?',
@@ -482,6 +515,7 @@ class WalletRepository with OwnedTableOps {
           table: 'transactions',
           recordId: txId,
           action: 'SOFT_DELETE',
+          data: tombstone,
         );
       }
 
@@ -489,7 +523,7 @@ class WalletRepository with OwnedTableOps {
       await _ensureSingleDefaultInTxn(
         txn,
         uid,
-        now: DateTime.fromMillisecondsSinceEpoch(nowMs),
+        now: DateTime.fromMillisecondsSinceEpoch(walletNowMs),
       );
     });
 
@@ -570,7 +604,8 @@ class WalletRepository with OwnedTableOps {
 
     final db = await _dbHelper.database;
     final transferId = 'xfer_${_uuid.v4()}';
-    final now = DateTime.now();
+    final nowMs = nextMonotonicTimestamp(null);
+    final now = DateTime.fromMillisecondsSinceEpoch(nowMs);
 
     await db.transaction((txn) async {
       final fromRow = await findOwned(txn, 'wallets', fromWalletId, uid);
@@ -1018,25 +1053,69 @@ class WalletRepository with OwnedTableOps {
             batchOps++;
             hasChanges = true;
           } else {
-            // Local thắng xung đột (Local mới hơn Remote): Nếu dữ liệu lệch nhau, đẩy bản Local chuẩn lên Firestore
+            // Local thắng xung đột (Local mới hơn Remote): kiểm tra sổ cái trước khi quyết định đẩy ngược lên Firestore
             final isDifferent =
                 (local.balance - fw.balance).abs() > 0.001 ||
                 (local.initialBalance - fw.initialBalance).abs() > 0.001 ||
                 local.name != fw.name ||
                 local.isDeleted != fw.isDeleted;
             if (isDifferent && !local.isDeleted) {
-              final healed = local.copyWith(syncStatus: 'pending');
-              final rowMap = stampOwner(healed.toSqlite(), currentUid);
-              await updateOwned(txn, 'wallets', local.id, rowMap, currentUid);
-              await SyncQueueWriter.enqueue(
-                txn,
-                ownerUid: currentUid,
-                table: 'wallets',
-                recordId: local.id,
-                action: 'INSERT',
-                data: rowMap,
+              final ledgerRows = await txn.rawQuery(
+                'SELECT COUNT(*) as txCount, '
+                "COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as totalIncome, "
+                "COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as totalExpense "
+                'FROM transactions '
+                'WHERE uid = ? AND walletId = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+                [currentUid, local.id],
               );
-              needsUploadHealing = true;
+              final txCount = (ledgerRows.first['txCount'] as int?) ?? 0;
+              final totalInc =
+                  (ledgerRows.first['totalIncome'] as num?)?.toDouble() ?? 0.0;
+              final totalExp =
+                  (ledgerRows.first['totalExpense'] as num?)?.toDouble() ?? 0.0;
+              final localLedgerBal = FinancePrecision.roundCurrency(
+                local.initialBalance + totalInc - totalExp,
+                currency: local.currency,
+              );
+              final remoteMatchesLedger =
+                  txCount > 0 &&
+                  (fw.balance -
+                              FinancePrecision.roundCurrency(
+                                fw.initialBalance + totalInc - totalExp,
+                                currency: fw.currency,
+                              ))
+                          .abs() <=
+                      0.001;
+              final localMatchesLedger =
+                  txCount == 0 ||
+                  (local.balance - localLedgerBal).abs() <= 0.001;
+
+              // Tránh đẩy ngược số dư cũ từ máy phụ lên ghi đè Firestore khi remote đã khớp sổ cái hoặc local bị lệch
+              if (remoteMatchesLedger && !localMatchesLedger) {
+                batch.update(
+                  'wallets',
+                  fw.copyWith(syncStatus: 'synced').toSqlite(),
+                  where: 'id = ? AND uid = ?',
+                  whereArgs: [fw.id, currentUid],
+                );
+                batchOps++;
+                hasChanges = true;
+              } else if (localMatchesLedger &&
+                  (local.syncStatus == 'pending' ||
+                      local.updatedAt.isAfter(fw.updatedAt))) {
+                final healed = local.copyWith(syncStatus: 'pending');
+                final rowMap = stampOwner(healed.toSqlite(), currentUid);
+                await updateOwned(txn, 'wallets', local.id, rowMap, currentUid);
+                await SyncQueueWriter.enqueue(
+                  txn,
+                  ownerUid: currentUid,
+                  table: 'wallets',
+                  recordId: local.id,
+                  action: 'UPDATE',
+                  data: rowMap,
+                );
+                needsUploadHealing = true;
+              }
             }
           }
         }
@@ -1131,12 +1210,114 @@ class WalletRepository with OwnedTableOps {
       }
     });
 
-    if (hasChanges || needsUploadHealing) {
+    final reconciledCount = await recalculateWalletBalances(
+      uid: currentUid,
+      enqueueSync: false,
+      notify: false,
+    );
+
+    if (hasChanges || needsUploadHealing || reconciledCount > 0) {
       await _refreshAndNotify();
     }
     if (needsUploadHealing) {
       unawaited(SyncService().syncAll());
     }
+  }
+
+  /// Tự động tính lại số dư chuẩn của toàn bộ ví từ sổ cái transactions cục bộ:
+  /// `balance = initialBalance + totalIncome - totalExpense` (bỏ qua giao dịch đã xóa mềm `isDeleted = 1`).
+  Future<int> recalculateWalletBalances({
+    String? uid,
+    bool enqueueSync = false,
+    bool notify = true,
+  }) async {
+    final targetUid = uid ?? session.uidOrNull;
+    if (targetUid == null || targetUid.isEmpty) return 0;
+
+    final db = await _dbHelper.database;
+    final walletRows = await db.query(
+      'wallets',
+      where: 'uid = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+      whereArgs: [targetUid],
+    );
+    if (walletRows.isEmpty) return 0;
+
+    final metaRows = await db.query(
+      'sync_metadata',
+      columns: ['lastSyncTimestamp'],
+      where: 'uid = ? AND entityName = ?',
+      whereArgs: [targetUid, 'transactions'],
+      limit: 1,
+    );
+    final hasTxSyncMetadata = metaRows.isNotEmpty;
+
+    int updatedCount = 0;
+    await db.transaction((txn) async {
+      for (final wRow in walletRows) {
+        final wallet = WalletModel.fromSqlite(wRow);
+
+        final stats = await txn.rawQuery(
+          'SELECT COUNT(*) as txCount, '
+          "COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as totalIncome, "
+          "COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as totalExpense "
+          'FROM transactions '
+          'WHERE uid = ? AND walletId = ? AND (isDeleted IS NULL OR isDeleted = 0)',
+          [targetUid, wallet.id],
+        );
+
+        final txCount = (stats.first['txCount'] as int?) ?? 0;
+        if (txCount == 0 &&
+            !hasTxSyncMetadata &&
+            (wallet.balance - wallet.initialBalance).abs() > 0.001) {
+          continue;
+        }
+
+        final totalIncome =
+            (stats.first['totalIncome'] as num?)?.toDouble() ?? 0.0;
+        final totalExpense =
+            (stats.first['totalExpense'] as num?)?.toDouble() ?? 0.0;
+        final expectedBalance = FinancePrecision.roundCurrency(
+          wallet.initialBalance + totalIncome - totalExpense,
+          currency: wallet.currency,
+        );
+
+        if ((wallet.balance - expectedBalance).abs() > 0.001) {
+          if (enqueueSync) {
+            final nextMs = nextMonotonicTimestamp(
+              wallet.updatedAt.millisecondsSinceEpoch,
+            );
+            final updated = wallet.copyWith(
+              balance: expectedBalance,
+              updatedAt: DateTime.fromMillisecondsSinceEpoch(nextMs),
+              syncStatus: 'pending',
+            );
+            final rowMap = stampOwner(updated.toSqlite(), targetUid);
+            await updateOwned(txn, 'wallets', wallet.id, rowMap, targetUid);
+            await SyncQueueWriter.enqueue(
+              txn,
+              ownerUid: targetUid,
+              table: 'wallets',
+              recordId: wallet.id,
+              action: 'UPDATE',
+              data: rowMap,
+            );
+          } else {
+            await txn.update(
+              'wallets',
+              {'balance': expectedBalance.round()},
+              where: 'id = ? AND uid = ?',
+              whereArgs: [wallet.id, targetUid],
+            );
+          }
+          updatedCount++;
+        }
+      }
+    });
+
+    if (updatedCount > 0 && notify) {
+      await _refreshAndNotify();
+    }
+    return updatedCount;
   }
 
   /// Upsert an toàn tuân thủ ISyncableRepository

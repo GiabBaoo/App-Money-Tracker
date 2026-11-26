@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:money_tracker_app/core/session/session_manager.dart';
 import 'package:money_tracker_app/data/local/owned_table_ops.dart';
 import 'package:money_tracker_app/data/local/sync_queue_writer.dart';
+import 'package:money_tracker_app/data/repositories/transaction_repository.dart';
+import 'package:money_tracker_app/data/repositories/wallet_repository.dart';
 import 'package:money_tracker_app/models/goal_model.dart';
 import 'package:money_tracker_app/models/transaction_model.dart';
 import 'package:money_tracker_app/models/wallet_model.dart';
@@ -350,6 +353,110 @@ void main() {
           (goal.currentAmount - deletedDepositAmount).clamp(0.0, double.infinity),
         );
         expect(revertedGoalAmount, equals(400000.0));
+      },
+    );
+
+    test(
+      'Scenario 6: Machine A deducts wallet -> Machine B converges balance via ledger & broadcast streams allow multiple listeners',
+      () async {
+        final ops = _TestOwnedOps();
+        const uid = 'uid_device_sync';
+        final t0 = DateTime.utc(2026, 11, 26, 10, 0, 0);
+
+        // Machine A và Machine B ban đầu cùng có 1 ví 1.000.000đ
+        final walletInit = WalletModel(
+          id: 'w_main',
+          uid: uid,
+          name: 'Ví chính',
+          type: WalletType.cash,
+          balance: 1000000,
+          initialBalance: 1000000,
+          iconCode: 1,
+          colorValue: 0xFF438883,
+          createdAt: t0,
+          updatedAt: t0,
+          syncStatus: 'synced',
+        );
+
+        // Machine A thêm chi tiêu 120.000đ -> trừ số dư ví và tăng monotonic updatedAt
+        final nextWalletMs = ops.nextMonotonicTimestamp(
+          walletInit.updatedAt.millisecondsSinceEpoch,
+        );
+        final walletOnA = walletInit.copyWith(
+          balance: FinancePrecision.roundCurrency(
+            walletInit.balance - 120000,
+            currency: walletInit.currency,
+          ),
+          updatedAt: DateTime.fromMillisecondsSinceEpoch(nextWalletMs),
+          syncStatus: 'pending',
+        );
+        final txExpense = TransactionModel(
+          id: 'tx_a_1',
+          uid: uid,
+          type: 'expense',
+          category: 'Ăn uống',
+          categoryIconCode: 1,
+          amount: 120000,
+          date: t0,
+          time: '10:05',
+          walletId: 'w_main',
+          createdAt: t0,
+          updatedAt: DateTime.fromMillisecondsSinceEpoch(nextWalletMs),
+          syncStatus: 'pending',
+        );
+        final txDeleted = TransactionModel(
+          id: 'tx_a_del',
+          uid: uid,
+          type: 'expense',
+          category: 'Mua sắm',
+          categoryIconCode: 1,
+          amount: 50000,
+          date: t0,
+          time: '10:06',
+          walletId: 'w_main',
+          isDeleted: true,
+          createdAt: t0,
+          updatedAt: DateTime.fromMillisecondsSinceEpoch(nextWalletMs),
+          syncStatus: 'synced',
+        );
+
+        expect(walletOnA.balance, equals(880000.0));
+        expect(walletOnA.updatedAt.isAfter(walletInit.updatedAt), isTrue);
+
+        // Machine B nhận transaction mới từ Firestore -> tái tính toán số dư từ initialBalance + income - expense (bỏ qua isDeleted)
+        final convergedBalanceOnB = _computeLedgerDerivedBalance(
+          walletInit,
+          [txExpense, txDeleted],
+        );
+        expect(convergedBalanceOnB, equals(880000.0));
+
+        // Kiểm tra sync_metadata trong LedgerReconciliationService dùng đúng cột entityName (không dùng tableName)
+        final reconcileSrc = File(
+          'lib/services/ledger_reconciliation_service.dart',
+        ).readAsStringSync();
+        expect(reconcileSrc.contains('entityName = ?'), isTrue);
+        expect(
+          RegExp(r'sync_metadata[\s\S]{0,120}tableName\s*=').hasMatch(reconcileSrc),
+          isFalse,
+        );
+
+        // Kiểm tra broadcast streams của WalletRepository & TransactionRepository không ném lỗi "Bad state: Stream has already been listened to"
+        final walletRepo = WalletRepository();
+        final txRepo = TransactionRepository();
+        final sub1 = walletRepo.getWalletsStream().listen((_) {});
+        final sub2 = walletRepo.getWalletsStream().listen((_) {});
+        final sub3 = walletRepo.getTotalBalanceStream().listen((_) {});
+        final sub4 = walletRepo.getTotalBalanceStream().listen((_) {});
+        final sub5 = txRepo.getTransactionsStream().listen((_) {});
+        final sub6 = txRepo.getTransactionsStream().listen((_) {});
+        await Future.wait([
+          sub1.cancel(),
+          sub2.cancel(),
+          sub3.cancel(),
+          sub4.cancel(),
+          sub5.cancel(),
+          sub6.cancel(),
+        ]);
       },
     );
   });

@@ -2384,6 +2384,47 @@ class SyncService implements ISyncService {
       whereArgs: ['transactions', txId, ownerUid, ownerUid],
     );
 
+    // Đồng bộ luôn ví tương ứng của giao dịch (đảm bảo số dư ví trên Firestore khớp tức thì)
+    if (tx.walletId.isNotEmpty) {
+      final walletRows = await db.query(
+        'wallets',
+        where: 'id = ? AND uid = ?',
+        whereArgs: [tx.walletId, ownerUid],
+        limit: 1,
+      );
+      if (walletRows.isNotEmpty) {
+        final wallet = WalletModel.fromSqlite(walletRows.first);
+        final walletFsData = _convertToFirestoreFormat(
+          wallet.toSqlite(),
+          'wallets',
+        );
+        walletFsData['uid'] = ownerUid;
+        walletFsData.remove('id');
+        await _firestore
+            .collection('wallets')
+            .doc(wallet.id)
+            .set(walletFsData, SetOptions(merge: true));
+
+        await db.update(
+          'wallets',
+          {'syncStatus': 'synced'},
+          where: 'id = ? AND uid = ? AND (updatedAt IS NULL OR updatedAt <= ?)',
+          whereArgs: [
+            wallet.id,
+            ownerUid,
+            wallet.updatedAt.millisecondsSinceEpoch,
+          ],
+        );
+        await db.delete(
+          'sync_queue',
+          where: 'tableName = ? AND recordId = ? AND (ownerUid = ? OR uid = ?)',
+          whereArgs: ['wallets', wallet.id, ownerUid, ownerUid],
+        );
+        await _walletRepo?.getWallets();
+        _walletRepo?.notifyChanged();
+      }
+    }
+
     _transactionRepo?.notifyTransactionsChanged();
     debugPrint('SyncService: Successfully synced single tx: $txId');
     return true;
@@ -3160,7 +3201,7 @@ class SyncService implements ISyncService {
           // 3. Hoặc ví cục bộ đang ở trạng thái 'pending'
           // 4. Hoặc ví cục bộ có dữ liệu khác với remote VÀ có updatedAt mới hơn remote (hoặc remote đang 0đ mà local có số dư thực)
           bool isLocalNewerOrRicher = false;
-          if (remote != null && !remote.isDeleted) {
+          if (remote != null && !remote.isDeleted && syncStatus == 'pending') {
             final hasDataDiff =
                 (localWallet.balance - remote.balance).abs() > 0.001 ||
                 (localWallet.initialBalance - remote.initialBalance).abs() >
@@ -3407,7 +3448,7 @@ class SyncService implements ISyncService {
 
     // Giai đoạn 1: Tải song song (Future.wait) tất cả các bảng độc lập bằng Delta Sync
     await Future.wait([
-      // 1. Wallets
+      // 1. Wallets (luôn tải đầy đủ danh sách ví ít doc của user để tránh trễ/sót do lệch đồng hồ Delta Cursor)
       () async {
         if (!stillValid()) return;
         try {
@@ -3415,7 +3456,7 @@ class SyncService implements ISyncService {
             baseQuery: _firestore
                 .collection('wallets')
                 .where('uid', isEqualTo: ownerUid),
-            lastSyncMs: lastWalletsTs,
+            lastSyncMs: 0,
             entityName: 'wallets',
             preferServer: true,
           );
@@ -3862,6 +3903,9 @@ class SyncService implements ISyncService {
     if (stillValid() && (walletsDownloadOk || transactionsDownloadOk)) {
       try {
         await LedgerReconciliationService().reconcileAll(ownerUid);
+        await _walletRepo?.getWallets();
+        _walletRepo?.notifyChanged();
+        _transactionRepo?.notifyTransactionsChanged();
         debugPrint(
           'SyncService: Ledger reconciliation completed for $ownerUid',
         );
@@ -4014,6 +4058,11 @@ class SyncService implements ISyncService {
                     removedIds,
                     onChanged: () =>
                         _transactionRepo?.notifyTransactionsChanged(),
+                  );
+                  await _walletRepo?.recalculateWalletBalances(
+                    uid: ownerUid,
+                    enqueueSync: false,
+                    notify: true,
                   );
                 }
                 if (stillValid() && !_isRestoring) {
